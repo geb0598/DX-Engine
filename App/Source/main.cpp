@@ -1,6 +1,6 @@
 // 직접 정의한 헤더 파일
-#include "window.hpp"
-#include "URenderer.hpp"
+#include "Window/Window.h"
+#include "Renderer/Renderer.h"
 
 #include "Sphere.h"
 

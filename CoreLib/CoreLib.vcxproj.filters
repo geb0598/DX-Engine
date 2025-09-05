@@ -13,83 +13,69 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-    <Filter Include="Shaders">
-      <UniqueIdentifier>{d3b52a0b-ef58-4b6d-b63c-52a73a340f72}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ImGui">
-      <UniqueIdentifier>{44b36b49-da4e-4907-8dd0-a2039671a171}</UniqueIdentifier>
+      <UniqueIdentifier>{1a4c33d0-f241-415f-b71e-8a6c24ef5aaa}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
+    <ClCompile Include="Renderer\Private\URenderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="window.cpp">
+    <ClCompile Include="Window\Private\UWindow.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="URenderer.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="..\ImGui\imgui.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\ImGui\imgui_demo.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\ImGui\imgui_draw.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\ImGui\imgui_tables.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\ImGui\imgui_widgets.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\ImGui\imgui_impl_dx11.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_dx11.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
-    <ClCompile Include="..\ImGui\imgui_impl_win32.cpp">
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="window.hpp">
+    <ClInclude Include="Renderer\Public\URenderer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="URenderer.hpp">
+    <ClInclude Include="Window\Public\UWindow.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="..\ImGui\imconfig.h">
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="..\ImGui\imgui.h">
+    <ClInclude Include="ThirdParty\ImGui\imgui_internal.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="..\ImGui\imgui_internal.h">
+    <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="..\ImGui\imstb_rectpack.h">
+    <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="..\ImGui\imstb_textedit.h">
+    <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="..\ImGui\imstb_truetype.h">
+    <ClInclude Include="ThirdParty\ImGui\imconfig.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="..\ImGui\imgui_impl_dx11.h">
+    <ClInclude Include="ThirdParty\ImGui\imgui.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="..\ImGui\imgui_impl_win32.h">
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h">
       <Filter>ImGui</Filter>
     </ClInclude>
-    <ClInclude Include="Sphere.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <FxCompile Include="ShaderW0.hlsl">
-      <Filter>Shaders</Filter>
-    </FxCompile>
   </ItemGroup>
 </Project>

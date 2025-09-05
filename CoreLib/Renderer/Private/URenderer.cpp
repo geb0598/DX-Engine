@@ -1,4 +1,4 @@
-#include "URenderer.hpp"
+#include "Renderer/Public/URenderer.h"
 
 void URenderer::Create(HWND hWindow)
 {
@@ -20,7 +20,7 @@ void URenderer::CreateShader()
 	ID3DBlob* pixelshaderCSO;
 
 	D3DCompileFromFile(
-		L"ShaderW0.hlsl",
+		L"Shader/ShaderW0.hlsl",
 		nullptr,
 		nullptr,
 		"mainVS",
@@ -39,7 +39,7 @@ void URenderer::CreateShader()
 	);
 
 	D3DCompileFromFile(
-		L"ShaderW0.hlsl",
+		L"Shader/ShaderW0.hlsl",
 		nullptr,
 		nullptr,
 		"mainPS",
