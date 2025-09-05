@@ -7,6 +7,12 @@ struct FVector
 	float Y;
 	float Z;
 
+	static const FVector Zero;
+	static const FVector One;
+	static const FVector Up;      // (0, 0, 1)
+	static const FVector Forward; // (1, 0, 0)
+	static const FVector Right;   // (0, 1, 0)
+
 	FVector(float X = 0.0f, float Y = 0.0f, float Z = 0.0f) : X(X), Y(Y), Z(Z) {}
 
 	FVector operator*(float Scalar) const 
@@ -87,9 +93,7 @@ struct FVector
 		float Len = Length(); 
 		if (Len > 0) 
 		{ 
-			X /= Len; 
-			Y /= Len; 
-			Z /= Len;
+			*this /= Len;
 		} 
 	}
 	FVector GetNormalized() const 
@@ -102,6 +106,14 @@ struct FVector
 	{
 		return (*this - Other).Length();
 	}
+	FVector ProjectOnto(const FVector& Other) const
+	{
+		return Other * (Dot(Other) / Other.LengthSquared());
+	}
+	float AngleBetween(const FVector& Other) const
+	{
+		return acosf(Dot(Other) / (Length() * Other.Length()));
+	}
 };
 
 struct FVector4
@@ -110,6 +122,12 @@ struct FVector4
 	float Y;
 	float Z;
 	float W;
+
+	static const FVector4 Zero;
+	static const FVector4 One;
+	static const FVector4 Up;      // (0, 0, 1, 0)
+	static const FVector4 Forward; // (1, 0, 0, 0)
+	static const FVector4 Right;   // (0, 1, 0, 0)
 
 	FVector4(float X = 0.0f, float Y = 0.0f, float Z = 0.0f, float W = 0.0f) : X(X), Y(Y), Z(Z), W(W) {}
 	FVector4(const FVector& Vec, float W = 1.0f) : X(Vec.X), Y(Vec.Y), Z(Vec.Z), W(W) {}
