@@ -76,7 +76,7 @@ struct FVector
 	{ 
 		return X * Other.X + Y * Other.Y + Z * Other.Z;
 	}
-	FVector Cross(const FVector& Other) 
+	FVector Cross(const FVector& Other) const
 	{ 
 		return FVector(Y * Other.Z - Z * Other.Y, Z * Other.X - X * Other.Z, X * Other.Y - Y * Other.X );
 	}

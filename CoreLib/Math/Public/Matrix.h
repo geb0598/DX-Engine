@@ -179,13 +179,13 @@ __declspec(align(16)) struct FMatrix
     }
     static FMatrix CreateRotationFromEuler(const FVector& EulerDegrees)
     {
-        float X = DEG_TO_RAD(EulerDegrees.X);  // Pitch
-        float Y = DEG_TO_RAD(EulerDegrees.Y);  // Yaw
-        float Z = DEG_TO_RAD(EulerDegrees.Z);  // Roll
+        float X = DEG_TO_RAD(EulerDegrees.X);
+        float Y = DEG_TO_RAD(EulerDegrees.Y);
+        float Z = DEG_TO_RAD(EulerDegrees.Z);
 
-        FMatrix RotX = CreateRotationX(Z);  // Roll
-        FMatrix RotY = CreateRotationY(X);  // Pitch
-        FMatrix RotZ = CreateRotationZ(Y);  // Yaw
+        FMatrix RotX = CreateRotationX(X);
+        FMatrix RotY = CreateRotationY(Y);
+        FMatrix RotZ = CreateRotationZ(Z);
 
         // Z-Up, Left-Hand = Yaw(Z) → Pitch(Y) → Roll(X)
         return RotZ * RotY * RotX;
