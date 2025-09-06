@@ -24,3 +24,5 @@ public:
 private:
 	AActor* Actor;
 };
+
+#include "Actor/Actor.h"
