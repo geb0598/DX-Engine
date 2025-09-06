@@ -8,7 +8,7 @@ UVertexShader::UVertexShader(
 	ID3D11Device* Device, 
 	const std::filesystem::path& VertexShaderFilePath,
 	const FString& VertexShaderMain,
-	const TArray<D3D11_INPUT_ELEMENT_DESC>& InputElementDesc
+	const TArray<D3D11_INPUT_ELEMENT_DESC>& InputLayoutDesc
 )
 {
 	if (!std::filesystem::exists(VertexShaderFilePath))
@@ -57,22 +57,10 @@ UVertexShader::UVertexShader(
 	ShaderReflector = std::make_unique<UShaderReflector>(Device, ShaderBlob.Get());
 
 	Device->CreateInputLayout(
-		InputElementDesc.data(),
-		InputElementDesc.size(),
+		InputLayoutDesc.data(),
+		InputLayoutDesc.size(),
 		ShaderBlob->GetBufferPointer(),
 		ShaderBlob->GetBufferSize(),
 		InputLayout.ReleaseAndGetAddressOf()
 	);
 }
-
-/*
-void UVertexShader::Bind(ID3D11DeviceContext* DeviceContext) const
-{
-	DeviceContext->IASetInputLayout(InputLayout.Get());
-
-	DeviceContext->VSSetShader(VertexShader.Get(), nullptr, 0);
-
-	// ShaderReflector->Bind(BufferName);
-}
-
-*/

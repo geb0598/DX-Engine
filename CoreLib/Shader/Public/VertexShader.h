@@ -17,7 +17,7 @@ public:
 		ID3D11Device* Device,
 		const std::filesystem::path& VertexShaderFilePath,
 		const FString& VertexShaderMain,
-		const TArray<D3D11_INPUT_ELEMENT_DESC>& InputElementDesc
+		const TArray<D3D11_INPUT_ELEMENT_DESC>& InputLayoutDesc
 	);
 
 	UVertexShader(const UVertexShader&) = delete;
@@ -29,8 +29,7 @@ public:
 		void UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* BufferData) const;
 
 	template<typename... TBufferNames>
-	std::enable_if_t<(std::is_same_v<TBufferNames, FString> && ...), void>
-		Bind(ID3D11DeviceContext* DeviceContext, TBufferNames&&... BufferNames) const;
+	void Bind(ID3D11DeviceContext* DeviceContext, TBufferNames&&... BufferNames) const;
 
 private:
 	std::unique_ptr<UShaderReflector> ShaderReflector;
@@ -42,7 +41,17 @@ private:
 // TODO: Incomplete Version
 inline void UVertexShader::UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* BufferData) const
 {
-	auto ConstantBufferInfo = ShaderReflector->GetConstantBufferInfo(BufferName);
+	UShaderReflector::FConstantBufferInfo ConstantBufferInfo;
+	// TODO
+	try
+	{
+		ConstantBufferInfo = ShaderReflector->GetConstantBufferInfo(BufferName);
+	}
+	catch (...)
+	{
+		return;
+	}
+	//
 	DeviceContext->UpdateSubresource(
 		ConstantBufferInfo.ConstantBuffer.Get(),
 		0, 
@@ -54,8 +63,7 @@ inline void UVertexShader::UpdateConstantBuffer(ID3D11DeviceContext* DeviceConte
 }
 
 template<typename ...TBufferNames>
-inline std::enable_if_t<(std::is_same_v<TBufferNames, FString> && ...), void>
-	UVertexShader::Bind(ID3D11DeviceContext* DeviceContext, TBufferNames && ...BufferNames) const
+void UVertexShader::Bind(ID3D11DeviceContext* DeviceContext, TBufferNames && ...BufferNames) const
 {
 	DeviceContext->IASetInputLayout(InputLayout.Get());
 

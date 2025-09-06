@@ -28,8 +28,7 @@ public:
 	void UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* BufferData) const;
 
 	template<typename... TBufferNames>
-	std::enable_if_t<(std::is_same_v<TBufferNames, FString> && ...), void>
-		Bind(ID3D11DeviceContext* DeviceContext, TBufferNames&&... BufferNames) const;
+	void Bind(ID3D11DeviceContext* DeviceContext, TBufferNames&&... BufferNames) const;
 
 private:
 	std::unique_ptr<UShaderReflector> ShaderReflector;
@@ -52,8 +51,7 @@ inline void UPixelShader::UpdateConstantBuffer(ID3D11DeviceContext* DeviceContex
 }
 
 template<typename ...TBufferNames>
-inline std::enable_if_t<(std::is_same_v<TBufferNames, FString> && ...), void>
-UPixelShader::Bind(ID3D11DeviceContext* DeviceContext, TBufferNames && ...BufferNames) const
+void UPixelShader::Bind(ID3D11DeviceContext* DeviceContext, TBufferNames && ...BufferNames) const
 {
 	DeviceContext->PSSetShader(PixelShader.Get(), nullptr, 0);
 

@@ -4,26 +4,27 @@
 
 #include "Math/Public/Vector.h"
 
-struct FVertexSimple
-{
-	float x, y, z;		// Position
-	float r, g, b, a;	// Color
-};
-
 struct FVertex
 {
 	FVector Position;
 	FVector4 Color;
 
-	FVertex operator() (FVertexSimple VertexSimple)
-	{
-		FVertex Vertex = {};
-		Vertex.Position = { VertexSimple.x, VertexSimple.y, VertexSimple.z };
-		Vertex.Color = { VertexSimple.r, VertexSimple.g, VertexSimple.b, VertexSimple.a };
-		return Vertex;
-	}
-
 	static const D3D11_INPUT_ELEMENT_DESC InputLayoutDesc[2];
+};
+
+struct FVertexSimple
+{
+	float x, y, z;		// Position
+	float r, g, b, a;	// Color
+
+	operator FVertex() const
+	{
+		return FVertex
+		{
+			{ x, y, z },
+			{ r, g, b, a }
+		};
+	}
 };
 
 inline const D3D11_INPUT_ELEMENT_DESC FVertex::InputLayoutDesc[2] =
