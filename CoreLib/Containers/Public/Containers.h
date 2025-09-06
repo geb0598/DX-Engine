@@ -5,6 +5,7 @@
 #include <unordered_set>
 #include <array>
 #include <queue>
+#include <string>
 
 template <typename T> using TArray = std::vector<T>;
 template <typename T> using TLinkedList = std::list<T>;
