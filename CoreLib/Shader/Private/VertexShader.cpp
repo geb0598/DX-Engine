@@ -6,20 +6,21 @@
 
 UVertexShader::UVertexShader(
 	ID3D11Device* Device, 
-	const std::filesystem::path& FilePath,
+	const TArray<D3D11_INPUT_ELEMENT_DESC>& InputElementDesc,
+	const std::filesystem::path& VertexShaderFilePath,
 	const FString& VertexShaderMain
 )
 {
-	if (!std::filesystem::exists(FilePath))
+	if (!std::filesystem::exists(VertexShaderFilePath))
 	{
-		throw std::invalid_argument("File not exist: " + FilePath.string());
+		throw std::invalid_argument("File not exist: " + VertexShaderFilePath.string());
 	}
 
 	Microsoft::WRL::ComPtr<ID3DBlob> ShaderBlob;
 	Microsoft::WRL::ComPtr<ID3DBlob> ShaderErrorBlob;
 
 	HRESULT hResult = D3DCompileFromFile(
-		FilePath.wstring().c_str(),
+		VertexShaderFilePath.wstring().c_str(),
 		nullptr,
 		nullptr,
 		VertexShaderMain.c_str(),
@@ -55,5 +56,23 @@ UVertexShader::UVertexShader(
 
 	ShaderReflector = std::make_unique<UShaderReflector>(Device, ShaderBlob.Get());
 
-	
+	Device->CreateInputLayout(
+		InputElementDesc.data(),
+		InputElementDesc.size(),
+		ShaderBlob->GetBufferPointer(),
+		ShaderBlob->GetBufferSize(),
+		InputLayout.ReleaseAndGetAddressOf()
+	);
 }
+
+/*
+void UVertexShader::Bind(ID3D11DeviceContext* DeviceContext) const
+{
+	DeviceContext->IASetInputLayout(InputLayout.Get());
+
+	DeviceContext->VSSetShader(VertexShader.Get(), nullptr, 0);
+
+	// ShaderReflector->Bind(BufferName);
+}
+
+*/

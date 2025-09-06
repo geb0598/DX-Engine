@@ -73,3 +73,13 @@ UShaderReflector::FConstantBufferInfo
 		return ConstantBufferInfoMap[BufferName];
 	}
 }
+
+void UShaderReflector::Bind(ID3D11DeviceContext* DeviceContext, const FString& BufferName)
+{
+	auto ConstantBufferInfo = GetConstantBufferInfo(BufferName);
+	DeviceContext->VSSetConstantBuffers(
+		ConstantBufferInfo.BindPoint,
+		1,
+		ConstantBufferInfo.ConstantBuffer.GetAddressOf()
+	);
+}
