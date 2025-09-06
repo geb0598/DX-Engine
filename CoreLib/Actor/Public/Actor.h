@@ -13,7 +13,7 @@ class AActor
 public:
 	~AActor() = default;
 
-	AActor();
+	AActor() = default;
 
 	// TODO: AActor is non-copyable and non-movable, 
 	//		 but it would become copyable and/or movable
@@ -26,11 +26,19 @@ public:
 
 	template<typename TComponent, typename... TArgs>
 	std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>>
-		RegisterComponent(TArgs&&... Args);
+		AddComponent(TArgs&&... Args);
+
+	template<typename TComponent>
+	std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>>
+		RemoveComponent();
 
 	template<typename TComponent>
 	std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>, TComponent>*
 		GetComponent();
+
+	template<typename TComponent>
+	std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>, bool>
+		HasComponent();
 
 private:
 	using ComponentKey = const void*;
@@ -42,9 +50,10 @@ private:
 };
 
 template<typename TComponent, typename ...TArgs>
-inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>> AActor::RegisterComponent(TArgs && ...Args)
+inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>> 
+	AActor::AddComponent(TArgs && ...Args)
 {
-	assert(!ComponentMap.count(GetComponentKey<TComponent>()));
+	assert(!HasComponent<TComponent>());
 
 	ComponentMap.emplace(
 		GetComponentKey<TComponent>(), 
@@ -53,9 +62,30 @@ inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>> AActor::
 }
 
 template<typename TComponent>
-inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>, TComponent>* AActor::GetComponent()
+inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>> AActor::RemoveComponent()
 {
-	// TODO
+	assert(!ComponentMap.count(GetComponentKey<TComponent>()));
+}
+
+template<typename TComponent>
+inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>, TComponent>* 
+	AActor::GetComponent()
+{
+	if (HasComponent<TComponent>())
+	{
+		return ComponentMap[GetComponentKey<TComponent>()];
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+template<typename TComponent>
+inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>, bool> 
+	AActor::HasComponent()
+{
+	return ComponentMap.count(GetComponentKey<TComponent>());
 }
 
 template<typename TComponent>
