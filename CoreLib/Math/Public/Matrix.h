@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "Vector.h"
 
 #define DEG_TO_RAD(degrees) ((degrees) * 3.14159265359f / 180.0f)
@@ -187,7 +187,7 @@ __declspec(align(16)) struct FMatrix
         FMatrix RotY = CreateRotationY(X);  // Pitch
         FMatrix RotZ = CreateRotationZ(Y);  // Yaw
 
-        // Z-Up, Left-Hand = Yaw(Z) ¡æ Pitch(Y) ¡æ Roll(X)
+        // Z-Up, Left-Hand = Yaw(Z) â†’ Pitch(Y) â†’ Roll(X)
         return RotZ * RotY * RotX;
     }
     static FMatrix CreateRotationFromQuaternion(const FVector4& Quat)
