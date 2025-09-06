@@ -19,6 +19,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Component\Private\ActorComponent.cpp" />
+    <ClCompile Include="Component\Private\PrimitiveComponent.cpp" />
     <ClCompile Include="Renderer\Private\URenderer.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
@@ -30,6 +32,8 @@
     <ClCompile Include="Window\Private\UWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Component\Public\ActorComponent.h" />
+    <ClInclude Include="Component\Public\PrimitiveComponent.h" />
     <ClInclude Include="Containers\Containers.h" />
     <ClInclude Include="Math\Math.h" />
     <ClInclude Include="Renderer\Public\URenderer.h" />
