@@ -1,11 +1,11 @@
 #include "Component/Public/PrimitiveComponent.h"
 
 UPrimitiveComponent::UPrimitiveComponent(
-	UActor* Actor, 
+	AActor* Actor, 
 	std::shared_ptr<UMesh> Mesh,
 	std::shared_ptr<UVertexShader> VertexShader,
 	std::shared_ptr<UPixelShader> PixelShader
-) : Mesh(Mesh), VertexShader(VertexShader), PixelShader(PixelShader)
+) : UActorComponent(Actor), Mesh(Mesh), VertexShader(VertexShader), PixelShader(PixelShader)
 {
 
 }

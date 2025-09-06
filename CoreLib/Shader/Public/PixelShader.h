@@ -25,7 +25,6 @@ public:
 	UPixelShader& operator=(const UPixelShader&) = delete;
 	UPixelShader& operator=(UPixelShader&&) noexcept = default;
 
-	template<typename TBuffer>
 	void UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* BufferData) const;
 
 	template<typename... TBufferNames>
@@ -38,7 +37,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> PixelShader;
 };
 
-template<typename TBuffer>
+// TODO: Incomplete Version
 inline void UPixelShader::UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* BufferData) const
 {
 	auto ConstantBufferInfo = ShaderReflector->GetConstantBufferInfo(BufferName);

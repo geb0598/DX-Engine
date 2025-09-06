@@ -1,8 +1,6 @@
-#include "Mesh.h"
-#include "Mesh.h"
-#include "Types/Types.h"
-
 #include <d3d11.h>
+
+#include "Types/Types.h"
 
 #include "Mesh/Public/Mesh.h"
 

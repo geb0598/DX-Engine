@@ -26,8 +26,7 @@ public:
 	UVertexShader& operator=(const UVertexShader&) = delete;
 	UVertexShader& operator=(UVertexShader&&) noexcept = default;
 
-	template<typename TBuffer>
-	void UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* BufferData) const;
+		void UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* BufferData) const;
 
 	template<typename... TBufferNames>
 	std::enable_if_t<(std::is_same_v<TBufferNames, FString> && ...), void>
@@ -40,7 +39,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> InputLayout;
 };
 
-template<typename TBuffer>
+// TODO: Incomplete Version
 inline void UVertexShader::UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* BufferData) const
 {
 	auto ConstantBufferInfo = ShaderReflector->GetConstantBufferInfo(BufferName);

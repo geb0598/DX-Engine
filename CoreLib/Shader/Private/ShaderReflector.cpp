@@ -55,6 +55,7 @@ UShaderReflector::UShaderReflector(ID3D11Device* Device, ID3DBlob* ShaderBlob)
 		FConstantBufferInfo ConstantBufferInfo = {};
 		ConstantBufferInfo.Size = ShaderBufferDesc.Size;
 		ConstantBufferInfo.BindPoint = ShaderInputBindDesc.BindPoint;
+		ConstantBufferInfo.ConstantBuffer = ConstantBuffer;
 		assert(!ConstantBufferInfoMap.count(ShaderBufferDesc.Name));
 		ConstantBufferInfoMap[ShaderBufferDesc.Name] = ConstantBufferInfo;
 	}

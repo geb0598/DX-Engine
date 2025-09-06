@@ -74,7 +74,7 @@ inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>, TCompone
 {
 	if (HasComponent<TComponent>())
 	{
-		return ComponentMap[GetComponentKey<TComponent>()];
+		return static_cast<TComponent*>(ComponentMap[GetComponentKey<TComponent>()].get());
 	}
 	else
 	{

@@ -20,7 +20,7 @@ UObject::UObject()
 {
 	if (GUDObjectFreeIndexArray.empty())
 	{
-		InternalIndex = GUDObjectArray.size();
+		InternalIndex = static_cast<uint32>(GUDObjectArray.size());
 		GUDObjectArray.push_back(this);
 	}
 	else
@@ -34,3 +34,9 @@ UObject::UObject()
 		GUDObjectArray[Index] = this;
 	}
 }
+
+TArray<UObject*> GUDObjectArray;
+TArray<uint32> GUDObjectFreeIndexArray;
+
+uint32 TotalAllocationBytes;
+uint32 TotalAllocationCount;

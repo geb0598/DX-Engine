@@ -3,14 +3,14 @@
 #include "Types/Types.h"
 
 // NOTE: Forward declaration of UActor class
-class UActor;
+class AActor;
 
 class UActorComponent
 {
 public:
 	virtual ~UActorComponent() = default;
 
-	UActorComponent(UActor* Actor);
+	UActorComponent(AActor* Actor);
 
 	UActorComponent(const UActorComponent&) = delete;
 	UActorComponent(UActorComponent&&) = delete;
@@ -18,9 +18,9 @@ public:
 	UActorComponent& operator=(const UActorComponent&) = delete;
 	UActorComponent& operator=(UActorComponent&&) = delete;
 
-	UActor* GetActor();
-	const UActor* GetActor() const;
+	AActor* GetActor();
+	const AActor* GetActor() const;
 
 private:
-	UActor* Actor;
+	AActor* Actor;
 };

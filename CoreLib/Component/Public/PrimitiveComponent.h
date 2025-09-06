@@ -9,13 +9,15 @@
 #include "Shader/Shader.h"
 #include "Types/Types.h"
 
-class UPrimitiveComponent
+class AActor;
+
+class UPrimitiveComponent : public UActorComponent
 {
 public:
 	virtual ~UPrimitiveComponent() = default;
 
 	UPrimitiveComponent(
-		UActor* Actor, 
+		AActor* Actor, 
 		std::shared_ptr<UMesh> Mesh,
 		std::shared_ptr<UVertexShader> VertexShader,
 		std::shared_ptr<UPixelShader> PixelShader
