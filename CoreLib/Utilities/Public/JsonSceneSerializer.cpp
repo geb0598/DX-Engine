@@ -10,6 +10,7 @@ void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotatio
 	Obj["Primitives"][IndexStr]["Type"] = PrimitiveTypeToString(Type);
 }
 
+// 미완성 함수
 void SaveScene(const FString& FilePath, int32 Version)
 {
 	json::JSON Obj = json::Object();
@@ -24,11 +25,11 @@ void SaveScene(const FString& FilePath, int32 Version)
 			auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
 			if (PrimitiveComponent)
 			{
-				FVector Location = FVector(i, i, i);
-				FVector Rotation = FVector(i, i, i);
-				FVector Scale = FVector(i, i, i);
-				EPrimitiveType Type = EPrimitiveType::Triangle; // Default to Triangle
-				SavePrimitive(Obj, static_cast<int>(i), Location, Rotation, Scale, Type);
+				//FVector Location = FVector(i, i, i);
+				//FVector Rotation = FVector(i, i, i);
+				//FVector Scale = FVector(i, i, i);
+				//EPrimitiveType Type = EPrimitiveType::Triangle; // Default to Triangle
+				//SavePrimitive(Obj, static_cast<int>(i), Location, Rotation, Scale, Type);
 			}
 		}
 	}
@@ -60,19 +61,19 @@ void LoadScene(const FString& FilePath)
 		json::JSON Primitive = p.second;
 
 		FVector Location = FVector(
-			Primitive["Location"][0].ToFloat(),
-			Primitive["Location"][1].ToFloat(),
-			Primitive["Location"][2].ToFloat()
+			static_cast<float>(Primitive["Location"][0].ToFloat()),
+			static_cast<float>(Primitive["Location"][1].ToFloat()),
+			static_cast<float>(Primitive["Location"][2].ToFloat())
 		);
 		FVector Rotation = FVector(
-			Primitive["Rotation"][0].ToFloat(),
-			Primitive["Rotation"][1].ToFloat(),
-			Primitive["Rotation"][2].ToFloat()
+			static_cast<float>(Primitive["Rotation"][0].ToFloat()),
+			static_cast<float>(Primitive["Rotation"][1].ToFloat()),
+			static_cast<float>(Primitive["Rotation"][2].ToFloat())
 		);
 		FVector Scale = FVector(
-			Primitive["Scale"][0].ToFloat(),
-			Primitive["Scale"][1].ToFloat(),
-			Primitive["Scale"][2].ToFloat()
+			static_cast<float>(Primitive["Scale"][0].ToFloat()),
+			static_cast<float>(Primitive["Scale"][1].ToFloat()),
+			static_cast<float>(Primitive["Scale"][2].ToFloat())
 		);
 	}
 }
