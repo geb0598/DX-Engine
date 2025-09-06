@@ -2,8 +2,9 @@
 #include "Vector.h"
 
 #define DEG_TO_RAD(degrees) ((degrees) * 3.14159265359f / 180.0f)
+#define RAD_TO_DEG(radians) ((radians) * 180.0f / 3.14159265359f)
 
-struct FMatrix
+__declspec(align(16)) struct FMatrix
 {
     float M[4][4];
 
@@ -88,11 +89,10 @@ struct FMatrix
         FVector4 V4 = *this * FVector4(V.X, V.Y, V.Z, 1.0f);
         return FVector(V4.X, V4.Y, V4.Z);
     }
-
     FVector TransformDirection(const FVector& V) const
     {
         FVector4 V4 = *this * FVector4(V.X, V.Y, V.Z, 0.0f);
-        return FVector(V4.X, V4.Y, V4.Z).GetNormalized();
+        return FVector(V4.X, V4.Y, V4.Z);
     }
     FMatrix Transpose() const
     {
@@ -148,8 +148,8 @@ struct FMatrix
         float Cos = cosf(Angle);
         float Sin = sinf(Angle);
         Result.M[1][1] = Cos;  
-        Result.M[1][2] = -Sin;
-        Result.M[2][1] = Sin;  
+        Result.M[1][2] = Sin;
+        Result.M[2][1] = -Sin;  
         Result.M[2][2] = Cos;
         return Result;
     }
@@ -179,15 +179,32 @@ struct FMatrix
     }
     static FMatrix CreateRotationFromEuler(const FVector& EulerDegrees)
     {
-        float X = DEG_TO_RAD(EulerDegrees.X);
-        float Y = DEG_TO_RAD(EulerDegrees.Y);
-        float Z = DEG_TO_RAD(EulerDegrees.Z);
+        float X = DEG_TO_RAD(EulerDegrees.X);  // Pitch
+        float Y = DEG_TO_RAD(EulerDegrees.Y);  // Yaw
+        float Z = DEG_TO_RAD(EulerDegrees.Z);  // Roll
 
-        FMatrix RotX = CreateRotationX(X);
-        FMatrix RotY = CreateRotationY(Y);
-        FMatrix RotZ = CreateRotationZ(Z);
+        FMatrix RotX = CreateRotationX(Z);  // Roll
+        FMatrix RotY = CreateRotationY(X);  // Pitch
+        FMatrix RotZ = CreateRotationZ(Y);  // Yaw
 
-        return RotX * RotY * RotZ;
+        // Z-Up, Left-Hand = Yaw(Z) ¡æ Pitch(Y) ¡æ Roll(X)
+        return RotZ * RotY * RotX;
+    }
+    static FMatrix CreateRotationFromQuaternion(const FVector4& Quat)
+    {
+        float X = Quat.X, Y = Quat.Y, Z = Quat.Z, W = Quat.W;
+        float X2 = X * 2.0f, Y2 = Y * 2.0f, Z2 = Z * 2.0f;
+        float XX = X * X2, XY = X * Y2, XZ = X * Z2;
+        float YY = Y * Y2, YZ = Y * Z2, ZZ = Z * Z2;
+        float WX = W * X2, WY = W * Y2, WZ = W * Z2;
+
+        FMatrix Result;
+        Result.M[0][0] = 1.0f - (YY + ZZ); Result.M[0][1] = XY + WZ;           Result.M[0][2] = XZ - WY;           Result.M[0][3] = 0.0f;
+        Result.M[1][0] = XY - WZ;          Result.M[1][1] = 1.0f - (XX + ZZ);  Result.M[1][2] = YZ + WX;           Result.M[1][3] = 0.0f;
+        Result.M[2][0] = XZ + WY;          Result.M[2][1] = YZ - WX;           Result.M[2][2] = 1.0f - (XX + YY);  Result.M[2][3] = 0.0f;
+        Result.M[3][0] = 0.0f;             Result.M[3][1] = 0.0f;              Result.M[3][2] = 0.0f;              Result.M[3][3] = 1.0f;
+
+        return Result;
     }
     static FMatrix CreateRotationAxis(const FVector& Axis, float Angle)
     {
@@ -202,17 +219,17 @@ struct FMatrix
 
         FMatrix Result;
         Result.M[0][0] = Cos + X * X * OneMinusCos;
-        Result.M[0][1] = X * Y * OneMinusCos - Z * Sin;
-        Result.M[0][2] = X * Z * OneMinusCos + Y * Sin;
+        Result.M[0][1] = X * Y * OneMinusCos + Z * Sin;
+        Result.M[0][2] = X * Z * OneMinusCos - Y * Sin;
         Result.M[0][3] = 0.0f;
 
-        Result.M[1][0] = Y * X * OneMinusCos + Z * Sin;
+        Result.M[1][0] = Y * X * OneMinusCos - Z * Sin;
         Result.M[1][1] = Cos + Y * Y * OneMinusCos;
-        Result.M[1][2] = Y * Z * OneMinusCos - X * Sin;
+        Result.M[1][2] = Y * Z * OneMinusCos + X * Sin;
         Result.M[1][3] = 0.0f;
 
-        Result.M[2][0] = Z * X * OneMinusCos - Y * Sin;
-        Result.M[2][1] = Z * Y * OneMinusCos + X * Sin;
+        Result.M[2][0] = Z * X * OneMinusCos + Y * Sin;
+        Result.M[2][1] = Z * Y * OneMinusCos - X * Sin;
         Result.M[2][2] = Cos + Z * Z * OneMinusCos;
         Result.M[2][3] = 0.0f;
 
@@ -223,26 +240,27 @@ struct FMatrix
 
         return Result;
     }
-    static FMatrix CreateSRT(const FVector& Translation, const FVector& RotationDegrees, const FVector& Scale)
+    static FMatrix CreateModelTransform(const FVector& Translation, const FVector& RotationDegrees, const FVector& Scale)
     {
         FMatrix ScaleMatrix = CreateScale(Scale);
         FMatrix RotationMatrix = CreateRotationFromEuler(RotationDegrees);
+        //FMatrix RotationMatrix = CreateRotationFromQuaternion(RotationDegrees);
         FMatrix TranslationMatrix = CreateTranslation(Translation);
 
         return TranslationMatrix * RotationMatrix * ScaleMatrix;
-		//return ScaleMatrix * RotationMatrix * TranslationMatrix;
     }
     static FMatrix CreateLookAt(const FVector& Eye, const FVector& Target, const FVector& Up)
     {
-        FVector Forward = (Target - Eye).GetNormalized();
-        FVector Right = Forward.Cross(Up).GetNormalized();
-        FVector NewUp = Right.Cross(Forward);
+		FVector OldUp = Up;
+		FVector N = (Target - Eye).GetNormalized(); // Forward
+        FVector U = OldUp.Cross(N).GetNormalized(); // RIGHT
+        FVector V = N.Cross(U);                     // UP
 
         FMatrix Result;
-        Result.M[0][0] = Right.X;   Result.M[0][1] = Right.Y;   Result.M[0][2] = Right.Z;   Result.M[0][3] = -Right.Dot(Eye);
-        Result.M[1][0] = NewUp.X;   Result.M[1][1] = NewUp.Y;   Result.M[1][2] = NewUp.Z;   Result.M[1][3] = -NewUp.Dot(Eye);
-        Result.M[2][0] = -Forward.X; Result.M[2][1] = -Forward.Y; Result.M[2][2] = -Forward.Z; Result.M[2][3] = Forward.Dot(Eye);
-        Result.M[3][0] = 0.0f;      Result.M[3][1] = 0.0f;      Result.M[3][2] = 0.0f;      Result.M[3][3] = 1.0f;
+        Result.M[0][0] = U.X;   Result.M[0][1] = U.Y;   Result.M[0][2] = U.Z;   Result.M[0][3] = -U.Dot(Eye);
+        Result.M[1][0] = V.X;   Result.M[1][1] = V.Y;   Result.M[1][2] = V.Z;   Result.M[1][3] = -V.Dot(Eye);
+        Result.M[2][0] = N.X;   Result.M[2][1] = N.Y;   Result.M[2][2] = N.Z;   Result.M[2][3] = -N.Dot(Eye);
+        Result.M[3][0] = 0.0f;  Result.M[3][1] = 0.0f;  Result.M[3][2] = 0.0f;  Result.M[3][3] = 1.0f;
 
         return Result;
     }
@@ -263,12 +281,12 @@ struct FMatrix
 
         Result.M[2][0] = 0.0f;
         Result.M[2][1] = 0.0f;
-        Result.M[2][2] = -(Far + Near) / (Far - Near);
-        Result.M[2][3] = -(2.0f * Far * Near) / (Far - Near);
+        Result.M[2][2] = Far / (Far - Near);
+        Result.M[2][3] = -(Far * Near) / (Far - Near);
 
         Result.M[3][0] = 0.0f;
         Result.M[3][1] = 0.0f;
-        Result.M[3][2] = -1.0f;
+        Result.M[3][2] = 1.0f;
         Result.M[3][3] = 0.0f;
 
         return Result;
@@ -288,8 +306,8 @@ struct FMatrix
 
         Result.M[2][0] = 0.0f;
         Result.M[2][1] = 0.0f;
-        Result.M[2][2] = -2.0f / (Far - Near);
-        Result.M[2][3] = -(Far + Near) / (Far - Near);
+		Result.M[2][2] = 1.0f / (Far - Near); // z range [0, 1]
+        Result.M[2][3] = -Near / (Far - Near);
 
         Result.M[3][0] = 0.0f;
         Result.M[3][1] = 0.0f;
