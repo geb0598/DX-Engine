@@ -22,10 +22,6 @@ UPixelShader* UPrimitiveComponent::GetPixelShader()
 
 void UPrimitiveComponent::Render(ID3D11DeviceContext* DeviceContext)
 {
-	VertexShader->Bind(DeviceContext);
-
-	PixelShader->Bind(DeviceContext);
-
 	Mesh->Bind(DeviceContext);
 
 	DeviceContext->Draw(Mesh->GetVertexCount(), 0);
