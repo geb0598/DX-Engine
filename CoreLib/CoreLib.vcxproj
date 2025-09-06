@@ -27,9 +27,12 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="Time\Public\TimeManager.cpp" />
+    <ClCompile Include="UI\Public\UIManager.cpp" />
     <ClCompile Include="Window\Private\UWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Containers\Containers.h" />
     <ClInclude Include="Renderer\Public\URenderer.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
@@ -39,6 +42,11 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
+    <ClInclude Include="Time\Public\TimeManager.h" />
+    <ClInclude Include="Time\Time.h" />
+    <ClInclude Include="Types\Types.h" />
+    <ClInclude Include="UI\Public\UIManager.h" />
+    <ClInclude Include="UI\UI.h" />
     <ClInclude Include="Window\Public\UWindow.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

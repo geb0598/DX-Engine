@@ -1,6 +1,10 @@
 // 직접 정의한 헤더 파일
 #include "Window/Window.h"
 #include "Renderer/Renderer.h"
+#include "UI/UI.h"
+#include "Time/Time.h"
+
+#include "ThirdParty/ImGui/imgui_demo.cpp"
 
 #include "Sphere.h"
 
@@ -104,12 +108,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// 상수 버퍼 생성
 	renderer.CreateConstantBuffer();
 
-	// IMGUI 생성
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	ImGui_ImplWin32_Init((void*)hWnd);
-	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext);
+	// Deltatime을 측정하는 타이머를 초기화한다.
+	TimeManager& Timer = TimeManager::Instance();
+	Timer.Initialize();
+
+	// IMGUI 초기화
+	UIManager& UI = UIManager::Instance();
+	UI.Initialize(hWnd, renderer.Device, renderer.DeviceContext);
 
 	// 정점 버퍼를 생성한다.
 	UINT numVerticesTriangle = sizeof(triangle_vertices) / sizeof(FVertexSimple);
@@ -186,40 +191,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		// 매번 실행되는 코드를 여기에 추가한다.
 		
+		// DeltaTime을 업데이트한다.
+		Timer.Update();
+
 		// 준비 작업
 		renderer.Prepare();
 		renderer.PrepareShader();
 
-
-		// ImGui 렌더링 준비, 컨트롤 설정, 렌더링 요청 등
-		ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-
-		// 이후 ImGui UI 컨트롤 추가는 ImGui::NewFrame()과 ImGui::Render() 사이인 여기에 위치합니다.
-		ImGui::Begin("Jungle Property Window");
-		ImGui::Text("Hello Jungle World!");
-
-		if (ImGui::Button("Change primitive"))
-		{
-			switch (typePrimitive)
-			{
-			case EPT_Triangle:
-				typePrimitive = EPT_Cube;
-				break;
-			case EPT_Cube:
-				typePrimitive = EPT_Sphere;
-				break;
-			case EPT_Sphere:
-				typePrimitive = EPT_Triangle;
-				break;
-			}
-		}
-
-		ImGui::End();
-
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 		// offset을 상수 버퍼로 업데이트한다.
 		renderer.UpdateConstant(offset);
@@ -238,14 +216,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		}
 
+		// Render UI
+		UI.RenderUI();
+
 		// 현재 화면에 보여지는 버퍼와 그리기 작업을 위한 버퍼를 서로 교환한다.
 		renderer.SwapBuffer();
 	}
 
 	// ImGui 소멸
-	ImGui_ImplDX11_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
+	UI.Release();
 
 	// 버텍스 버퍼 소멸은 Renderer 소멸 전에 처리한다
 	renderer.ReleaseVertexBuffer(vertexBufferTriangle);
