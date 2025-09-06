@@ -25,6 +25,7 @@
     <ClCompile Include="Math\Private\Vector.cpp" />
     <ClCompile Include="Mesh\Private\Mesh.cpp" />
     <ClCompile Include="Object\Private\Object.cpp" />
+    <ClCompile Include="Renderer\Private\Renderer.cpp" />
     <ClCompile Include="Renderer\Private\URenderer.cpp" />
     <ClCompile Include="Shader\Private\PixelShader.cpp" />
     <ClCompile Include="Shader\Private\ShaderReflector.cpp" />
@@ -49,6 +50,7 @@
     <ClInclude Include="Mesh\Public\Mesh.h" />
     <ClInclude Include="Mesh\Public\Vertex.h" />
     <ClInclude Include="Object\Public\Object.h" />
+    <ClInclude Include="Renderer\Public\Renderer.h" />
     <ClInclude Include="Renderer\Public\URenderer.h" />
     <ClInclude Include="Shader\Private\ShaderReflector.h" />
     <ClInclude Include="Shader\Public\PixelShader.h" />

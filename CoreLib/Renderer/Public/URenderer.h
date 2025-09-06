@@ -9,21 +9,6 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 
-// 1. Define the triangle vertices
-struct FVertexSimple
-{
-	float x, y, z;		// Position
-	float r, g, b, a;	// Color
-};
-
-// Structure for a 3D vector
-/*
-struct FVector
-{
-	float x, y, z;
-	FVector(float _x = 0, float _y = 0, float _z = 0) : x(_x), y(_y), z(_z) {};
-};
-*/
 
 extern FVertexSimple triangle_vertices[];
 extern FVertexSimple cube_vertices[];
