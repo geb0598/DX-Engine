@@ -8,7 +8,7 @@
 #include "Component/Component.h"
 #include "Renderer/Renderer.h"
 #include "Window/Window.h"
-#include "Utilities/Utilities.h"
+
 // ---------------------------------------------------------- //
 
 #include "Sphere.h"
@@ -117,21 +117,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	AActor Actor;
 
 	TArray<FVertex> VertexArray;
-	for (size_t i = 0; i < sizeof(sphere_vertices) / sizeof(FVertexSimple); ++i)
+	for (size_t i = 0; i < sizeof(triangle_vertices) / sizeof(FVertexSimple); ++i)
 	{
-		VertexArray.push_back(static_cast<FVertex>(sphere_vertices[i]));
+		VertexArray.push_back(static_cast<FVertex>(triangle_vertices[i]));
 	}
 
 	std::shared_ptr<UMesh> Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
 
 	TArray<D3D11_INPUT_ELEMENT_DESC> InputLayoutDesc(
-		std::begin(FVertex::InputLayoutDesc),
+		std::begin(FVertex::InputLayoutDesc), 
 		std::end(FVertex::InputLayoutDesc)
 	);
 
 	std::shared_ptr<UVertexShader> VertexShader = std::make_shared<UVertexShader>(
 		Renderer.GetDevice(),
-		"./Shader/VertexShader.hlsl",
+		"./Shader/VertexShader.hlsl", 
 		"main",
 		InputLayoutDesc
 	);
@@ -144,8 +144,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	Actor.AddComponent<UPrimitiveComponent>(&Actor, Mesh, VertexShader, PixelShader);
 
-	
-
 	float MVP[4][4] =
 	{
 		{ 0.2f, 0.0f, 0.0f, 0.0f },
@@ -154,9 +152,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		{ 0.0f, 0.0f, 0.0f, 1.0f }
 	};
 
-
-	SaveScene("TestScene.json", 1);
-	LoadScene("TestScene.json");
 	// ----------------------------------------------------------------------------- //
 
 	while (bIsExit == false)
@@ -205,33 +200,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-		//auto PrimitiveComponent = Actor.GetComponent<UPrimitiveComponent>();
-		//PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
-		//	Renderer.GetDeviceContext(),
-		//	"constants",
-		//	reinterpret_cast<void*>(MVP)
-		//);
-		//PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
-		//PrimitiveComponent->Render(Renderer.GetDeviceContext());
-
-		for (size_t i = 0; i < GUDObjectArray.size(); ++i)
-		{
-			auto Actor = static_cast<AActor*>(GUDObjectArray[i]);
-			if (Actor)
-			{
-				auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
-				if (PrimitiveComponent)
-				{
-					PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
-						Renderer.GetDeviceContext(),
-						"constants",
-						reinterpret_cast<void*>(MVP)
-					);
-					PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
-					PrimitiveComponent->Render(Renderer.GetDeviceContext());
-				}
-			}
-		}
+		auto PrimitiveComponent = Actor.GetComponent<UPrimitiveComponent>();
+		PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
+			Renderer.GetDeviceContext(),
+			"constants",
+			reinterpret_cast<void*>(MVP)
+		);
+		PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
+		PrimitiveComponent->Render(Renderer.GetDeviceContext());
 
 		Renderer.SwapBuffer();
 	}
