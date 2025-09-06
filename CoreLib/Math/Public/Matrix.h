@@ -1,13 +1,18 @@
 #pragma once
 #include "Vector.h"
 
+#define DEG_TO_RAD(degrees) ((degrees) * 3.14159265359f / 180.0f)
+
 struct FMatrix
 {
     float M[4][4];
 
+    static const FMatrix Identity;
+    static const FMatrix Zero;
+
     FMatrix()
     {
-        Identity();
+        SetIdentity();
     }
     FMatrix(const float InM[4][4])
     {
@@ -67,7 +72,8 @@ struct FMatrix
         );
     }
 
-    void Identity()
+    FMatrix Inverse() const;
+    void SetIdentity()
     {
         for (int i = 0; i < 4; i++)
         {
@@ -77,7 +83,6 @@ struct FMatrix
             }
         }
     }
-
     FVector TransformPosition(const FVector& V) const
     {
         FVector4 V4 = *this * FVector4(V.X, V.Y, V.Z, 1.0f);
@@ -89,7 +94,6 @@ struct FMatrix
         FVector4 V4 = *this * FVector4(V.X, V.Y, V.Z, 0.0f);
         return FVector(V4.X, V4.Y, V4.Z).GetNormalized();
     }
-
     FMatrix Transpose() const
     {
         FMatrix Result;
@@ -102,7 +106,6 @@ struct FMatrix
         }
         return Result;
     }
-
     float Determinant() const
     {
         return
@@ -120,96 +123,72 @@ struct FMatrix
                 M[1][2] * (M[2][0] * M[3][1] - M[2][1] * M[3][0]));
     }
 
-    // 역행렬 (간단한 구현)
-    FMatrix Inverse() const
-    {
-        float Det = Determinant();
-        if (fabsf(Det) < 1e-6f)
-        {
-            // 특이행렬인 경우 단위행렬 반환
-            FMatrix Result;
-            Result.Identity();
-            return Result;
-        }
-
-        FMatrix Result;
-        float InvDet = 1.0f / Det;
-
-        // 여인수 행렬 계산 (복잡하므로 간단한 버전)
-        // 실제 프로덕션에서는 LU 분해나 가우스-조던 소거법 사용 권장
-
-        Result.M[0][0] = (M[1][1] * (M[2][2] * M[3][3] - M[2][3] * M[3][2]) -
-            M[1][2] * (M[2][1] * M[3][3] - M[2][3] * M[3][1]) +
-            M[1][3] * (M[2][1] * M[3][2] - M[2][2] * M[3][1])) * InvDet;
-        // ... (나머지 원소들도 비슷하게 계산, 복잡하므로 생략)
-
-        // 간단한 변환 행렬의 경우를 위한 특별 처리
-        // 회전+이동 행렬의 역행렬은 더 간단하게 계산 가능
-
-        return Result;
-    }
-
-    // ===== 정적 변환 행렬 생성 함수들 =====
-
-    // 이동 행렬
     static FMatrix CreateTranslation(const FVector& Translation)
     {
         FMatrix Result;
-        Result.Identity();
+        Result.SetIdentity();
         Result.M[0][3] = Translation.X;
         Result.M[1][3] = Translation.Y;
         Result.M[2][3] = Translation.Z;
         return Result;
     }
-
-    // 스케일 행렬
     static FMatrix CreateScale(const FVector& Scale)
     {
         FMatrix Result;
-        Result.Identity();
+        Result.SetIdentity();
         Result.M[0][0] = Scale.X;
         Result.M[1][1] = Scale.Y;
         Result.M[2][2] = Scale.Z;
         return Result;
     }
-
-    // X축 회전 행렬
     static FMatrix CreateRotationX(float Angle)
     {
         FMatrix Result;
-        Result.Identity();
+        Result.SetIdentity();
         float Cos = cosf(Angle);
         float Sin = sinf(Angle);
-        Result.M[1][1] = Cos;  Result.M[1][2] = -Sin;
-        Result.M[2][1] = Sin;  Result.M[2][2] = Cos;
+        Result.M[1][1] = Cos;  
+        Result.M[1][2] = -Sin;
+        Result.M[2][1] = Sin;  
+        Result.M[2][2] = Cos;
         return Result;
     }
-
-    // Y축 회전 행렬
     static FMatrix CreateRotationY(float Angle)
     {
         FMatrix Result;
-        Result.Identity();
+        Result.SetIdentity();
         float Cos = cosf(Angle);
         float Sin = sinf(Angle);
-        Result.M[0][0] = Cos;   Result.M[0][2] = Sin;
-        Result.M[2][0] = -Sin;  Result.M[2][2] = Cos;
+        Result.M[0][0] = Cos;   
+        Result.M[0][2] = Sin;
+        Result.M[2][0] = -Sin;  
+        Result.M[2][2] = Cos;
         return Result;
     }
-
-    // Z축 회전 행렬
     static FMatrix CreateRotationZ(float Angle)
     {
         FMatrix Result;
-        Result.Identity();
+        Result.SetIdentity();
         float Cos = cosf(Angle);
         float Sin = sinf(Angle);
-        Result.M[0][0] = Cos;  Result.M[0][1] = -Sin;
-        Result.M[1][0] = Sin;  Result.M[1][1] = Cos;
+        Result.M[0][0] = Cos;  
+        Result.M[0][1] = -Sin;
+        Result.M[1][0] = Sin;  
+        Result.M[1][1] = Cos;
         return Result;
     }
+    static FMatrix CreateRotationFromEuler(const FVector& EulerDegrees)
+    {
+        float X = DEG_TO_RAD(EulerDegrees.X);
+        float Y = DEG_TO_RAD(EulerDegrees.Y);
+        float Z = DEG_TO_RAD(EulerDegrees.Z);
 
-    // 임의 축 회전 행렬
+        FMatrix RotX = CreateRotationX(X);
+        FMatrix RotY = CreateRotationY(Y);
+        FMatrix RotZ = CreateRotationZ(Z);
+
+        return RotX * RotY * RotZ;
+    }
     static FMatrix CreateRotationAxis(const FVector& Axis, float Angle)
     {
         FVector NormalizedAxis = Axis.GetNormalized();
@@ -244,8 +223,15 @@ struct FMatrix
 
         return Result;
     }
+    static FMatrix CreateSRT(const FVector& Translation, const FVector& RotationDegrees, const FVector& Scale)
+    {
+        FMatrix ScaleMatrix = CreateScale(Scale);
+        FMatrix RotationMatrix = CreateRotationFromEuler(RotationDegrees);
+        FMatrix TranslationMatrix = CreateTranslation(Translation);
 
-    // Look-At 행렬 (카메라 뷰 행렬)
+        return TranslationMatrix * RotationMatrix * ScaleMatrix;
+		//return ScaleMatrix * RotationMatrix * TranslationMatrix;
+    }
     static FMatrix CreateLookAt(const FVector& Eye, const FVector& Target, const FVector& Up)
     {
         FVector Forward = (Target - Eye).GetNormalized();
@@ -260,8 +246,6 @@ struct FMatrix
 
         return Result;
     }
-
-    // 원근 투영 행렬
     static FMatrix CreatePerspective(float FOV, float AspectRatio, float Near, float Far)
     {
         float TanHalfFOV = tanf(FOV * 0.5f);
@@ -289,8 +273,6 @@ struct FMatrix
 
         return Result;
     }
-
-    // 직교 투영 행렬
     static FMatrix CreateOrthographic(float Left, float Right, float Bottom, float Top, float Near, float Far)
     {
         FMatrix Result;
@@ -316,7 +298,4 @@ struct FMatrix
 
         return Result;
     }
-
-    static const FMatrix Identity;
-    static const FMatrix Zero;
 };
