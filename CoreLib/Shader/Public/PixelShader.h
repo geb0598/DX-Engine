@@ -39,7 +39,7 @@ private:
 };
 
 template<typename TBuffer>
-inline void UPixelShader::UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* Buff) const
+inline void UPixelShader::UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* BufferData) const
 {
 	auto ConstantBufferInfo = ShaderReflector->GetConstantBufferInfo(BufferName);
 	DeviceContext->UpdateSubresource(

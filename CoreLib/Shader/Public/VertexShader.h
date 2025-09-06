@@ -41,7 +41,7 @@ private:
 };
 
 template<typename TBuffer>
-inline void UVertexShader::UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* Buff) const
+inline void UVertexShader::UpdateConstantBuffer(ID3D11DeviceContext* DeviceContext, const FString& BufferName, const void* BufferData) const
 {
 	auto ConstantBufferInfo = ShaderReflector->GetConstantBufferInfo(BufferName);
 	DeviceContext->UpdateSubresource(
