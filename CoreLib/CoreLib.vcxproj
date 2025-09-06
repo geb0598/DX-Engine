@@ -35,9 +35,9 @@
   <ItemGroup>
     <ClInclude Include="Containers\Containers.h" />
     <ClInclude Include="Math\Math.h" />
-    <ClInclude Include="Public\PixelShader.h" />
     <ClInclude Include="Renderer\Public\URenderer.h" />
     <ClInclude Include="Shader\Private\ShaderReflector.h" />
+    <ClInclude Include="Shader\Public\PixelShader.h" />
     <ClInclude Include="Shader\Public\VertexShader.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />

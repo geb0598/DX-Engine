@@ -6,9 +6,9 @@
 
 UVertexShader::UVertexShader(
 	ID3D11Device* Device, 
-	const TArray<D3D11_INPUT_ELEMENT_DESC>& InputElementDesc,
 	const std::filesystem::path& VertexShaderFilePath,
-	const FString& VertexShaderMain
+	const FString& VertexShaderMain,
+	const TArray<D3D11_INPUT_ELEMENT_DESC>& InputElementDesc
 )
 {
 	if (!std::filesystem::exists(VertexShaderFilePath))
