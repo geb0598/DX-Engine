@@ -1,12 +1,16 @@
-// 직접 정의한 헤더 파일
+// 占쏙옙占쏙옙 占쏙옙占쏙옙占쏙옙 占쏙옙占� 占쏙옙占쏙옙
 #include "Window/Window.h"
 #include "Renderer/Renderer.h"
-#include "UI/UI.h"
-#include "Time/Time.h"
-
-#include "ThirdParty/ImGui/imgui_demo.cpp"
 
 #include "Sphere.h"
+
+// ---------------------------------------------------------- //
+#include "Actor/Actor.h"
+#include "Component/Component.h"
+#include <vector>
+
+
+// ---------------------------------------------------------- //
 
 FVertexSimple triangle_vertices[] =
 {
@@ -68,19 +72,14 @@ FVertexSimple cube_vertices[] =
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-	// 윈도우 클래스 이름
 	WCHAR WindowClass[] = L"JungleWindowClass";
 
-	// 윈도우 타이틀바에 표시될 이름
 	WCHAR Title[] = L"Game Tech Lab";
 
-	// 각종 메시지를 처리할 함수인 WndProc의 함수 포인터를 WindowCLass 구조체에 넣는다.
 	WNDCLASSW wndclass = { 0, WndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
 
-	// 윈도우 클래스 등록
 	RegisterClassW(&wndclass);
 
-	// 1024 x 1024 크기에 윈도우 생성
 	HWND hWnd = CreateWindowExW(
 								0,
 								WindowClass,
@@ -96,27 +95,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 								nullptr
 								);
 
-	// Renderer Class를 생성한다.
 	URenderer renderer;
 
-	// D3D11 생성하는 함수를 호출한다.
 	renderer.Create(hWnd);
 
-	// 렌더러 생성 직후에 쉐이더를 생성하는 함수를 호출한다.
-	renderer.CreateShader();
+	// renderer.CreateShader();
 
-	// 상수 버퍼 생성
-	renderer.CreateConstantBuffer();
+	// renderer.CreateConstantBuffer();
 
-	// Deltatime을 측정하는 타이머를 초기화한다.
-	TimeManager& Timer = TimeManager::Instance();
-	Timer.Initialize();
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	ImGui_ImplWin32_Init((void*)hWnd);
+	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext);
 
-	// IMGUI 초기화
-	UIManager& UI = UIManager::Instance();
-	UI.Initialize(hWnd, renderer.Device, renderer.DeviceContext);
-
-	// 정점 버퍼를 생성한다.
 	UINT numVerticesTriangle = sizeof(triangle_vertices) / sizeof(FVertexSimple);
 	UINT numVerticesCube = sizeof(cube_vertices) / sizeof(FVertexSimple);
 	UINT numVerticesSphere = sizeof(sphere_vertices) / sizeof(FVertexSimple);
@@ -130,9 +122,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		sphere_vertices[i].z *= scaleMod;
 	}
 
-	ID3D11Buffer* vertexBufferTriangle = renderer.CreateVertexBuffer(triangle_vertices, sizeof(triangle_vertices));
-	ID3D11Buffer* vertexBufferCube = renderer.CreateVertexBuffer(cube_vertices, sizeof(cube_vertices));
-	ID3D11Buffer* vertexBufferSphere = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
+	// ID3D11Buffer* vertexBufferTriangle = renderer.CreateVertexBuffer(triangle_vertices, sizeof(triangle_vertices));
+	// ID3D11Buffer* vertexBufferCube = renderer.CreateVertexBuffer(cube_vertices, sizeof(cube_vertices));
+	// ID3D11Buffer* vertexBufferSphere = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
 	
 	bool bIsExit = false;
 
@@ -145,20 +137,57 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	};
 
 	ETypePrimitive typePrimitive = EPT_Triangle;
-	// 도형의 움직임 정도를 담을 offset 변수
 	FVector offset(0.0f);
 
-	// Main Loop (Quit Message가 들어오기 전까지 아래 Loop를 무한히 실행하게 됨)
+	// ----------------------------------------------------------------------------- //
+									/* TEST CODE */
+	// ----------------------------------------------------------------------------- //
+
+	AActor Actor;
+
+	auto Convert = [](FVertexSimple VertexSimple) {
+		FVertex Vertex;
+		Vertex.Position.X = VertexSimple.x;
+		Vertex.Position.Y = VertexSimple.y;
+		Vertex.Position.Z = VertexSimple.z;
+		Vertex.Color.X = VertexSimple.r;
+		Vertex.Color.Y = VertexSimple.g;
+		Vertex.Color.Z = VertexSimple.b;
+		Vertex.Color.W = VertexSimple.a;
+		return Vertex;
+	};
+
+	TArray<FVertex> Vertices;
+	for (size_t i = 0; i < sizeof(triangle_vertices) / sizeof(FVertexSimple); ++i)
+	{
+		Vertices.push_back(Convert(triangle_vertices[i]));
+	}
+
+	std::shared_ptr<UMesh> Mesh = std::make_shared<UMesh>(renderer.Device, Vertices);
+	TArray<D3D11_INPUT_ELEMENT_DESC> InputElem(std::begin(FVertex::InputLayout), std::end(FVertex::InputLayout));
+	std::shared_ptr<UVertexShader> VertexShader = std::make_shared<UVertexShader>(
+		renderer.Device, 
+		"./Shader/ShaderW0_VS.hlsl", 
+		"mainVS",
+		InputElem
+	);
+	std::shared_ptr<UPixelShader> PixelShader = std::make_shared<UPixelShader>(
+		renderer.Device,
+		"./Shader/ShaderW0_PS.hlsl",
+		"mainPS"
+	);
+	Actor.AddComponent<UPrimitiveComponent>(&Actor, Mesh, VertexShader, PixelShader);
+	// Actor.AddComponent<UPrimitiveComponent>(Actor);
+
+	// ----------------------------------------------------------------------------- //
+
 	while (bIsExit == false)
 	{
 		MSG msg;
 
-		// 처리할 메시지가 더 이상 없을 때까지 수행
 		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
-			// 키 입력 메시지를 번역
 			TranslateMessage(&msg);
-			// 메시지를 적절한 윈도우 프로시저에 전달, 메시지가 위에서 등록한 WndProc으로 전달됨
 			DispatchMessage(&msg);
 
 			if (msg.message == WM_QUIT)
@@ -166,76 +195,77 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				bIsExit = true;
 				break;
 			}
-			else if (msg.message == WM_KEYDOWN)	// 키보드 눌렸을 때
+		}
+
+		
+		renderer.Prepare();
+		// renderer.PrepareShader();
+
+
+		ImGui_ImplDX11_NewFrame();
+		ImGui_ImplWin32_NewFrame();
+		ImGui::NewFrame();
+
+		ImGui::Begin("Jungle Property Window");
+		ImGui::Text("Hello Jungle World!");
+
+		if (ImGui::Button("Change primitive"))
+		{
+			switch (typePrimitive)
 			{
-				// 눌린 키가 방향키라면 해당 방향에 맞춰서
-				// offset 변수의 x, y 멤버 변수의 값을 조정한다
-				if (msg.wParam == VK_LEFT)
-				{
-					offset.x -= 0.01f;
-				}
-				if (msg.wParam == VK_RIGHT)
-				{
-					offset.x += 0.01f;
-				}
-				if (msg.wParam == VK_UP)
-				{
-					offset.y += 0.01f;
-				}
-				if (msg.wParam == VK_DOWN)
-				{
-					offset.y -= 0.01f;
-				}
+			case EPT_Triangle:
+				typePrimitive = EPT_Cube;
+				break;
+			case EPT_Cube:
+				typePrimitive = EPT_Sphere;
+				break;
+			case EPT_Sphere:
+				typePrimitive = EPT_Triangle;
+				break;
 			}
 		}
 
-		// 매번 실행되는 코드를 여기에 추가한다.
-		
-		// DeltaTime을 업데이트한다.
-		Timer.Update();
+		ImGui::End();
 
-		// 준비 작업
-		renderer.Prepare();
-		renderer.PrepareShader();
+		ImGui::Render();
+		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
+		// renderer.UpdateConstant(offset);
 
-		// offset을 상수 버퍼로 업데이트한다.
-		renderer.UpdateConstant(offset);
-
-		// 아래 Switch를 통해 현재 Primitive Type에 맞춰서 VertexBuffer와 numVertices 변수를 선택한다.
 		switch (typePrimitive)
 		{
 		case EPT_Triangle :
-			renderer.RenderPrimitive(vertexBufferTriangle, numVerticesTriangle);
+			// renderer.RenderPrimitive(vertexBufferTriangle, numVerticesTriangle);
 			break;
 		case EPT_Cube :
-			renderer.RenderPrimitive(vertexBufferCube, numVerticesCube);
+			// renderer.RenderPrimitive(vertexBufferCube, numVerticesCube);
 			break;
 		case EPT_Sphere :
-			renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
+			// renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
 			break;
 		}
 
-		// Render UI
-		UI.RenderUI();
+		auto PrimitiveComponent = Actor.GetComponent<UPrimitiveComponent>();
+		PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
+			renderer.DeviceContext,
+			"constants",
+			reinterpret_cast<void*>(&offset)
+		);
+		PrimitiveComponent->Render(renderer.DeviceContext);
 
-		// 현재 화면에 보여지는 버퍼와 그리기 작업을 위한 버퍼를 서로 교환한다.
 		renderer.SwapBuffer();
 	}
 
-	// ImGui 소멸
-	UI.Release();
+	ImGui_ImplDX11_Shutdown();
+	ImGui_ImplWin32_Shutdown();
+	ImGui::DestroyContext();
 
-	// 버텍스 버퍼 소멸은 Renderer 소멸 전에 처리한다
-	renderer.ReleaseVertexBuffer(vertexBufferTriangle);
-	renderer.ReleaseVertexBuffer(vertexBufferCube);
-	renderer.ReleaseVertexBuffer(vertexBufferSphere);
+	// renderer.ReleaseVertexBuffer(vertexBufferTriangle);
+	// renderer.ReleaseVertexBuffer(vertexBufferCube);
+	// renderer.ReleaseVertexBuffer(vertexBufferSphere);
 
-	// 쉐이더 소멸 직전에 상수 버퍼를 소멸시키는 함수를 호출한다.
-	renderer.ReleaseConstantBuffer();
-	// 렌더러 소멸 직전에 쉐이더를 소멸시키는 함수를 호출한다.
-	renderer.ReleaseShader();
-	// D3D11 소멸시키는 함수를 호출한다.
+	// renderer.ReleaseConstantBuffer();
+	// renderer.ReleaseShader();
 	renderer.Release();
 
 	return 0;

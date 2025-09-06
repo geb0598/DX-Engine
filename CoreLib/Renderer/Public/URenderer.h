@@ -17,11 +17,13 @@ struct FVertexSimple
 };
 
 // Structure for a 3D vector
+/*
 struct FVector
 {
 	float x, y, z;
 	FVector(float _x = 0, float _y = 0, float _z = 0) : x(_x), y(_y), z(_z) {};
 };
+*/
 
 extern FVertexSimple triangle_vertices[];
 extern FVertexSimple cube_vertices[];
@@ -54,7 +56,7 @@ public:
 	// 상수 버퍼 정의 구조체
 	struct FConstants
 	{
-		FVector Offset;
+		// FVector Offset;
 		float Pad;
 	};
 
@@ -72,7 +74,7 @@ public:
 	void ReleaseRasterizerState();					// 래스터라이저 상태를 해제하는 함수
 	void CreateConstantBuffer();					// 상수 버퍼 생성
 	void ReleaseConstantBuffer();					// 상수 버퍼 해제
-	void UpdateConstant(FVector Offset);			// 상수 버퍼를 갱신하는 함수
+	// void UpdateConstant(FVector Offset);			// 상수 버퍼를 갱신하는 함수
 	void Release();									// 렌더러에 사용된 모든 리소스를 해제하는 함수
 	void SwapBuffer();								// 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
 

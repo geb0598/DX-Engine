@@ -1,22 +1,32 @@
 #include "Component/Public/PrimitiveComponent.h"
 
 UPrimitiveComponent::UPrimitiveComponent(
-	UActor* Actor, 
+	AActor* Actor, 
 	std::shared_ptr<UMesh> Mesh,
 	std::shared_ptr<UVertexShader> VertexShader,
 	std::shared_ptr<UPixelShader> PixelShader
-) : Mesh(Mesh), VertexShader(VertexShader), PixelShader(PixelShader)
+) : UActorComponent(Actor), Mesh(Mesh), VertexShader(VertexShader), PixelShader(PixelShader)
 {
 
 }
 
+UVertexShader* UPrimitiveComponent::GetVertexShader()
+{
+	return VertexShader.get();
+}
+
+UPixelShader* UPrimitiveComponent::GetPixelShader()
+{
+	return PixelShader.get();
+}
+
 void UPrimitiveComponent::Render(ID3D11DeviceContext* DeviceContext)
 {
-	// TODO;
-	// VertexShader->Bind(DeviceContext, TODO:cbuffer)
-	// PixelShader->Bind(DeviceContext, TODO:cbuffer)
+	VertexShader->Bind(DeviceContext);
 
-	//Mesh->Bind(DeviceContext);
+	PixelShader->Bind(DeviceContext);
 
-	//DeviceContext->Draw();
+	Mesh->Bind(DeviceContext);
+
+	DeviceContext->Draw(Mesh->GetVertexCount(), 0);
 }

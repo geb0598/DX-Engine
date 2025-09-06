@@ -1,17 +1,17 @@
 #include "Component/Public/ActorComponent.h"
 
-UActorComponent::UActorComponent(UActor* Actor)
+UActorComponent::UActorComponent(AActor* Actor)
 	: Actor(Actor)
 {
 
 }
 
-UActor* UActorComponent::GetActor()
+AActor* UActorComponent::GetActor()
 {
 	return Actor;
 }
 
-const UActor* UActorComponent::GetActor() const
+const AActor* UActorComponent::GetActor() const
 {
 	return Actor;
 }

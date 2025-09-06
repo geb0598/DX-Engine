@@ -21,7 +21,14 @@
   <ItemGroup>
     <ClCompile Include="Component\Private\ActorComponent.cpp" />
     <ClCompile Include="Component\Private\PrimitiveComponent.cpp" />
+    <ClCompile Include="Math\Private\Matrix.cpp" />
+    <ClCompile Include="Math\Private\Vector.cpp" />
+    <ClCompile Include="Mesh\Private\Mesh.cpp" />
+    <ClCompile Include="Object\Private\Object.cpp" />
     <ClCompile Include="Renderer\Private\URenderer.cpp" />
+    <ClCompile Include="Shader\Private\PixelShader.cpp" />
+    <ClCompile Include="Shader\Private\ShaderReflector.cpp" />
+    <ClCompile Include="Shader\Private\VertexShader.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
@@ -33,7 +40,19 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Actor\Public\Actor.h" />
+    <ClInclude Include="Component\Public\ActorComponent.h" />
+    <ClInclude Include="Component\Public\PrimitiveComponent.h" />
+    <ClInclude Include="Containers\Containers.h" />
+    <ClInclude Include="Math\Math.h" />
+    <ClInclude Include="Math\Public\Matrix.h" />
+    <ClInclude Include="Math\Public\Vector.h" />
+    <ClInclude Include="Mesh\Public\Mesh.h" />
+    <ClInclude Include="Mesh\Public\Vertex.h" />
+    <ClInclude Include="Object\Public\Object.h" />
     <ClInclude Include="Renderer\Public\URenderer.h" />
+    <ClInclude Include="Shader\Private\ShaderReflector.h" />
+    <ClInclude Include="Shader\Public\PixelShader.h" />
+    <ClInclude Include="Shader\Public\VertexShader.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />

@@ -1,6 +1,6 @@
-#include "Types/Types.h"
-
 #include <d3d11.h>
+
+#include "Types/Types.h"
 
 #include "Mesh/Public/Mesh.h"
 
@@ -26,4 +26,14 @@ void UMesh::Bind(ID3D11DeviceContext* DeviceContext) const
 	DeviceContext->IASetVertexBuffers(0, 1, VertexBuffer.GetAddressOf(), &Stride, &Offset);
 
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+UINT UMesh::GetVertexCount() const
+{
+	return VertexCount;
+}
+
+UINT UMesh::GetStride() const
+{
+	return Stride;
 }

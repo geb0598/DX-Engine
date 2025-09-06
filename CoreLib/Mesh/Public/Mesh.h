@@ -23,6 +23,9 @@ public:
 
 	void Bind(ID3D11DeviceContext* DeviceContext) const;
 
+	UINT GetVertexCount() const;
+	UINT GetStride() const;
+
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> VertexBuffer;
 

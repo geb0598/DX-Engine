@@ -26,13 +26,10 @@ public:
 
 	uint32 UUID;
 	uint32 InternalIndex;
-
-private:
-	UObject();
 };
 
-TArray<UObject*> GUDObjectArray;
-TArray<uint32> GUDObjectFreeIndexArray;
+extern TArray<UObject*> GUDObjectArray;
+extern TArray<uint32> GUDObjectFreeIndexArray;
 
-uint32 TotalAllocationBytes;
-uint32 TotalAllocationCount;
+extern uint32 TotalAllocationBytes;
+extern uint32 TotalAllocationCount;
