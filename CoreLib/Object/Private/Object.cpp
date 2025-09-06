@@ -12,7 +12,7 @@ uint32 UObject::UEngineStatics::GenUUID()
 UObject::~UObject()
 {
 	GUDObjectArray[InternalIndex] = nullptr;
-	GUDObjectFreeIndexArray.push_back(UUID);
+	GUDObjectFreeIndexArray.push_back(InternalIndex);
 }
 
 UObject::UObject()
