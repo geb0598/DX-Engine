@@ -20,6 +20,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Renderer\Private\URenderer.cpp" />
+    <ClCompile Include="Shader\Private\PixelShader.cpp" />
+    <ClCompile Include="Shader\Private\ShaderReflector.cpp" />
+    <ClCompile Include="Shader\Private\VertexShader.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
@@ -34,7 +37,7 @@
     <ClInclude Include="Math\Math.h" />
     <ClInclude Include="Public\PixelShader.h" />
     <ClInclude Include="Renderer\Public\URenderer.h" />
-    <ClInclude Include="Shader\Public\Shader.h" />
+    <ClInclude Include="Shader\Private\ShaderReflector.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />

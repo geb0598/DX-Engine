@@ -45,6 +45,15 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp">
       <Filter>ImGui</Filter>
     </ClCompile>
+    <ClCompile Include="Shader\Private\ShaderReflector.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader\Private\VertexShader.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Shader\Private\PixelShader.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Renderer\Public\URenderer.h">
@@ -86,7 +95,7 @@
     <ClInclude Include="Public\PixelShader.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Shader\Public\Shader.h">
+    <ClInclude Include="Shader\Private\ShaderReflector.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
