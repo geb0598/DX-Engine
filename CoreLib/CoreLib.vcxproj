@@ -30,6 +30,8 @@
     <ClCompile Include="Window\Private\UWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Containers\Containers.h" />
+    <ClInclude Include="Math\Math.h" />
     <ClInclude Include="Renderer\Public\URenderer.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
