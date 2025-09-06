@@ -25,7 +25,7 @@
     <ClCompile Include="Math\Private\Vector.cpp" />
     <ClCompile Include="Mesh\Private\Mesh.cpp" />
     <ClCompile Include="Object\Private\Object.cpp" />
-    <ClCompile Include="Renderer\Private\URenderer.cpp" />
+    <ClCompile Include="Renderer\Private\Renderer.cpp" />
     <ClCompile Include="Shader\Private\PixelShader.cpp" />
     <ClCompile Include="Shader\Private\ShaderReflector.cpp" />
     <ClCompile Include="Shader\Private\VertexShader.cpp" />
@@ -36,7 +36,9 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
-    <ClCompile Include="Window\Private\UWindow.cpp" />
+    <ClCompile Include="Window\Private\Keyboard.cpp" />
+    <ClCompile Include="Window\Private\Mouse.cpp" />
+    <ClCompile Include="Window\Private\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Actor\Public\Actor.h" />
@@ -49,7 +51,7 @@
     <ClInclude Include="Mesh\Public\Mesh.h" />
     <ClInclude Include="Mesh\Public\Vertex.h" />
     <ClInclude Include="Object\Public\Object.h" />
-    <ClInclude Include="Renderer\Public\URenderer.h" />
+    <ClInclude Include="Renderer\Public\Renderer.h" />
     <ClInclude Include="Shader\Private\ShaderReflector.h" />
     <ClInclude Include="Shader\Public\PixelShader.h" />
     <ClInclude Include="Shader\Public\VertexShader.h" />
@@ -61,7 +63,9 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
-    <ClInclude Include="Window\Public\UWindow.h" />
+    <ClInclude Include="Window\Public\Keyboard.h" />
+    <ClInclude Include="Window\Public\Mouse.h" />
+    <ClInclude Include="Window\Public\Window.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

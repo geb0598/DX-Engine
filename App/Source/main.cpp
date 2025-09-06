@@ -1,16 +1,17 @@
-// ���� ������ ��� ����
-#include "Window/Window.h"
-#include "Renderer/Renderer.h"
-
-#include "Sphere.h"
+#include "ImGui/imgui.h"
+#include "ImGui/imgui_impl_win32.h"
+#include "ImGui/imgui_impl_dx11.h"
+#include "ImGui/imgui_internal.h"
 
 // ---------------------------------------------------------- //
 #include "Actor/Actor.h"
 #include "Component/Component.h"
-#include <vector>
-
+#include "Renderer/Renderer.h"
+#include "Window/Window.h"
 
 // ---------------------------------------------------------- //
+
+#include "Sphere.h"
 
 FVertexSimple triangle_vertices[] =
 {
@@ -72,42 +73,15 @@ FVertexSimple cube_vertices[] =
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-	WCHAR WindowClass[] = L"JungleWindowClass";
+	UWindow Window(1024, 1024, "Hello World!");
 
-	WCHAR Title[] = L"Game Tech Lab";
-
-	WNDCLASSW wndclass = { 0, WndProc, 0, 0, 0, 0, 0, 0, 0, WindowClass };
-
-	RegisterClassW(&wndclass);
-
-	HWND hWnd = CreateWindowExW(
-								0,
-								WindowClass,
-								Title,
-								WS_POPUP | WS_VISIBLE | WS_OVERLAPPEDWINDOW,
-								CW_USEDEFAULT,
-								CW_USEDEFAULT,
-								1024,
-								1024,
-								nullptr,
-								nullptr,
-								hInstance,
-								nullptr
-								);
-
-	URenderer renderer;
-
-	renderer.Create(hWnd);
-
-	// renderer.CreateShader();
-
-	// renderer.CreateConstantBuffer();
+	URenderer& Renderer = URenderer::GetInstance(Window.GethWnd());
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
-	ImGui_ImplWin32_Init((void*)hWnd);
-	ImGui_ImplDX11_Init(renderer.Device, renderer.DeviceContext);
+	ImGui_ImplWin32_Init((void*)Window.GethWnd());
+	ImGui_ImplDX11_Init(Renderer.GetDevice(), Renderer.GetDeviceContext());
 
 	UINT numVerticesTriangle = sizeof(triangle_vertices) / sizeof(FVertexSimple);
 	UINT numVerticesCube = sizeof(cube_vertices) / sizeof(FVertexSimple);
@@ -122,10 +96,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		sphere_vertices[i].z *= scaleMod;
 	}
 
-	// ID3D11Buffer* vertexBufferTriangle = renderer.CreateVertexBuffer(triangle_vertices, sizeof(triangle_vertices));
-	// ID3D11Buffer* vertexBufferCube = renderer.CreateVertexBuffer(cube_vertices, sizeof(cube_vertices));
-	// ID3D11Buffer* vertexBufferSphere = renderer.CreateVertexBuffer(sphere_vertices, sizeof(sphere_vertices));
-	
 	bool bIsExit = false;
 
 	enum ETypePrimitive
@@ -145,39 +115,41 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	AActor Actor;
 
-	auto Convert = [](FVertexSimple VertexSimple) {
-		FVertex Vertex;
-		Vertex.Position.X = VertexSimple.x;
-		Vertex.Position.Y = VertexSimple.y;
-		Vertex.Position.Z = VertexSimple.z;
-		Vertex.Color.X = VertexSimple.r;
-		Vertex.Color.Y = VertexSimple.g;
-		Vertex.Color.Z = VertexSimple.b;
-		Vertex.Color.W = VertexSimple.a;
-		return Vertex;
-	};
-
-	TArray<FVertex> Vertices;
+	TArray<FVertex> VertexArray;
 	for (size_t i = 0; i < sizeof(triangle_vertices) / sizeof(FVertexSimple); ++i)
 	{
-		Vertices.push_back(Convert(triangle_vertices[i]));
+		VertexArray.push_back(static_cast<FVertex>(triangle_vertices[i]));
 	}
 
-	std::shared_ptr<UMesh> Mesh = std::make_shared<UMesh>(renderer.Device, Vertices);
-	TArray<D3D11_INPUT_ELEMENT_DESC> InputElem(std::begin(FVertex::InputLayout), std::end(FVertex::InputLayout));
+	std::shared_ptr<UMesh> Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
+
+	TArray<D3D11_INPUT_ELEMENT_DESC> InputLayoutDesc(
+		std::begin(FVertex::InputLayoutDesc), 
+		std::end(FVertex::InputLayoutDesc)
+	);
+
 	std::shared_ptr<UVertexShader> VertexShader = std::make_shared<UVertexShader>(
-		renderer.Device, 
-		"./Shader/ShaderW0_VS.hlsl", 
-		"mainVS",
-		InputElem
+		Renderer.GetDevice(),
+		"./Shader/VertexShader.hlsl", 
+		"main",
+		InputLayoutDesc
 	);
+
 	std::shared_ptr<UPixelShader> PixelShader = std::make_shared<UPixelShader>(
-		renderer.Device,
-		"./Shader/ShaderW0_PS.hlsl",
-		"mainPS"
+		Renderer.GetDevice(),
+		"./Shader/PixelShader.hlsl",
+		"main"
 	);
+
 	Actor.AddComponent<UPrimitiveComponent>(&Actor, Mesh, VertexShader, PixelShader);
-	// Actor.AddComponent<UPrimitiveComponent>(Actor);
+
+	float MVP[4][4] =
+	{
+		{ 0.2f, 0.0f, 0.0f, 0.0f },
+		{ 0.0f, 1.0f, 0.0f, 0.0f },
+		{ 0.0f, 0.0f, 1.0f, 0.0f },
+		{ 0.0f, 0.0f, 0.0f, 1.0f }
+	};
 
 	// ----------------------------------------------------------------------------- //
 
@@ -196,11 +168,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 		}
-
 		
-		renderer.Prepare();
-		// renderer.PrepareShader();
-
+		Renderer.Prepare();
 
 		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplWin32_NewFrame();
@@ -230,43 +199,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui::Render();
 		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-		// renderer.UpdateConstant(offset);
-
-		switch (typePrimitive)
-		{
-		case EPT_Triangle :
-			// renderer.RenderPrimitive(vertexBufferTriangle, numVerticesTriangle);
-			break;
-		case EPT_Cube :
-			// renderer.RenderPrimitive(vertexBufferCube, numVerticesCube);
-			break;
-		case EPT_Sphere :
-			// renderer.RenderPrimitive(vertexBufferSphere, numVerticesSphere);
-			break;
-		}
-
 		auto PrimitiveComponent = Actor.GetComponent<UPrimitiveComponent>();
 		PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
-			renderer.DeviceContext,
+			Renderer.GetDeviceContext(),
 			"constants",
-			reinterpret_cast<void*>(&offset)
+			reinterpret_cast<void*>(MVP)
 		);
-		PrimitiveComponent->Render(renderer.DeviceContext);
+		PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
+		PrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
+		PrimitiveComponent->Render(Renderer.GetDeviceContext());
 
-		renderer.SwapBuffer();
+		Renderer.SwapBuffer();
 	}
 
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
-
-	// renderer.ReleaseVertexBuffer(vertexBufferTriangle);
-	// renderer.ReleaseVertexBuffer(vertexBufferCube);
-	// renderer.ReleaseVertexBuffer(vertexBufferSphere);
-
-	// renderer.ReleaseConstantBuffer();
-	// renderer.ReleaseShader();
-	renderer.Release();
 
 	return 0;
 }
