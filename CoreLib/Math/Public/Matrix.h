@@ -264,6 +264,17 @@ __declspec(align(16)) struct FMatrix
 
         return Result;
     }
+    static FMatrix CreateView(const FVector &CamLocation, const FVector &CamRotation)
+    {
+        FMatrix T = FMatrix::CreateTranslation(CamLocation);
+        FMatrix R = FMatrix::CreateRotationFromEuler(CamRotation);
+
+        FMatrix V = T.Transpose() * R.Transpose();
+        *(V[0]) *= -1;
+        *(V[1]) *= -1;
+
+        return V;
+    }
     static FMatrix CreatePerspective(float FOV, float AspectRatio, float Near, float Far)
     {
         float TanHalfFOV = tanf(FOV * 0.5f);
