@@ -74,7 +74,6 @@ FVertexSimple cube_vertices[] =
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	UWindow Window(1024, 1024, "Hello World!");
-	UWindow Window2(1024, 1024, "Hello World!");
 
 	URenderer& Renderer = URenderer::GetInstance(Window.GethWnd());
 
@@ -207,6 +206,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			reinterpret_cast<void*>(MVP)
 		);
 		PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
+		PrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
 		PrimitiveComponent->Render(Renderer.GetDeviceContext());
 
 		Renderer.SwapBuffer();
