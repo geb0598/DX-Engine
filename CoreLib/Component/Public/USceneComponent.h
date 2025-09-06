@@ -30,4 +30,8 @@ public:
 	const FVector& GetScale() const;
 	void SetScale(const FVector& ScaleToSet);
 
+	const FMatrix& GetModelingMatrix() const
+	{
+		return FMatrix::CreateModelTransform(Location, Rotation, Scale);
+	}
 };

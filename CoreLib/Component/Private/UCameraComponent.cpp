@@ -1,8 +1,8 @@
 #include "../Public/UCameraComponent.h"
 
-const static double DefaultFOV = 90.0;
-const static double DefaultNearPlane = 0.1;
-const static double DefaultFarPlane = 1000.0;
+const double UCameraComponent::DefaultFOV = 90.0;
+const double UCameraComponent::DefaultNearPlane = 0.1;
+const double UCameraComponent::DefaultFarPlane = 1000.0;
 
 UCameraComponent::UCameraComponent(AActor* Actor)
 	: UActorComponent(Actor),
