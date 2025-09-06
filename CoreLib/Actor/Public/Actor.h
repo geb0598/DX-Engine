@@ -7,11 +7,12 @@
 #include "Component/Public/ActorComponent.h"
 #include "Containers/Containers.h"
 #include "Types/Types.h"
+#include "Object/Object.h"
 
-class AActor
+class AActor : public UObject
 {
 public:
-	~AActor() = default;
+	virtual ~AActor() = default;
 
 	AActor() = default;
 

@@ -30,6 +30,7 @@
     <ClCompile Include="Window\Private\UWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Actor\Public\Actor.h" />
     <ClInclude Include="Renderer\Public\URenderer.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
