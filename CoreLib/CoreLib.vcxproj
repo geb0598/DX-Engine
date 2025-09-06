@@ -38,6 +38,7 @@
     <ClInclude Include="Public\PixelShader.h" />
     <ClInclude Include="Renderer\Public\URenderer.h" />
     <ClInclude Include="Shader\Private\ShaderReflector.h" />
+    <ClInclude Include="Shader\Public\VertexShader.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_dx11.h" />

@@ -30,6 +30,8 @@ public:
 
 	FConstantBufferInfo GetConstantBufferInfo(const FString& BufferName);
 
+	void Bind();
+
 private:
 	TMap<FString, FConstantBufferInfo> ConstantBufferInfoMap;
 };
