@@ -34,6 +34,7 @@ FMatrix UCameraComponent::GetViewMatrix()
 {
 	// Get the info of scene component from camera's owner, actor
 	AActor* Actor = GetActor();
+	assert(Actor != nullptr);
 	USceneComponent* SC = Actor->GetComponent<USceneComponent>();
 
 	assert(SC != nullptr);
@@ -42,7 +43,6 @@ FMatrix UCameraComponent::GetViewMatrix()
 	FVector CamRotation = SC->GetRotation();
 
 	return FMatrix::CreateView(CamLocation, CamRotation);
-	//return FMatrix::CreateLookAt(CamLocation, FVector4(1, 0, 0, 1) * FMatrix::CreateModelTransform(CamLocation, CamRotation, FVector::Zero), FVector::Up);
 }
 
 FMatrix UCameraComponent::GetProjectionMatrix(float AspectRatio) { return FMatrix::CreatePerspective(DEG_TO_RAD(FOV), AspectRatio, NearPlane, FarPlane); }

@@ -16,8 +16,8 @@
 FVertexSimple triangle_vertices[] =
 {
 	{  0.0f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f, 1.0f }, // Top vertex (red)
-	{  1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right vertex (green)
-	{ -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f }  // Bottom-left vertex (blue)
+	{ -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f },  // Bottom-left vertex (blue)
+	{  1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f } // Bottom-right vertex (green)
 };
 
 FVertexSimple cube_vertices[] =
@@ -142,7 +142,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	);
 
 	Actor.AddComponent<UPrimitiveComponent>(&Actor, Mesh, VertexShader, PixelShader);
-	Actor.AddComponent<USceneComponent>(&Actor, FVector(0.0f, 0.0f, 1.0f), FVector(0.0f, 0.0f, 0.0f), FVector(1.0f, 1.0f, 1.0f));
+	Actor.AddComponent<USceneComponent>(&Actor, FVector(0.0f, 0.0f, 20.0f), FVector(0.0f, 60.0f, 0.0f), FVector(1.0f, 1.0f, 1.0f));
 
 	// -------------------------- Add Input Component -------------------------------- //
 	Actor.AddComponent<UInputComponent>(&Actor);
@@ -150,20 +150,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// ------------------------------------------------------------------------------- //
 
 	AActor CameraActor;
-	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -5.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
+	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -1.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
 	CameraActor.AddComponent<UCameraComponent>(&CameraActor);
 
-		//* CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
-		//* CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
+	FMatrix M = Actor.GetComponent<USceneComponent>()->GetModelingMatrix();
+	FMatrix V = CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
+	FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
 
-	float MVP[4][4] =
-	{
-		{ 0.2f, 0.0f, 0.0f, 0.0f },
-		{ 0.0f, 1.0f, 0.0f, 0.0f },
-		{ 0.0f, 0.0f, 1.0f, 0.0f },
-		{ 0.0f, 0.0f, 0.0f, 1.0f }
-	};
-
+	FMatrix MVP = M * V * P;
+	
 	// ----------------------------------------------------------------------------- //
 
 	while (bIsExit == false)
@@ -225,7 +220,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
 			Renderer.GetDeviceContext(),
 			"constants",
-			reinterpret_cast<void*>(MVP2.M)
+			reinterpret_cast<void*>(MVP.M)
 		);
 		PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
 		PrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());

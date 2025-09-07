@@ -247,7 +247,7 @@ __declspec(align(16)) struct FMatrix
         //FMatrix RotationMatrix = CreateRotationFromQuaternion(RotationDegrees);
         FMatrix TranslationMatrix = CreateTranslation(Translation);
 
-        return TranslationMatrix * RotationMatrix * ScaleMatrix;
+        return ScaleMatrix * RotationMatrix * TranslationMatrix;
     }
     static FMatrix CreateLookAt(const FVector& Eye, const FVector& Target, const FVector& Up)
     {
@@ -267,18 +267,19 @@ __declspec(align(16)) struct FMatrix
     static FMatrix CreateView(const FVector& CamLocation, const FVector& CamRotation)
     {
         // 카메라 회전 행렬 (월드 → 카메라 좌표, 역회전 필요하므로 전치)
-        FMatrix R = FMatrix::CreateRotationFromEuler(CamRotation).Transpose();
+        FMatrix R = FMatrix::CreateRotationFromEuler(CamRotation);
 
         // 카메라 위치를 원점으로 이동
-        FMatrix T = FMatrix::CreateTranslation(-CamLocation);
+        FMatrix T = FMatrix::CreateTranslation(CamLocation);
 
-        //for (int i = 0; i < 4; i++)
-        //{
-        //    R[i][2] *= -1;   // Z축 반전
-        //}
+        for (int i = 0; i < 4; i++)
+        {
+            R[i][0] *= -1;
+            R[i][2] *= -1;   // Z축 반전
+        }
 
         // 뷰 행렬 = Rᵀ * T
-        return R * T;
+        return R.Inverse() * T.Inverse();
     }
 
     static FMatrix CreatePerspective(float FOV, float AspectRatio, float Near, float Far)
