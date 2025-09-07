@@ -71,8 +71,7 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
-    <ClInclude Include="Window\Public\EventDispatcher.h" />
-    <ClInclude Include="Window\Public\EventListener.h" />
+    <ClInclude Include="Window\Public\EventPublisher.h" />
     <ClInclude Include="Window\Public\Keyboard.h" />
     <ClInclude Include="Window\Public\Mouse.h" />
     <ClInclude Include="Window\Public\Window.h" />

@@ -4,10 +4,14 @@
 #include <optional>
 
 #include "Containers/Containers.h"
-#include "EventDispatcher.h"
+#include "EventPublisher.h"
 #include "Types/Types.h"
 
-class UKeyboardEvent
+
+class UKeyboard 
+{
+public:
+class UEvent
 {
 public:
 	enum class EEventType
@@ -16,7 +20,7 @@ public:
 		RELEASE
 	};
 
-	UKeyboardEvent(EEventType EventType, uint8 KeyCode) 
+	UEvent(EEventType EventType, uint8 KeyCode) 
 		: EventType(EventType), KeyCode(KeyCode) {}
 
 	bool IsPress() const
@@ -39,8 +43,6 @@ private:
 	uint8 KeyCode;
 };
 
-class UKeyboard : public IEventDispatcher<UKeyboardEvent>
-{
 public:
 	friend class UWindow;
 
@@ -54,11 +56,6 @@ public:
 	UKeyboard& operator=(const UKeyboard&) = delete;
 	UKeyboard& operator=(UKeyboard&&) = delete;
 
-	void Dispatch(UKeyboardEvent Event);
-
-	void Subscribe(std::shared_ptr<IEventListener<UKeyboardEvent>> Listener);
-	void UnSubscribe(std::shared_ptr<IEventListener<UKeyboardEvent>> Listener);
-
 	void Flush();
 	void FlushKey();
 	void FlushChar();
@@ -67,12 +64,15 @@ public:
 	bool IsKeyEmpty() const;
 	bool IsCharEmpty() const;
 
-	std::optional<UKeyboardEvent> ReadKey();
+	std::optional<UEvent> ReadKey();
 	std::optional<char> ReadChar();
 
 	void EnableAutoRepeat();
 	void DisableAutoRepeat();
 	bool IsAutoRepeatEnabled();
+
+	UEventPublisher<UEvent>& GetEventPublisher();
+	const UEventPublisher<UEvent>& GetEventPublisher() const;
 	
 private:
 	template<typename TElement>
@@ -81,18 +81,20 @@ private:
 	static constexpr uint32 NUM_KEYS = 256u;
 	static constexpr uint32 BUFFER_SIZE = 16u;
 
+private:
 	void OnKeyPressed(uint8 KeyCode);
 	void OnKeyReleased(uint8 KeyCode);
 	void OnChar(char Char);
 	void ClearState();
 
+private:
 	bool bIsAutoRepeatEnabled;
 
 	std::bitset<NUM_KEYS> KeyStates;
-	TQueue<UKeyboardEvent> KeyBuffer;
+	TQueue<UEvent> KeyBuffer;
 	TQueue<char> CharBuffer;
 
-	TArray<std::weak_ptr<IEventListener<UKeyboardEvent>>> ListenerArray;
+	UEventPublisher<UEvent> EventPublisher;
 };
 
 template<typename TElement>

@@ -78,6 +78,18 @@
     <ClCompile Include="Window\Private\Mouse.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Component\Private\UCameraComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Component\Private\USceneComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Component\Public\USceneComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="RayCaster\Private\URayCaster.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h">
@@ -155,10 +167,19 @@
     <ClInclude Include="Window\Public\Keyboard.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Window\Public\EventListener.h">
+    <ClInclude Include="Window\Public\EventPublisher.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Window\Public\EventDispatcher.h">
+    <ClInclude Include="Actor\Actor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Component\Component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Component\Public\UCameraComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="RayCaster\Public\URayCaster.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

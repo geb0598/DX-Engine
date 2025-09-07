@@ -4,9 +4,13 @@
 #include <utility>
 
 #include "Containers/Containers.h"
-#include "EventDispatcher.h"
+#include "EventPublisher.h"
 #include "Types/Types.h"
 
+
+class UMouse 
+{
+public:
 struct FMouseState
 {
 	bool bIsInsideWindow = false;
@@ -17,7 +21,7 @@ struct FMouseState
 	int WheelDeltaCarry = 0;
 };
 
-class UMouseEvent
+class UEvent
 {
 public:
 	enum class EEventType
@@ -33,7 +37,7 @@ public:
 		LEAVE
 	};
 
-	UMouseEvent(EEventType EventType, FMouseState MouseState) : EventType(EventType), MouseState(MouseState) {}
+	UEvent(EEventType EventType, FMouseState MouseState) : EventType(EventType), MouseState(MouseState) {}
 
 	EEventType GetEventType() const
 	{
@@ -70,8 +74,6 @@ private:
 	FMouseState MouseState;
 };
 
-class UMouse : public IEventDispatcher<UMouseEvent>
-{
 public:
 	friend class UWindow;
 
@@ -85,23 +87,21 @@ public:
 	UMouse(UMouse&&) = delete;
 	UMouse& operator=(UMouse&&) = delete;
 
-	virtual void Dispatch(UMouseEvent Event) override;
-
-	virtual void Subscribe(std::shared_ptr<IEventListener<UMouseEvent>> Listener) override;
-	virtual void UnSubscribe(std::shared_ptr<IEventListener<UMouseEvent>> Listener) override;
-
 	void Flush();
 
 	std::pair<int, int> GetPosition() const;
 	int GetXPosition() const;
 	int GetYPosition() const;
 
+	UEventPublisher<UEvent>& GetEventPublisher();
+	const UEventPublisher<UEvent>& GetEventPublisher() const;
+
 	bool IsInsideWindow() const;
 	bool IsLeftPressed() const;
 	bool IsRightPressed() const;
 	bool IsEmpty() const;
 
-	std::optional<UMouseEvent> Read();
+	std::optional<UEvent> Read();
 
 private:
 	static constexpr uint8 BUFFER_SIZE = 16u;
@@ -119,7 +119,7 @@ private:
 	void OnWheelDelta(int X, int Y, int Delta);
 
 	FMouseState MouseState;
-	TQueue<UMouseEvent> MouseEventBuffer;
+	TQueue<UEvent> MouseEventBuffer;
 		
-	TArray<std::weak_ptr<IEventListener<UMouseEvent>>> ListenerArray;
+	UEventPublisher<UEvent> EventPublisher;
 };
