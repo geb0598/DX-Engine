@@ -11,6 +11,7 @@
 #include "Window/Public/Keyboard.h"
 #include "Window/Public/Mouse.h"
 
+// TODO: InputComponent should update internal delta time to calculate next transform
 class UInputComponent : public UActorComponent, public std::enable_shared_from_this<UInputComponent>
 {
 public:
@@ -26,10 +27,16 @@ public:
 	void Disable();
 
 private:
+	// TODO: Take multiple key at the same time
 	void KeyboardInputDelegate(const UKeyboard::UEvent& Event);
 	void MouseInputDelegate(const UMouse::UEvent& Event);
 
 	bool bIsEnabled;
+	// TODO: Temporary vars for test
+	bool bIsWPressed = false;
+	bool bIsAPressed = false;
+	bool bIsSPressed = false;
+	bool bIsDPressed = false;
 
 	std::pair<int32, int32> LastMousePosition;
 };

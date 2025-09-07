@@ -21,8 +21,8 @@ private:
 		Ray.Point = FVector4(static_cast<float>(X), static_cast<float>(Y), 0.0f, 1.0f);
 		Ray.Vector = FVector4(0.0f, 0.0f, 1.0f, 0.0f);
 
-		Ray.Point = Ray.Point * Projection.Inverse() * View.Inverse() * Modeling.Inverse();
-		Ray.Vector = Ray.Vector * Projection.Inverse() * View.Inverse() * Modeling.Inverse();
+		//Ray.Point = Ray.Point * Projection.Inverse() * View.Inverse() * Modeling.Inverse();
+		//Ray.Vector = Ray.Vector * Projection.Inverse() * View.Inverse() * Modeling.Inverse();
 
 		return Ray;
 	}
