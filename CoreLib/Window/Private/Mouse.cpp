@@ -29,6 +29,16 @@ int UMouse::GetYPosition() const
 	return MouseState.Y;
 }
 
+UEventPublisher<UMouse::UEvent>& UMouse::GetEventPublisher()
+{
+	return EventPublisher;
+}
+
+const UEventPublisher<UMouse::UEvent>& UMouse::GetEventPublisher() const
+{
+	return EventPublisher;
+}
+
 bool UMouse::IsInsideWindow() const
 {
 	return MouseState.bIsInsideWindow;

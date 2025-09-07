@@ -144,16 +144,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Actor.AddComponent<UPrimitiveComponent>(&Actor, Mesh, VertexShader, PixelShader);
 	Actor.AddComponent<USceneComponent>(&Actor, FVector(0.0f, 0.0f, 1.0f), FVector(0.0f, 0.0f, 0.0f), FVector(1.0f, 1.0f, 1.0f));
 
+	// -------------------------- Add Input Component -------------------------------- //
+	Actor.AddComponent<UInputComponent>(&Actor);
+	Actor.GetComponent<UInputComponent>()->Initiailze(Window.GetKeyboard(), Window.GetMouse());
+
+	// ------------------------------------------------------------------------------- //
+
 	AActor CameraActor;
 	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -5.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
 	CameraActor.AddComponent<UCameraComponent>(&CameraActor);
 
-	auto CamLoc = CameraActor.GetComponent<USceneComponent>()->GetLocation();
-	auto CamRot = CameraActor.GetComponent<USceneComponent>()->GetRotation();
-
-	FMatrix V = FMatrix::CreateView(CamLoc, CamRot);
-
-	FMatrix MVP2 = Actor.GetComponent<USceneComponent>()->GetModelingMatrix() * V;
 		//* CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
 		//* CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
 
@@ -184,6 +184,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		
 		Renderer.Prepare();
+
+		// ---------------------------------------------------------------------------- //
+		auto CamLoc = CameraActor.GetComponent<USceneComponent>()->GetLocation();
+		auto CamRot = CameraActor.GetComponent<USceneComponent>()->GetRotation();
+
+		FMatrix V = FMatrix::CreateView(CamLoc, CamRot);
+
+		FMatrix MVP2 = Actor.GetComponent<USceneComponent>()->GetModelingMatrix() * V;
+		// ---------------------------------------------------------------------------- //
 
 		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplWin32_NewFrame();

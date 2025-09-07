@@ -16,9 +16,9 @@ struct FMouseState
 	bool bIsInsideWindow = false;
 	bool bIsLeftPressed = false;
 	bool bIsRightPressed = false;
-	int X = 0;
-	int Y = 0;
-	int WheelDeltaCarry = 0;
+	int32 X = 0;
+	int32 Y = 0;
+	int32 WheelDeltaCarry = 0;
 };
 
 class UEvent
@@ -49,12 +49,12 @@ public:
 		return { MouseState.X, MouseState.Y };
 	}
 
-	int GetXPosition() const
+	int32 GetXPosition() const
 	{
 		return MouseState.X;
 	}
 
-	int GetYPosition() const
+	int32 GetYPosition() const
 	{
 		return MouseState.Y;
 	}
@@ -90,8 +90,8 @@ public:
 	void Flush();
 
 	std::pair<int, int> GetPosition() const;
-	int GetXPosition() const;
-	int GetYPosition() const;
+	int32 GetXPosition() const;
+	int32 GetYPosition() const;
 
 	UEventPublisher<UEvent>& GetEventPublisher();
 	const UEventPublisher<UEvent>& GetEventPublisher() const;
