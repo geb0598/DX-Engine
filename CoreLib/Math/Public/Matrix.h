@@ -264,21 +264,23 @@ __declspec(align(16)) struct FMatrix
 
         return Result;
     }
-    static FMatrix CreateView(const FVector &CamLocation, const FVector &CamRotation)
+    static FMatrix CreateView(const FVector& CamLocation, const FVector& CamRotation)
     {
-        FMatrix T = FMatrix::CreateTranslation(CamLocation);
-        FMatrix R = FMatrix::CreateRotationFromEuler(CamRotation);
+        // 카메라 회전 행렬 (월드 → 카메라 좌표, 역회전 필요하므로 전치)
+        FMatrix R = FMatrix::CreateRotationFromEuler(CamRotation).Transpose();
 
-        FMatrix V = T.Transpose() * R.Transpose();
+        // 카메라 위치를 원점으로 이동
+        FMatrix T = FMatrix::CreateTranslation(-CamLocation);
 
-        for (int i = 0; i < 4; i++)
-        {
-            V[0][i] *= -1;
-            V[2][i] *= -1;
-        }
+        //for (int i = 0; i < 4; i++)
+        //{
+        //    R[i][2] *= -1;   // Z축 반전
+        //}
 
-        return V;
+        // 뷰 행렬 = Rᵀ * T
+        return R * T;
     }
+
     static FMatrix CreatePerspective(float FOV, float AspectRatio, float Near, float Far)
     {
         float TanHalfFOV = tanf(FOV * 0.5f);
