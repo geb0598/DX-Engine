@@ -45,5 +45,8 @@ FMatrix UCameraComponent::GetViewMatrix()
 	return FMatrix::CreateView(CamLocation, CamRotation);
 }
 
-FMatrix UCameraComponent::GetProjectionMatrix(float AspectRatio) { return FMatrix::CreatePerspective(DEG_TO_RAD(FOV), AspectRatio, NearPlane, FarPlane); }
+FMatrix UCameraComponent::GetProjectionMatrix(float AspectRatio) 
+{ 
+	return FMatrix::CreatePerspective(DEG_TO_RAD(FOV), AspectRatio, NearPlane, FarPlane); 
+}
 

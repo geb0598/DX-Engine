@@ -244,7 +244,6 @@ __declspec(align(16)) struct FMatrix
     {
         FMatrix ScaleMatrix = CreateScale(Scale);
         FMatrix RotationMatrix = CreateRotationFromEuler(RotationDegrees);
-        //FMatrix RotationMatrix = CreateRotationFromQuaternion(RotationDegrees);
         FMatrix TranslationMatrix = CreateTranslation(Translation);
 
         return ScaleMatrix * RotationMatrix * TranslationMatrix;
@@ -252,7 +251,7 @@ __declspec(align(16)) struct FMatrix
     static FMatrix CreateLookAt(const FVector& Eye, const FVector& Target, const FVector& Up)
     {
 		FVector OldUp = Up;
-		FVector N = (Target - Eye).GetNormalized(); // Forward
+		FVector N = (Eye - Target).GetNormalized(); // Forward
         FVector U = OldUp.Cross(N).GetNormalized(); // RIGHT
         FVector V = N.Cross(U);                     // UP
 
@@ -299,7 +298,7 @@ __declspec(align(16)) struct FMatrix
 
         Result.M[2][0] = 0.0f;
         Result.M[2][1] = 0.0f;
-        Result.M[2][2] = Far / (Far - Near);
+        Result.M[2][2] = -Far / (Far - Near);
         Result.M[2][3] = -(Far * Near) / (Far - Near);
 
         Result.M[3][0] = 0.0f;
