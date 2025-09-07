@@ -47,24 +47,35 @@ void SaveScene(const FString& FilePath, int32 Version)
 	Obj["Version"] = Version;
 	Obj["NextUUID"] = GUDObjectArray.size() + 1;
 	Obj["Primitives"] = json::Object();
+
 	for (size_t i = 0; i < GUDObjectArray.size(); ++i)
 	{
 		auto Actor = static_cast<AActor*>(GUDObjectArray[i]);
 		if (Actor)
 		{
 			auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
-			if (PrimitiveComponent)
+			auto SceneComponent = Actor->GetComponent<USceneComponent>();
+			
+			if (PrimitiveComponent && SceneComponent)
 			{
-				//FVector Location = FVector(i, i, i);
-				//FVector Rotation = FVector(i, i, i);
-				//FVector Scale = FVector(i, i, i);
-				//EPrimitiveType Type = EPrimitiveType::Triangle; // Default to Triangle
-				//SavePrimitive(Obj, static_cast<int>(i), Location, Rotation, Scale, Type);
+				FVector Location = SceneComponent->GetLocation();
+				FVector Rotation = SceneComponent->GetRotation();
+				FVector Scale = SceneComponent->GetScale();
+				
+				// TODO: 프리미티브 타입에 따라 저장하도록 변경해야함. (현재는 삼각형으로 고정)
+				ETypePrimitive Type = ETypePrimitive::EPT_Triangle;
+				
+				SavePrimitive(Obj, static_cast<int>(i), Location, Rotation, Scale, Type);
 			}
 		}
 	}
 
 	std::ofstream file(FilePath.c_str());
+	if (!file.is_open())
+	{
+		return;
+	}
+
 	file << Obj.dump(1);
 }
 

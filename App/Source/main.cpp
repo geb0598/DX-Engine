@@ -34,7 +34,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	LoadScene("Scene/DefaultScene.Scene", Window.GethWnd());
 
 	AActor CameraActor;
-	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -50.f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
+	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -20.f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
 	CameraActor.AddComponent<UCameraComponent>(&CameraActor);
 	
 	// ----------------------------------------------------------------------------- //
@@ -74,8 +74,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			{
 				M = Actor->GetComponent<USceneComponent>()->GetModelingMatrix();
 				FMatrix MVP = M * V * P;
-				//FMatrix MVP = M * V;
-				//FMatrix MVP = M;
 
 				PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
 					Renderer.GetDeviceContext(), 
