@@ -147,7 +147,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// -------------------------- Add Input Component -------------------------------- //
 	Actor.AddComponent<UInputComponent>(&Actor);
 	Actor.GetComponent<UInputComponent>()->Initiailze(Window.GetKeyboard(), Window.GetMouse());
-
 	// ------------------------------------------------------------------------------- //
 
 	AActor CameraActor;
