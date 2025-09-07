@@ -155,5 +155,11 @@
     <ClInclude Include="Window\Public\Keyboard.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Window\Public\EventListener.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Window\Public\EventDispatcher.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

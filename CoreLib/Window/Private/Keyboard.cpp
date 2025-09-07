@@ -1,6 +1,42 @@
 #include "Containers/Containers.h"
 #include "Types/Types.h"
+#include "Window/Public/EventDispatcher.h"
+#include "Window/Public/EventListener.h"
 #include "Window/Public/Keyboard.h"
+
+void UKeyboard::Dispatch(UKeyboardEvent Event)
+{
+	auto it = ListenerArray.begin();
+	while (it != ListenerArray.end())
+	{
+		if (auto Listener = it->lock())
+		{
+			Listener->OnEvent(Event);
+			++it;
+		}
+		else
+		{
+			it = ListenerArray.erase(it);
+		}
+	}
+}
+
+void UKeyboard::Subscribe(std::shared_ptr<IEventListener<UKeyboardEvent>> Listener)
+{
+	ListenerArray.push_back(Listener);
+}
+
+void UKeyboard::UnSubscribe(std::shared_ptr<IEventListener<UKeyboardEvent>> Listener)
+{
+	ListenerArray.erase(
+		std::remove_if(ListenerArray.begin(), ListenerArray.end(),
+			[&](std::weak_ptr<IEventListener<UKeyboardEvent>> ListenerPtr) {
+				auto CurrentListener = ListenerPtr.lock();
+				return !CurrentListener || CurrentListener == Listener;
+			}),
+		ListenerArray.end()
+	);
+}
 
 void UKeyboard::Flush()
 {
@@ -10,7 +46,7 @@ void UKeyboard::Flush()
 
 void UKeyboard::FlushKey()
 {
-	KeyBuffer = TQueue<UEvent>();
+	KeyBuffer = TQueue<UKeyboardEvent>();
 }
 
 void UKeyboard::FlushChar()
@@ -33,9 +69,9 @@ bool UKeyboard::IsCharEmpty() const
 	return CharBuffer.empty();
 }
 
-std::optional<UKeyboard::UEvent> UKeyboard::ReadKey()
+std::optional<UKeyboardEvent> UKeyboard::ReadKey()
 {
-	std::optional<UEvent> Event;
+	std::optional<UKeyboardEvent> Event;
 	if (!IsKeyEmpty())
 	{
 		Event = KeyBuffer.front();
@@ -73,14 +109,18 @@ bool UKeyboard::IsAutoRepeatEnabled()
 void UKeyboard::OnKeyPressed(uint8 KeyCode)
 {
 	KeyStates[KeyCode] = true;
-	KeyBuffer.push(UEvent(UEvent::EEventType::PRESS, KeyCode));
+	UKeyboardEvent Event{ UKeyboardEvent::EEventType::PRESS, KeyCode };
+	KeyBuffer.push(Event);
+	Dispatch(Event);
 	TrimBuffer(KeyBuffer);
 }
 
 void UKeyboard::OnKeyReleased(uint8 KeyCode)
 {
 	KeyStates[KeyCode] = false;
-	KeyBuffer.push(UEvent(UEvent::EEventType::RELEASE, KeyCode));
+	UKeyboardEvent Event{UKeyboardEvent::EEventType::RELEASE, KeyCode};
+	KeyBuffer.push(Event);
+	Dispatch(Event);
 	TrimBuffer(KeyBuffer);
 }
 

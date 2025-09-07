@@ -52,7 +52,7 @@ private:
 
 template<typename TComponent, typename ...TArgs>
 inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>> 
-	AActor::AddComponent(TArgs && ...Args)
+	AActor::AddComponent(TArgs&&... Args)
 {
 	assert(!HasComponent<TComponent>());
 

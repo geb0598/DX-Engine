@@ -4,43 +4,43 @@
 #include <optional>
 
 #include "Containers/Containers.h"
+#include "EventDispatcher.h"
 #include "Types/Types.h"
 
-class UKeyboard
+class UKeyboardEvent
 {
 public:
-	class UEvent
+	enum class EEventType
 	{
-	public:
-		enum class EEventType
-		{
-			PRESS,
-			RELEASE
-		};
-
-		UEvent(EEventType EventType, char KeyCode) : EventType(EventType), KeyCode(KeyCode) {}
-
-		bool IsPress() const
-		{
-			return EventType == EEventType::PRESS;
-		}
-
-		bool IsRelease() const
-		{
-			return EventType == EEventType::RELEASE;
-		}
-
-		uint8 GetKeyCode() const
-		{
-			return KeyCode;
-		}
-
-	private:
-		EEventType EventType;
-		uint8 KeyCode;
+		PRESS,
+		RELEASE
 	};
-//--------------------------------------------------------------------------------------//
 
+	UKeyboardEvent(EEventType EventType, uint8 KeyCode) 
+		: EventType(EventType), KeyCode(KeyCode) {}
+
+	bool IsPress() const
+	{
+		return EventType == EEventType::PRESS;
+	}
+
+	bool IsRelease() const
+	{
+		return EventType == EEventType::RELEASE;
+	}
+
+	uint8 GetKeyCode() const
+	{
+		return KeyCode;
+	}
+
+private:
+	EEventType EventType;
+	uint8 KeyCode;
+};
+
+class UKeyboard : public IEventDispatcher<UKeyboardEvent>
+{
 public:
 	friend class UWindow;
 
@@ -54,6 +54,11 @@ public:
 	UKeyboard& operator=(const UKeyboard&) = delete;
 	UKeyboard& operator=(UKeyboard&&) = delete;
 
+	void Dispatch(UKeyboardEvent Event);
+
+	void Subscribe(std::shared_ptr<IEventListener<UKeyboardEvent>> Listener);
+	void UnSubscribe(std::shared_ptr<IEventListener<UKeyboardEvent>> Listener);
+
 	void Flush();
 	void FlushKey();
 	void FlushChar();
@@ -62,7 +67,7 @@ public:
 	bool IsKeyEmpty() const;
 	bool IsCharEmpty() const;
 
-	std::optional<UEvent> ReadKey();
+	std::optional<UKeyboardEvent> ReadKey();
 	std::optional<char> ReadChar();
 
 	void EnableAutoRepeat();
@@ -84,8 +89,10 @@ private:
 	bool bIsAutoRepeatEnabled;
 
 	std::bitset<NUM_KEYS> KeyStates;
-	TQueue<UEvent> KeyBuffer;
+	TQueue<UKeyboardEvent> KeyBuffer;
 	TQueue<char> CharBuffer;
+
+	TArray<std::weak_ptr<IEventListener<UKeyboardEvent>>> ListenerArray;
 };
 
 template<typename TElement>
