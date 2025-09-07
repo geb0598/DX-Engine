@@ -65,7 +65,9 @@ inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>>
 template<typename TComponent>
 inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>> AActor::RemoveComponent()
 {
-	assert(!ComponentMap.count(GetComponentKey<TComponent>()));
+	assert(!HasComponent<TComponent>());
+	
+	ComponentMap.erase(GetComponentKey<TComponent>());
 }
 
 template<typename TComponent>

@@ -52,6 +52,11 @@ public:
 
 	void SetWindowTitle(const FString& WindowTitle);
 
+	float getAspectRatio()
+	{
+		return static_cast<float>(Width) / static_cast<float>(Height);
+	}
+
 private:
 	static LRESULT CALLBACK WndProcSetUp(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);

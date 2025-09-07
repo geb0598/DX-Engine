@@ -127,9 +127,9 @@ __declspec(align(16)) struct FMatrix
     {
         FMatrix Result;
         Result.SetIdentity();
-        Result.M[0][3] = Translation.X;
-        Result.M[1][3] = Translation.Y;
-        Result.M[2][3] = Translation.Z;
+        Result.M[3][0] = Translation.X;
+        Result.M[3][1] = Translation.Y;
+        Result.M[3][2] = Translation.Z;
         return Result;
     }
     static FMatrix CreateScale(const FVector& Scale)
@@ -160,8 +160,8 @@ __declspec(align(16)) struct FMatrix
         float Cos = cosf(Angle);
         float Sin = sinf(Angle);
         Result.M[0][0] = Cos;   
-        Result.M[0][2] = Sin;
-        Result.M[2][0] = -Sin;  
+        Result.M[0][2] = -Sin;
+        Result.M[2][0] = Sin;  
         Result.M[2][2] = Cos;
         return Result;
     }
@@ -172,8 +172,8 @@ __declspec(align(16)) struct FMatrix
         float Cos = cosf(Angle);
         float Sin = sinf(Angle);
         Result.M[0][0] = Cos;  
-        Result.M[0][1] = -Sin;
-        Result.M[1][0] = Sin;  
+        Result.M[0][1] = Sin;
+        Result.M[1][0] = -Sin;  
         Result.M[1][1] = Cos;
         return Result;
     }
@@ -264,6 +264,23 @@ __declspec(align(16)) struct FMatrix
 
         return Result;
     }
+    static FMatrix CreateView(const FVector& CamLocation, const FVector& CamRotation)
+    {
+        // 카메라 회전 행렬 (월드 → 카메라 좌표, 역회전 필요하므로 전치)
+        FMatrix R = FMatrix::CreateRotationFromEuler(CamRotation).Transpose();
+
+        // 카메라 위치를 원점으로 이동
+        FMatrix T = FMatrix::CreateTranslation(-CamLocation);
+
+        //for (int i = 0; i < 4; i++)
+        //{
+        //    R[i][2] *= -1;   // Z축 반전
+        //}
+
+        // 뷰 행렬 = Rᵀ * T
+        return R * T;
+    }
+
     static FMatrix CreatePerspective(float FOV, float AspectRatio, float Near, float Far)
     {
         float TanHalfFOV = tanf(FOV * 0.5f);

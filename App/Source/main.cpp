@@ -142,6 +142,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	);
 
 	Actor.AddComponent<UPrimitiveComponent>(&Actor, Mesh, VertexShader, PixelShader);
+	Actor.AddComponent<USceneComponent>(&Actor, FVector(0.0f, 0.0f, 1.0f), FVector(0.0f, 0.0f, 0.0f), FVector(1.0f, 1.0f, 1.0f));
+
+	AActor CameraActor;
+	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -5.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
+	CameraActor.AddComponent<UCameraComponent>(&CameraActor);
+
+	auto CamLoc = CameraActor.GetComponent<USceneComponent>()->GetLocation();
+	auto CamRot = CameraActor.GetComponent<USceneComponent>()->GetRotation();
+
+	FMatrix V = FMatrix::CreateView(CamLoc, CamRot);
+
+	FMatrix MVP2 = Actor.GetComponent<USceneComponent>()->GetModelingMatrix() * V;
+		//* CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
+		//* CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
 
 	float MVP[4][4] =
 	{
@@ -203,7 +217,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
 			Renderer.GetDeviceContext(),
 			"constants",
-			reinterpret_cast<void*>(MVP)
+			reinterpret_cast<void*>(MVP2.M)
 		);
 		PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
 		PrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
