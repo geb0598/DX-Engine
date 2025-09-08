@@ -48,7 +48,7 @@ void UIManager::RenderControlPanel()
 	ImGui::Combo("Primitive", &CurrentItem, Items, IM_ARRAYSIZE(Items));
 
 	/* Number of Spawns */
-	static int NumberOfSpawns = 0;
+	static int NumberOfSpawns = 1;
 	// draw button and bind event
 	if (ImGui::Button("Spawn"))
 	{
