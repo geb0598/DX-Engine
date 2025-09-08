@@ -1,6 +1,6 @@
 #include "../Public/UCameraComponent.h"
 
-const float UCameraComponent::DefaultFieldOfView = 90.0;
+const float UCameraComponent::DefaultFieldOfView = PIDIV2;
 const float UCameraComponent::DefaultNearPlane = 0.1;
 const float UCameraComponent::DefaultFarPlane = 1000.0;
 

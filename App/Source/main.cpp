@@ -35,14 +35,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	AActor CameraActor;
 	CameraActor.AddComponent<UInputComponent>(&CameraActor, Window.GetKeyboard(), Window.GetMouse());
-	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -1.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
-	CameraActor.AddComponent<UCameraComponent>(&CameraActor);
+	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -30.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
+	CameraActor.AddComponent<UCameraComponent>(&CameraActor, PIDIV2, 0.1f, 1000.f);
 
 	Window.GetKeyboard().EnableAutoRepeat();
 	// ----------------------------------------------------------------------------- //
 
 	// ---------------------------- Temporary Timer -------------------------------- //
 	auto LastTime = std::chrono::high_resolution_clock::now();
+
 	// ----------------------------------------------------------------------------- //
 	while (bIsExit == false)
 	{
@@ -60,6 +61,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		Timer.Update();
+
+		CameraActor.GetComponent<UInputComponent>()->Update(Timer.GetDeltaTimeInSecond());
 		
 		Renderer.Prepare();
 

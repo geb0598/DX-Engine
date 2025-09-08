@@ -112,9 +112,9 @@ void LoadScene(const FString& FilePath)
 	}
 
 	// Main Camera 생성
-	AActor CameraActor;
+	/*AActor CameraActor;
 	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, 0.f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
-	CameraActor.AddComponent<UCameraComponent>(&CameraActor, PIDIV2, 0.1f, 1000.f);
+	CameraActor.AddComponent<UCameraComponent>(&CameraActor, PIDIV2, 0.1f, 1000.f);*/
 
 	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	json::JSON Obj = json::JSON::Load(content);
