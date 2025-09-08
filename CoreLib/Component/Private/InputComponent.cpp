@@ -1,11 +1,11 @@
 #include "Component/Public/InputComponent.h"
 #include "Component/Public/USceneComponent.h"
 
-UInputComponent::UInputComponent(AActor* Actor, UKeyboard& Keyboard, UMouse& Mouse)
+UInputComponent::UInputComponent(AActor* Actor)
 	: 
 	UActorComponent(Actor), 
-	Keyboard(Keyboard), 
-	Mouse(Mouse), 
+	Keyboard(nullptr), 
+	Mouse(nullptr), 
 	bIsKeyboardInputEnabled(true),
 	bIsMouseInputEnabled(true),
 	bIsMouseRightButtonPressed(false)
@@ -58,6 +58,16 @@ float UInputComponent::GetVerticalTurnSensitivity() const
 	return 0.0f;
 }
 
+void UInputComponent::SetMouse(UMouse* Mouse)
+{
+	this->Mouse = Mouse;
+}
+
+void UInputComponent::SetKeyboard(UKeyboard* Keyboard)
+{
+	this->Keyboard = Keyboard;
+}
+
 void UInputComponent::SetMoveSensitivity(float NewMoveSensitivity)
 {
 	MoveSensitivity = NewMoveSensitivity;
@@ -80,23 +90,28 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 		return;
 	}
 
+	if (!Keyboard || !Mouse)
+	{
+		return;
+	}
+
 	auto SceneComponent = GetActor()->GetComponent<USceneComponent>();
 	if (bIsKeyboardInputEnabled)
 	{
 		FVector DeltaPosition = {};
-		if (Keyboard.IsKeyPressed('W'))
+		if (Keyboard->IsKeyPressed('W'))
 		{
 			DeltaPosition.Z += 1.0f;
 		}
-		if (Keyboard.IsKeyPressed('A'))
+		if (Keyboard->IsKeyPressed('A'))
 		{
 			DeltaPosition.X += 1.0f;
 		}
-		if (Keyboard.IsKeyPressed('S'))
+		if (Keyboard->IsKeyPressed('S'))
 		{
 			DeltaPosition.Z -= 1.0f;
 		}
-		if (Keyboard.IsKeyPressed('D'))
+		if (Keyboard->IsKeyPressed('D'))
 		{
 			DeltaPosition.X -= 1.0f;
 		}
@@ -109,21 +124,21 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 
 	if (bIsMouseInputEnabled)
 	{
-		if (Mouse.IsRightPressed())
+		if (Mouse->IsRightPressed())
 		{
 			if (!bIsMouseRightButtonPressed)
 			{
-				CapturedMousePositionX = Mouse.GetXPosition();
-				CapturedMousePositionY = Mouse.GetYPosition();
+				CapturedMousePositionX = Mouse->GetXPosition();
+				CapturedMousePositionY = Mouse->GetYPosition();
 				bIsMouseRightButtonPressed = true;
 			}
 			else
 			{
-				int32 DeltaMouseXPosition = static_cast<int32>(Mouse.GetXPosition()) - CapturedMousePositionX;
-				int32 DeltaMouseYPosition = static_cast<int32>(Mouse.GetYPosition()) - CapturedMousePositionY;
+				int32 DeltaMouseXPosition = static_cast<int32>(Mouse->GetXPosition()) - CapturedMousePositionX;
+				int32 DeltaMouseYPosition = static_cast<int32>(Mouse->GetYPosition()) - CapturedMousePositionY;
 
-				CapturedMousePositionX = static_cast<int32>(Mouse.GetXPosition());
-				CapturedMousePositionY = static_cast<int32>(Mouse.GetYPosition());
+				CapturedMousePositionX = static_cast<int32>(Mouse->GetXPosition());
+				CapturedMousePositionY = static_cast<int32>(Mouse->GetYPosition());
 
 				float DeltaYaw = HorizontalTurnSensitivity * DeltaMouseXPosition * DeltaTimeSeconds;
 				float DeltaPitch = VerticalTurnSensitivity * DeltaMouseYPosition * DeltaTimeSeconds;

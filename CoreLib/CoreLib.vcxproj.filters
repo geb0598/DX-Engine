@@ -224,10 +224,10 @@
     <ClInclude Include="Scene\Public\Scene.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Scene\Public\SceneManager.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Scene\Scene.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\Public\SceneManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

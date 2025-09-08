@@ -17,7 +17,7 @@ class UInputComponent : public UActorComponent
 public:
 	virtual ~UInputComponent() = default;
 
-	UInputComponent(AActor* Actor, UKeyboard& Keyboard, UMouse& Mouse);
+	UInputComponent(AActor* Actor);
 
 	bool IsKeyboardInputEnabled();
 	void EnableKeyboardInput();
@@ -30,6 +30,9 @@ public:
 	float GetMoveSensitivity() const;
 	float GetHorizontalTurnSensitivity() const;
 	float GetVerticalTurnSensitivity() const;
+
+	void SetMouse(UMouse* Mouse);
+	void SetKeyboard(UKeyboard* Keyboard);
 
 	void SetMoveSensitivity(float NewMoveSensitivity);
 	void SetHorizontalTurnSensitivity(float NewHorizontalTurnSensitivity);
@@ -44,8 +47,8 @@ private:
 	bool bIsKeyboardInputEnabled;
 	bool bIsMouseInputEnabled;
 
-	UKeyboard& Keyboard;
-	UMouse& Mouse;
+	UKeyboard* Keyboard;
+	UMouse* Mouse;
 
 	float MoveSensitivity = 5.0f;
 	float HorizontalTurnSensitivity = 5.0f;;

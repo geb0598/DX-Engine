@@ -277,9 +277,7 @@ __declspec(align(16)) struct FMatrix
 
     static FMatrix CreatePerspective(float FieldOfViewRad, float AspectRatio, float Near, float Far)
     {
-        float YScale = 1.0f / tanf(FieldOfViewRad * 0.5f);
-        float XScale = YScale / AspectRatio;
-        float ZRange = Far - Near;
+        float TanHalfFOV = tanf(FieldOfViewRad * 0.5f);
 
         FMatrix Result;
         Result.M[0][0] = 1.0f / (AspectRatio * TanHalfFOV);
@@ -307,10 +305,7 @@ __declspec(align(16)) struct FMatrix
     }
     static FMatrix CreateOrthographic(float Left, float Right, float Bottom, float Top, float Near, float Far)
     {
-        float Width = Right - Left;
-        float Height = Top - Bottom;
-        float Depth = Far - Near;
-
+        FMatrix Result;
         Result.M[1][0] = 0.0f;
         Result.M[1][1] = 2.0f / (Top - Bottom);
         Result.M[1][2] = 0.0f;

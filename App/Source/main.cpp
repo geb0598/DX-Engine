@@ -34,11 +34,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	// 메인 카메라에 입력 컴포넌트 추가
 	AActor* MainCamera = SceneManager.GetMainCameraActor();
-	if (MainCamera)
-	{
-		MainCamera->AddComponent<UInputComponent>(MainCamera, Window.GetKeyboard(), Window.GetMouse());
-	}
-
 	Window.GetKeyboard().EnableAutoRepeat();
 
 	bool bIsExit = false;
@@ -62,16 +57,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Timer.Update();
 
 		// 메인 카메라 입력 업데이트
-		/*if (MainCamera && MainCamera->GetComponent<UInputComponent>())
+		if (MainCamera && MainCamera->GetComponent<UInputComponent>())
 		{
 			MainCamera->GetComponent<UInputComponent>()->Update(Timer.GetDeltaTimeInSecond());
-		}*/
+		}
 		
 		Renderer.Prepare();
 
 		// 현재 씬에서 렌더링
 		UScene* CurrentScene = SceneManager.GetCurrentScene();
 		MainCamera = SceneManager.GetMainCameraActor();
+		MainCamera->GetComponent<UInputComponent>()->SetMouse(&Window.GetMouse());
+		MainCamera->GetComponent<UInputComponent>()->SetKeyboard(&Window.GetKeyboard());
 		if (CurrentScene && MainCamera)
 		{
 			FMatrix M;

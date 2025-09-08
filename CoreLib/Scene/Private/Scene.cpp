@@ -33,6 +33,7 @@ void UScene::CreateMainCamera()
     );
     MainCameraActor->AddComponent<UCameraComponent>(MainCameraActor, PIDIV2, 0.1f, 1000.0f);
     // 인풋 컴포넌트 추가해야함
+    MainCameraActor->AddComponent<UInputComponent>(MainCameraActor);
     
     // 씬에 추가
     SceneActors.push_back(MainCameraActor);
