@@ -25,6 +25,7 @@ public:
 	void RenderControlPanel();
 	void RenderPropertyWindow();
 	void RenderConsole();
+	void RenderStatWindow();
 	void RenderUI();
 
 	void Release();

@@ -348,10 +348,28 @@ void UIManager::RenderUI()
 	RenderControlPanel();
 	RenderPropertyWindow();
 	RenderConsole();
+	RenderStatWindow();
 
 	ImGui::Render();
 	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
+}
+
+void UIManager::RenderStatWindow()
+{
+    ImGui::SetNextWindowSize(ImVec2(300, 100), ImGuiCond_Once);
+    ImGui::SetNextWindowPos(ImVec2(1100, 200), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
+    if (!ImGui::Begin("Memory Statistics:", nullptr))
+    {
+        ImGui::End();
+        return;
+    }
+
+	ImGui::Text("Memory Statistics:");
+    ImGui::Text("Total Allocation Count: %u", FMemory::TotalAllocationCount);
+    ImGui::Text("Total Allocation Bytes: %u bytes", FMemory::TotalAllocationBytes);
+
+    ImGui::End();
 }
 
 void UIManager::Release()

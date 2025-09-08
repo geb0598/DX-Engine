@@ -1,4 +1,4 @@
-#include "../Public/Logger.h"
+﻿#include "../Public/Logger.h"
 
 CLogger& CLogger::Instance() 
 {

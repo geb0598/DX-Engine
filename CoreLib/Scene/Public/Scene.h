@@ -4,6 +4,7 @@
 #include "Containers/Containers.h"
 #include "Types/Types.h"
 #include "Component/Component.h"
+#include "Memory/Memory.h"
 
 class UScene
 {

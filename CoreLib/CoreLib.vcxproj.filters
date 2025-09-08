@@ -102,13 +102,13 @@
     <ClCompile Include="Scene\Private\Scene.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Scene\Private\SceneManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Utilities\Private\Logger.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Memory\Private\MemoryManager.cpp">
+    <ClCompile Include="Scene\Private\SceneManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Memory\Private\FMemory.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -233,7 +233,7 @@
     <ClInclude Include="Utilities\Public\Logger.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Memory\Public\MemoryManager.h">
+    <ClInclude Include="Memory\Public\FMemory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Memory\Memory.h">
