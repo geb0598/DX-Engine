@@ -90,6 +90,12 @@
     <ClCompile Include="Component\Public\USceneComponent.h">
       <Filter>헤더 파일</Filter>
     </ClCompile>
+    <ClCompile Include="UI\Private\UIManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Time\Private\TimeManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h">
@@ -177,6 +183,24 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Component\Component.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Public\UIManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\UI.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Types.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Time\Time.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Time\Public\TimeManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Raycaster\Raycaster.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

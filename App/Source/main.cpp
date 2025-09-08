@@ -8,6 +8,8 @@
 #include "Component/Component.h"
 #include "Renderer/Renderer.h"
 #include "Window/Window.h"
+#include "UI/UI.h"
+#include "RayCaster/Raycaster.h"
 
 // ---------------------------------------------------------- //
 
@@ -77,24 +79,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	URenderer& Renderer = URenderer::GetInstance(Window.GethWnd());
 
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	ImGui_ImplWin32_Init((void*)Window.GethWnd());
-	ImGui_ImplDX11_Init(Renderer.GetDevice(), Renderer.GetDeviceContext());
+	UIManager &UI = UIManager::Instance();
+	UI.Initialize(Window.GethWnd(), Renderer.GetDevice(), Renderer.GetDeviceContext());
+
+	URayCaster& RayCaster = URayCaster::Instance();
 
 	UINT numVerticesTriangle = sizeof(triangle_vertices) / sizeof(FVertexSimple);
 	UINT numVerticesCube = sizeof(cube_vertices) / sizeof(FVertexSimple);
 	UINT numVerticesSphere = sizeof(sphere_vertices) / sizeof(FVertexSimple);
-
-	float scaleMod = 0.1f;
-
-	for (UINT i = 0; i < numVerticesSphere; ++i)
-	{
-		sphere_vertices[i].x *= scaleMod;
-		sphere_vertices[i].y *= scaleMod;
-		sphere_vertices[i].z *= scaleMod;
-	}
 
 	bool bIsExit = false;
 
@@ -113,24 +105,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 									/* TEST CODE */
 	// ----------------------------------------------------------------------------- //
 
-	AActor Actor;
-
-	TArray<FVertex> VertexArray;
-	for (size_t i = 0; i < sizeof(triangle_vertices) / sizeof(FVertexSimple); ++i)
-	{
-		VertexArray.push_back(static_cast<FVertex>(triangle_vertices[i]));
-	}
-
-	std::shared_ptr<UMesh> Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
-
+	// allocate shader first
 	TArray<D3D11_INPUT_ELEMENT_DESC> InputLayoutDesc(
-		std::begin(FVertex::InputLayoutDesc), 
+		std::begin(FVertex::InputLayoutDesc),
 		std::end(FVertex::InputLayoutDesc)
 	);
 
 	std::shared_ptr<UVertexShader> VertexShader = std::make_shared<UVertexShader>(
 		Renderer.GetDevice(),
-		"./Shader/VertexShader.hlsl", 
+		"./Shader/VertexShader.hlsl",
 		"main",
 		InputLayoutDesc
 	);
@@ -141,23 +124,92 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		"main"
 	);
 
-	Actor.AddComponent<UPrimitiveComponent>(&Actor, Mesh, VertexShader, PixelShader);
-	Actor.AddComponent<USceneComponent>(&Actor, FVector(0.0f, 0.0f, 20.0f), FVector(0.0f, 60.0f, 0.0f), FVector(1.0f, 1.0f, 1.0f));
-
 	AActor CameraActor;
 	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -1.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
 	CameraActor.AddComponent<UCameraComponent>(&CameraActor);
 
-	FMatrix M = Actor.GetComponent<USceneComponent>()->GetModelingMatrix();
 	FMatrix V = CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
 	FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
 
-	FMatrix MVP = M * V * P;
+	AActor TriangleActor;
+
+	TArray<FVertex> VertexArray;
+	for (size_t i = 0; i < sizeof(triangle_vertices) / sizeof(FVertexSimple); ++i)
+	{
+		VertexArray.push_back(static_cast<FVertex>(triangle_vertices[i]));
+	}
+
+	std::shared_ptr<UMesh> Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
+
+	TriangleActor.AddComponent<UPrimitiveComponent>(&TriangleActor, Mesh, VertexShader, PixelShader);
+	TriangleActor.AddComponent<USceneComponent>(&TriangleActor, FVector(0.5f, -0.8f, 50.0f), FVector(20.0f, 30.0f, -50.0f), FVector(0.5f, 1.2f, 1.4f));
+
+	FMatrix MTriangle = TriangleActor.GetComponent<USceneComponent>()->GetModelingMatrix();
+
+	AActor SphereActor;
+
+	TArray<FVertex> SphereVertexArray;
+	for (size_t i = 0; i < sizeof(sphere_vertices) / sizeof(FVertexSimple); ++i)
+	{
+		SphereVertexArray.push_back(static_cast<FVertex>(sphere_vertices[i]));
+	}
+
+	std::shared_ptr<UMesh> SphereMesh = std::make_shared<UMesh>(Renderer.GetDevice(), SphereVertexArray);
+
+	SphereActor.AddComponent<UPrimitiveComponent>(&SphereActor, SphereMesh, VertexShader, PixelShader);
+	SphereActor.AddComponent<USceneComponent>(&SphereActor, FVector(3.0f, -2.0f, 50.0f), FVector(7.0f, -20.0f, -90.0f), FVector(2.0f, 1.0f, 0.5f));
+
+	FMatrix MSphere = SphereActor.GetComponent<USceneComponent>()->GetModelingMatrix();
+
+	AActor CubeActor;
+
+	TArray<FVertex> CubeVertexArray;
+	for (size_t i = 0; i < sizeof(cube_vertices) / sizeof(FVertexSimple); ++i)
+	{
+		CubeVertexArray.push_back(static_cast<FVertex>(cube_vertices[i]));
+	}
+
+	std::shared_ptr<UMesh> CubeMesh = std::make_shared<UMesh>(Renderer.GetDevice(), CubeVertexArray);
+
+	CubeActor.AddComponent<UPrimitiveComponent>(&CubeActor, CubeMesh, VertexShader, PixelShader);
+	CubeActor.AddComponent<USceneComponent>(&CubeActor, FVector(-3.0f, 2.0f, 50.0f), FVector(-7.0f, 20.0f, 9.0f), FVector(-2.0f, -1.0f, -0.5f));
+
+	FMatrix MCube = CubeActor.GetComponent<USceneComponent>()->GetModelingMatrix();
 	
 	// ----------------------------------------------------------------------------- //
 
 	while (bIsExit == false)
 	{
+		// test raytracer
+		if (Window.Mouse.IsLeftPressed())
+		{
+			int32 MouseX = Window.Mouse.GetXPosition();
+			int32 MouseY = Window.Mouse.GetYPosition();
+
+			// mouse position
+			/*UI.AddDebugLog("Mouse clicked!");
+			UI.AddDebugLog("X : " + std::to_string(MouseX) + " Y : " + std::to_string(MouseY));*/
+
+			// ndc mouse position
+			/*float NDCX = (static_cast<float>(MouseX) - 500.0f) / 500.0f;
+			float NDCY = (static_cast<float>(MouseY) - 500.0f) / 500.0f;
+
+			UI.AddDebugLog("NDCX : " + std::to_string(NDCX));
+			UI.AddDebugLog("NDCY : " + std::to_string(NDCY));*/
+
+			RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, MTriangle, V, P);
+			if (RayCaster.RayCastToTriangle() != DONT_INTERSECT)
+				UI.AddDebugLog("Ray hit triangle");
+
+			RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, MSphere, V, P);
+			if (RayCaster.RayCastToSphere(1) != DONT_INTERSECT)
+				UI.AddDebugLog("Ray hit sphere");
+
+			RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, MCube, V, P);
+			if (RayCaster.RayCastToCube() != DONT_INTERSECT)
+				UI.AddDebugLog("Ray hit Cube");
+		}
+
 		MSG msg;
 
 		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -174,35 +226,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		
 		Renderer.Prepare();
 
-		ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
+		FMatrix MVP;
+		
+		MVP = MTriangle * V * P;
 
-		ImGui::Begin("Jungle Property Window");
-		ImGui::Text("Hello Jungle World!");
-
-		if (ImGui::Button("Change primitive"))
-		{
-			switch (typePrimitive)
-			{
-			case EPT_Triangle:
-				typePrimitive = EPT_Cube;
-				break;
-			case EPT_Cube:
-				typePrimitive = EPT_Sphere;
-				break;
-			case EPT_Sphere:
-				typePrimitive = EPT_Triangle;
-				break;
-			}
-		}
-
-		ImGui::End();
-
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-		auto PrimitiveComponent = Actor.GetComponent<UPrimitiveComponent>();
+		auto PrimitiveComponent = TriangleActor.GetComponent<UPrimitiveComponent>();
 		PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
 			Renderer.GetDeviceContext(),
 			"constants",
@@ -212,12 +240,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		PrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
 		PrimitiveComponent->Render(Renderer.GetDeviceContext());
 
+		MVP = MSphere * V * P;
+
+		auto SpherePrimitiveComponent = SphereActor.GetComponent<UPrimitiveComponent>();
+		SpherePrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
+			Renderer.GetDeviceContext(),
+			"constants",
+			reinterpret_cast<void*>(MVP.M)
+		);
+		SpherePrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
+		SpherePrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
+		SpherePrimitiveComponent->Render(Renderer.GetDeviceContext());
+
+		MVP = MCube * V * P;
+
+		auto CubePrimitiveComponent = CubeActor.GetComponent<UPrimitiveComponent>();
+		CubePrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
+			Renderer.GetDeviceContext(),
+			"constants",
+			reinterpret_cast<void*>(MVP.M)
+		);
+		CubePrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
+		CubePrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
+		CubePrimitiveComponent->Render(Renderer.GetDeviceContext());
+
+		UI.RenderUI();
+
 		Renderer.SwapBuffer();
 	}
 
-	ImGui_ImplDX11_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
+	UI.Release();
 
 	return 0;
 }

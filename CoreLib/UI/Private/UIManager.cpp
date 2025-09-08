@@ -1,9 +1,11 @@
-#include "UIManager.h"
+#include "../Public/UIManager.h"
 
 /* private */
 
 UIManager::UIManager() {}
 UIManager::~UIManager() {}
+
+const uint32 UIManager::LogLegionSize = 5;
 
 /* public */
 
@@ -218,6 +220,8 @@ void UIManager::RenderConsole()
 	ImGui::SameLine();
 	if (ImGui::SmallButton("Clear"))
 	{
+		// erase all log in console
+		ClearLog();
 	}
 	ImGui::SameLine();
 	bool CopyToClipBoard = ImGui::SmallButton("Copy");
@@ -238,6 +242,11 @@ void UIManager::RenderConsole()
 
 	if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, 100), ImGuiChildFlags_NavFlattened, ImGuiWindowFlags_HorizontalScrollbar))
 	{
+		// show debug logs here
+		for (const FString& Log : Logs)
+		{
+			ImGui::TextUnformatted(Log.c_str());
+		}
 	}
 	ImGui::EndChild();
 
@@ -260,8 +269,8 @@ void UIManager::RenderUI()
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	RenderControlPanel();
-	RenderPropertyWindow();
+	//RenderControlPanel();
+	//RenderPropertyWindow();
 	RenderConsole();
 
 	ImGui::Render();
