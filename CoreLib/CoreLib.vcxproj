@@ -41,6 +41,8 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Utilities\Public\JsonSceneSerializer.cpp" />
+    <ClCompile Include="Time\Private\TimeManager.cpp" />
+    <ClCompile Include="UI\Private\UIManager.cpp" />
     <ClCompile Include="Window\Private\Keyboard.cpp" />
     <ClCompile Include="Window\Private\Mouse.cpp" />
     <ClCompile Include="Window\Private\Window.cpp" />
@@ -59,6 +61,7 @@
     <ClInclude Include="Mesh\Public\Mesh.h" />
     <ClInclude Include="Mesh\Public\Vertex.h" />
     <ClInclude Include="Object\Public\Object.h" />
+    <ClInclude Include="Raycaster\Raycaster.h" />
     <ClInclude Include="Renderer\Public\Renderer.h" />
     <ClInclude Include="RayCaster\Public\URayCaster.h" />
     <ClInclude Include="Shader\Private\ShaderReflector.h" />
@@ -74,6 +77,11 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
     <ClInclude Include="Utilities\Public\JsonSceneSerializer.h" />
     <ClInclude Include="Utilities\Public\Utilities.h" />
+    <ClInclude Include="Time\Public\TimeManager.h" />
+    <ClInclude Include="Time\Time.h" />
+    <ClInclude Include="Types\Types.h" />
+    <ClInclude Include="UI\Public\UIManager.h" />
+    <ClInclude Include="UI\UI.h" />
     <ClInclude Include="Window\Public\Keyboard.h" />
     <ClInclude Include="Window\Public\Mouse.h" />
     <ClInclude Include="Window\Public\Window.h" />

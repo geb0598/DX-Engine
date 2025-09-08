@@ -72,7 +72,15 @@ __declspec(align(16)) struct FMatrix
             M[3][0] * V.X + M[3][1] * V.Y + M[3][2] * V.Z + M[3][3] * V.W
         );
     }
-
+    friend FVector4 operator*(const FVector4& V, const FMatrix& M)
+    {
+        return FVector4(
+            V.X * M[0][0] + V.Y * M[1][0] + V.Z * M[2][0] + V.W * M[3][0],
+            V.X * M[0][1] + V.Y * M[1][1] + V.Z * M[2][1] + V.W * M[3][1],
+            V.X * M[0][2] + V.Y * M[1][2] + V.Z * M[2][2] + V.W * M[3][2],
+            V.X * M[0][3] + V.Y * M[1][3] + V.Z * M[2][3] + V.W * M[3][3]
+        );
+    }
     FMatrix Inverse() const;
     void SetIdentity()
     {
@@ -278,8 +286,8 @@ __declspec(align(16)) struct FMatrix
             R[i][2] *= -1;   // Z축 반전
         }
 
-        // 뷰 행렬 = Rᵀ * T
-        return R.Inverse() * T.Inverse();
+        // 뷰 행렬 = T의 역행렬 * R의 역행렬
+        return T.Inverse() * R.Inverse();
     }
 
     static FMatrix CreatePerspective(float FOV, float AspectRatio, float Near, float Far)

@@ -28,6 +28,10 @@ struct FVector
 	{ 
 		return FVector(X * Scalar, Y * Scalar, Z * Scalar); 
 	}
+	friend FVector operator*(float Scalar, FVector Other)
+	{
+		return FVector(Other.X * Scalar, Other.Y * Scalar, Other.Z * Scalar);
+	}
 	FVector operator*=(float Scalar) 
 	{ 
 		X *= Scalar; 
