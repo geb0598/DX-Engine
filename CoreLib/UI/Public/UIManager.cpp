@@ -23,8 +23,6 @@ void UIManager::Initialize(HWND HWnd, ID3D11Device* Device, ID3D11DeviceContext*
 
 void UIManager::RenderControlPanel()
 {
-	ImGui::SetNextWindowSize(ImVec2(350, 325), ImGuiCond_Once);
-	ImGui::SetNextWindowPos(ImVec2(200, 200), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
 	if (!ImGui::Begin("Jungle Control Panel", nullptr))
 	{
 		ImGui::End();
@@ -140,8 +138,6 @@ void UIManager::RenderControlPanel()
 
 void UIManager::RenderPropertyWindow()
 {
-	ImGui::SetNextWindowSize(ImVec2(350, 100), ImGuiCond_Once);
-	ImGui::SetNextWindowPos(ImVec2(200, 450), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
 	if (!ImGui::Begin("Jungle Property Window", nullptr))
 	{
 		ImGui::End();
@@ -205,8 +201,6 @@ void UIManager::RenderPropertyWindow()
 
 void UIManager::RenderConsole()
 {
-	ImGui::SetNextWindowSize(ImVec2(800, 275), ImGuiCond_Once);
-	ImGui::SetNextWindowPos(ImVec2(425, 800), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
 	if (!ImGui::Begin("Jungle Console", nullptr))
 	{
 		ImGui::End();
@@ -357,8 +351,6 @@ void UIManager::RenderUI()
 
 void UIManager::RenderStatWindow()
 {
-    ImGui::SetNextWindowSize(ImVec2(300, 100), ImGuiCond_Once);
-    ImGui::SetNextWindowPos(ImVec2(1100, 200), ImGuiCond_Once, ImVec2(0.5f, 0.5f));
     if (!ImGui::Begin("Memory Statistics:", nullptr))
     {
         ImGui::End();
