@@ -1,6 +1,6 @@
 ﻿#include "UIManager.h"
 #include "TIme/Time.h"
-#include "Utilities/Utilities.h"
+#include "Scene/Scene.h"
 /* private */
 
 UIManager::UIManager() {}
@@ -74,17 +74,15 @@ void UIManager::RenderControlPanel()
 	// draw buttons
 	if (ImGui::Button("New scene"))
 	{
-		SaveScene(FString(SceneNameStr), 1);
-		NewScene();
+		USceneManager::GetInstance().NewScene(SceneNameStr);
 	}
 	if (ImGui::Button("Save scene"))
 	{
-		SaveScene(FString(SceneNameStr), 1);
+		USceneManager::GetInstance().SaveScene(SceneNameStr);
 	}
 	if (ImGui::Button("Load scene"))
 	{
-		//NewScene();
-		LoadScene(FString(SceneNameStr));
+		USceneManager::GetInstance().LoadScene(SceneNameStr);
 	}
 
 	ImGui::Separator();

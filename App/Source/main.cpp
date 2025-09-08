@@ -11,6 +11,7 @@
 #include "Utilities/Utilities.h"
 #include "UI/UI.h"
 #include "TIme/Time.h"
+#include "Scene/Scene.h"
 
 // ---------------------------------------------------------- //
 
@@ -27,20 +28,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	TimeManager& Timer = TimeManager::Instance();
 	Timer.Initialize();
 
-	bool bIsExit = false;
+	// 씬 매니저 초기화 및 새로운 씬 생성
+	USceneManager& SceneManager = USceneManager::GetInstance();
+	SceneManager.NewScene("Default Scene");
 
-	// ----------------------------------------------------------------------------- //
-									/* TEST CODE */
-	// ----------------------------------------------------------------------------- //
-
-	AActor CameraActor;
-	CameraActor.AddComponent<UInputComponent>(&CameraActor, Window.GetKeyboard(), Window.GetMouse());
-	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -30.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
-	CameraActor.AddComponent<UCameraComponent>(&CameraActor, PIDIV2, 0.1f, 1000.f);
+	// 메인 카메라에 입력 컴포넌트 추가
+	AActor* MainCamera = SceneManager.GetMainCameraActor();
+	if (MainCamera)
+	{
+		MainCamera->AddComponent<UInputComponent>(MainCamera, Window.GetKeyboard(), Window.GetMouse());
+	}
 
 	Window.GetKeyboard().EnableAutoRepeat();
-	// ----------------------------------------------------------------------------- //
 
+	bool bIsExit = false;
 
 	// ----------------------------------------------------------------------------- //
 	while (bIsExit == false)
@@ -60,32 +61,44 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		Timer.Update();
 
-		CameraActor.GetComponent<UInputComponent>()->Update(Timer.GetDeltaTimeInSecond());
+		// 메인 카메라 입력 업데이트
+		/*if (MainCamera && MainCamera->GetComponent<UInputComponent>())
+		{
+			MainCamera->GetComponent<UInputComponent>()->Update(Timer.GetDeltaTimeInSecond());
+		}*/
 		
 		Renderer.Prepare();
 
-		FMatrix M;
-		FMatrix V = CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
-		FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
-
-		for (UObject* Obj : GUDObjectArray)
+		// 현재 씬에서 렌더링
+		UScene* CurrentScene = SceneManager.GetCurrentScene();
+		MainCamera = SceneManager.GetMainCameraActor();
+		if (CurrentScene && MainCamera)
 		{
-			if (Obj == nullptr) 
-				continue;
-			AActor* Actor = static_cast<AActor*>(Obj);
-			auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
-			if (PrimitiveComponent)
-			{
-				M = Actor->GetComponent<USceneComponent>()->GetModelingMatrix();
-				FMatrix MVP = M * V * P;
+			FMatrix M;
+			FMatrix V = MainCamera->GetComponent<UCameraComponent>()->GetViewMatrix();
+			FMatrix P = MainCamera->GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
 
-				PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
-					Renderer.GetDeviceContext(), 
-					"constants", 
-					reinterpret_cast<void*>(MVP.M));
-				PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
-				PrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
-				PrimitiveComponent->Render(Renderer.GetDeviceContext());
+			// 현재 씬의 모든 액터들을 렌더링
+			const TArray<AActor*>& SceneActors = CurrentScene->GetActors();
+			for (AActor* Actor : SceneActors)
+			{
+				if (Actor == nullptr) 
+					continue;
+					
+				auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
+				if (PrimitiveComponent)
+				{
+					M = Actor->GetComponent<USceneComponent>()->GetModelingMatrix();
+					FMatrix MVP = M * V * P;
+
+					PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
+						Renderer.GetDeviceContext(), 
+						"constants", 
+						reinterpret_cast<void*>(MVP.M));
+					PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
+					PrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
+					PrimitiveComponent->Render(Renderer.GetDeviceContext());
+				}
 			}
 		}
 
