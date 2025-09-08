@@ -9,6 +9,8 @@
 #include "Renderer/Renderer.h"
 #include "Window/Window.h"
 #include "Utilities/Utilities.h"
+#include "UI/UI.h"
+#include "TIme/Time.h"
 
 // ---------------------------------------------------------- //
 
@@ -18,11 +20,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	URenderer& Renderer = URenderer::GetInstance(Window.GethWnd());
 
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	ImGui_ImplWin32_Init((void*)Window.GethWnd());
-	ImGui_ImplDX11_Init(Renderer.GetDevice(), Renderer.GetDeviceContext());
+	UIManager& EditorUI = UIManager::Instance();
+	EditorUI.Initialize(Window.GethWnd(), Renderer.GetDevice(), Renderer.GetDeviceContext());
+
+	TimeManager& Timer = TimeManager::Instance();
+	Timer.Initialize();
 
 	bool bIsExit = false;
 
@@ -56,6 +58,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 		}
+
+		Timer.Update();
 		
 		Renderer.Prepare();
 
@@ -84,24 +88,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-
-		ImGui::Begin("Jungle Property Window");
-		ImGui::Text("Hello Jungle World!");
-
-		ImGui::End();
-
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+		EditorUI.RenderUI();
 
 		Renderer.SwapBuffer();
 	}
 
-	ImGui_ImplDX11_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
+	EditorUI.Release();
 
 	return 0;
 }

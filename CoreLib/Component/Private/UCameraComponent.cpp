@@ -6,7 +6,7 @@ const float UCameraComponent::DefaultFarPlane = 1000.0;
 
 UCameraComponent::UCameraComponent(AActor* Actor)
 	: UActorComponent(Actor),
-	FieldOfView(DefaultFieldOfView),
+	FieldOfViewRad(DefaultFieldOfView),
 	NearPlane(DefaultNearPlane),
 	FarPlane(DefaultFarPlane)
 {}
@@ -16,19 +16,19 @@ UCameraComponent::UCameraComponent(AActor* Actor,
 	float NearPlaneToSet,
 	float FarPlaneToSet)
 	: UActorComponent(Actor),
-	FieldOfView(FieldOfViewToSet),
+	FieldOfViewRad(FieldOfViewToSet),
 	NearPlane(NearPlaneToSet),
 	FarPlane(FarPlaneToSet)
 {}
 
 float UCameraComponent::GetFieldOfView() const 
 { 
-	return FieldOfView;
+	return FieldOfViewRad;
 }
 
 void UCameraComponent::SetFieldOfView(float FOVToSet) 
 { 
-	FieldOfView = FOVToSet; 
+	FieldOfViewRad = FOVToSet; 
 }
 
 float UCameraComponent::GetNearPlane() const 
@@ -67,7 +67,7 @@ FMatrix UCameraComponent::GetViewMatrix()
 
 FMatrix UCameraComponent::GetProjectionMatrix(float AspectRatio) 
 { 
-	return FMatrix::CreatePerspective(FieldOfView, AspectRatio, NearPlane, FarPlane); 
+	return FMatrix::CreatePerspective(FieldOfViewRad, AspectRatio, NearPlane, FarPlane);
 }
 
 FMatrix UCameraComponent::GetOrthographicMatrix(float Left, float Right, float Bottom, float Top)

@@ -93,6 +93,12 @@
     <ClCompile Include="Utilities\Private\JsonSceneSerializer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="UI\Public\UIManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Time\Public\TimeManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h">
@@ -189,6 +195,18 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Math\Public\MathUtilities.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\UI.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="UI\Public\UIManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Time\Time.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Time\Public\TimeManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

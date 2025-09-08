@@ -284,17 +284,17 @@ __declspec(align(16)) struct FMatrix
         return R.Inverse() * T.Inverse();
     }
 
-    static FMatrix CreatePerspective(float FOV, float AspectRatio, float Near, float Far)
+    static FMatrix CreatePerspective(float FieldOfViewRad, float AspectRatio, float Near, float Far)
     {
-        float YScale = 1.0f / tanf(FOV * 0.5f);
+        float YScale = 1.0f / tanf(FieldOfViewRad * 0.5f);
         float XScale = YScale / AspectRatio;
         float ZRange = Far - Near;
 
 		return FMatrix(
             XScale,  0.0f,   0.0f,                0.0f,
 			0.0f,    YScale, 0.0f,                0.0f,
-			0.0f,    0.0f,   Far / ZRange,        1.0f,
-			0.0f,    0.0f,  -Near * Far / ZRange, 0.0f
+            0.0f, 0.0f, Far / ZRange, 1.0f,
+            0.0f, 0.0f, -Near * Far / ZRange, 0.0f
         );
     }
     static FMatrix CreateOrthographic(float Left, float Right, float Bottom, float Top, float Near, float Far)

@@ -7,7 +7,7 @@
 class UCameraComponent : public UActorComponent
 {
 private:
-	float FieldOfView;
+	float FieldOfViewRad;
 	float NearPlane;
 	float FarPlane;
 
