@@ -7,9 +7,12 @@
 class UCameraComponent : public UActorComponent
 {
 private:
-	float FieldOfViewRad;
+	float FieldOfView;
 	float NearPlane;
 	float FarPlane;
+
+	// NOTE: bIsOrthogonal flag does nothing. Caller should check its state and choose which projection matrix to use.
+	bool bIsOrthogonal;
 
 	const static float DefaultFieldOfView;
 	const static float DefaultNearPlane;
@@ -27,6 +30,10 @@ public:
 
 	float GetFarPlane() const;
 	void SetFarPlane(float FarPlaneToSet);
+
+	bool IsOrthogonal() const;
+	bool EnableOrthogonal();
+	bool DisableOrthogonal();
 
 	FMatrix GetViewMatrix();
 	FMatrix GetProjectionMatrix(float AspectRatio);

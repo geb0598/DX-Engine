@@ -92,6 +92,16 @@ const UMouse& UWindow::GetMouse() const
 	return Mouse;
 }
 
+int32 UWindow::GetWidth() const
+{
+	return Width;
+}
+
+int32 UWindow::GetHeight() const
+{
+	return Height;
+}
+
 void UWindow::SetWindowTitle(const FString& WindowTitle)
 {
 	SetWindowTextW(hWnd, std::wstring(WindowTitle.begin(), WindowTitle.end()).c_str());

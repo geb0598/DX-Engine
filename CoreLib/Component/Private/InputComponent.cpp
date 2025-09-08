@@ -1,5 +1,6 @@
 #include "Component/Public/InputComponent.h"
 #include "Component/Public/USceneComponent.h"
+#include "Component/Public/UCameraComponent.h"
 
 UInputComponent::UInputComponent(AActor* Actor)
 	: 
@@ -105,7 +106,7 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 		}
 		if (Keyboard->IsKeyPressed('A'))
 		{
-			DeltaPosition.X += 1.0f;
+			DeltaPosition.X -= 1.0f;
 		}
 		if (Keyboard->IsKeyPressed('S'))
 		{
@@ -113,12 +114,17 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 		}
 		if (Keyboard->IsKeyPressed('D'))
 		{
-			DeltaPosition.X -= 1.0f;
+			DeltaPosition.X += 1.0f;
 		}
 		DeltaPosition.Normalize();
 		DeltaPosition *= MoveSensitivity * DeltaTimeSeconds;
-		auto Rotation = SceneComponent->GetRotation();
-		auto WorldDeltaPosition = DeltaPosition * FMatrix::CreateRotationFromEuler(SceneComponent->GetRotation());
+
+		auto CameraComponent = GetActor()->GetComponent<UCameraComponent>();
+		FMatrix ViewMatrix = CameraComponent->GetViewMatrix();
+		FMatrix InverseViewMatrix = ViewMatrix.Inverse();
+
+		auto WorldDeltaPosition = DeltaPosition * InverseViewMatrix;
+
 		SceneComponent->TranslateTransform(WorldDeltaPosition);
 	}
 
@@ -144,8 +150,9 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 				float DeltaPitch = VerticalTurnSensitivity * DeltaMouseYPosition * DeltaTimeSeconds;
 
 				auto Rotation = SceneComponent->GetRotation();
-				Rotation.Y -= DeltaYaw;
-				Rotation.X -= DeltaPitch;
+				Rotation.Y += DeltaYaw;
+				Rotation.X += DeltaPitch;
+				Rotation.X = std::clamp(Rotation.X, MIN_PITCH, MAX_PITCH);
 
 				SceneComponent->SetRotation(Rotation);
 			}

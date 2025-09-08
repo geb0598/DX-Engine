@@ -1,14 +1,15 @@
 #include "../Public/UCameraComponent.h"
 
-const float UCameraComponent::DefaultFieldOfView = PIDIV2;
+const float UCameraComponent::DefaultFieldOfView = 90.0f;
 const float UCameraComponent::DefaultNearPlane = 0.1;
 const float UCameraComponent::DefaultFarPlane = 1000.0;
 
 UCameraComponent::UCameraComponent(AActor* Actor)
 	: UActorComponent(Actor),
-	FieldOfViewRad(DefaultFieldOfView),
+	FieldOfView(DefaultFieldOfView),
 	NearPlane(DefaultNearPlane),
-	FarPlane(DefaultFarPlane)
+	FarPlane(DefaultFarPlane),
+	bIsOrthogonal(false)
 {}
 
 UCameraComponent::UCameraComponent(AActor* Actor,
@@ -16,19 +17,19 @@ UCameraComponent::UCameraComponent(AActor* Actor,
 	float NearPlaneToSet,
 	float FarPlaneToSet)
 	: UActorComponent(Actor),
-	FieldOfViewRad(FieldOfViewToSet),
+	FieldOfView(FieldOfViewToSet),
 	NearPlane(NearPlaneToSet),
 	FarPlane(FarPlaneToSet)
 {}
 
 float UCameraComponent::GetFieldOfView() const 
 { 
-	return FieldOfViewRad;
+	return FieldOfView;
 }
 
 void UCameraComponent::SetFieldOfView(float FOVToSet) 
 { 
-	FieldOfViewRad = FOVToSet; 
+	FieldOfView = FOVToSet; 
 }
 
 float UCameraComponent::GetNearPlane() const 
@@ -51,22 +52,23 @@ void UCameraComponent::SetFarPlane(float FPToSet)
 	FarPlane = FPToSet; 
 }
 
+bool UCameraComponent::IsOrthogonal() const
+{
+	return bIsOrthogonal;
+}
+
+bool UCameraComponent::EnableOrthogonal()
+{
+	return bIsOrthogonal = true;
+}
+
+bool UCameraComponent::DisableOrthogonal()
+{
+	return bIsOrthogonal = false;
+}
+
 FMatrix UCameraComponent::GetViewMatrix()
 {
-	/* NOTE: Legacy Code
-	// Get the info of scene component from camera's owner, actor
-	AActor* Actor = GetActor();
-	assert(Actor != nullptr);
-
-	USceneComponent* SceneComponent = Actor->GetComponent<USceneComponent>();
-	assert(SceneComponent != nullptr);
-
-	FVector Location = SceneComponent->GetLocation();
-	FVector Rotation = SceneComponent->GetRotation();
-
-	return FMatrix::CreateView(CamLocation, CamRotation);
-	*/
-
 	auto SceneComponent = GetActor()->GetComponent<USceneComponent>();
 	auto Rotation = SceneComponent->GetRotation();
 
@@ -76,15 +78,16 @@ FMatrix UCameraComponent::GetViewMatrix()
 	auto RollMatrix = FMatrix::CreateRotationZ(DEG_TO_RAD(Rotation.Z));
 
 	auto Eye = SceneComponent->GetLocation();
+	//auto At = Eye + (FVector(0.0f, 0.0f, 1.0f) * RollMatrix * PitchMatrix * YawMatrix);
 	auto At = Eye + (FVector(0.0f, 0.0f, 1.0f) * RollMatrix * PitchMatrix * YawMatrix);
-	auto Up = FVector(0.0f, 1.0f, 0.0f);
+	auto Up = FVector(0.0f, 1.0f, 0.0f) * RollMatrix * PitchMatrix * YawMatrix;
 
 	return FMatrix::CreateLookAt(Eye, At, Up);
 }
 
 FMatrix UCameraComponent::GetProjectionMatrix(float AspectRatio) 
 { 
-	return FMatrix::CreatePerspective(FieldOfViewRad, AspectRatio, NearPlane, FarPlane);
+	return FMatrix::CreatePerspective(DEG_TO_RAD(FieldOfView), AspectRatio, NearPlane, FarPlane);
 }
 
 FMatrix UCameraComponent::GetOrthographicMatrix(float Left, float Right, float Bottom, float Top)

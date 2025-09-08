@@ -87,52 +87,71 @@ void UIManager::RenderControlPanel()
 
 	ImGui::Separator();
 
+	// ------------------------------- Camera UI ------------------------------------- //
+	auto CameraActor = USceneManager::GetInstance().GetMainCameraActor();
+	auto CameraComponent = CameraActor->GetComponent<UCameraComponent>();
+	auto CameraSceneComponent = CameraActor->GetComponent<USceneComponent>();
+
+
 	/* Set orthogonal option */
 
-	static bool IsOrthogonal = false;
+	bool IsOrthogonal = CameraComponent->IsOrthogonal();
 
+	// TODO: Camera requires SetOrthogonal method
 	ImGui::Checkbox("Orthogonal", &IsOrthogonal);
+
+	if (IsOrthogonal)
+	{
+		CameraComponent->EnableOrthogonal();
+	}
+	else
+	{
+		CameraComponent->DisableOrthogonal();
+	}
 
 	/* Set POV */
 
-	static float Fov = 0.0f;
+	float Fov = CameraComponent->GetFieldOfView();
+	if (ImGui::DragFloat("FOV", &Fov, 0.2f, 20.0f, 120.0f))
+	{
+		// NOTE: Field Of View is managed with Radian
+		CameraComponent->SetFieldOfView(Fov);
+	}
 
-	ImGui::DragFloat("FOV", &Fov, 0.2f, 20.0f, 120.0f);
 
 	/* Set Camera Location */
 
-	static float CameraLocationX = 0.0f;
-	static float CameraLocationY = 0.0f;
-	static float CameraLocationZ = 0.0f;
+	auto CameraLocation = CameraSceneComponent->GetLocation();
 
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##CameraLocationX", &CameraLocationX, 0.2f);
+	ImGui::DragFloat("##CameraLocationX", &CameraLocation.X, 0.05f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##CameraLocationY", &CameraLocationY, 0.2f);
+	ImGui::DragFloat("##CameraLocationY", &CameraLocation.Y, 0.05f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##CameraLocationZ", &CameraLocationZ, 0.2f);
+	ImGui::DragFloat("##CameraLocationZ", &CameraLocation.Z, 0.05f);
 	ImGui::SameLine();
 	ImGui::Text("Camera Location");
 
+	CameraSceneComponent->SetLocation(CameraLocation);
+
 	/* Set Camera Rotation */
 
-	static float CameraRotationX = 0.0f;
-	static float CameraRotationY = 0.0f;
-	static float CameraRotationZ = 0.0f;
+	auto CameraRotation = CameraSceneComponent->GetRotation();
 
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##CameraRotationX", &CameraRotationX, 0.2f);
+	ImGui::DragFloat("##CameraRotationX", &CameraRotation.X, 0.05f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##CameraRotationY", &CameraRotationY, 0.2f);
+	ImGui::DragFloat("##CameraRotationY", &CameraRotation.Y, 0.05f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##CameraRotationZ", &CameraRotationZ, 0.2f);
+	ImGui::DragFloat("##CameraRotationZ", &CameraRotation.Z, 0.05f);
 	ImGui::SameLine();
 	ImGui::Text("Camera Rotation");
 
+	CameraSceneComponent->SetRotation(CameraRotation);
 	ImGui::End();
 	return;
 }

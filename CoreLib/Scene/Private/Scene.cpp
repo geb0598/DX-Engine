@@ -31,7 +31,7 @@ void UScene::CreateMainCamera()
         FVector(0.0f, 0.0f, 0.0f),    // 회전
         FVector(1.0f, 1.0f, 1.0f)     // 스케일
     );
-    MainCameraActor->AddComponent<UCameraComponent>(MainCameraActor, PIDIV2, 0.1f, 1000.0f);
+    MainCameraActor->AddComponent<UCameraComponent>(MainCameraActor);
     // 인풋 컴포넌트 추가해야함
     MainCameraActor->AddComponent<UInputComponent>(MainCameraActor);
     

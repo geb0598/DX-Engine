@@ -257,7 +257,7 @@ __declspec(align(16)) struct FMatrix
     static FMatrix CreateLookAt(const FVector& Eye, const FVector& Target, const FVector& Up)
     {
 		FVector OldUp = Up;
-		FVector N = (Eye - Target).GetNormalized(); // Forward
+		FVector N = (Target - Eye).GetNormalized(); // Forward
         FVector U = OldUp.Cross(N).GetNormalized(); // RIGHT
         FVector V = N.Cross(U);                     // UP
 
@@ -306,6 +306,11 @@ __declspec(align(16)) struct FMatrix
     static FMatrix CreateOrthographic(float Left, float Right, float Bottom, float Top, float Near, float Far)
     {
         FMatrix Result;
+        Result.M[0][0] = 2.0f / (Right - Left);
+        Result.M[0][1] = 0.0f;
+        Result.M[0][2] = 0.0f;
+        Result.M[0][3] = -(Right + Left) / (Right - Left);
+
         Result.M[1][0] = 0.0f;
         Result.M[1][1] = 2.0f / (Top - Bottom);
         Result.M[1][2] = 0.0f;

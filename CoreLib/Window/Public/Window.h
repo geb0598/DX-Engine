@@ -50,6 +50,9 @@ public:
 	const UKeyboard& GetKeyboard() const;
 	const UMouse& GetMouse() const;
 
+	int32 GetWidth() const;
+	int32 GetHeight() const;
+
 	void SetWindowTitle(const FString& WindowTitle);
 
 	float getAspectRatio()
@@ -64,8 +67,8 @@ private:
 
 	HWND hWnd;
 
-	int Width;
-	int Height;
+	int32 Width;
+	int32 Height;
 
 	UKeyboard Keyboard;
 	UMouse Mouse;

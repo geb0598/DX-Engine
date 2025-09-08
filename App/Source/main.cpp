@@ -57,10 +57,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Timer.Update();
 
 		// 메인 카메라 입력 업데이트
-		if (MainCamera && MainCamera->GetComponent<UInputComponent>())
-		{
-			MainCamera->GetComponent<UInputComponent>()->Update(Timer.GetDeltaTimeInSecond());
-		}
 		
 		Renderer.Prepare();
 
@@ -69,11 +65,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		MainCamera = SceneManager.GetMainCameraActor();
 		MainCamera->GetComponent<UInputComponent>()->SetMouse(&Window.GetMouse());
 		MainCamera->GetComponent<UInputComponent>()->SetKeyboard(&Window.GetKeyboard());
+		if (MainCamera && MainCamera->GetComponent<UInputComponent>())
+		{
+			MainCamera->GetComponent<UInputComponent>()->Update(Timer.GetDeltaTimeInSecond());
+		}
+
 		if (CurrentScene && MainCamera)
 		{
+			auto CameraComponent = MainCamera->GetComponent<UCameraComponent>();
 			FMatrix M;
-			FMatrix V = MainCamera->GetComponent<UCameraComponent>()->GetViewMatrix();
-			FMatrix P = MainCamera->GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
+			FMatrix V = CameraComponent->GetViewMatrix();
+			FMatrix P;
+			if (CameraComponent->IsOrthogonal())
+			{
+				P = CameraComponent->GetOrthographicMatrix(-30.0f, 30.0f, -30.0f, 30.0f);
+			}
+			else
+			{
+				P = CameraComponent->GetProjectionMatrix(Window.getAspectRatio());
+			}
 
 			// 현재 씬의 모든 액터들을 렌더링
 			const TArray<AActor*>& SceneActors = CurrentScene->GetActors();
