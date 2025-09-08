@@ -48,7 +48,7 @@ public:
 		// Ray
 		// change point and vector because world is mirrored
 		CurrentRay.Point = WorldNear.ToVector3();
-		CurrentRay.Vector = (WorldNear - WorldFar).ToVector3().GetNormalized();
+		CurrentRay.Vector = (WorldFar - WorldNear).ToVector3().GetNormalized();
 		return;
 	}
 

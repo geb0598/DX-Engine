@@ -348,6 +348,7 @@ inline FVector operator*(const FVector& V, const FMatrix& M)
     );
 }
 
+/*
 inline FVector4 operator*(const FVector4& V, const FMatrix& M)
 {
     return FVector4(
@@ -357,3 +358,4 @@ inline FVector4 operator*(const FVector4& V, const FMatrix& M)
         M[0][3] * V.X + M[1][3] * V.Y + M[2][3] * V.Z + M[3][3] * V.W
     );
 }
+*/

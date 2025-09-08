@@ -1,4 +1,4 @@
-﻿#include "UIManager.h"
+﻿#include "UI/Public/UIManager.h"
 #include "TIme/Time.h"
 #include "Scene/Scene.h"
 /* private */
@@ -170,7 +170,7 @@ void UIManager::RenderPropertyWindow()
 
 	/* Set object translation */
 
-	static float ObjectTranslationX = 0.0f;
+	 float ObjectTranslationX = 0.0f;
 	static float ObjectTranslationY = 0.0f;
 	static float ObjectTranslationZ = 0.0f;
 
@@ -295,8 +295,8 @@ void UIManager::RenderUI()
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-	//RenderControlPanel();
-	//RenderPropertyWindow();
+	RenderControlPanel();
+	RenderPropertyWindow();
 	RenderConsole();
 
 	ImGui::Render();

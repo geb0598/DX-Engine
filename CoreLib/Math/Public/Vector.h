@@ -1,6 +1,8 @@
 #pragma once
 #include <cmath>
 
+struct FVector4;
+
 struct FVector
 {
 	float X;
@@ -15,6 +17,7 @@ struct FVector
 
 	FVector(float X = 0.0f, float Y = 0.0f, float Z = 0.0f) : X(X), Y(Y), Z(Z) {}
 	FVector(const FVector& Other) : X(Other.X), Y(Other.Y), Z(Other.Z) {}
+	//FVector(const FVector4& Vec4);
 
 	FVector operator=(const FVector& Other)
 	{
@@ -240,3 +243,5 @@ struct FVector4
 		return FVector(X, Y, Z);
 	}
 };
+
+//inline FVector::FVector(const FVector4& Vec4) : X(Vec4.X), Y(Vec4.Y), Z(Vec4.Z) {}

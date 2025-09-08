@@ -90,15 +90,6 @@
     <ClCompile Include="Component\Public\USceneComponent.h">
       <Filter>헤더 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Utilities\Private\JsonSceneSerializer.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="UI\Public\UIManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Time\Public\TimeManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Component\Private\InputComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -106,6 +97,18 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Scene\Private\SceneManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Axis\Private\UAxis.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Time\Private\TimeManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="UI\Private\UIManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Utilities\Private\JsonSceneSerializer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -197,9 +200,6 @@
     <ClInclude Include="Component\Component.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Utilities\Utilities.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Utilities\Public\JsonSceneSerializer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -231,6 +231,21 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Axis\Axis.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Component\Public\InputComponent.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\Public\Scene.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\Public\SceneManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\Scene.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Types\Types.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

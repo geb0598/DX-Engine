@@ -125,6 +125,7 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 
 		auto WorldDeltaPosition = DeltaPosition * InverseViewMatrix;
 
+		//SceneComponent->TranslateTransform({ 1.0f, 0.0f, 0.0f });
 		SceneComponent->TranslateTransform(WorldDeltaPosition);
 	}
 

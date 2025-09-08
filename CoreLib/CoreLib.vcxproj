@@ -44,7 +44,7 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
-    <ClCompile Include="Utilities\Public\JsonSceneSerializer.cpp" />
+    <ClCompile Include="Utilities\Private\JsonSceneSerializer.cpp" />
     <ClCompile Include="Time\Private\TimeManager.cpp" />
     <ClCompile Include="UI\Private\UIManager.cpp" />
     <ClCompile Include="Window\Private\Keyboard.cpp" />
@@ -92,11 +92,7 @@
     <ClInclude Include="UI\UI.h" />
     <ClInclude Include="Utilities\Public\JsonSceneSerializer.h" />
     <ClInclude Include="Utilities\Public\Utilities.h" />
-    <ClInclude Include="Time\Public\TimeManager.h" />
-    <ClInclude Include="Time\Time.h" />
     <ClInclude Include="Types\Types.h" />
-    <ClInclude Include="UI\Public\UIManager.h" />
-    <ClInclude Include="UI\UI.h" />
     <ClInclude Include="Window\Public\Keyboard.h" />
     <ClInclude Include="Window\Public\Mouse.h" />
     <ClInclude Include="Window\Public\Window.h" />

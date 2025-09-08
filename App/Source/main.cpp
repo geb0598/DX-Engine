@@ -1,163 +1,99 @@
-﻿#include "ImGui/imgui.h"
+﻿// ----------------------------- ImGui Headers -------------------------------- //
+#include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_internal.h"
 
-// ---------------------------------------------------------- //
+// --------------------------------- Modules ---------------------------------- //
 #include "Actor/Actor.h"
 #include "Component/Component.h"
+#include "RayCaster/Raycaster.h"
 #include "Renderer/Renderer.h"
-#include "Window/Window.h"
-#include "Utilities/Utilities.h"
-#include "UI/UI.h"
-#include "TIme/Time.h"
 #include "Scene/Scene.h"
+#include "TIme/Time.h"
+#include "UI/UI.h"
+#include "Utilities/Utilities.h"
+#include "Window/Window.h"
 
-// ---------------------------------------------------------- //
+// ---------------------------------------------------------------------------- //
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
+	// ------------------------------- Initial Setup ------------------------------- //
+	// #1. Window Creation
 	UWindow Window(1024, 1024, "Jungle Engine");
 
+	// #2 Renderer
 	URenderer& Renderer = URenderer::GetInstance();
+	// NOTE: Renderer should be initialized before use
 	Renderer.Create(Window.GethWnd());
 
-	UIManager &UI = UIManager::Instance();
-	UI.Initialize(Window.GethWnd(), Renderer.GetDevice(), Renderer.GetDeviceContext());
+	// #3. UI Manager
+	UIManager& EditorUI = UIManager::Instance();
+	// NOTE: UIManager should be initialized before use
+	EditorUI.Initialize(Window.GethWnd(), Renderer.GetDevice(), Renderer.GetDeviceContext());
+	// TODO: Should follow Naming Convention
 
-	URayCaster& RayCaster = URayCaster::Instance();
-
+	// #4. Time Manager
 	TimeManager& Timer = TimeManager::Instance();
 	Timer.Initialize();
+	// TODO: Should follow Naming Convention
 
-	// 씬 매니저 초기화 및 새로운 씬 생성
+	// #5. Ray Caster
+	URayCaster& RayCaster = URayCaster::Instance();
+
+	// #6. Scene Manager
 	USceneManager& SceneManager = USceneManager::GetInstance();
 	SceneManager.NewScene("Default Scene");
 
-	// 메인 카메라에 입력 컴포넌트 추가
 	AActor* MainCamera = SceneManager.GetMainCameraActor();
-	Window.GetKeyboard().EnableAutoRepeat();
 
-	bool bIsExit = false;
+	// ------------------------------- Axis Setup ------------------------------- //
 
-	// ----------------------------------------------------------------------------- //
-									/* TEST CODE */
-	// ----------------------------------------------------------------------------- //
-
-	// allocate shader and input layout first
-	TArray<D3D11_INPUT_ELEMENT_DESC> InputLayoutDesc(
-		std::begin(FVertex::InputLayoutDesc),
-		std::end(FVertex::InputLayoutDesc)
-	);
-
-	std::shared_ptr<UVertexShader> VertexShader = std::make_shared<UVertexShader>(
-		Renderer.GetDevice(),
-		"./Shader/VertexShader.hlsl",
-		"main",
-		InputLayoutDesc
-	);
-
-	std::shared_ptr<UPixelShader> PixelShader = std::make_shared<UPixelShader>(
-		Renderer.GetDevice(),
-		"./Shader/PixelShader.hlsl",
-		"main"
-	);
-
-	TArray<FVertex> XAxisVertexArray;
-	for (size_t i = 0; i < sizeof(XAxisVertices) / sizeof(FVertexSimple); ++i)
-	{
-		XAxisVertexArray.push_back(static_cast<FVertex>(XAxisVertices[i]));
-	}
-
-	TArray<FVertex> YAxisVertexArray;
-	for (size_t i = 0; i < sizeof(YAxisVertices) / sizeof(FVertexSimple); ++i)
-	{
-		YAxisVertexArray.push_back(static_cast<FVertex>(YAxisVertices[i]));
-	}
-
-	TArray<FVertex> ZAxisVertexArray;
-	for (size_t i = 0; i < sizeof(ZAxisVertices) / sizeof(FVertexSimple); ++i)
-	{
-		ZAxisVertexArray.push_back(static_cast<FVertex>(ZAxisVertices[i]));
-	}
-
-	UAxisDrawer XAxisDrawer(Renderer.GetDevice(), XAxisVertexArray);
-	UAxisDrawer YAxisDrawer(Renderer.GetDevice(), YAxisVertexArray);
-	UAxisDrawer ZAxisDrawer(Renderer.GetDevice(), ZAxisVertexArray);
-
-	AActor CameraActor;
-	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -1.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
-	CameraActor.AddComponent<UCameraComponent>(&CameraActor);
-
-	FMatrix V = CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
-	FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
-
-	AActor TriangleActor;
-
-	TArray<FVertex> VertexArray;
-	for (size_t i = 0; i < sizeof(triangle_vertices) / sizeof(FVertexSimple); ++i)
-	{
-		VertexArray.push_back(static_cast<FVertex>(triangle_vertices[i]));
-	}
-
-	std::shared_ptr<UMesh> TriangleMesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
-
-	TriangleActor.AddComponent<UPrimitiveComponent>(&TriangleActor, TriangleMesh, VertexShader, PixelShader);
-	TriangleActor.AddComponent<USceneComponent>(&TriangleActor, FVector(0.5f, -0.8f, 50.0f), FVector(20.0f, 30.0f, -50.0f), FVector(0.5f, 1.2f, 1.4f));
-
-	FMatrix MTriangle = TriangleActor.GetComponent<USceneComponent>()->GetModelingMatrix();
-
-	AActor SphereActor;
-
-	TArray<FVertex> SphereVertexArray;
-	for (size_t i = 0; i < sizeof(sphere_vertices) / sizeof(FVertexSimple); ++i)
-	{
-		SphereVertexArray.push_back(static_cast<FVertex>(sphere_vertices[i]));
-	}
-
-	std::shared_ptr<UMesh> SphereMesh = std::make_shared<UMesh>(Renderer.GetDevice(), SphereVertexArray);
-
-	SphereActor.AddComponent<UPrimitiveComponent>(&SphereActor, SphereMesh, VertexShader, PixelShader);
-	SphereActor.AddComponent<USceneComponent>(&SphereActor, FVector(3.0f, -2.0f, 50.0f), FVector(7.0f, -20.0f, -90.0f), FVector(2.0f, 1.0f, 0.5f));
-
-	FMatrix MSphere = SphereActor.GetComponent<USceneComponent>()->GetModelingMatrix();
-
-	AActor CubeActor;
-
-	TArray<FVertex> CubeVertexArray;
-	for (size_t i = 0; i < sizeof(cube_vertices) / sizeof(FVertexSimple); ++i)
-	{
-		CubeVertexArray.push_back(static_cast<FVertex>(cube_vertices[i]));
-	}
-
-	std::shared_ptr<UMesh> CubeMesh = std::make_shared<UMesh>(Renderer.GetDevice(), CubeVertexArray);
-
-	CubeActor.AddComponent<UPrimitiveComponent>(&CubeActor, CubeMesh, VertexShader, PixelShader);
-	CubeActor.AddComponent<USceneComponent>(&CubeActor, FVector(-3.0f, 2.0f, 50.0f), FVector(-7.0f, 20.0f, 9.0f), FVector(-2.0f, -1.0f, -0.5f));
-
-	FMatrix MCube = CubeActor.GetComponent<USceneComponent>()->GetModelingMatrix();
+	// TODO
 	
-	// ----------------------------------------------------------------------------- //
+	// ------------------------------- Misc Setup ------------------------------- //
 
+	// -------------------------------- Main Loop -------------------------------- //
+	bool bIsExit = false;
 	while (bIsExit == false)
 	{
-		// test raytracer
-		if (Window.Mouse.IsLeftPressed())
+		// ------------------------- Message Loop  ----------------------------- //
+		MSG Msg;
+		while (PeekMessage(&Msg, nullptr, 0, 0, PM_REMOVE))
 		{
-			int32 MouseX = Window.Mouse.GetXPosition();
-			int32 MouseY = Window.Mouse.GetYPosition();
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
 
-			// mouse position
-			/*UI.AddDebugLog("Mouse clicked!");
-			UI.AddDebugLog("X : " + std::to_string(MouseX) + " Y : " + std::to_string(MouseY));*/
+			if (Msg.message == WM_QUIT)
+			{
+				bIsExit = true;
+				break;
+			}
+		}
 
-			// ndc mouse position
-			/*float NDCX = (static_cast<float>(MouseX) - 500.0f) / 500.0f;
-			float NDCY = (static_cast<float>(MouseY) - 500.0f) / 500.0f;
+		// ------------------------- Scene Load ------------------------------- //
+		Timer.Update();
 
-			UI.AddDebugLog("NDCX : " + std::to_string(NDCX));
-			UI.AddDebugLog("NDCY : " + std::to_string(NDCY));*/
+		// NOTE: Load Scene from here
+		UScene* CurrentScene = SceneManager.GetCurrentScene();
 
+		// NOTE: Update Main Camera
+		MainCamera = SceneManager.GetMainCameraActor();
+
+		auto CameraComponent = MainCamera->GetComponent<UCameraComponent>();
+		auto CameraInputComponent = MainCamera->GetComponent<UInputComponent>();
+
+		// TODO: Mouse and Keyboard are updated in every loop
+		CameraInputComponent->SetMouse(&Window.GetMouse());
+		CameraInputComponent->SetKeyboard(&Window.GetKeyboard());
+
+		// ------------------------- Input Handling ---------------------------- //
+		if (Window.GetMouse().IsLeftPressed())
+		{
+			auto [MouseX, MouseY] = Window.GetMouse().GetPosition();
+
+			/*
 			RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, MTriangle, V, P);
 			if (RayCaster.RayCastToTriangle() != DONT_INTERSECT)
 				UI.AddDebugLog("Ray hit triangle");
@@ -169,117 +105,99 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, MCube, V, P);
 			if (RayCaster.RayCastToCube() != DONT_INTERSECT)
 				UI.AddDebugLog("Ray hit Cube");
+			*/
 		}
 
-		MSG msg;
-		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+		if (MainCamera && CameraInputComponent)
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
-
-			if (msg.message == WM_QUIT)
-			{
-				bIsExit = true;
-				break;
-			}
+			 CameraInputComponent->Update(Timer.GetDeltaTimeInSecond());
 		}
 
-		Timer.Update();
+		// ------------------------- Rendering Loop ---------------------------- //
+		assert(CurrentScene && MainCamera);
 
-		// 메인 카메라 입력 업데이트
-		
 		Renderer.Prepare();
 
-		// 현재 씬에서 렌더링
-		UScene* CurrentScene = SceneManager.GetCurrentScene();
-		MainCamera = SceneManager.GetMainCameraActor();
-		MainCamera->GetComponent<UInputComponent>()->SetMouse(&Window.GetMouse());
-		MainCamera->GetComponent<UInputComponent>()->SetKeyboard(&Window.GetKeyboard());
-		if (MainCamera && MainCamera->GetComponent<UInputComponent>())
+		FMatrix ModelMatrix;
+		FMatrix ViewMatrix = CameraComponent->GetViewMatrix();
+		FMatrix ProjectionMatrix;
+
+		if (CameraComponent->IsOrthogonal())
 		{
-			MainCamera->GetComponent<UInputComponent>()->Update(Timer.GetDeltaTimeInSecond());
+			// TODO: These values are arbitrarily hard-coded values
+			constexpr float LEFT = -20.0f;
+			constexpr float RIGHT = 20.0f;
+			constexpr float BOTTOM = -20.0f;
+			constexpr float TOP = 20.0f;
+			ProjectionMatrix = CameraComponent->GetOrthographicMatrix(LEFT, RIGHT, BOTTOM, TOP);
+		}
+		else
+		{
+			// TODO: Change name of getter to PascalCase
+			ProjectionMatrix = CameraComponent->GetProjectionMatrix(Window.getAspectRatio());
 		}
 
-		if (CurrentScene && MainCamera)
+		// #1. Rendering Scene Actors
+		const TArray<AActor*> SceneActors = CurrentScene->GetActors();
+		for (auto Actor : SceneActors)
 		{
-			auto CameraComponent = MainCamera->GetComponent<UCameraComponent>();
-			FMatrix M;
-			FMatrix V = CameraComponent->GetViewMatrix();
-			FMatrix P;
-			if (CameraComponent->IsOrthogonal())
+			if (Actor == nullptr)
 			{
-				P = CameraComponent->GetOrthographicMatrix(-30.0f, 30.0f, -30.0f, 30.0f);
-			}
-			else
-			{
-				P = CameraComponent->GetProjectionMatrix(Window.getAspectRatio());
+				continue;
 			}
 
-			// 현재 씬의 모든 액터들을 렌더링
-			const TArray<AActor*>& SceneActors = CurrentScene->GetActors();
-			for (AActor* Actor : SceneActors)
+			auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
+			if (PrimitiveComponent == nullptr)
 			{
-				if (Actor == nullptr) 
-					continue;
-					
-				auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
-				if (PrimitiveComponent)
+				continue;
+			}
+
+			// NOTE: Actor with no scene component is ignored quietely
+			auto SceneComponent = Actor->GetComponent<USceneComponent>();
+			if (SceneComponent == nullptr)
+			{
+				continue;
+			}
+			ModelMatrix = SceneComponent->GetModelingMatrix();
+
+			// --------------------- Object Picking------------------------- //
+			if (Window.GetMouse().IsLeftPressed())
+			{
+				auto [MouseX, MouseY] = Window.GetMouse().GetPosition();
+
+				RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, ModelMatrix, ViewMatrix, ProjectionMatrix);
+				if (RayCaster.RayCastToCube() != DONT_INTERSECT)
 				{
-					M = Actor->GetComponent<USceneComponent>()->GetModelingMatrix();
-					FMatrix MVP = M * V * P;
-
-					PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
-						Renderer.GetDeviceContext(), 
-						"constants", 
-						reinterpret_cast<void*>(MVP.M));
-					PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
-					PrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
-					PrimitiveComponent->Render(Renderer.GetDeviceContext());
+					EditorUI.AddDebugLog("Clicked!");
+					EditorUI.AddDebugLog("Ray hit");
 				}
 			}
+			// ------------------------------------------------------------- //
+
+			FMatrix MVP = ModelMatrix * ViewMatrix * ProjectionMatrix;
+
+			auto VertexShader = PrimitiveComponent->GetVertexShader();
+			auto PixelShader = PrimitiveComponent->GetPixelShader();
+
+			VertexShader->UpdateConstantBuffer(
+				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(MVP.M)
+			);
+
+			// NOTE: Shader Binding
+			VertexShader->Bind(Renderer.GetDeviceContext(), "constants");
+			PixelShader->Bind(Renderer.GetDeviceContext());
+
+			// NOTE: Render Call
+			PrimitiveComponent->Render(Renderer.GetDeviceContext());
 		}
 
+		// #2. Rendering UI
 		EditorUI.RenderUI();
-
-		MVP = MSphere * V * P;
-
-		auto SpherePrimitiveComponent = SphereActor.GetComponent<UPrimitiveComponent>();
-		SpherePrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
-			Renderer.GetDeviceContext(),
-			"constants",
-			reinterpret_cast<void*>(MVP.M)
-		);
-		SpherePrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
-		SpherePrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
-		SpherePrimitiveComponent->Render(Renderer.GetDeviceContext());
-
-		MVP = MCube * V * P;
-
-		auto CubePrimitiveComponent = CubeActor.GetComponent<UPrimitiveComponent>();
-		CubePrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
-			Renderer.GetDeviceContext(),
-			"constants",
-			reinterpret_cast<void*>(MVP.M)
-		);
-		CubePrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
-		CubePrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
-		CubePrimitiveComponent->Render(Renderer.GetDeviceContext());
-
-		VertexShader->UpdateConstantBuffer(
-			Renderer.GetDeviceContext(),
-			"constants",
-			reinterpret_cast<void*>((V * P).M)
-		);
-
-		XAxisDrawer.Render(Renderer.GetDeviceContext());
-		YAxisDrawer.Render(Renderer.GetDeviceContext());
-		ZAxisDrawer.Render(Renderer.GetDeviceContext());
-
-		UI.RenderUI();
 
 		Renderer.SwapBuffer();
 	}
 
+	// NOTE: Release UI Manager
 	EditorUI.Release();
 
 	return 0;

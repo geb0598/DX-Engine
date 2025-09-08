@@ -80,7 +80,7 @@ FMatrix UCameraComponent::GetViewMatrix()
 	auto Eye = SceneComponent->GetLocation();
 	//auto At = Eye + (FVector(0.0f, 0.0f, 1.0f) * RollMatrix * PitchMatrix * YawMatrix);
 	auto At = Eye + (FVector(0.0f, 0.0f, 1.0f) * RollMatrix * PitchMatrix * YawMatrix);
-	auto Up = FVector(0.0f, 1.0f, 0.0f) * RollMatrix * PitchMatrix * YawMatrix;
+	auto Up = (FVector(0.0f, 1.0f, 0.0f) * RollMatrix * PitchMatrix * YawMatrix);
 
 	return FMatrix::CreateLookAt(Eye, At, Up);
 }
