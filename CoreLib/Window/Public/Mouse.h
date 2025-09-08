@@ -3,82 +3,80 @@
 #include <optional>
 #include <utility>
 
-#include "Types/Types.h"
 #include "Containers/Containers.h"
+#include "Types/Types.h"
 
 
-class UMouse
+class UMouse 
 {
+public:
+struct FMouseState
+{
+	bool bIsInsideWindow = false;
+	bool bIsLeftPressed = false;
+	bool bIsRightPressed = false;
+	int32 X = 0;
+	int32 Y = 0;
+	int32 WheelDeltaCarry = 0;
+};
+
+class UEvent
+{
+public:
+	enum class EEventType
+	{
+		L_PRESS,
+		L_RELEASE,
+		R_PRESS,
+		R_RELEASE,
+		WHEEL_UP,
+		WHEEL_DOWN,
+		MOVE,
+		ENTER,
+		LEAVE
+	};
+
+	UEvent(EEventType EventType, FMouseState MouseState) : EventType(EventType), MouseState(MouseState) {}
+
+	EEventType GetEventType() const
+	{
+		return EventType;
+	}
+
+	std::pair<int, int> GetPosition() const
+	{
+		return { MouseState.X, MouseState.Y };
+	}
+
+	int32 GetXPosition() const
+	{
+		return MouseState.X;
+	}
+
+	int32 GetYPosition() const
+	{
+		return MouseState.Y;
+	}
+
+	bool IsLeftPressed() const
+	{
+		return MouseState.bIsLeftPressed;
+	}
+
+	bool IsRightPressed() const
+	{
+		return MouseState.bIsRightPressed;
+	}
+
+private:
+	EEventType EventType;
+	FMouseState MouseState;
+};
+
 public:
 	friend class UWindow;
 
-	struct FMouseState
-	{
-		bool bIsInsideWindow = false;
-		bool bIsLeftPressed = false;
-		bool bIsRightPressed = false;
-		int X = 0;
-		int Y = 0;
-		int WheelDeltaCarry = 0;
-	};
-
-	class UEvent
-	{
-	public:
-		enum class EEventType
-		{
-			L_PRESS,
-			L_RELEASE,
-			R_PRESS,
-			R_RELEASE,
-			WHEEL_UP,
-			WHEEL_DOWN,
-			MOVE,
-			ENTER,
-			LEAVE
-		};
-
-		UEvent(EEventType EventType, FMouseState MouseState) : EventType(EventType), MouseState(MouseState) {}
-
-		EEventType GetEventType() const
-		{
-			return EventType;
-		}
-
-		std::pair<int, int> GetPosition() const
-		{
-			return { MouseState.X, MouseState.Y };
-		}
-
-		int GetXPosition() const
-		{
-			return MouseState.X;
-		}
-
-		int GetYPosition() const
-		{
-			return MouseState.Y;
-		}
-
-		bool IsLeftPressed() const
-		{
-			return MouseState.bIsLeftPressed;
-		}
-
-		bool IsRightPressed() const
-		{
-			return MouseState.bIsRightPressed;
-		}
-
-	private:
-		EEventType EventType;
-		FMouseState MouseState;
-	};
-
-	//----------------------------------------------------------------------------------------//
-	friend class UWindow;
-
-	~UMouse() = default;
+	virtual ~UMouse() = default;
 
 	UMouse() = default;
 
@@ -91,8 +89,8 @@ public:
 	void Flush();
 
 	std::pair<int, int> GetPosition() const;
-	int GetXPosition() const;
-	int GetYPosition() const;
+	int32 GetXPosition() const;
+	int32 GetYPosition() const;
 
 	bool IsInsideWindow() const;
 	bool IsLeftPressed() const;
@@ -118,4 +116,4 @@ private:
 
 	FMouseState MouseState;
 	TQueue<UEvent> MouseEventBuffer;
-	};
+};

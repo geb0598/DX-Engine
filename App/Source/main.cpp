@@ -10,7 +10,7 @@
 #include "Window/Window.h"
 
 // ---------------------------------------------------------- //
-
+#include <chrono>
 #include "Sphere.h"
 
 FVertexSimple triangle_vertices[] =
@@ -144,22 +144,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Actor.AddComponent<UPrimitiveComponent>(&Actor, Mesh, VertexShader, PixelShader);
 	Actor.AddComponent<USceneComponent>(&Actor, FVector(0.0f, 0.0f, 20.0f), FVector(0.0f, 60.0f, 0.0f), FVector(1.0f, 1.0f, 1.0f));
 
+	// -------------------------- Add Input Component -------------------------------- //
 	AActor CameraActor;
+	CameraActor.AddComponent<UInputComponent>(&CameraActor, Window.GetKeyboard(), Window.GetMouse());
 	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -1.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
 	CameraActor.AddComponent<UCameraComponent>(&CameraActor);
 
-	FMatrix M = Actor.GetComponent<USceneComponent>()->GetModelingMatrix();
-	FMatrix V = CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
-	FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
-
-	FMatrix MVP = M * V * P;
-	
+	Window.GetKeyboard().EnableAutoRepeat();
 	// ----------------------------------------------------------------------------- //
 
+	// ---------------------------- Temporary Timer -------------------------------- //
+	auto LastTime = std::chrono::high_resolution_clock::now();
+	// ----------------------------------------------------------------------------- //
 	while (bIsExit == false)
 	{
 		MSG msg;
-
 		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -171,8 +170,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 		}
-		
+
+		// ------------------------- Temporary Timer ---------------------------------- //
+		auto CurrentTime = std::chrono::high_resolution_clock::now();
+		auto DeltaTime = LastTime - CurrentTime;
+		LastTime = CurrentTime;
+		CameraActor.GetComponent<UInputComponent>()->Update(
+			std::chrono::duration_cast<std::chrono::duration<double>>(DeltaTime).count()
+		);
+		/*
+		CameraActor.GetComponent<USceneComponent>()->RotateTranform({ 0.0f,
+			float(180 * std::chrono::duration_cast<std::chrono::duration<double>>(DeltaTime).count()),
+			0.0f });
+			*/
+		// ---------------------------------------------------------------------------- //
+
 		Renderer.Prepare();
+
+		// ---------------------------------------------------------------------------- //
+		FMatrix M = Actor.GetComponent<USceneComponent>()->GetModelingMatrix();
+		FMatrix V = CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
+		FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
+
+		FMatrix MVP = M * V * P;
+		// ---------------------------------------------------------------------------- //
 
 		ImGui_ImplDX11_NewFrame();
 		ImGui_ImplWin32_NewFrame();

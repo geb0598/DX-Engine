@@ -47,18 +47,18 @@ private:
 	template<typename TComponent>
 	static ComponentKey GetComponentKey();
 
-	TMap<ComponentKey, std::unique_ptr<UActorComponent>> ComponentMap;
+	TMap<ComponentKey, std::shared_ptr<UActorComponent>> ComponentMap;
 };
 
 template<typename TComponent, typename ...TArgs>
 inline std::enable_if_t<std::is_base_of_v<UActorComponent, TComponent>> 
-	AActor::AddComponent(TArgs && ...Args)
+	AActor::AddComponent(TArgs&&... Args)
 {
 	assert(!HasComponent<TComponent>());
 
 	ComponentMap.emplace(
 		GetComponentKey<TComponent>(), 
-		std::make_unique<TComponent>(std::forward<TArgs>(Args)...)
+		std::make_shared<TComponent>(std::forward<TArgs>(Args)...)
 	);
 }
 

@@ -35,7 +35,7 @@ private:
 public:
 	~UWindow();
 
-	UWindow(int Width, int Height, const FString& WindowName);
+	UWindow(int Width, int Height, const FString& WindowTitle);
 
 	UWindow(const UWindow&) = delete;
 	UWindow(UWindow&&) = delete;
@@ -45,8 +45,12 @@ public:
 
 	HWND GethWnd() const;
 
-	UKeyboard Keyboard;
-	UMouse Mouse;
+	UKeyboard& GetKeyboard();
+	UMouse& GetMouse();
+	const UKeyboard& GetKeyboard() const;
+	const UMouse& GetMouse() const;
+
+	void SetWindowTitle(const FString& WindowTitle);
 
 	float getAspectRatio()
 	{
@@ -62,4 +66,7 @@ private:
 
 	int Width;
 	int Height;
+
+	UKeyboard Keyboard;
+	UMouse Mouse;
 };

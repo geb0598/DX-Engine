@@ -1,11 +1,12 @@
 #include <optional>
 #include <utility>
+#include <memory>
 
 #include <Windows.h>
 
-#include "Types/Types.h"
 #include "Containers/Containers.h"
 #include "Window/Public/Mouse.h"
+#include "Types/Types.h"
 
 void UMouse::Flush()
 {
@@ -62,60 +63,70 @@ void UMouse::OnMouseMove(int X, int Y)
 {
 	MouseState.X = X;
 	MouseState.Y = Y;
-	MouseEventBuffer.push(UEvent(UEvent::EEventType::MOVE, MouseState));
+	UEvent Event{ UEvent::EEventType::MOVE, MouseState };
+	MouseEventBuffer.push(Event);
+	TrimBuffer();
 }
 
 void UMouse::OnMouseLeave()
 {
 	MouseState.bIsInsideWindow = false;
-	MouseEventBuffer.push(UEvent(UEvent::EEventType::LEAVE, MouseState));
+	UEvent Event{ UEvent::EEventType::LEAVE, MouseState };
+	MouseEventBuffer.push(Event);
 	TrimBuffer();
 }
 
 void UMouse::OnMouseEnter()
 {
 	MouseState.bIsInsideWindow = true;
-	MouseEventBuffer.push(UEvent(UEvent::EEventType::ENTER, MouseState));
+	UEvent Event{ UEvent::EEventType::ENTER, MouseState };
+	MouseEventBuffer.push(Event);
 	TrimBuffer();
 }
 
 void UMouse::OnLeftPressed(int X, int Y)
 {
 	MouseState.bIsLeftPressed = true;
-	MouseEventBuffer.push(UEvent(UEvent::EEventType::L_PRESS, MouseState));
+	UEvent Event{ UEvent::EEventType::L_PRESS, MouseState };
+	MouseEventBuffer.push(Event);
 	TrimBuffer();
 }
 
 void UMouse::OnLeftReleased(int X, int Y)
 {
 	MouseState.bIsLeftPressed = false;
-	MouseEventBuffer.push(UEvent(UEvent::EEventType::L_PRESS, MouseState));
+	UEvent Event{ UEvent::EEventType::L_PRESS, MouseState };
+	MouseEventBuffer.push(Event);
 	TrimBuffer();
 }
 
 void UMouse::OnRightPressed(int X, int Y)
 {
 	MouseState.bIsRightPressed = true;
-	MouseEventBuffer.push(UEvent(UEvent::EEventType::R_PRESS, MouseState));
+	UEvent Event{ UEvent::EEventType::R_PRESS, MouseState };
+	MouseEventBuffer.push(Event);
 	TrimBuffer();
 }
 
 void UMouse::OnRightReleased(int X, int Y)
 {
 	MouseState.bIsRightPressed = false;
-	MouseEventBuffer.push(UEvent(UEvent::EEventType::R_PRESS, MouseState));
+	UEvent Event{ UEvent::EEventType::R_PRESS, MouseState };
+	MouseEventBuffer.push(Event);
 	TrimBuffer();
 }
 
 void UMouse::OnWheelUp(int X, int Y)
 {
-	MouseEventBuffer.push(UEvent(UEvent::EEventType::WHEEL_UP, MouseState));
+	UEvent Event{ UEvent::EEventType::WHEEL_UP, MouseState };
+	MouseEventBuffer.push(Event);
 	TrimBuffer();
 }
 
 void UMouse::OnWheelDown(int X, int Y)
 {
-	MouseEventBuffer.push(UEvent(UEvent::EEventType::WHEEL_DOWN, MouseState));
+	UEvent Event{ UEvent::EEventType::WHEEL_DOWN, MouseState };
+	MouseEventBuffer.push(Event);
 	TrimBuffer();
 }
 

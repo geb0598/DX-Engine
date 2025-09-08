@@ -20,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Component\Private\ActorComponent.cpp" />
+    <ClCompile Include="Component\Private\InputComponent.cpp" />
     <ClCompile Include="Component\Private\PrimitiveComponent.cpp" />
     <ClCompile Include="Component\Private\UCameraComponent.cpp" />
     <ClCompile Include="Component\Private\USceneComponent.cpp" />
@@ -50,6 +51,7 @@
     <ClInclude Include="Actor\Public\Actor.h" />
     <ClInclude Include="Component\Component.h" />
     <ClInclude Include="Component\Public\ActorComponent.h" />
+    <ClInclude Include="Component\Public\InputComponent.h" />
     <ClInclude Include="Component\Public\PrimitiveComponent.h" />
     <ClInclude Include="Component\Public\UCameraComponent.h" />
     <ClInclude Include="Containers\Containers.h" />
@@ -72,8 +74,7 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
-    <ClInclude Include="Utilities\Public\JsonSceneSerializer.h" />
-    <ClInclude Include="Utilities\Public\Utilities.h" />
+    <ClInclude Include="Window\Public\EventPublisher.h" />
     <ClInclude Include="Window\Public\Keyboard.h" />
     <ClInclude Include="Window\Public\Mouse.h" />
     <ClInclude Include="Window\Public\Window.h" />
