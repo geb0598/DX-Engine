@@ -14,6 +14,15 @@ struct FVector
 	static const FVector Right;   // (0, 1, 0)
 
 	FVector(float X = 0.0f, float Y = 0.0f, float Z = 0.0f) : X(X), Y(Y), Z(Z) {}
+	FVector(const FVector& Other) : X(Other.X), Y(Other.Y), Z(Other.Z) {}
+
+	FVector operator=(const FVector& Other)
+	{
+		X = Other.X;
+		Y = Other.Y;
+		Z = Other.Z;
+		return *this;
+	}
 
 	FVector operator*(float Scalar) const 
 	{ 
