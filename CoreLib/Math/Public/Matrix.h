@@ -177,7 +177,7 @@ __declspec(align(16)) struct FMatrix
         Result.M[1][1] = Cos;
         return Result;
     }
-	// 오일러 각도로부터 회전 행렬 생성
+    // NOTE: Yaw -> Pitch -> Roll
     static FMatrix CreateRotationFromEuler(const FVector& EulerDegrees)
     {
         float X = DEG_TO_RAD(EulerDegrees.X);
@@ -188,8 +188,11 @@ __declspec(align(16)) struct FMatrix
         FMatrix RotY = CreateRotationY(Y);
         FMatrix RotZ = CreateRotationZ(Z);
 
+        // TODO: Is this correct? -> Junyong Lee
         // Z-Up, Left-Hand = Yaw(Z) → Pitch(Y) → Roll(X)
-        return RotZ * RotY * RotX;
+        //return RotZ * RotY * RotX;
+
+        return RotY * RotX * RotZ;
     }
 	// 쿼터니언으로부터 회전 행렬 생성
     static FMatrix CreateRotationFromQuaternion(const FVector4& Quat)
@@ -264,7 +267,8 @@ __declspec(align(16)) struct FMatrix
         Result.M[2][0] = N.X;   Result.M[2][1] = N.Y;   Result.M[2][2] = N.Z;   Result.M[2][3] = -N.Dot(Eye);
         Result.M[3][0] = 0.0f;  Result.M[3][1] = 0.0f;  Result.M[3][2] = 0.0f;  Result.M[3][3] = 1.0f;
 
-        return Result;
+        // TODO: Must Check whether this transpose is required or not
+        return Result.Transpose();
     }
     static FMatrix CreateViewMatrix(const FVector& CamLocation, const FVector& CamRotation)
     {
@@ -277,12 +281,29 @@ __declspec(align(16)) struct FMatrix
         float XScale = YScale / AspectRatio;
         float ZRange = Far - Near;
 
-		return FMatrix(
-            XScale,  0.0f,   0.0f,                0.0f,
-			0.0f,    YScale, 0.0f,                0.0f,
-            0.0f, 0.0f, Far / ZRange, 1.0f,
-            0.0f, 0.0f, -Near * Far / ZRange, 0.0f
-        );
+        FMatrix Result;
+        Result.M[0][0] = 1.0f / (AspectRatio * TanHalfFOV);
+        Result.M[0][1] = 0.0f;
+        Result.M[0][2] = 0.0f;
+        Result.M[0][3] = 0.0f;
+
+        Result.M[1][0] = 0.0f;
+        Result.M[1][1] = 1.0f / TanHalfFOV;
+        Result.M[1][2] = 0.0f;
+        Result.M[1][3] = 0.0f;
+
+        Result.M[2][0] = 0.0f;
+        Result.M[2][1] = 0.0f;
+        Result.M[2][2] = Far / (Far - Near);
+        Result.M[2][3] = -(Far * Near) / (Far - Near);
+
+        Result.M[3][0] = 0.0f;
+        Result.M[3][1] = 0.0f;
+        Result.M[3][2] = 1.0f;
+        Result.M[3][3] = 0.0f;
+
+        // TODO: Must Check whether this transpose is required or not
+        return Result.Transpose();
     }
     static FMatrix CreateOrthographic(float Left, float Right, float Bottom, float Top, float Near, float Far)
     {
@@ -290,11 +311,41 @@ __declspec(align(16)) struct FMatrix
         float Height = Top - Bottom;
         float Depth = Far - Near;
 
-        return FMatrix(
-            2.0f / Width,  0.0f,           0.0f,          -(Right + Left) / Width,
-            0.0f,          2.0f / Height,  0.0f,          -(Top + Bottom) / Height,
-            0.0f,          0.0f,           1.0f / Depth,  -Near / Depth,
-            0.0f,          0.0f,           0.0f,          1.0f
-        );
+        Result.M[1][0] = 0.0f;
+        Result.M[1][1] = 2.0f / (Top - Bottom);
+        Result.M[1][2] = 0.0f;
+        Result.M[1][3] = -(Top + Bottom) / (Top - Bottom);
+
+        Result.M[2][0] = 0.0f;
+        Result.M[2][1] = 0.0f;
+		Result.M[2][2] = 1.0f / (Far - Near); // z range [0, 1]
+        Result.M[2][3] = -Near / (Far - Near);
+
+        Result.M[3][0] = 0.0f;
+        Result.M[3][1] = 0.0f;
+        Result.M[3][2] = 0.0f;
+        Result.M[3][3] = 1.0f;
+
+        // TODO: Must Check whether this transpose is required or not
+        return Result.Transpose();
     }
 };
+
+inline FVector operator*(const FVector& V, const FMatrix& M)
+{
+    return FVector(
+        M[0][0] * V.X + M[1][0] * V.Y + M[2][0] * V.Z,
+        M[0][1] * V.X + M[1][1] * V.Y + M[2][1] * V.Z,
+        M[0][2] * V.X + M[1][2] * V.Y + M[2][2] * V.Z
+    );
+}
+
+inline FVector4 operator*(const FVector4& V, const FMatrix& M)
+{
+    return FVector4(
+        M[0][0] * V.X + M[1][0] * V.Y + M[2][0] * V.Z + M[3][0] * V.W,
+        M[0][1] * V.X + M[1][1] * V.Y + M[2][1] * V.Z + M[3][1] * V.W,
+        M[0][2] * V.X + M[1][2] * V.Y + M[2][2] * V.Z + M[3][2] * V.W,
+        M[0][3] * V.X + M[1][3] * V.Y + M[2][3] * V.Z + M[3][3] * V.W
+    );
+}
