@@ -45,7 +45,7 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="Time\Public\TimeManager.cpp" />
     <ClCompile Include="UI\Public\UIManager.cpp" />
-    <ClCompile Include="Utilities\Private\JsonSceneSerializer.cpp" />
+    <ClCompile Include="Utilities\Private\Logger.cpp" />
     <ClCompile Include="Window\Private\Keyboard.cpp" />
     <ClCompile Include="Window\Private\Mouse.cpp" />
     <ClCompile Include="Window\Private\Window.cpp" />
@@ -86,7 +86,7 @@
     <ClInclude Include="Time\Time.h" />
     <ClInclude Include="UI\Public\UIManager.h" />
     <ClInclude Include="UI\UI.h" />
-    <ClInclude Include="Utilities\Public\JsonSceneSerializer.h" />
+    <ClInclude Include="Utilities\Public\Logger.h" />
     <ClInclude Include="Utilities\Utilities.h" />
     <ClInclude Include="Window\Public\Keyboard.h" />
     <ClInclude Include="Window\Public\Mouse.h" />
@@ -180,7 +180,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -195,6 +195,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

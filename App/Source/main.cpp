@@ -19,6 +19,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 {
 	UWindow Window(1024, 1024, "Jungle Engine");
 
+	CLogger::Instance().AddOutput(std::make_unique<CFileOutput>("JungleEngine.log"));
+	UE_LOG(Info, "Hello World %d", 2025);
+
 	URenderer& Renderer = URenderer::GetInstance();
 	Renderer.Create(Window.GethWnd());
 

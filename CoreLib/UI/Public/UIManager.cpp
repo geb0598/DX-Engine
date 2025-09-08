@@ -1,6 +1,7 @@
 ﻿#include "UIManager.h"
 #include "TIme/Time.h"
 #include "Scene/Scene.h"
+#include "Utilities/Public/Logger.h"
 /* private */
 
 UIManager::UIManager() {}
@@ -219,34 +220,111 @@ void UIManager::RenderConsole()
 
 	if (ImGui::SmallButton("Add Debug Text"))
 	{
+		UE_LOG(Info, "Test info message %d", rand() % 1000);
 	}
 	ImGui::SameLine();
 	if (ImGui::SmallButton("Add Debug Error"))
 	{
+		UE_LOG(Error, "Test error message %d", rand() % 1000);
 	}
 	ImGui::SameLine();
 	if (ImGui::SmallButton("Clear"))
 	{
+		std::lock_guard<std::mutex> lock(CConsoleOutput::GetConsoleMutex());
+		CConsoleOutput::GetConsoleMessages().clear();
 	}
 	ImGui::SameLine();
 	bool CopyToClipBoard = ImGui::SmallButton("Copy");
 
 	ImGui::Separator();
 
-	// Options, Filter
-	ImGui::SetNextItemShortcut(ImGuiMod_Ctrl | ImGuiKey_O, ImGuiInputFlags_Tooltip);
-	if (ImGui::Button("Options"))
-		ImGui::OpenPopup("Options");
+	// 로그 레벨 필터 체크박스들
+	static bool showDebug = true;
+	static bool showInfo = true;
+	static bool showWarning = true;
+	static bool showError = true;
+	static bool showFatal = true;
+
+	ImGui::Text("Log Levels:");
 	ImGui::SameLine();
+	ImGui::Checkbox("DEBUG", &showDebug);
+	ImGui::SameLine();
+	ImGui::Checkbox("INFO", &showInfo);
+	ImGui::SameLine();
+	ImGui::Checkbox("WARNING", &showWarning);
+	ImGui::SameLine();
+	ImGui::Checkbox("ERROR", &showError);
+	ImGui::SameLine();
+	ImGui::Checkbox("FATAL", &showFatal);
 
-	static char OptionInput[200] = {};
+	// 검색창
+	static char searchText[256] = {};
+	ImGui::SetNextItemWidth(300);
+	ImGui::InputTextWithHint("##Search", "Search messages...", searchText, sizeof(searchText));
+	ImGui::SameLine();
+	if (ImGui::Button("Clear Search")) {
+		searchText[0] = '\0';
+	}
 
-	ImGui::SetNextItemWidth(200);
-	ImGui::InputText("Filter (\"incl,-excl\") (\"error\")", OptionInput, sizeof(OptionInput));
 	ImGui::Separator();
 
 	if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, 100), ImGuiChildFlags_NavFlattened, ImGuiWindowFlags_HorizontalScrollbar))
 	{
+		// ConsoleOutput에서 메시지를 가져와서 표시
+		{
+			std::lock_guard<std::mutex> lock(CConsoleOutput::GetConsoleMutex());
+			const auto& messages = CConsoleOutput::GetConsoleMessages();
+			
+			FString searchString = searchText;
+			std::transform(searchString.begin(), searchString.end(), searchString.begin(), ::tolower);
+			
+			for (const auto& consoleMsg : messages) {
+				// 로그 레벨 필터링
+				bool shouldShow = false;
+				switch (consoleMsg.level) {
+					case ELogLevel::DebugLevel:   shouldShow = showDebug; break;
+					case ELogLevel::InfoLevel:    shouldShow = showInfo; break;
+					case ELogLevel::WarningLevel: shouldShow = showWarning; break;
+					case ELogLevel::ErrorLevel:   shouldShow = showError; break;
+					case ELogLevel::FatalLevel:   shouldShow = showFatal; break;
+				}
+				
+				if (!shouldShow) continue;
+				
+				// 검색 필터링
+				if (searchString.length() > 0) {
+					FString messageLower = consoleMsg.message;
+					std::transform(messageLower.begin(), messageLower.end(), messageLower.begin(), ::tolower);
+					if (messageLower.find(searchString) == FString::npos) {
+						continue;
+					}
+				}
+				
+				// 줄바꿈 문자 제거하여 깔끔하게 표시
+				FString displayMessage = consoleMsg.message;
+				if (!displayMessage.empty() && displayMessage.back() == '\n') {
+					displayMessage.pop_back();
+				}
+				
+				// 로그 레벨에 따른 색상 적용
+				ImVec4 color;
+				switch (consoleMsg.level) {
+					case ELogLevel::DebugLevel:   color = ImVec4(0.7f, 0.7f, 0.7f, 1.0f); break; // 회색
+					case ELogLevel::InfoLevel:    color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); break; // 흰색
+					case ELogLevel::WarningLevel: color = ImVec4(1.0f, 1.0f, 0.0f, 1.0f); break; // 노란색
+					case ELogLevel::ErrorLevel:   color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f); break; // 빨간색
+					case ELogLevel::FatalLevel:   color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); break; // 진한 빨간색
+				}
+				
+				ImGui::PushStyleColor(ImGuiCol_Text, color);
+				ImGui::TextUnformatted(displayMessage.c_str());
+				ImGui::PopStyleColor();
+			}
+			
+			// 자동 스크롤 - 새 메시지가 있을 때 맨 아래로
+			if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
+				ImGui::SetScrollHereY(1.0f);
+		}
 	}
 	ImGui::EndChild();
 

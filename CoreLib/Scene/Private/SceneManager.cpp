@@ -1,4 +1,4 @@
-#include "../Public/SceneManager.h"
+﻿#include "../Public/SceneManager.h"
 #include "Renderer/Renderer.h"
 #include "Json/json.hpp"
 #include <fstream>
