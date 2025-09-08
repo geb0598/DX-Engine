@@ -48,8 +48,8 @@ private:
 	UMouse& Mouse;
 
 	float MoveSensitivity = 5.0f;
-	float HorizontalTurnSensitivity = 1.00f;;
-	float VerticalTurnSensitivity = 1.00f;
+	float HorizontalTurnSensitivity = 5.0f;;
+	float VerticalTurnSensitivity = 5.0f;
 
 	bool bIsMouseRightButtonPressed = false;
 	int32 CapturedMousePositionX = 0;

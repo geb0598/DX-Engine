@@ -177,6 +177,7 @@ __declspec(align(16)) struct FMatrix
         Result.M[1][1] = Cos;
         return Result;
     }
+    // NOTE: Yaw -> Pitch -> Roll
     static FMatrix CreateRotationFromEuler(const FVector& EulerDegrees)
     {
         float X = DEG_TO_RAD(EulerDegrees.X);
@@ -187,8 +188,11 @@ __declspec(align(16)) struct FMatrix
         FMatrix RotY = CreateRotationY(Y);
         FMatrix RotZ = CreateRotationZ(Z);
 
+        // TODO: Is this correct? -> Junyong Lee
         // Z-Up, Left-Hand = Yaw(Z) → Pitch(Y) → Roll(X)
-        return RotZ * RotY * RotX;
+        //return RotZ * RotY * RotX;
+
+        return RotY * RotX * RotZ;
     }
     static FMatrix CreateRotationFromQuaternion(const FVector4& Quat)
     {
@@ -262,7 +266,8 @@ __declspec(align(16)) struct FMatrix
         Result.M[2][0] = N.X;   Result.M[2][1] = N.Y;   Result.M[2][2] = N.Z;   Result.M[2][3] = -N.Dot(Eye);
         Result.M[3][0] = 0.0f;  Result.M[3][1] = 0.0f;  Result.M[3][2] = 0.0f;  Result.M[3][3] = 1.0f;
 
-        return Result;
+        // TODO: Must Check whether this transpose is required or not
+        return Result.Transpose();
     }
     static FMatrix CreateView(const FVector& CamLocation, const FVector& CamRotation)
     {
@@ -307,7 +312,8 @@ __declspec(align(16)) struct FMatrix
         Result.M[3][2] = 1.0f;
         Result.M[3][3] = 0.0f;
 
-        return Result;
+        // TODO: Must Check whether this transpose is required or not
+        return Result.Transpose();
     }
     static FMatrix CreateOrthographic(float Left, float Right, float Bottom, float Top, float Near, float Far)
     {
@@ -332,6 +338,26 @@ __declspec(align(16)) struct FMatrix
         Result.M[3][2] = 0.0f;
         Result.M[3][3] = 1.0f;
 
-        return Result;
+        // TODO: Must Check whether this transpose is required or not
+        return Result.Transpose();
     }
 };
+
+inline FVector operator*(const FVector& V, const FMatrix& M)
+{
+    return FVector(
+        M[0][0] * V.X + M[1][0] * V.Y + M[2][0] * V.Z,
+        M[0][1] * V.X + M[1][1] * V.Y + M[2][1] * V.Z,
+        M[0][2] * V.X + M[1][2] * V.Y + M[2][2] * V.Z
+    );
+}
+
+inline FVector4 operator*(const FVector4& V, const FMatrix& M)
+{
+    return FVector4(
+        M[0][0] * V.X + M[1][0] * V.Y + M[2][0] * V.Z + M[3][0] * V.W,
+        M[0][1] * V.X + M[1][1] * V.Y + M[2][1] * V.Z + M[3][1] * V.W,
+        M[0][2] * V.X + M[1][2] * V.Y + M[2][2] * V.Z + M[3][2] * V.W,
+        M[0][3] * V.X + M[1][3] * V.Y + M[2][3] * V.Z + M[3][3] * V.W
+    );
+}

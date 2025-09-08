@@ -35,6 +35,7 @@ const FVector& USceneComponent::GetRotation() const { return Rotation; }
 void USceneComponent::SetRotation(const FVector& RotationToSet) { Rotation = RotationToSet; }
 
 const FVector& USceneComponent::GetScale() const { return Scale; }
+
 void USceneComponent::SetScale(const FVector& ScaleToSet) { Scale = ScaleToSet; }
 
 void USceneComponent::TranslateTransform(const FVector& T)
@@ -42,7 +43,7 @@ void USceneComponent::TranslateTransform(const FVector& T)
 	Location += T;
 }
 
-void USceneComponent::RotateTranform(const FVector& R)
+void USceneComponent::RotateTransform(const FVector& R)
 {
 	Rotation += R;
 }

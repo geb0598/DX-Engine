@@ -90,7 +90,7 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 		}
 		if (Keyboard.IsKeyPressed('A'))
 		{
-			DeltaPosition.X -= 1.0f;
+			DeltaPosition.X += 1.0f;
 		}
 		if (Keyboard.IsKeyPressed('S'))
 		{
@@ -98,11 +98,13 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 		}
 		if (Keyboard.IsKeyPressed('D'))
 		{
-			DeltaPosition.X += 1.0f;
+			DeltaPosition.X -= 1.0f;
 		}
 		DeltaPosition.Normalize();
 		DeltaPosition *= MoveSensitivity * DeltaTimeSeconds;
-		SceneComponent->TranslateTransform(DeltaPosition);
+		auto Rotation = SceneComponent->GetRotation();
+		auto WorldDeltaPosition = DeltaPosition * FMatrix::CreateRotationFromEuler(SceneComponent->GetRotation());
+		SceneComponent->TranslateTransform(WorldDeltaPosition);
 	}
 
 	if (bIsMouseInputEnabled)
@@ -123,16 +125,14 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 				CapturedMousePositionX = static_cast<int32>(Mouse.GetXPosition());
 				CapturedMousePositionY = static_cast<int32>(Mouse.GetYPosition());
 
-				float Yaw = HorizontalTurnSensitivity * DeltaMouseXPosition * DeltaTimeSeconds;
-				float Pitch = VerticalTurnSensitivity * DeltaMouseYPosition * DeltaTimeSeconds;
+				float DeltaYaw = HorizontalTurnSensitivity * DeltaMouseXPosition * DeltaTimeSeconds;
+				float DeltaPitch = VerticalTurnSensitivity * DeltaMouseYPosition * DeltaTimeSeconds;
 
-				auto CurrentRotation = SceneComponent->GetRotation();
-				CurrentRotation.X += Pitch;
-				CurrentRotation.Y += Yaw;
+				auto Rotation = SceneComponent->GetRotation();
+				Rotation.Y -= DeltaYaw;
+				Rotation.X -= DeltaPitch;
 
-				CurrentRotation.X = std::clamp(CurrentRotation.X, MIN_PITCH, MAX_PITCH);
-
-				SceneComponent->SetRotation(CurrentRotation);
+				SceneComponent->SetRotation(Rotation);
 			}
 		}
 		else

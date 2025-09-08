@@ -16,8 +16,8 @@
 FVertexSimple triangle_vertices[] =
 {
 	{  0.0f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f, 1.0f }, // Top vertex (red)
-	{ -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f },  // Bottom-left vertex (blue)
-	{  1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f } // Bottom-right vertex (green)
+	{  1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right vertex (green)
+	{ -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f }  // Bottom-left vertex (blue)
 };
 
 FVertexSimple cube_vertices[] =
@@ -87,15 +87,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UINT numVerticesCube = sizeof(cube_vertices) / sizeof(FVertexSimple);
 	UINT numVerticesSphere = sizeof(sphere_vertices) / sizeof(FVertexSimple);
 
-	float scaleMod = 0.1f;
-
-	for (UINT i = 0; i < numVerticesSphere; ++i)
-	{
-		sphere_vertices[i].x *= scaleMod;
-		sphere_vertices[i].y *= scaleMod;
-		sphere_vertices[i].z *= scaleMod;
-	}
-
 	bool bIsExit = false;
 
 	enum ETypePrimitive
@@ -142,7 +133,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	);
 
 	Actor.AddComponent<UPrimitiveComponent>(&Actor, Mesh, VertexShader, PixelShader);
-	Actor.AddComponent<USceneComponent>(&Actor, FVector(0.0f, 0.0f, 20.0f), FVector(0.0f, 60.0f, 0.0f), FVector(1.0f, 1.0f, 1.0f));
+	Actor.AddComponent<USceneComponent>(&Actor, FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 60.0f, 0.0f), FVector(1.0f, 1.0f, 1.0f));
 
 	// -------------------------- Add Input Component -------------------------------- //
 	AActor CameraActor;
@@ -202,20 +193,42 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ImGui::Begin("Jungle Property Window");
 		ImGui::Text("Hello Jungle World!");
 
-		if (ImGui::Button("Change primitive"))
+		// Get location and rotation
+		auto* SceneComp = CameraActor.GetComponent<USceneComponent>();
+		auto Location = SceneComp->GetLocation();
+		auto Rotation = SceneComp->GetRotation();
+
+		ImGui::Text("Location | X: %f, Y: %f, Z: %f", Location.X, Location.Y, Location.Z);
+		ImGui::Text("Rotation | Pitch(X): %f, Yaw(Y): %f, Roll(Z): %f", Rotation.X, Rotation.Y, Rotation.Z);
+
+		// ------------------ Position sliders ------------------
+		static float posX = Location.X;
+		static float posY = Location.Y;
+		static float posZ = Location.Z;
+
+		bool posChanged = false;
+		posChanged |= ImGui::SliderFloat("Pos X", &posX, -1000.0f, 1000.0f);
+		posChanged |= ImGui::SliderFloat("Pos Y", &posY, -1000.0f, 1000.0f);
+		posChanged |= ImGui::SliderFloat("Pos Z", &posZ, -1000.0f, 1000.0f);
+
+		if (posChanged)
 		{
-			switch (typePrimitive)
-			{
-			case EPT_Triangle:
-				typePrimitive = EPT_Cube;
-				break;
-			case EPT_Cube:
-				typePrimitive = EPT_Sphere;
-				break;
-			case EPT_Sphere:
-				typePrimitive = EPT_Triangle;
-				break;
-			}
+			SceneComp->SetLocation(FVector(posX, posY, posZ));
+		}
+
+		// ------------------ Rotation sliders ------------------
+		static float rotX = Rotation.X;
+		static float rotY = Rotation.Y;
+		static float rotZ = Rotation.Z;
+
+		bool rotChanged = false;
+		rotChanged |= ImGui::SliderFloat("Pitch (X)", &rotX, -180.0f, 180.0f);
+		rotChanged |= ImGui::SliderFloat("Yaw (Y)", &rotY, -180.0f, 180.0f);
+		rotChanged |= ImGui::SliderFloat("Roll (Z)", &rotZ, -180.0f, 180.0f);
+
+		if (rotChanged)
+		{
+			SceneComp->SetRotation({ rotX, rotY, rotZ });
 		}
 
 		ImGui::End();

@@ -32,6 +32,7 @@ void UCameraComponent::SetFarPlane(double FPToSet) { FarPlane = FPToSet; }
 
 FMatrix UCameraComponent::GetViewMatrix()
 {
+	/* NOTE: Legacy Code
 	// Get the info of scene component from camera's owner, actor
 	AActor* Actor = GetActor();
 	assert(Actor != nullptr);
@@ -43,6 +44,21 @@ FMatrix UCameraComponent::GetViewMatrix()
 	FVector CamRotation = SC->GetRotation();
 
 	return FMatrix::CreateView(CamLocation, CamRotation);
+	*/
+
+	auto SceneComponent = GetActor()->GetComponent<USceneComponent>();
+	auto Rotation = SceneComponent->GetRotation();
+
+	// NOTE: Angle should be sent as radian to these functions
+	auto PitchMatrix = FMatrix::CreateRotationX(DEG_TO_RAD(Rotation.X));
+	auto YawMatrix = FMatrix::CreateRotationY(DEG_TO_RAD(Rotation.Y));
+	auto RollMatrix = FMatrix::CreateRotationZ(DEG_TO_RAD(Rotation.Z));
+
+	auto Eye = SceneComponent->GetLocation();
+	auto At = Eye + (FVector(0.0f, 0.0f, 1.0f) * RollMatrix * PitchMatrix * YawMatrix);
+	auto Up = FVector(0.0f, 1.0f, 0.0f);
+
+	return FMatrix::CreateLookAt(Eye, At, Up);
 }
 
 FMatrix UCameraComponent::GetProjectionMatrix(float AspectRatio) { return FMatrix::CreatePerspective(DEG_TO_RAD(FOV), AspectRatio, NearPlane, FarPlane); }

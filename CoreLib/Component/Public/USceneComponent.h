@@ -33,7 +33,7 @@ public:
 	void SetScale(const FVector& ScaleToSet);
 
 	void TranslateTransform(const FVector& T);
-	void RotateTranform(const FVector& R);
+	void RotateTransform(const FVector& R);
 	void ScaleTransform(const FVector& S);
 
 	FMatrix GetModelingMatrix() const;
