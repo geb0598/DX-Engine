@@ -12,31 +12,47 @@
 #include "Window/Public/Mouse.h"
 
 // TODO: InputComponent should update internal delta time to calculate next transform
-class UInputComponent : public UActorComponent, public std::enable_shared_from_this<UInputComponent>
+class UInputComponent : public UActorComponent
 {
 public:
 	virtual ~UInputComponent() = default;
 
-	UInputComponent(AActor* Actor);
+	UInputComponent(AActor* Actor, UKeyboard& Keyboard, UMouse& Mouse);
 
-	// This component should be initialized before using
-	void Initiailze(UKeyboard& Keyboard, UMouse& Mouse);
+	bool IsKeyboardInputEnabled();
+	void EnableKeyboardInput();
+	void DisableKeyboardInput();
 
-	bool IsEnabled();
-	void Enable();
-	void Disable();
+	bool IsMouseInputEnabled();
+	void EnableMouseInput();
+	void DisableMouseInput();
+
+	float GetMoveSensitivity() const;
+	float GetHorizontalTurnSensitivity() const;
+	float GetVerticalTurnSensitivity() const;
+
+	void SetMoveSensitivity(float NewMoveSensitivity);
+	void SetHorizontalTurnSensitivity(float NewHorizontalTurnSensitivity);
+	void SetVerticalTurnSensitivity(float NewVerticalTurnSensitivity);
+
+	void Update(float DeltaTimeSeconds);
 
 private:
-	// TODO: Take multiple key at the same time
-	void KeyboardInputDelegate(const UKeyboard::UEvent& Event);
-	void MouseInputDelegate(const UMouse::UEvent& Event);
+	static constexpr float MAX_PITCH = 89.0f;
+	static constexpr float MIN_PITCH = -89.0f;
 
-	bool bIsEnabled;
-	// TODO: Temporary vars for test
-	bool bIsWPressed = false;
-	bool bIsAPressed = false;
-	bool bIsSPressed = false;
-	bool bIsDPressed = false;
+	bool bIsKeyboardInputEnabled;
+	bool bIsMouseInputEnabled;
 
-	std::pair<int32, int32> LastMousePosition;
+	UKeyboard& Keyboard;
+	UMouse& Mouse;
+
+	float MoveSensitivity = 5.0f;
+	float HorizontalTurnSensitivity = 1.00f;;
+	float VerticalTurnSensitivity = 1.00f;
+
+	bool bIsMouseRightButtonPressed = false;
+	int32 CapturedMousePositionX = 0;
+	int32 CapturedMousePositionY = 0;
+	FVector CapturedRotation;
 };

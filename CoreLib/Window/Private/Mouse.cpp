@@ -5,7 +5,6 @@
 #include <Windows.h>
 
 #include "Containers/Containers.h"
-#include "Window/Public/EventPublisher.h"
 #include "Window/Public/Mouse.h"
 #include "Types/Types.h"
 
@@ -27,16 +26,6 @@ int UMouse::GetXPosition() const
 int UMouse::GetYPosition() const
 {
 	return MouseState.Y;
-}
-
-UEventPublisher<UMouse::UEvent>& UMouse::GetEventPublisher()
-{
-	return EventPublisher;
-}
-
-const UEventPublisher<UMouse::UEvent>& UMouse::GetEventPublisher() const
-{
-	return EventPublisher;
 }
 
 bool UMouse::IsInsideWindow() const
@@ -76,7 +65,6 @@ void UMouse::OnMouseMove(int X, int Y)
 	MouseState.Y = Y;
 	UEvent Event{ UEvent::EEventType::MOVE, MouseState };
 	MouseEventBuffer.push(Event);
-	EventPublisher.Publish(Event);
 	TrimBuffer();
 }
 
@@ -85,7 +73,6 @@ void UMouse::OnMouseLeave()
 	MouseState.bIsInsideWindow = false;
 	UEvent Event{ UEvent::EEventType::LEAVE, MouseState };
 	MouseEventBuffer.push(Event);
-	EventPublisher.Publish(Event);
 	TrimBuffer();
 }
 
@@ -94,7 +81,6 @@ void UMouse::OnMouseEnter()
 	MouseState.bIsInsideWindow = true;
 	UEvent Event{ UEvent::EEventType::ENTER, MouseState };
 	MouseEventBuffer.push(Event);
-	EventPublisher.Publish(Event);
 	TrimBuffer();
 }
 
@@ -103,7 +89,6 @@ void UMouse::OnLeftPressed(int X, int Y)
 	MouseState.bIsLeftPressed = true;
 	UEvent Event{ UEvent::EEventType::L_PRESS, MouseState };
 	MouseEventBuffer.push(Event);
-	EventPublisher.Publish(Event);
 	TrimBuffer();
 }
 
@@ -112,7 +97,6 @@ void UMouse::OnLeftReleased(int X, int Y)
 	MouseState.bIsLeftPressed = false;
 	UEvent Event{ UEvent::EEventType::L_PRESS, MouseState };
 	MouseEventBuffer.push(Event);
-	EventPublisher.Publish(Event);
 	TrimBuffer();
 }
 
@@ -121,7 +105,6 @@ void UMouse::OnRightPressed(int X, int Y)
 	MouseState.bIsRightPressed = true;
 	UEvent Event{ UEvent::EEventType::R_PRESS, MouseState };
 	MouseEventBuffer.push(Event);
-	EventPublisher.Publish(Event);
 	TrimBuffer();
 }
 
@@ -130,7 +113,6 @@ void UMouse::OnRightReleased(int X, int Y)
 	MouseState.bIsRightPressed = false;
 	UEvent Event{ UEvent::EEventType::R_PRESS, MouseState };
 	MouseEventBuffer.push(Event);
-	EventPublisher.Publish(Event);
 	TrimBuffer();
 }
 
@@ -138,7 +120,6 @@ void UMouse::OnWheelUp(int X, int Y)
 {
 	UEvent Event{ UEvent::EEventType::WHEEL_UP, MouseState };
 	MouseEventBuffer.push(Event);
-	EventPublisher.Publish(Event);
 	TrimBuffer();
 }
 
@@ -146,7 +127,6 @@ void UMouse::OnWheelDown(int X, int Y)
 {
 	UEvent Event{ UEvent::EEventType::WHEEL_DOWN, MouseState };
 	MouseEventBuffer.push(Event);
-	EventPublisher.Publish(Event);
 	TrimBuffer();
 }
 

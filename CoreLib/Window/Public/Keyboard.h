@@ -4,7 +4,6 @@
 #include <optional>
 
 #include "Containers/Containers.h"
-#include "EventPublisher.h"
 #include "Types/Types.h"
 
 
@@ -71,9 +70,6 @@ public:
 	void DisableAutoRepeat();
 	bool IsAutoRepeatEnabled();
 
-	UEventPublisher<UEvent>& GetEventPublisher();
-	const UEventPublisher<UEvent>& GetEventPublisher() const;
-	
 private:
 	template<typename TElement>
 	static void TrimBuffer(TQueue<TElement>& Buffer);
@@ -93,8 +89,6 @@ private:
 	std::bitset<NUM_KEYS> KeyStates;
 	TQueue<UEvent> KeyBuffer;
 	TQueue<char> CharBuffer;
-
-	UEventPublisher<UEvent> EventPublisher;
 };
 
 template<typename TElement>

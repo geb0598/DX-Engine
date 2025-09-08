@@ -1,6 +1,5 @@
 #include "Containers/Containers.h"
 #include "Types/Types.h"
-#include "Window/Public/EventPublisher.h"
 #include "Window/Public/Keyboard.h"
 
 void UKeyboard::Flush()
@@ -71,22 +70,11 @@ bool UKeyboard::IsAutoRepeatEnabled()
 	return bIsAutoRepeatEnabled;
 }
 
-UEventPublisher<UKeyboard::UEvent>& UKeyboard::GetEventPublisher()
-{
-	return EventPublisher;
-}
-
-const UEventPublisher<UKeyboard::UEvent>& UKeyboard::GetEventPublisher() const
-{
-	return EventPublisher;
-}
-
 void UKeyboard::OnKeyPressed(uint8 KeyCode)
 {
 	KeyStates[KeyCode] = true;
 	UEvent Event{ UEvent::EEventType::PRESS, KeyCode };
 	KeyBuffer.push(Event);
-	EventPublisher.Publish(Event);
 	TrimBuffer(KeyBuffer);
 }
 
@@ -95,7 +83,6 @@ void UKeyboard::OnKeyReleased(uint8 KeyCode)
 	KeyStates[KeyCode] = false;
 	UEvent Event{UEvent::EEventType::RELEASE, KeyCode};
 	KeyBuffer.push(Event);
-	EventPublisher.Publish(Event);
 	TrimBuffer(KeyBuffer);
 }
 

@@ -4,7 +4,6 @@
 #include <utility>
 
 #include "Containers/Containers.h"
-#include "EventPublisher.h"
 #include "Types/Types.h"
 
 
@@ -93,9 +92,6 @@ public:
 	int32 GetXPosition() const;
 	int32 GetYPosition() const;
 
-	UEventPublisher<UEvent>& GetEventPublisher();
-	const UEventPublisher<UEvent>& GetEventPublisher() const;
-
 	bool IsInsideWindow() const;
 	bool IsLeftPressed() const;
 	bool IsRightPressed() const;
@@ -120,6 +116,4 @@ private:
 
 	FMouseState MouseState;
 	TQueue<UEvent> MouseEventBuffer;
-		
-	UEventPublisher<UEvent> EventPublisher;
 };

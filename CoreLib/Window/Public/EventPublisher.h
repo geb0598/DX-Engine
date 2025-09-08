@@ -7,7 +7,7 @@
 #include "Containers/Containers.h"
 
 template<typename TEvent>
-class UEventPublisher
+class [[deperecatd]] UEventPublisher
 {
 public:
 	using FDelegate = std::function<void(const TEvent&)>;
