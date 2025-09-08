@@ -66,21 +66,19 @@ public:
 		float D = B * B - 4 * A * C;
 
 		if (D >= 0.0f)
-		{
-			float T1 = (-B + std::sqrtf(D)) / 2.0f * A;
-			float T2 = (-B - std::sqrtf(D)) / 2.0f * A;
-
-			if (T1 < 0.0f && T2 < 0.0f)
-				return DONT_INTERSECT;
-			else if (T1 >= 0.0f && T2 < 0.0f)
-				return T1;
-			else if (T1 < 0.0f && T2 >= 0.0f)
-				return T2;
-			else
-				return (std::min)(T1, T2);
-		}
-		else
 			return DONT_INTERSECT;
+
+		float T1 = (-B + std::sqrtf(D)) / 2.0f * A;
+		float T2 = (-B - std::sqrtf(D)) / 2.0f * A;
+
+		if (T1 < 0.0f && T2 < 0.0f)
+			return DONT_INTERSECT;
+		else if (T1 >= 0.0f && T2 < 0.0f)
+			return T1;
+		else if (T1 < 0.0f && T2 >= 0.0f)
+			return T2;
+		else
+			return (std::min)(T1, T2);
 	}
 
 	float RayCastToCube()
@@ -173,9 +171,6 @@ public:
 
 	float RayCastToTriangle()
 	{
-		// �ε��Ҽ��� ���� ����
-		const float EPSILON = 1e-5f;
-
 		FVector P = CurrentRay.Point;
 		FVector V = CurrentRay.Vector;
 
@@ -187,6 +182,9 @@ public:
 		// Normal of Triangle
 		FVector N = (T1 - T0).Cross(T2 - T0);
 		
+		// resolve floating point error
+		const float EPSILON = 1e-5f;
+
 		// when ray is parellel to triangle
 		if (V.Dot(N) >= -EPSILON && V.Dot(N) <= EPSILON)
 			return DONT_INTERSECT;
@@ -210,13 +208,27 @@ public:
 		return T;
 	}
 
-	bool RayCastToCylinder(float Radius, float Height)
+	float GetCloserT(float T1, float T2)
 	{
+		if (T1 == DONT_INTERSECT && T2 == DONT_INTERSECT)
+			return DONT_INTERSECT;
+		else if (T1 == DONT_INTERSECT && T2 != DONT_INTERSECT)
+			return T2;
+		else if (T1 != DONT_INTERSECT && T2 == DONT_INTERSECT)
+			return T1;
+		else
+			return (std::min)(T1, T2);
+	}
+
+	// this function return closest intersection between cylinder side and ray
+	float RayCastToCylinderSide(float Radius, float Height)
+	{
+		const float HalfHeight = Height * 0.5f;
+
 		FVector P = CurrentRay.Point;
 		FVector V = CurrentRay.Vector;
 		float T1, T2;
 
-		/* Calculate for cylinder side first */
 		// Remain X Y Component Only
 		FVector PXY = FVector(CurrentRay.Point.X, CurrentRay.Point.Y);
 		FVector VXY = FVector(CurrentRay.Vector.X, CurrentRay.Vector.Y);
@@ -230,34 +242,138 @@ public:
 		float D = B * B - 4 * A * C;
 
 		if (D < 0.0f)
-			return false;
+			return DONT_INTERSECT;
 
 		T1 = (-B + std::sqrtf(D)) / 2.0f * A;
 		T2 = (-B - std::sqrtf(D)) / 2.0f * A;
 
-		// Check that Z is in valid range
-		float Z1 = CurrentRay.Point.Z + CurrentRay.Vector.Z * T1;
-		float Z2 = CurrentRay.Point.Z + CurrentRay.Vector.Z * T2;
+		if (T1 > 0.0f)
+		{
+			// Check that Z is in valid range
+			float Z1 = CurrentRay.Point.Z + CurrentRay.Vector.Z * T1;
+			if (Z1 > HalfHeight || Z1 < -HalfHeight)
+				T1 = DONT_INTERSECT;
+		}
+		else
+			T1 = DONT_INTERSECT;
 
-		if (Z1 > 0.5f * Height && Z1 < -0.5f * Height &&
-			Z2 > 0.5f * Height && Z2 < -0.5f * Height)
-			return false;
+		if (T2 > 0.0f)
+		{
+			// Check that Z is in valid range
+			float Z2 = CurrentRay.Point.Z + CurrentRay.Vector.Z * T2;
+			if (Z2 > HalfHeight || Z2 < -HalfHeight)
+				T2 = DONT_INTERSECT;
+		}
+		else
+			T2 = DONT_INTERSECT;
 
-		/* Calculate for cylinder cap next */
-		// Find t when Z value of ray is equal to height
-		float PZ = CurrentRay.Point.Z;
-		float VZ = CurrentRay.Point.Z;
-		T1 = (0.5f * Height - PZ) / VZ;
-		T2 = (-0.5f * Height - PZ) / VZ;
-
-		if (T1 * T1 * V.Dot(V) + 2.0f * T1 * P.Dot(V) + P.Dot(P) - Radius * Radius > 0 &&
-			T2 * T2 * V.Dot(V) + 2.0f * T2 * P.Dot(V) + P.Dot(P) - Radius * Radius > 0)
-			return false;
-
-		return true;
+		return GetCloserT(T1, T2);
 	}
 
-	bool RayCastToTorus();
+	float RayCastToCylinderCap(float Radius, float Height)
+	{
+		const float HalfHeight = Height * 0.5f;
+
+		FVector P = CurrentRay.Point;
+		FVector V = CurrentRay.Vector;
+
+		// Find t when Z value of ray is equal to half height
+		float PZ = CurrentRay.Point.Z;
+		float VZ = CurrentRay.Point.Z;
+		float T1 = (HalfHeight - PZ) / VZ;
+		float T2 = (HalfHeight - PZ) / VZ;
+
+		if (T1 > 0.0f)
+		{
+			if (T1 * T1 * V.Dot(V) + 2.0f * T1 * P.Dot(V) + P.Dot(P) - Radius * Radius > 0.0f)
+				T1 = DONT_INTERSECT;
+		}
+		else
+			T1 = DONT_INTERSECT;
+
+		if (T2 > 0.0f)
+		{
+			if (T2 * T2 * V.Dot(V) + 2.0f * T2 * P.Dot(V) + P.Dot(P) - Radius * Radius > 0.0f)
+				T2 = DONT_INTERSECT;
+		}
+		else
+			T2 = DONT_INTERSECT;
+
+		return GetCloserT(T1, T2);
+	}
+
+	float RayCastToCylinder(float Radius, float Height)
+	{
+		 float TSide = RayCastToCylinderSide(Radius, Height);
+		 float TCap = RayCastToCylinderCap(Radius, Height);
+
+		 return GetCloserT(TSide, TCap);
+	}
+
+	float RayCastToAnnulus(float InnerRadius, float OuterRadius, float Height)
+	{
+		float A, B, CInnerRadius, COuterRadius, D;
+
+		// Remain Z Component only
+		float PZ = CurrentRay.Point.Z;
+		float VZ = CurrentRay.Vector.Z;
+
+		const float EPSILON = 1e-5f;
+		// when ray is parellel to annulus
+		if (VZ >= -EPSILON && VZ <= EPSILON)
+			return DONT_INTERSECT;
+
+		// T value of ray equation when ray's z equal to annulus z position
+		float T = -PZ / VZ;
+
+		// when annulus is behind camera
+		if (T < 0.0f)
+			return DONT_INTERSECT;
+
+		// Remain XY Component only
+		FVector PXY = FVector(CurrentRay.Point.X, CurrentRay.Point.Y);
+		FVector VXY = FVector(CurrentRay.Vector.X, CurrentRay.Vector.Y);
+
+		// Components for Quadratic Formula
+		A = VXY.Dot(VXY);
+		B = 2.0f * PXY.Dot(VXY);
+		COuterRadius = PXY.Dot(PXY) - OuterRadius * OuterRadius;
+
+		// Discriminant
+		D = B * B - 4 * A * COuterRadius;
+
+		// When there is no intersect
+		if (D < 0.0f)
+			return DONT_INTERSECT;
+		if (A * T * T + B * T + COuterRadius > 0.0f)
+			return DONT_INTERSECT;
+
+		// Calculate second equation
+		CInnerRadius = PXY.Dot(PXY) - InnerRadius * InnerRadius;
+
+		// Discriminant
+		D = B * B - 4 * A * CInnerRadius;
+		
+		// When there is no intersect
+		if (D < 0.0f)
+			return DONT_INTERSECT;
+		if (A * T * T + B * T + CInnerRadius < 0.0f)
+			return DONT_INTERSECT;
+
+		return T;
+	}
+
+	bool RayCastToAnalogousTorus()
+	{
+		const float InnerRadius = 0.1f;
+		const float OuterRadius = 1.0f;
+		const float Height = 0.1f;
+
+		float TVerticalAnnulus = RayCastToCylinderSide((InnerRadius + OuterRadius) / 2.0f, Height);
+		float THorizontalAnnulus = RayCastToAnnulus(InnerRadius, OuterRadius, Height);
+
+		return GetCloserT(TVerticalAnnulus, THorizontalAnnulus);
+	}
 
 	static URayCaster& Instance()
 	{
