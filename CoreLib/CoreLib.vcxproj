@@ -54,6 +54,7 @@
     <ClInclude Include="Component\Public\UCameraComponent.h" />
     <ClInclude Include="Containers\Containers.h" />
     <ClInclude Include="Math\Math.h" />
+    <ClInclude Include="Math\Public\MathUtilities.h" />
     <ClInclude Include="Math\Public\Matrix.h" />
     <ClInclude Include="Math\Public\Vector.h" />
     <ClInclude Include="Mesh\Public\Mesh.h" />

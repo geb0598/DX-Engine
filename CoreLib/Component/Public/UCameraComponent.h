@@ -7,27 +7,28 @@
 class UCameraComponent : public UActorComponent
 {
 private:
-	double FOV;
-	double NearPlane;
-	double FarPlane;
+	float FieldOfView;
+	float NearPlane;
+	float FarPlane;
 
-	const static double DefaultFOV;
-	const static double DefaultNearPlane;
-	const static double DefaultFarPlane;
+	const static float DefaultFieldOfView;
+	const static float DefaultNearPlane;
+	const static float DefaultFarPlane;
 
 public:
 	UCameraComponent(AActor* Actor);
-	UCameraComponent(AActor* Actor, double FOVToSet, double NPToSet, double FPToSet);
+	UCameraComponent(AActor* Actor, float FieldOfViewToSet, float NearPlaneToSet, float FarPlaneToSet);
 
-	double GetFOV() const;
-	void SetFOV(double FOVToSet);
+	float GetFieldOfView() const;
+	void SetFieldOfView(float FieldOfViewToSet);
 
-	double GetNearPlane() const;
-	void SetNearPlane(double NPToSet);
+	float GetNearPlane() const;
+	void SetNearPlane(float NearPlaneToSet);
 
-	double GetFarPlane() const;
-	void SetFarPlane(double FPToSet);
+	float GetFarPlane() const;
+	void SetFarPlane(float FarPlaneToSet);
 
 	FMatrix GetViewMatrix();
 	FMatrix GetProjectionMatrix(float AspectRatio);
+	FMatrix GetOrthographicMatrix(float Left, float Right, float Bottom, float Top);
 };

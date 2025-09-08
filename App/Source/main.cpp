@@ -34,8 +34,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	LoadScene("Scene/DefaultScene.Scene", Window.GethWnd());
 
 	AActor CameraActor;
-	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -20.f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
-	CameraActor.AddComponent<UCameraComponent>(&CameraActor);
+	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -30.f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
+	CameraActor.AddComponent<UCameraComponent>(&CameraActor, PIDIV2, 0.1f, 1000.f);
 	
 	// ----------------------------------------------------------------------------- //
 	
@@ -60,9 +60,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Renderer.Prepare();
 
 		FMatrix M;
-		//FMatrix V = CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
-		FMatrix V = FMatrix::CreateLookAt(CameraActor.GetComponent<USceneComponent>()->GetLocation(), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 1.0f, 0.0f));
-		FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
+		FMatrix V = CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
+		FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.GetAspectRatio());
+		//FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetOrthographicMatrix(-1.f, 1.f, -1.f, 1.f);
 
 		for (UObject* Obj : GUDObjectArray)
 		{

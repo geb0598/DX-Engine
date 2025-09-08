@@ -1,8 +1,6 @@
 ﻿#pragma once
 #include "Vector.h"
-
-#define DEG_TO_RAD(degrees) ((degrees) * 3.14159265359f / 180.0f)
-#define RAD_TO_DEG(radians) ((radians) * 180.0f / 3.14159265359f)
+#include "../Public/MathUtilities.h"
 
 __declspec(align(16)) struct FMatrix
 {
@@ -84,14 +82,16 @@ __declspec(align(16)) struct FMatrix
             }
         }
     }
-    FVector TransformPosition(const FVector& V) const
+	// 행렬을 이용해 위치 벡터 변환 (평행 이동 포함)
+    FVector TransformPosition(const FVector& Vector) const
     {
-        FVector4 V4 = *this * FVector4(V.X, V.Y, V.Z, 1.0f);
+        FVector4 V4 = *this * FVector4(Vector.X, Vector.Y, Vector.Z, 1.0f);
         return FVector(V4.X, V4.Y, V4.Z);
     }
-    FVector TransformDirection(const FVector& V) const
+	// 행렬을 이용해 방향 벡터 변환 (평행 이동 미포함)
+    FVector TransformDirection(const FVector& Vector) const
     {
-        FVector4 V4 = *this * FVector4(V.X, V.Y, V.Z, 0.0f);
+        FVector4 V4 = *this * FVector4(Vector.X, Vector.Y, Vector.Z, 0.0f);
         return FVector(V4.X, V4.Y, V4.Z);
     }
     FMatrix Transpose() const
@@ -177,6 +177,7 @@ __declspec(align(16)) struct FMatrix
         Result.M[1][1] = Cos;
         return Result;
     }
+	// 오일러 각도로부터 회전 행렬 생성
     static FMatrix CreateRotationFromEuler(const FVector& EulerDegrees)
     {
         float X = DEG_TO_RAD(EulerDegrees.X);
@@ -190,6 +191,7 @@ __declspec(align(16)) struct FMatrix
         // Z-Up, Left-Hand = Yaw(Z) → Pitch(Y) → Roll(X)
         return RotZ * RotY * RotX;
     }
+	// 쿼터니언으로부터 회전 행렬 생성
     static FMatrix CreateRotationFromQuaternion(const FVector4& Quat)
     {
         float X = Quat.X, Y = Quat.Y, Z = Quat.Z, W = Quat.W;
@@ -206,6 +208,7 @@ __declspec(align(16)) struct FMatrix
 
         return Result;
     }
+	// 주어진 축과 각도로 회전 행렬 생성
     static FMatrix CreateRotationAxis(const FVector& Axis, float Angle)
     {
         FVector NormalizedAxis = Axis.GetNormalized();
@@ -263,7 +266,7 @@ __declspec(align(16)) struct FMatrix
 
         return Result;
     }
-    static FMatrix CreateView(const FVector& CamLocation, const FVector& CamRotation)
+    static FMatrix CreateViewMatrix(const FVector& CamLocation, const FVector& CamRotation)
     {
         // 카메라 회전 행렬 (월드 → 카메라 좌표, 역회전 필요하므로 전치)
         FMatrix R = FMatrix::CreateRotationFromEuler(CamRotation);
@@ -283,54 +286,28 @@ __declspec(align(16)) struct FMatrix
 
     static FMatrix CreatePerspective(float FOV, float AspectRatio, float Near, float Far)
     {
-        float TanHalfFOV = tanf(FOV * 0.5f);
+        float YScale = 1.0f / tanf(FOV * 0.5f);
+        float XScale = YScale / AspectRatio;
+        float ZRange = Far - Near;
 
-        FMatrix Result;
-        Result.M[0][0] = 1.0f / (AspectRatio * TanHalfFOV);
-        Result.M[0][1] = 0.0f;
-        Result.M[0][2] = 0.0f;
-        Result.M[0][3] = 0.0f;
-
-        Result.M[1][0] = 0.0f;
-        Result.M[1][1] = 1.0f / TanHalfFOV;
-        Result.M[1][2] = 0.0f;
-        Result.M[1][3] = 0.0f;
-
-        Result.M[2][0] = 0.0f;
-        Result.M[2][1] = 0.0f;
-        Result.M[2][2] = -Far / (Far - Near);
-        Result.M[2][3] = -(Far * Near) / (Far - Near);
-
-        Result.M[3][0] = 0.0f;
-        Result.M[3][1] = 0.0f;
-        Result.M[3][2] = 1.0f;
-        Result.M[3][3] = 0.0f;
-
-        return Result;
+		return FMatrix(
+            XScale,  0.0f,   0.0f,                0.0f,
+			0.0f,    YScale, 0.0f,                0.0f,
+			0.0f,    0.0f,   Far / ZRange,        1.0f,
+			0.0f,    0.0f,  -Near * Far / ZRange, 0.0f
+        );
     }
     static FMatrix CreateOrthographic(float Left, float Right, float Bottom, float Top, float Near, float Far)
     {
-        FMatrix Result;
-        Result.M[0][0] = 2.0f / (Right - Left);
-        Result.M[0][1] = 0.0f;
-        Result.M[0][2] = 0.0f;
-        Result.M[0][3] = -(Right + Left) / (Right - Left);
+        float Width = Right - Left;
+        float Height = Top - Bottom;
+        float Depth = Far - Near;
 
-        Result.M[1][0] = 0.0f;
-        Result.M[1][1] = 2.0f / (Top - Bottom);
-        Result.M[1][2] = 0.0f;
-        Result.M[1][3] = -(Top + Bottom) / (Top - Bottom);
-
-        Result.M[2][0] = 0.0f;
-        Result.M[2][1] = 0.0f;
-		Result.M[2][2] = 1.0f / (Far - Near); // z range [0, 1]
-        Result.M[2][3] = -Near / (Far - Near);
-
-        Result.M[3][0] = 0.0f;
-        Result.M[3][1] = 0.0f;
-        Result.M[3][2] = 0.0f;
-        Result.M[3][3] = 1.0f;
-
-        return Result;
+        return FMatrix(
+            2.0f / Width,  0.0f,           0.0f,          -(Right + Left) / Width,
+            0.0f,          2.0f / Height,  0.0f,          -(Top + Bottom) / Height,
+            0.0f,          0.0f,           1.0f / Depth,  -Near / Depth,
+            0.0f,          0.0f,           0.0f,          1.0f
+        );
     }
 };

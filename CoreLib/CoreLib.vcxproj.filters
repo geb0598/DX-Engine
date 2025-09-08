@@ -188,5 +188,8 @@
     <ClInclude Include="Utilities\Public\JsonSceneSerializer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Math\Public\MathUtilities.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
