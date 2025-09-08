@@ -279,7 +279,7 @@ __declspec(align(16)) struct FMatrix
         }
 
         // 뷰 행렬 = Rᵀ * T
-        return R.Inverse() * T.Inverse();
+        return T.Inverse() * R.Inverse();
     }
 
     static FMatrix CreatePerspective(float FOV, float AspectRatio, float Near, float Far)
