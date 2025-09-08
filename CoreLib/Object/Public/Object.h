@@ -3,16 +3,18 @@
 #include "Containers/Containers.h"
 #include "Types/Types.h"
 
+class UEngineStatics
+{
+public:
+	static uint32 GenUUID();
+
+	static uint32 NextUUID;
+};
+
 class UObject
 {
 private:
-	class UEngineStatics
-	{
-	public:
-		static uint32 GenUUID();
-
-		static uint32 NextUUID;
-	};
+	
 public:
 	~UObject();
 

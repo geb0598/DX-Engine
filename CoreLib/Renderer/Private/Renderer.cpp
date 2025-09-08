@@ -1,9 +1,9 @@
-#include "Renderer/Public/Renderer.h"
+﻿#include "Renderer/Public/Renderer.h"
 
 // NOTE: Renderer is initialized once per execution as a singleton
-URenderer& URenderer::GetInstance(HWND hWnd)
+URenderer & URenderer::GetInstance()
 {
-	static URenderer Renderer(hWnd);
+	static URenderer Renderer;
 	return Renderer;
 }
 
@@ -41,9 +41,8 @@ ID3D11DeviceContext* URenderer::GetDeviceContext()
 	return DeviceContext.Get();
 }
 
-URenderer::URenderer(HWND hWnd)
+URenderer::URenderer()
 {
-	Create(hWnd);
 }
 
 void URenderer::Create(HWND hWnd)

@@ -73,14 +73,16 @@ bool UKeyboard::IsAutoRepeatEnabled()
 void UKeyboard::OnKeyPressed(uint8 KeyCode)
 {
 	KeyStates[KeyCode] = true;
-	KeyBuffer.push(UEvent(UEvent::EEventType::PRESS, KeyCode));
+	UEvent Event{ UEvent::EEventType::PRESS, KeyCode };
+	KeyBuffer.push(Event);
 	TrimBuffer(KeyBuffer);
 }
 
 void UKeyboard::OnKeyReleased(uint8 KeyCode)
 {
 	KeyStates[KeyCode] = false;
-	KeyBuffer.push(UEvent(UEvent::EEventType::RELEASE, KeyCode));
+	UEvent Event{UEvent::EEventType::RELEASE, KeyCode};
+	KeyBuffer.push(Event);
 	TrimBuffer(KeyBuffer);
 }
 

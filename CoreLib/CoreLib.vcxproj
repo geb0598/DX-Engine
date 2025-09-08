@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="Axis\Private\UAxis.cpp" />
     <ClCompile Include="Component\Private\ActorComponent.cpp" />
+    <ClCompile Include="Component\Private\InputComponent.cpp" />
     <ClCompile Include="Component\Private\PrimitiveComponent.cpp" />
     <ClCompile Include="Component\Private\UCameraComponent.cpp" />
     <ClCompile Include="Component\Private\USceneComponent.cpp" />
@@ -31,6 +32,8 @@
     <ClCompile Include="Object\Private\Object.cpp" />
     <ClCompile Include="Renderer\Private\Renderer.cpp" />
     <ClCompile Include="RayCaster\Private\URayCaster.cpp" />
+    <ClCompile Include="Scene\Private\Scene.cpp" />
+    <ClCompile Include="Scene\Private\SceneManager.cpp" />
     <ClCompile Include="Shader\Private\PixelShader.cpp" />
     <ClCompile Include="Shader\Private\ShaderReflector.cpp" />
     <ClCompile Include="Shader\Private\VertexShader.cpp" />
@@ -55,10 +58,12 @@
     <ClInclude Include="Axis\Public\UAxis.h" />
     <ClInclude Include="Component\Component.h" />
     <ClInclude Include="Component\Public\ActorComponent.h" />
+    <ClInclude Include="Component\Public\InputComponent.h" />
     <ClInclude Include="Component\Public\PrimitiveComponent.h" />
     <ClInclude Include="Component\Public\UCameraComponent.h" />
     <ClInclude Include="Containers\Containers.h" />
     <ClInclude Include="Math\Math.h" />
+    <ClInclude Include="Math\Public\MathUtilities.h" />
     <ClInclude Include="Math\Public\Matrix.h" />
     <ClInclude Include="Math\Public\Vector.h" />
     <ClInclude Include="Mesh\Public\Mesh.h" />
@@ -67,6 +72,9 @@
     <ClInclude Include="Raycaster\Raycaster.h" />
     <ClInclude Include="Renderer\Public\Renderer.h" />
     <ClInclude Include="RayCaster\Public\URayCaster.h" />
+    <ClInclude Include="Scene\Public\Scene.h" />
+    <ClInclude Include="Scene\Public\SceneManager.h" />
+    <ClInclude Include="Scene\Scene.h" />
     <ClInclude Include="Shader\Private\ShaderReflector.h" />
     <ClInclude Include="Shader\Public\PixelShader.h" />
     <ClInclude Include="Shader\Public\VertexShader.h" />
@@ -78,6 +86,10 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
+    <ClInclude Include="Time\Public\TimeManager.h" />
+    <ClInclude Include="Time\Time.h" />
+    <ClInclude Include="UI\Public\UIManager.h" />
+    <ClInclude Include="UI\UI.h" />
     <ClInclude Include="Utilities\Public\JsonSceneSerializer.h" />
     <ClInclude Include="Utilities\Public\Utilities.h" />
     <ClInclude Include="Time\Public\TimeManager.h" />

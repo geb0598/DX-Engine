@@ -32,9 +32,11 @@ public:
 
 		// near/far in NDC
 		FMatrix InverseMVP = (Modeling * View * Projection).Inverse();
-		FVector4 NDCNear(NDCX, NDCY, 0.0f, 1.0f); // DirectX ½ºÅ¸ÀÏ (0~1)
+		FVector4 NDCNear(NDCX, NDCY, 0.0f, 1.0f); // DirectX ï¿½ï¿½Å¸ï¿½ï¿½ (0~1)
 		FVector4 NDCFar(NDCX, NDCY, 1.0f, 1.0f);
 
+		//Ray.Point = Ray.Point * Projection.Inverse() * View.Inverse() * Modeling.Inverse();
+		//Ray.Vector = Ray.Vector * Projection.Inverse() * View.Inverse() * Modeling.Inverse();
 
 		// World space points
 		FVector4 WorldNear = NDCNear * InverseMVP;
@@ -171,7 +173,7 @@ public:
 
 	float RayCastToTriangle()
 	{
-		// ºÎµ¿¼Ò¼öÁ¡ ¿ÀÂ÷ Èí¼ö
+		// ï¿½Îµï¿½ï¿½Ò¼ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		const float EPSILON = 1e-5f;
 
 		FVector P = CurrentRay.Point;

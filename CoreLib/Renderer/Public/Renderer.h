@@ -10,7 +10,7 @@
 class URenderer
 {
 public:
-	static URenderer& GetInstance(HWND hWnd);
+	static URenderer & GetInstance();
 
 	~URenderer();
 
@@ -20,6 +20,7 @@ public:
 	URenderer& operator=(const URenderer&) = delete;
 	URenderer& operator=(URenderer&&) = delete;
 
+	void Create(HWND hWindow);						// 렌더러 초기화 함수
 	void Prepare();									// 그래픽 파이프라인에 필요한 정보를 전달하고 바인드
 	void SwapBuffer();								// 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
 
@@ -27,9 +28,8 @@ public:
 	ID3D11DeviceContext* GetDeviceContext();
 
 private:
-	URenderer(HWND hWnd);
+	URenderer();
 
-	void Create(HWND hWindow);						// 렌더러 초기화 함수
 	void CreateDeviceAndSwapChain(HWND hWindow);	// Direct3D 장치 및 스왑 체인을 생성하는 함수
 	void CreateFrameBuffer();						// 프레임 버퍼를 생성하는 함수
 	void CreateRasterizerState();					// 래스터라이저 상태를 생성하는 함수

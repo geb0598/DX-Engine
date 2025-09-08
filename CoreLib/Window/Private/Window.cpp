@@ -72,6 +72,41 @@ HWND UWindow::GethWnd() const
 	return hWnd;
 }
 
+UKeyboard& UWindow::GetKeyboard()
+{
+	return Keyboard;
+}
+
+UMouse& UWindow::GetMouse()
+{
+	return Mouse;
+}
+
+const UKeyboard& UWindow::GetKeyboard() const
+{
+	return Keyboard;
+}
+
+const UMouse& UWindow::GetMouse() const
+{
+	return Mouse;
+}
+
+int32 UWindow::GetWidth() const
+{
+	return Width;
+}
+
+int32 UWindow::GetHeight() const
+{
+	return Height;
+}
+
+void UWindow::SetWindowTitle(const FString& WindowTitle)
+{
+	SetWindowTextW(hWnd, std::wstring(WindowTitle.begin(), WindowTitle.end()).c_str());
+}
+
 LRESULT UWindow::WndProcSetUp(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
 	if (Msg == WM_NCCREATE)
@@ -97,7 +132,6 @@ LRESULT UWindow::WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 
 LRESULT UWindow::WndProcImpl(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-
 	if (ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam))
 	{
 		return true;

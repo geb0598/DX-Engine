@@ -1,35 +1,19 @@
 ﻿#pragma once
 #include "Math/Math.h"
 #include "Containers/Containers.h"
-#include "Json/json.hpp"
 #include "Object/Object.h"
 #include "Actor/Actor.h"
 #include "Component/Component.h"
 #include <fstream>
 
-// TODO: 임시 Primitive Type, 만들어줘야함.
-enum class EPrimitiveType
-{
-	Sphere,
-	Cube,
-	Triangle
-};
+namespace json { class JSON; }
 
-FString PrimitiveTypeToString(EPrimitiveType Type)
-{
-	switch (Type)
-	{
-	case EPrimitiveType::Sphere:
-		return "Sphere";
-	case EPrimitiveType::Cube:
-		return "Cube";
-	case EPrimitiveType::Triangle:
-		return "Triangle";
-	default:
-		return "Unknown";
-	}
-}
+FString PrimitiveTypeToString(EPrimitiveType Type);
+EPrimitiveType StringToPrimitiveType(const FString& TypeStr);
 
-void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, EPrimitiveType Type);
+void NewScene();
 void SaveScene(const FString& FilePath, int32 Version);
+void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, EPrimitiveType Type);
 void LoadScene(const FString& FilePath);
+
+AActor * CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, EPrimitiveType Type);

@@ -6,40 +6,41 @@
 #include "Containers/Containers.h"
 #include "Types/Types.h"
 
-class UKeyboard
+
+class UKeyboard 
 {
 public:
-	class UEvent
+class UEvent
+{
+public:
+	enum class EEventType
 	{
-	public:
-		enum class EEventType
-		{
-			PRESS,
-			RELEASE
-		};
-
-		UEvent(EEventType EventType, char KeyCode) : EventType(EventType), KeyCode(KeyCode) {}
-
-		bool IsPress() const
-		{
-			return EventType == EEventType::PRESS;
-		}
-
-		bool IsRelease() const
-		{
-			return EventType == EEventType::RELEASE;
-		}
-
-		uint8 GetKeyCode() const
-		{
-			return KeyCode;
-		}
-
-	private:
-		EEventType EventType;
-		uint8 KeyCode;
+		PRESS,
+		RELEASE
 	};
-//--------------------------------------------------------------------------------------//
+
+	UEvent(EEventType EventType, uint8 KeyCode) 
+		: EventType(EventType), KeyCode(KeyCode) {}
+
+	bool IsPress() const
+	{
+		return EventType == EEventType::PRESS;
+	}
+
+	bool IsRelease() const
+	{
+		return EventType == EEventType::RELEASE;
+	}
+
+	uint8 GetKeyCode() const
+	{
+		return KeyCode;
+	}
+
+private:
+	EEventType EventType;
+	uint8 KeyCode;
+};
 
 public:
 	friend class UWindow;
@@ -68,7 +69,7 @@ public:
 	void EnableAutoRepeat();
 	void DisableAutoRepeat();
 	bool IsAutoRepeatEnabled();
-	
+
 private:
 	template<typename TElement>
 	static void TrimBuffer(TQueue<TElement>& Buffer);
@@ -76,11 +77,13 @@ private:
 	static constexpr uint32 NUM_KEYS = 256u;
 	static constexpr uint32 BUFFER_SIZE = 16u;
 
+private:
 	void OnKeyPressed(uint8 KeyCode);
 	void OnKeyReleased(uint8 KeyCode);
 	void OnChar(char Char);
 	void ClearState();
 
+private:
 	bool bIsAutoRepeatEnabled;
 
 	std::bitset<NUM_KEYS> KeyStates;

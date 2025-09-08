@@ -1,4 +1,4 @@
-#include "ImGui/imgui.h"
+﻿#include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_internal.h"
@@ -8,117 +8,37 @@
 #include "Component/Component.h"
 #include "Renderer/Renderer.h"
 #include "Window/Window.h"
+#include "Utilities/Utilities.h"
 #include "UI/UI.h"
-#include "RayCaster/Raycaster.h"
-#include "Axis/Axis.h"
+#include "TIme/Time.h"
+#include "Scene/Scene.h"
 
 // ---------------------------------------------------------- //
 
-#include "Sphere.h"
-
-FVertexSimple XAxisVertices[] =
-{
-	{  0.0f,  0.0f, 0.0f,  1.0f, 0.0f, 0.0f, 1.0f }, // Axis Color(Red)
-	{ AXIS_LENGTH, 0.0f, 0.0f,  1.0f, 0.0f, 0.0f, 1.0f },
-};
-
-FVertexSimple YAxisVertices[] =
-{
-	{  0.0f,  0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f }, // Axis Color(Green)
-	{ 0.0f, AXIS_LENGTH, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f },
-};
-
-FVertexSimple ZAxisVertices[] =
-{
-	{  0.0f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f }, // Axis Color(Blue)
-	{ 0.0f, 0.0f, AXIS_LENGTH,  0.0f, 0.0f, 1.0f, 1.0f },
-};
-
-FVertexSimple triangle_vertices[] =
-{
-	{  0.0f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f, 1.0f }, // Top vertex (red)
-	{ -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f },  // Bottom-left vertex (blue)
-	{  1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f } // Bottom-right vertex (green)
-};
-
-FVertexSimple cube_vertices[] =
-{
-	// Front face (Z+)
-	{ -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f }, // Bottom-left (red)
-	{ -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-left (yellow)
-	{  0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
-	{ -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-left (yellow)
-	{  0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-right (blue)
-	{  0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
-
-	// Back face (Z-)
-	{ -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f, 1.0f }, // Bottom-left (cyan)
-	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f, 1.0f }, // Bottom-right (magenta)
-	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
-	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
-	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f, 1.0f }, // Bottom-right (magenta)
-	{  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-right (yellow)
-
-	// Left face (X-)
-	{ -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f, 1.0f }, // Bottom-left (purple)
-	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
-	{ -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
-	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
-	{ -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-right (yellow)
-	{ -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
-
-	// Right face (X+)
-	{  0.5f, -0.5f, -0.5f,  1.0f, 0.5f, 0.0f, 1.0f }, // Bottom-left (orange)
-	{  0.5f, -0.5f,  0.5f,  0.5f, 0.5f, 0.5f, 1.0f }, // Bottom-right (gray)
-	{  0.5f,  0.5f, -0.5f,  0.5f, 0.0f, 0.5f, 1.0f }, // Top-left (purple)
-	{  0.5f,  0.5f, -0.5f,  0.5f, 0.0f, 0.5f, 1.0f }, // Top-left (purple)
-	{  0.5f, -0.5f,  0.5f,  0.5f, 0.5f, 0.5f, 1.0f }, // Bottom-right (gray)
-	{  0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 0.5f, 1.0f }, // Top-right (dark blue)
-
-	// Top face (Y+)
-	{ -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.5f, 1.0f }, // Bottom-left (light green)
-	{ -0.5f,  0.5f,  0.5f,  0.0f, 0.5f, 1.0f, 1.0f }, // Top-left (cyan)
-	{  0.5f,  0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f }, // Bottom-right (white)
-	{ -0.5f,  0.5f,  0.5f,  0.0f, 0.5f, 1.0f, 1.0f }, // Top-left (cyan)
-	{  0.5f,  0.5f,  0.5f,  0.5f, 0.5f, 0.0f, 1.0f }, // Top-right (brown)
-	{  0.5f,  0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f }, // Bottom-right (white)
-
-	// Bottom face (Y-)
-	{ -0.5f, -0.5f, -0.5f,  0.5f, 0.5f, 0.0f, 1.0f }, // Bottom-left (brown)
-	{ -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f }, // Top-left (red)
-	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.5f, 1.0f }, // Bottom-right (purple)
-	{ -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f }, // Top-left (red)
-	{  0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Top-right (green)
-	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.5f, 1.0f }, // Bottom-right (purple)
-};
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-	UWindow Window(1024, 1024, "Hello World!");
+	UWindow Window(1024, 1024, "Jungle Engine");
 
-	URenderer& Renderer = URenderer::GetInstance(Window.GethWnd());
+	URenderer& Renderer = URenderer::GetInstance();
+	Renderer.Create(Window.GethWnd());
 
 	UIManager &UI = UIManager::Instance();
 	UI.Initialize(Window.GethWnd(), Renderer.GetDevice(), Renderer.GetDeviceContext());
 
 	URayCaster& RayCaster = URayCaster::Instance();
 
-	UINT numVerticesTriangle = sizeof(triangle_vertices) / sizeof(FVertexSimple);
-	UINT numVerticesCube = sizeof(cube_vertices) / sizeof(FVertexSimple);
-	UINT numVerticesSphere = sizeof(sphere_vertices) / sizeof(FVertexSimple);
+	TimeManager& Timer = TimeManager::Instance();
+	Timer.Initialize();
+
+	// 씬 매니저 초기화 및 새로운 씬 생성
+	USceneManager& SceneManager = USceneManager::GetInstance();
+	SceneManager.NewScene("Default Scene");
+
+	// 메인 카메라에 입력 컴포넌트 추가
+	AActor* MainCamera = SceneManager.GetMainCameraActor();
+	Window.GetKeyboard().EnableAutoRepeat();
 
 	bool bIsExit = false;
-
-	enum ETypePrimitive
-	{
-		EPT_Triangle,
-		EPT_Cube,
-		EPT_Sphere,
-		EPT_Max,
-	};
-
-	ETypePrimitive typePrimitive = EPT_Triangle;
-	FVector offset(0.0f);
 
 	// ----------------------------------------------------------------------------- //
 									/* TEST CODE */
@@ -252,7 +172,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		MSG msg;
-
 		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{
 			TranslateMessage(&msg);
@@ -264,22 +183,63 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 			}
 		}
+
+		Timer.Update();
+
+		// 메인 카메라 입력 업데이트
 		
 		Renderer.Prepare();
 
-		FMatrix MVP;
-		
-		MVP = MTriangle * V * P;
+		// 현재 씬에서 렌더링
+		UScene* CurrentScene = SceneManager.GetCurrentScene();
+		MainCamera = SceneManager.GetMainCameraActor();
+		MainCamera->GetComponent<UInputComponent>()->SetMouse(&Window.GetMouse());
+		MainCamera->GetComponent<UInputComponent>()->SetKeyboard(&Window.GetKeyboard());
+		if (MainCamera && MainCamera->GetComponent<UInputComponent>())
+		{
+			MainCamera->GetComponent<UInputComponent>()->Update(Timer.GetDeltaTimeInSecond());
+		}
 
-		auto PrimitiveComponent = TriangleActor.GetComponent<UPrimitiveComponent>();
-		PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
-			Renderer.GetDeviceContext(),
-			"constants",
-			reinterpret_cast<void*>(MVP.M)
-		);
-		PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
-		PrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
-		PrimitiveComponent->Render(Renderer.GetDeviceContext());
+		if (CurrentScene && MainCamera)
+		{
+			auto CameraComponent = MainCamera->GetComponent<UCameraComponent>();
+			FMatrix M;
+			FMatrix V = CameraComponent->GetViewMatrix();
+			FMatrix P;
+			if (CameraComponent->IsOrthogonal())
+			{
+				P = CameraComponent->GetOrthographicMatrix(-30.0f, 30.0f, -30.0f, 30.0f);
+			}
+			else
+			{
+				P = CameraComponent->GetProjectionMatrix(Window.getAspectRatio());
+			}
+
+			// 현재 씬의 모든 액터들을 렌더링
+			const TArray<AActor*>& SceneActors = CurrentScene->GetActors();
+			for (AActor* Actor : SceneActors)
+			{
+				if (Actor == nullptr) 
+					continue;
+					
+				auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
+				if (PrimitiveComponent)
+				{
+					M = Actor->GetComponent<USceneComponent>()->GetModelingMatrix();
+					FMatrix MVP = M * V * P;
+
+					PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
+						Renderer.GetDeviceContext(), 
+						"constants", 
+						reinterpret_cast<void*>(MVP.M));
+					PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
+					PrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
+					PrimitiveComponent->Render(Renderer.GetDeviceContext());
+				}
+			}
+		}
+
+		EditorUI.RenderUI();
 
 		MVP = MSphere * V * P;
 
@@ -320,7 +280,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		Renderer.SwapBuffer();
 	}
 
-	UI.Release();
+	EditorUI.Release();
 
 	return 0;
 }
