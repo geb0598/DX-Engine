@@ -61,8 +61,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		FMatrix M;
 		FMatrix V = CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
-		FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.GetAspectRatio());
-		//FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetOrthographicMatrix(-1.f, 1.f, -1.f, 1.f);
+		FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
 
 		for (UObject* Obj : GUDObjectArray)
 		{
