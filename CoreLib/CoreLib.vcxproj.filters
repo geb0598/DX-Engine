@@ -96,6 +96,12 @@
     <ClCompile Include="Time\Private\TimeManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Utilities\Public\JsonSceneSerializer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Axis\Private\UAxis.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h">
@@ -201,6 +207,18 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Raycaster\Raycaster.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\Public\JsonSceneSerializer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Utilities\Public\Utilities.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Axis\Public\UAxis.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Axis\Axis.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

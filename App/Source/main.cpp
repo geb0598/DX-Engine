@@ -10,10 +10,29 @@
 #include "Window/Window.h"
 #include "UI/UI.h"
 #include "RayCaster/Raycaster.h"
+#include "Axis/Axis.h"
 
 // ---------------------------------------------------------- //
 
 #include "Sphere.h"
+
+FVertexSimple XAxisVertices[] =
+{
+	{  0.0f,  0.0f, 0.0f,  1.0f, 0.0f, 0.0f, 1.0f }, // Axis Color(Red)
+	{ AXIS_LENGTH, 0.0f, 0.0f,  1.0f, 0.0f, 0.0f, 1.0f },
+};
+
+FVertexSimple YAxisVertices[] =
+{
+	{  0.0f,  0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f }, // Axis Color(Green)
+	{ 0.0f, AXIS_LENGTH, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f },
+};
+
+FVertexSimple ZAxisVertices[] =
+{
+	{  0.0f,  0.0f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f }, // Axis Color(Blue)
+	{ 0.0f, 0.0f, AXIS_LENGTH,  0.0f, 0.0f, 1.0f, 1.0f },
+};
 
 FVertexSimple triangle_vertices[] =
 {
@@ -105,7 +124,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 									/* TEST CODE */
 	// ----------------------------------------------------------------------------- //
 
-	// allocate shader first
+	// allocate shader and input layout first
 	TArray<D3D11_INPUT_ELEMENT_DESC> InputLayoutDesc(
 		std::begin(FVertex::InputLayoutDesc),
 		std::end(FVertex::InputLayoutDesc)
@@ -124,6 +143,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		"main"
 	);
 
+	TArray<FVertex> XAxisVertexArray;
+	for (size_t i = 0; i < sizeof(XAxisVertices) / sizeof(FVertexSimple); ++i)
+	{
+		XAxisVertexArray.push_back(static_cast<FVertex>(XAxisVertices[i]));
+	}
+
+	TArray<FVertex> YAxisVertexArray;
+	for (size_t i = 0; i < sizeof(YAxisVertices) / sizeof(FVertexSimple); ++i)
+	{
+		YAxisVertexArray.push_back(static_cast<FVertex>(YAxisVertices[i]));
+	}
+
+	TArray<FVertex> ZAxisVertexArray;
+	for (size_t i = 0; i < sizeof(ZAxisVertices) / sizeof(FVertexSimple); ++i)
+	{
+		ZAxisVertexArray.push_back(static_cast<FVertex>(ZAxisVertices[i]));
+	}
+
+	UAxisDrawer XAxisDrawer(Renderer.GetDevice(), XAxisVertexArray);
+	UAxisDrawer YAxisDrawer(Renderer.GetDevice(), YAxisVertexArray);
+	UAxisDrawer ZAxisDrawer(Renderer.GetDevice(), ZAxisVertexArray);
+
 	AActor CameraActor;
 	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -1.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
 	CameraActor.AddComponent<UCameraComponent>(&CameraActor);
@@ -139,9 +180,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		VertexArray.push_back(static_cast<FVertex>(triangle_vertices[i]));
 	}
 
-	std::shared_ptr<UMesh> Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
+	std::shared_ptr<UMesh> TriangleMesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
 
-	TriangleActor.AddComponent<UPrimitiveComponent>(&TriangleActor, Mesh, VertexShader, PixelShader);
+	TriangleActor.AddComponent<UPrimitiveComponent>(&TriangleActor, TriangleMesh, VertexShader, PixelShader);
 	TriangleActor.AddComponent<USceneComponent>(&TriangleActor, FVector(0.5f, -0.8f, 50.0f), FVector(20.0f, 30.0f, -50.0f), FVector(0.5f, 1.2f, 1.4f));
 
 	FMatrix MTriangle = TriangleActor.GetComponent<USceneComponent>()->GetModelingMatrix();
@@ -263,6 +304,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		CubePrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
 		CubePrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
 		CubePrimitiveComponent->Render(Renderer.GetDeviceContext());
+
+		VertexShader->UpdateConstantBuffer(
+			Renderer.GetDeviceContext(),
+			"constants",
+			reinterpret_cast<void*>((V * P).M)
+		);
+
+		XAxisDrawer.Render(Renderer.GetDeviceContext());
+		YAxisDrawer.Render(Renderer.GetDeviceContext());
+		ZAxisDrawer.Render(Renderer.GetDeviceContext());
 
 		UI.RenderUI();
 

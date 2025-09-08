@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Axis\Private\UAxis.cpp" />
     <ClCompile Include="Component\Private\ActorComponent.cpp" />
     <ClCompile Include="Component\Private\PrimitiveComponent.cpp" />
     <ClCompile Include="Component\Private\UCameraComponent.cpp" />
@@ -50,6 +51,8 @@
   <ItemGroup>
     <ClInclude Include="Actor\Actor.h" />
     <ClInclude Include="Actor\Public\Actor.h" />
+    <ClInclude Include="Axis\Axis.h" />
+    <ClInclude Include="Axis\Public\UAxis.h" />
     <ClInclude Include="Component\Component.h" />
     <ClInclude Include="Component\Public\ActorComponent.h" />
     <ClInclude Include="Component\Public\PrimitiveComponent.h" />
