@@ -19,8 +19,9 @@ enum class ETypePrimitive
 FString PrimitiveTypeToString(ETypePrimitive Type);
 ETypePrimitive StringToPrimitiveType(const FString& TypeStr);
 
-void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, ETypePrimitive Type);
+void NewScene();
 void SaveScene(const FString& FilePath, int32 Version);
-void LoadScene(const FString& FilePath, HWND hWnd);
+void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, ETypePrimitive Type);
+void LoadScene(const FString& FilePath);
 
-AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, ETypePrimitive Type, HWND hWnd);
+AActor * CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, ETypePrimitive Type);

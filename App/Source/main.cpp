@@ -16,9 +16,10 @@
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-	UWindow Window(1024, 1024, "Hello World!");
+	UWindow Window(1024, 1024, "Jungle Engine");
 
-	URenderer& Renderer = URenderer::GetInstance(Window.GethWnd());
+	URenderer& Renderer = URenderer::GetInstance();
+	Renderer.Create(Window.GethWnd());
 
 	UIManager& EditorUI = UIManager::Instance();
 	EditorUI.Initialize(Window.GethWnd(), Renderer.GetDevice(), Renderer.GetDeviceContext());
@@ -31,9 +32,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// ----------------------------------------------------------------------------- //
 									/* TEST CODE */
 	// ----------------------------------------------------------------------------- //
-
-	// Load Scene from JSON File
-	LoadScene("Scene/DefaultScene.Scene", Window.GethWnd());
 
 	AActor CameraActor;
 	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -30.f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));

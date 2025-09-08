@@ -19,7 +19,9 @@ private:
 public:
 	// Set Imgui
 	void Initialize(HWND HWnd, ID3D11Device* Device, ID3D11DeviceContext* DeviceContext);
-
+	
+	void SetGreenTheme();
+	
 	void RenderControlPanel();
 	void RenderPropertyWindow();
 	void RenderConsole();

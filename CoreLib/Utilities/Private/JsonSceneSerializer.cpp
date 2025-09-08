@@ -40,12 +40,36 @@ void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotatio
 	Obj["Primitives"][IndexStr]["Type"] = PrimitiveTypeToString(Type);
 }
 
+void NewScene()
+{
+	// 현재 씬의 모든 오브젝트 제거
+	for (int i = static_cast<int>(GUDObjectArray.size()) - 1; i >= 0; --i)
+	{
+		if (GUDObjectArray[i] != nullptr)
+		{
+			// Actor 타입인지 확인하고 삭제
+			AActor* Actor = static_cast<AActor*>(GUDObjectArray[i]);
+			if (Actor)
+			{
+				delete Actor;  // 소멸자에서 자동으로 GUDObjectArray에서 제거
+			}
+		}
+	}
+
+	// 배열 정리 (nullptr 제거)
+	GUDObjectArray.clear();
+	GUDObjectFreeIndexArray.clear();
+
+	// UUID 카운터 초기화
+	UEngineStatics::NextUUID = 0;
+}
+
 // 미완성 함수
 void SaveScene(const FString& FilePath, int32 Version)
 {
 	json::JSON Obj = json::Object();
 	Obj["Version"] = Version;
-	Obj["NextUUID"] = GUDObjectArray.size() + 1;
+	Obj["NextUUID"] = GUDObjectArray.size(); // 0번은 카메라
 	Obj["Primitives"] = json::Object();
 
 	for (size_t i = 0; i < GUDObjectArray.size(); ++i)
@@ -79,13 +103,19 @@ void SaveScene(const FString& FilePath, int32 Version)
 	file << Obj.dump(1);
 }
 
-void LoadScene(const FString& FilePath, HWND hWnd)
+void LoadScene(const FString& FilePath)
 {
 	std::ifstream file(FilePath.c_str());
 	if (!file.is_open())
 	{
 		return;
 	}
+
+	// Main Camera 생성
+	AActor CameraActor;
+	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, 0.f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
+	CameraActor.AddComponent<UCameraComponent>(&CameraActor, PIDIV2, 0.1f, 1000.f);
+
 	std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 	json::JSON Obj = json::JSON::Load(content);
 	int32 NextUUID = Obj["NextUUID"].ToInt();
@@ -120,11 +150,11 @@ void LoadScene(const FString& FilePath, HWND hWnd)
 
 		ETypePrimitive Type = StringToPrimitiveType(PrimitiveType);
 		
-		AActor* LoadedActor = CreateActorFromPrimitive(Location, Rotation, Scale, Type, hWnd);
+		AActor* LoadedActor = CreateActorFromPrimitive(Location, Rotation, Scale, Type);
 	}
 }
 
-AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, ETypePrimitive Type, HWND hWnd)
+AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, ETypePrimitive Type)
 {
 	AActor* NewActor = new AActor();
 	
@@ -151,7 +181,7 @@ AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotatio
 		break;
 	}
 
-	URenderer& Renderer = URenderer::GetInstance(hWnd);
+	URenderer& Renderer = URenderer::GetInstance();
 	std::shared_ptr<UMesh> Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
 	
 	TArray<D3D11_INPUT_ELEMENT_DESC> InputLayoutDesc(
