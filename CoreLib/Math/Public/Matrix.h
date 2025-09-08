@@ -268,20 +268,7 @@ __declspec(align(16)) struct FMatrix
     }
     static FMatrix CreateViewMatrix(const FVector& CamLocation, const FVector& CamRotation)
     {
-        // 카메라 회전 행렬 (월드 → 카메라 좌표, 역회전 필요하므로 전치)
-        FMatrix R = FMatrix::CreateRotationFromEuler(CamRotation);
-
-        // 카메라 위치를 원점으로 이동
-        FMatrix T = FMatrix::CreateTranslation(CamLocation);
-
-        for (int i = 0; i < 4; i++)
-        {
-            R[i][0] *= -1;
-            R[i][2] *= -1;   // Z축 반전
-        }
-
-        // 뷰 행렬 = Rᵀ * T
-        return T.Inverse() * R.Inverse();
+		return CreateModelTransform(CamLocation, CamRotation, FVector(1.0f, 1.0f, 1.0f)).Inverse();
     }
 
     static FMatrix CreatePerspective(float FieldOfViewRad, float AspectRatio, float Near, float Far)

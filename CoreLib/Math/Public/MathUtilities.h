@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Vector.h"
 
 #define DEG_TO_RAD(degrees) ((degrees) * 3.14159265359f / 180.0f)

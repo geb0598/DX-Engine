@@ -41,8 +41,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Window.GetKeyboard().EnableAutoRepeat();
 	// ----------------------------------------------------------------------------- //
 
-	// ---------------------------- Temporary Timer -------------------------------- //
-	auto LastTime = std::chrono::high_resolution_clock::now();
 
 	// ----------------------------------------------------------------------------- //
 	while (bIsExit == false)

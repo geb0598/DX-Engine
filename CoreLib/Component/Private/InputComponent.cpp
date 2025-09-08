@@ -86,7 +86,7 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 		FVector DeltaPosition = {};
 		if (Keyboard.IsKeyPressed('W'))
 		{
-			DeltaPosition.Z -= 1.0f;
+			DeltaPosition.Z += 1.0f;
 		}
 		if (Keyboard.IsKeyPressed('A'))
 		{
@@ -94,7 +94,7 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 		}
 		if (Keyboard.IsKeyPressed('S'))
 		{
-			DeltaPosition.Z += 1.0f;
+			DeltaPosition.Z -= 1.0f;
 		}
 		if (Keyboard.IsKeyPressed('D'))
 		{

@@ -1,36 +1,35 @@
 ﻿#include "../Public/JsonSceneSerializer.h"
 #include "Renderer/Renderer.h"
-#include "../App/Source/BasicShapes.h"
 #include "Json/json.hpp"
 
-FString PrimitiveTypeToString(ETypePrimitive Type)
+FString PrimitiveTypeToString(EPrimitiveType Type)
 {
 	switch (Type)
 	{
-	case ETypePrimitive::EPT_Triangle:
+	case EPrimitiveType::EPT_Triangle:
 		return "Triangle";
-	case ETypePrimitive::EPT_Cube:
+	case EPrimitiveType::EPT_Cube:
 		return "Cube";
-	case ETypePrimitive::EPT_Sphere:
+	case EPrimitiveType::EPT_Sphere:
 		return "Sphere";
 	default:
 		return "Triangle";
 	}
 }
 
-ETypePrimitive StringToPrimitiveType(const FString& TypeStr)
+EPrimitiveType StringToPrimitiveType(const FString& TypeStr)
 {
 	if (TypeStr == "Triangle")
-		return ETypePrimitive::EPT_Triangle;
+		return EPrimitiveType::EPT_Triangle;
 	else if (TypeStr == "Cube")
-		return ETypePrimitive::EPT_Cube;
+		return EPrimitiveType::EPT_Cube;
 	else if (TypeStr == "Sphere")
-		return ETypePrimitive::EPT_Sphere;
+		return EPrimitiveType::EPT_Sphere;
 	else
-		return ETypePrimitive::EPT_Triangle;
+		return EPrimitiveType::EPT_Triangle;
 }
 
-void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, ETypePrimitive Type)
+void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, EPrimitiveType Type)
 {
 	FString IndexStr = std::to_string(Index);
 	Obj["Primitives"][IndexStr] = json::Object();
@@ -85,9 +84,7 @@ void SaveScene(const FString& FilePath, int32 Version)
 				FVector Location = SceneComponent->GetLocation();
 				FVector Rotation = SceneComponent->GetRotation();
 				FVector Scale = SceneComponent->GetScale();
-				
-				// TODO: 프리미티브 타입에 따라 저장하도록 변경해야함. (현재는 삼각형으로 고정)
-				ETypePrimitive Type = ETypePrimitive::EPT_Triangle;
+				EPrimitiveType Type = PrimitiveComponent->GetPrimitiveType();
 				
 				SavePrimitive(Obj, static_cast<int>(i), Location, Rotation, Scale, Type);
 			}
@@ -148,41 +145,17 @@ void LoadScene(const FString& FilePath)
 
 		FString PrimitiveType = Primitive["Type"].ToString();
 
-		ETypePrimitive Type = StringToPrimitiveType(PrimitiveType);
+		EPrimitiveType Type = StringToPrimitiveType(PrimitiveType);
 		
 		AActor* LoadedActor = CreateActorFromPrimitive(Location, Rotation, Scale, Type);
 	}
 }
 
-AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, ETypePrimitive Type)
+AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, EPrimitiveType Type)
 {
-	AActor* NewActor = new AActor();
-	
-	TArray<FVertex> VertexArray;
-	switch (Type)
-	{
-	case ETypePrimitive::EPT_Triangle:
-		for (size_t i = 0; i < sizeof(triangle_vertices) / sizeof(FVertexSimple); ++i)
-		{
-			VertexArray.push_back(static_cast<FVertex>(triangle_vertices[i]));
-		}
-		break;
-	case ETypePrimitive::EPT_Cube:
-		for (size_t i = 0; i < sizeof(cube_vertices) / sizeof(FVertexSimple); ++i)
-		{
-			VertexArray.push_back(static_cast<FVertex>(cube_vertices[i]));
-		}
-		break;
-	case ETypePrimitive::EPT_Sphere:
-		for (size_t i = 0; i < sizeof(sphere_vertices) / sizeof(FVertexSimple); ++i)
-		{
-			VertexArray.push_back(static_cast<FVertex>(sphere_vertices[i]));
-		}
-		break;
-	}
-
 	URenderer& Renderer = URenderer::GetInstance();
-	std::shared_ptr<UMesh> Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
+
+	AActor* NewActor = new AActor();
 	
 	TArray<D3D11_INPUT_ELEMENT_DESC> InputLayoutDesc(
 		std::begin(FVertex::InputLayoutDesc), 
@@ -202,7 +175,7 @@ AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotatio
 		"main"
 	);
 
-	NewActor->AddComponent<UPrimitiveComponent>(NewActor, Mesh, VertexShader, PixelShader);
+	NewActor->AddComponent<UPrimitiveComponent>(NewActor, Type, VertexShader, PixelShader);
 	NewActor->AddComponent<USceneComponent>(NewActor, Location, Rotation, Scale);
 
 	return NewActor;

@@ -8,20 +8,12 @@
 
 namespace json { class JSON; }
 
-enum class ETypePrimitive
-{
-	EPT_Triangle,
-	EPT_Cube,
-	EPT_Sphere,
-	EPT_Max,
-};
-
-FString PrimitiveTypeToString(ETypePrimitive Type);
-ETypePrimitive StringToPrimitiveType(const FString& TypeStr);
+FString PrimitiveTypeToString(EPrimitiveType Type);
+EPrimitiveType StringToPrimitiveType(const FString& TypeStr);
 
 void NewScene();
 void SaveScene(const FString& FilePath, int32 Version);
-void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, ETypePrimitive Type);
+void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, EPrimitiveType Type);
 void LoadScene(const FString& FilePath);
 
-AActor * CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, ETypePrimitive Type);
+AActor * CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, EPrimitiveType Type);

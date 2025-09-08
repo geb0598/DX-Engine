@@ -1,4 +1,4 @@
-#include "Renderer/Public/Renderer.h"
+﻿#include "Renderer/Public/Renderer.h"
 
 // NOTE: Renderer is initialized once per execution as a singleton
 URenderer & URenderer::GetInstance()
