@@ -8,7 +8,7 @@ uint32 FMemory::TotalAllocationCount = 0;
 void* operator new(size_t size)
 {
     void* ptr = std::malloc(size);
-    FMemory::TotalAllocationBytes += size;
+    FMemory::TotalAllocationBytes += static_cast<uint32>(size);
     FMemory::TotalAllocationCount++;
     return ptr;
 }
@@ -16,6 +16,6 @@ void* operator new(size_t size)
 void operator delete(void* ptr, size_t size) noexcept
 {
     std::free(ptr);
-    FMemory::TotalAllocationBytes -= size;
+    FMemory::TotalAllocationBytes -= static_cast<uint32>(size);
     FMemory::TotalAllocationCount--;
 }

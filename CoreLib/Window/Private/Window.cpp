@@ -69,7 +69,10 @@ UWindow::UWindow(int Width, int Height, const FString& WindowName)
 }
 
 UWindow::UWindow(const FWindowSettings& Settings)
-	: Width(Settings.Width), Height(Settings.Height)
+	: Width(Settings.Width), Height(Settings.Height), 
+	  bWasMaximized(Settings.bIsMaximized),
+	  RestoredWidth(Settings.RestoredWidth), RestoredHeight(Settings.RestoredHeight),
+	  RestoredPosX(Settings.RestoredPosX), RestoredPosY(Settings.RestoredPosY)
 {
 	RECT windowRect = { 0, 0, Settings.Width, Settings.Height };
 	DWORD style = WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_MAXIMIZEBOX;
@@ -174,6 +177,12 @@ void UWindow::SaveWindowSettings(const FString& FilePath) const
 
 	// Save Maximized State
 	Settings.bIsMaximized = IsMaximized();
+	
+	// Save Restored Size and Position
+	Settings.RestoredWidth = RestoredWidth;
+	Settings.RestoredHeight = RestoredHeight;
+	Settings.RestoredPosX = RestoredPosX;
+	Settings.RestoredPosY = RestoredPosY;
 	
 	// Save Window Title
 	WCHAR Title[256];
@@ -333,6 +342,36 @@ LRESULT UWindow::WndProcImpl(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	{
 		if (wParam != SIZE_MINIMIZED)
 		{
+			bool isCurrentlyMaximized = IsMaximized();
+			
+			// Maximized State Change Detection
+			if (isCurrentlyMaximized != bWasMaximized)
+			{
+				if (isCurrentlyMaximized && !bWasMaximized)
+				{
+					// Changed to Maximized
+					RECT rect;
+					if (GetWindowRect(hWnd, &rect))
+					{
+						// Save Current Size and Position
+						RECT clientRect;
+						if (GetClientRect(hWnd, &clientRect))
+						{
+							RestoredWidth = clientRect.right - clientRect.left;
+							RestoredHeight = clientRect.bottom - clientRect.top;
+						}
+						else
+						{
+							RestoredWidth = Width;
+							RestoredHeight = Height;
+						}
+						RestoredPosX = rect.left;
+						RestoredPosY = rect.top;
+					}
+				}
+				bWasMaximized = isCurrentlyMaximized;
+			}
+			
 			Width = LOWORD(lParam);
 			Height = HIWORD(lParam);
 			bIsResized = true;

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <Windows.h>
 
@@ -80,6 +80,13 @@ private:
 	int32 Height;
 	bool bIsResized = false;
 	FString SettingsFilePath;
+	
+	// 최대화 상태 관리
+	bool bWasMaximized = false;
+	int32 RestoredWidth = 1024;
+	int32 RestoredHeight = 1024;
+	int32 RestoredPosX = 100;
+	int32 RestoredPosY = 100;
 
 	UKeyboard Keyboard;
 	UMouse Mouse;

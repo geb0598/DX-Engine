@@ -12,6 +12,10 @@ void FWindowSettings::SaveToFile(const FString& FilePath) const
         file << "PosY=" << PosY << std::endl;
         file << "IsMaximized=" << (bIsMaximized ? 1 : 0) << std::endl;
         file << "WindowTitle=" << WindowTitle << std::endl;
+        file << "RestoredWidth=" << RestoredWidth << std::endl;
+        file << "RestoredHeight=" << RestoredHeight << std::endl;
+        file << "RestoredPosX=" << RestoredPosX << std::endl;
+        file << "RestoredPosY=" << RestoredPosY << std::endl;
         file.close();
     }
 }
@@ -44,6 +48,14 @@ bool FWindowSettings::LoadFromFile(const FString& FilePath)
             bIsMaximized = (std::stoi(value) != 0);
         else if (key == "WindowTitle")
             WindowTitle = value;
+        else if (key == "RestoredWidth")
+            RestoredWidth = std::stoi(value);
+        else if (key == "RestoredHeight")
+            RestoredHeight = std::stoi(value);
+        else if (key == "RestoredPosX")
+            RestoredPosX = std::stoi(value);
+        else if (key == "RestoredPosY")
+            RestoredPosY = std::stoi(value);
     }
 
     file.close();
