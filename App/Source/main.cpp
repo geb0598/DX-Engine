@@ -23,7 +23,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// #1. Window Creation
 	UWindow Window(1024, 1024, "Jungle Engine");
 
-	// #2 Renderer
 	URenderer& Renderer = URenderer::GetInstance();
 	// NOTE: Renderer should be initialized before use
 	Renderer.Create(Window.GethWnd());

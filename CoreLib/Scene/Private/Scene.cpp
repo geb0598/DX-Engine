@@ -1,4 +1,4 @@
-#include "../Public/Scene.h"
+﻿#include "../Public/Scene.h"
 
 UScene::UScene() 
     : SceneName("Untitled Scene"), SceneVersion(1), MainCameraActor(nullptr)

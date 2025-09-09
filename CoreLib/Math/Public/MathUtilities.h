@@ -4,12 +4,12 @@
 #define DEG_TO_RAD(degrees) ((degrees) * 3.14159265359f / 180.0f)
 #define RAD_TO_DEG(radians) ((radians) * 180.0f / 3.14159265359f)
 
-constexpr float PI = 3.141592654f;
-constexpr float TOWPI = 6.283185307f;
-constexpr float ONEDIVPI = 0.318309886f;
-constexpr float ONEDIV2PI = 0.159154943f;
-constexpr float PIDIV2 = 1.570796327f;
-constexpr float PIDIV4 = 0.785398163f;
+inline const float PI = 3.141592654f;
+inline const float TOWPI = 6.283185307f;
+inline const float ONEDIVPI = 0.318309886f;
+inline const float ONEDIV2PI = 0.159154943f;
+inline const float PIDIV2 = 1.570796327f;
+inline const float PIDIV4 = 0.785398163f;
 
 // 오일러 각도를 쿼터니언으로 변환
 inline FVector4 EulerToQuaternion(const FVector& EulerDegrees)
