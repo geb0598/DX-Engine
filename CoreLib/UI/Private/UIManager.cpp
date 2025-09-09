@@ -1,4 +1,6 @@
-﻿#include "UI/Public/UIManager.h"
+﻿#include <random>
+
+#include "UI/Public/UIManager.h"
 #include "TIme/Time.h"
 #include "Scene/Scene.h"
 #include "Utilities/Public/Logger.h"
@@ -52,7 +54,40 @@ void UIManager::RenderControlPanel()
 	// draw button and bind event
 	if (ImGui::Button("Spawn"))
 	{
+		auto PrimitiveType = UPrimitiveComponent::EType::Triangle;
 		// Code to delete or add primive by NumberOfSpawns variable
+		if (Items[CurrentItem] == "Cube")
+		{
+			PrimitiveType = UPrimitiveComponent::EType::Cube;
+		}
+		else if (Items[CurrentItem] == "Sphere")
+		{
+			PrimitiveType = UPrimitiveComponent::EType::Sphere;
+		}
+		else if (Items[CurrentItem] == "Triangle")
+		{
+			PrimitiveType = UPrimitiveComponent::EType::Triangle;
+		}
+
+		std::random_device RandomDevice;
+		std::mt19937 Generator(RandomDevice());
+		std::uniform_real_distribution<float> UniformDist(-10.0f, 10.0f);
+
+		for (int i = 0; i < NumberOfSpawns; ++i)
+		{
+			float X = UniformDist(Generator);
+			float Y = UniformDist(Generator);
+			float Z = UniformDist(Generator);
+
+			auto& SceneManager = USceneManager::GetInstance();
+			AActor* NewActor = SceneManager.CreateActorFromPrimitive(
+				{	 X,    Y,    Z },
+				{ 0.0f, 0.0f, 0.0f },
+				{ 1.0f, 1.0f, 1.0f },
+				PrimitiveType
+			);
+			SceneManager.AddActorToCurrentScene(NewActor);
+		}
 	}
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(150);

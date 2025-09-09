@@ -125,6 +125,15 @@ void UInputComponent::Update(float DeltaTimeSeconds)
 
 		auto WorldDeltaPosition = DeltaPosition * InverseViewMatrix;
 
+		if (Keyboard->IsKeyPressed('E'))
+		{
+			WorldDeltaPosition.Y += 1.0f * MoveSensitivity * DeltaTimeSeconds;
+		}
+		if (Keyboard->IsKeyPressed('Q'))
+		{
+			WorldDeltaPosition.Y -= 1.0f * MoveSensitivity * DeltaTimeSeconds;
+		}
+
 		//SceneComponent->TranslateTransform({ 1.0f, 0.0f, 0.0f });
 		SceneComponent->TranslateTransform(WorldDeltaPosition);
 	}
