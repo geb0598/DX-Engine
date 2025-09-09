@@ -186,6 +186,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					RayCaster,
 					MouseX,
 					MouseY,
+					Window.GetWidth(),
+					Window.GetHeight(),
 					ModelMatrix,
 					ViewMatrix,
 					ProjectionMatrix

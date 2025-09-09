@@ -32,17 +32,20 @@ UTriangleComponent::EType UTriangleComponent::GetType() const
 
 std::optional<float> UTriangleComponent::GetHitResultAtScreenPosition(
 	URayCaster& RayCaster, 
-	int32 X, 
-	int32 Y, 
-	const FMatrix& ModelingMatrix, 
+	int32 MouseX,
+	int32 MouseY,
+	int32 ScreenWidth,
+	int32 ScreenHeight, const FMatrix& ModelingMatrix,
 	const FMatrix& ViewMatrix, 
 	const FMatrix& ProjectionMatrix
 )
 {
 	return RayCaster.GetHitResultAtScreenPosition(
 		*this,
-		X, 
-		Y,
+		MouseX, 
+		MouseY,
+		ScreenWidth,
+		ScreenHeight,
 		ModelingMatrix,
 		ViewMatrix,
 		ProjectionMatrix

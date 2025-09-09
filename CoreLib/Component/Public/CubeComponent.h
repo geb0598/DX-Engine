@@ -26,8 +26,10 @@ public:
 
 	virtual std::optional<float> GetHitResultAtScreenPosition(
 		URayCaster& RayCaster,
-		int32 X, 
-		int32 Y,
+		int32 MouseX,
+		int32 MouseY,
+		int32 ScreenWidth,
+		int32 ScreenHeight,
 		const FMatrix& ModelingMatrix,
 		const FMatrix& ViewMatrix,
 		const FMatrix& ProjectionMatrix

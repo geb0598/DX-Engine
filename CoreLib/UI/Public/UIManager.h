@@ -19,6 +19,8 @@ private:
 	~UIManager();
 
 	TArray<FString> Logs;
+
+	const static uint32 LogLegionSize;
 public:
 	// Set Imgui
 	void Initialize(HWND HWnd, ID3D11Device* Device, ID3D11DeviceContext* DeviceContext);
@@ -32,6 +34,12 @@ public:
 	void RenderUI();
 
 	void Release();
+	void AddDebugLog(const FString &Log)
+	{
+		if (Logs.size() > LogLegionSize)
+			Logs.erase(Logs.begin());
+		Logs.push_back(Log);
+	}
 
 	// Get singleton instance
     static UIManager& Instance();

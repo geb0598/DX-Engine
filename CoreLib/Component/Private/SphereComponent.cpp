@@ -2425,12 +2425,23 @@ USphereComponent::EType USphereComponent::GetType() const
 	return EType::Sphere;
 }
 
-std::optional<float> USphereComponent::GetHitResultAtScreenPosition(URayCaster& RayCaster, int32 X, int32 Y, const FMatrix& ModelingMatrix, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix)
+std::optional<float> USphereComponent::GetHitResultAtScreenPosition(
+	URayCaster& RayCaster,
+	int32 MouseX,
+	int32 MouseY,
+	int32 ScreenWidth,
+	int32 ScreenHeight,
+	const FMatrix& ModelingMatrix,
+	const FMatrix& ViewMatrix,
+	const FMatrix& ProjectionMatrix
+)
 {
 	return RayCaster.GetHitResultAtScreenPosition(
 		*this,
-		X, 
-		Y,
+		MouseX, 
+		MouseY,
+		ScreenWidth,
+		ScreenHeight,
 		ModelingMatrix,
 		ViewMatrix,
 		ProjectionMatrix

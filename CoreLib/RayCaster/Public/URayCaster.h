@@ -30,13 +30,10 @@ private:
 	~URayCaster() = default;
 
 private:
-	void SetRayWithMouseAndMVP(int X, int Y, FMatrix Modeling, FMatrix View, FMatrix Projection)
+	void SetRayWithMouseAndMVP(int MouseX, int MouseY, int ScreenWidth, int ScreenHeight ,FMatrix Modeling, FMatrix View, FMatrix Projection)
 	{
-		const float SCREENWIDTH = 1024.0f;
-		const float SCREENHEIGHT = 1024.0f;
-
-		float NDCX = 2.0f * X / SCREENWIDTH - 1.0f;
-		float NDCY = 1.0f - 2.0f * Y / SCREENHEIGHT;
+		float NDCX = 2.0f * MouseX / ScreenWidth - 1.0f;
+		float NDCY = 1.0f - 2.0f * MouseY / ScreenHeight;
 
 		// near/far in NDC
 		M = Modeling;
@@ -448,7 +445,10 @@ public:
 public:
 	std::optional<float> GetHitResultAtScreenPosition(
 		UTriangleComponent& TriangleComponent,
-		int32 X, int32 Y,
+		int32 MouseX,
+		int32 MouseY,
+		int32 ScreenWidth,
+		int32 ScreenHeight,
 		const FMatrix& ModelingMatrix,
 		const FMatrix& ViewMatrix,
 		const FMatrix& ProjectionMatrix
@@ -456,7 +456,10 @@ public:
 
 	std::optional<float> GetHitResultAtScreenPosition(
 		UCubeComponent& CubeComponent,
-		int32 X, int32 Y,
+		int32 MouseX,
+		int32 MouseY,
+		int32 ScreenWidth,
+		int32 ScreenHeight,
 		const FMatrix& ModelingMatrix,
 		const FMatrix& ViewMatrix,
 		const FMatrix& ProjectionMatrix
@@ -464,7 +467,10 @@ public:
 
 	std::optional<float> GetHitResultAtScreenPosition(
 		USphereComponent& SphereComponent,
-		int32 X, int32 Y,
+		int32 MouseX,
+		int32 MouseY,
+		int32 ScreenWidth,
+		int32 ScreenHeight,
 		const FMatrix& ModelingMatrix,
 		const FMatrix& ViewMatrix,
 		const FMatrix& ProjectionMatrix
