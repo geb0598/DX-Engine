@@ -69,5 +69,5 @@ void UVertexShader::Bind(ID3D11DeviceContext* DeviceContext, TBufferNames && ...
 
 	DeviceContext->VSSetShader(VertexShader.Get(), nullptr, 0);
 
-	(ShaderReflector->Bind(DeviceContext, std::forward<TBufferNames>(BufferNames)), ...);
+	(ShaderReflector->BindVertexShader(DeviceContext, std::forward<TBufferNames>(BufferNames)), ...);
 }

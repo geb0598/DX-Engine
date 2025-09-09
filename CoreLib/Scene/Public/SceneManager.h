@@ -38,6 +38,8 @@ public:
     
     // Camera Access
     AActor* GetMainCameraActor() const;
+    // Current Actor Access
+    AActor* GetCurrentActor() const;
     
 private:
     // Helper functions for serialization

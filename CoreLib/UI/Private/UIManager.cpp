@@ -170,54 +170,63 @@ void UIManager::RenderPropertyWindow()
 
 	/* Set object translation */
 
-	 float ObjectTranslationX = 0.0f;
-	static float ObjectTranslationY = 0.0f;
-	static float ObjectTranslationZ = 0.0f;
+	auto CurrentActor = USceneManager::GetInstance().GetCurrentActor();
+	if (!CurrentActor)
+	{
+		ImGui::End();
+		return;
+	}
+
+	auto CurrentActorSceneComponent = CurrentActor->GetComponent<USceneComponent>();
+
+	auto ObjectLocation = CurrentActorSceneComponent->GetLocation();
 
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectTranslationX", &ObjectTranslationX, 0.2f);
+	ImGui::DragFloat("##ObjectTranslationX", &ObjectLocation.X, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectTranslationY", &ObjectTranslationY, 0.2f);
+	ImGui::DragFloat("##ObjectTranslationY", &ObjectLocation.Y, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectTranslationZ", &ObjectTranslationZ, 0.2f);
+	ImGui::DragFloat("##ObjectTranslationZ", &ObjectLocation.Z, 0.2f);
 	ImGui::SameLine();
 	ImGui::Text("Translation");
 
+	CurrentActorSceneComponent->SetLocation(ObjectLocation);
+
 	/* Set object rotation */
 
-	static float ObjectRotationX = 0.0f;
-	static float ObjectRotationY = 0.0f;
-	static float ObjectRotationZ = 0.0f;
+	auto ObjectRotation = CurrentActorSceneComponent->GetRotation();
 
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectRotationX", &ObjectRotationX, 0.2f);
+	ImGui::DragFloat("##ObjectRotationX", &ObjectRotation.X, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectRotationY", &ObjectRotationY, 0.2f);
+	ImGui::DragFloat("##ObjectRotationY", &ObjectRotation.Y, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectRotationZ", &ObjectRotationZ, 0.2f);
+	ImGui::DragFloat("##ObjectRotationZ", &ObjectRotation.Z, 0.2f);
 	ImGui::SameLine();
 	ImGui::Text("Rotation");
 
+	CurrentActorSceneComponent->SetRotation(ObjectRotation);
+
 	/* Set object translation */
 
-	static float ObjectScaleX = 0.0f;
-	static float ObjectScaleY = 0.0f;
-	static float ObjectScaleZ = 0.0f;
+	auto ObjectScale = CurrentActorSceneComponent->GetScale();
 
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectScaleX", &ObjectScaleX, 0.2f);
+	ImGui::DragFloat("##ObjectScaleX", &ObjectScale.X, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectScaleY", &ObjectScaleY, 0.2f);
+	ImGui::DragFloat("##ObjectScaleY", &ObjectScale.Y, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectScaleZ", &ObjectScaleZ, 0.2f);
+	ImGui::DragFloat("##ObjectScaleZ", &ObjectScale.Z, 0.2f);
 	ImGui::SameLine();
 	ImGui::Text("Scale");
+
+	CurrentActorSceneComponent->SetScale(ObjectScale);
 
 	ImGui::End();
 	return;

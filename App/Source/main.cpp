@@ -1,4 +1,7 @@
-﻿// ----------------------------- ImGui Headers -------------------------------- //
+﻿// ------------------------------- C++ Headers -------------------------------- //
+#include <limits>
+
+// ----------------------------- ImGui Headers -------------------------------- //
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
 #include "ImGui/imgui_impl_dx11.h"
@@ -53,6 +56,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// TODO
 	
 	// ------------------------------- Misc Setup ------------------------------- //
+
+	ImGuiIO& ImIO = ImGui::GetIO();
 
 	// -------------------------------- Main Loop -------------------------------- //
 	bool bIsExit = false;
@@ -118,8 +123,91 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			ProjectionMatrix = CameraComponent->GetProjectionMatrix(Window.getAspectRatio());
 		}
 
-		// #1. Rendering Scene Actors
 		const TArray<AActor*> SceneActors = CurrentScene->GetActors();
+
+		// #1. Object Picking
+		AActor* PickedActor = nullptr;
+		float PickedActorDistance = (std::numeric_limits<float>::max)();
+
+		// TODO: Improve performance with caching
+		if (!ImIO.WantCaptureMouse && Window.GetMouse().IsLeftPressed())
+		{
+			for (auto Actor : SceneActors)
+			{
+				if (Actor == nullptr)
+				{
+					continue;
+				}
+
+				auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
+				if (PrimitiveComponent == nullptr)
+				{
+					continue;
+				}
+
+				// NOTE: Actor with no scene component is ignored quietely
+				auto SceneComponent = Actor->GetComponent<USceneComponent>();
+				if (SceneComponent == nullptr)
+				{
+					continue;
+				}
+				ModelMatrix = SceneComponent->GetModelingMatrix();
+
+				// --------------------- Object Picking------------------------- //
+				auto [MouseX, MouseY] = Window.GetMouse().GetPosition();
+
+				auto HitResult = PrimitiveComponent->GetHitResultAtScreenPosition(
+					RayCaster,
+					MouseX,
+					MouseY,
+					ModelMatrix,
+					ViewMatrix,
+					ProjectionMatrix
+				);
+
+				if (HitResult && PickedActorDistance > *HitResult)
+				{
+					PickedActor = Actor;
+					PickedActorDistance = *HitResult;
+				}
+
+				// ------------------------- Debug ---------------------------- //
+				if (!HitResult)
+				{
+					continue;
+				}
+
+				switch (PrimitiveComponent->GetType())
+				{
+				case UPrimitiveComponent::EType::Triangle:
+					EditorUI.AddDebugLog("Triangle Hit!");
+					EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+					break;
+				case UPrimitiveComponent::EType::Cube:
+					EditorUI.AddDebugLog("Cube Hit!");
+					EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+					break;
+				case UPrimitiveComponent::EType::Sphere:
+					EditorUI.AddDebugLog("Sphere Hit!");
+					EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+					break;
+				default:
+					EditorUI.AddDebugLog("Unknown Hit!");
+					EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+					break;
+				}
+				// ----------------------------------------------------------- //
+
+			}
+
+			if (PickedActor)
+			{
+				CurrentScene->SetCurrentActor(PickedActor);
+				EditorUI.AddDebugLog("Selected Dist: " + std::to_string(PickedActorDistance));
+			}
+		}
+
+		// #2. Object Rendering
 		for (auto Actor : SceneActors)
 		{
 			if (Actor == nullptr)
@@ -141,61 +229,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 			ModelMatrix = SceneComponent->GetModelingMatrix();
 
-			// --------------------- Object Picking------------------------- //
-			if (Window.GetMouse().IsLeftPressed())
-			{
-				auto [MouseX, MouseY] = Window.GetMouse().GetPosition();
-
-				auto HitResult = PrimitiveComponent->GetHitResultAtScreenPosition(
-					RayCaster,
-					MouseX,
-					MouseY,
-					ModelMatrix,
-					ViewMatrix,
-					ProjectionMatrix
-				);
-
-				if (HitResult)
-				{
-					EditorUI.AddDebugLog("Ray Hit!");
-				}
-
-				/* Legacy Code
-
-				RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, ModelMatrix, ViewMatrix, ProjectionMatrix);
-				bool bIsCollidedWithRay = false;
-				switch (PrimitiveComponent->GetType())
-				{
-				case UPrimitiveComponent::EType::Cube:
-					bIsCollidedWithRay = RayCaster.RayCastToCube() != DONT_INTERSECT;
-					if (bIsCollidedWithRay)
-					{
-						EditorUI.AddDebugLog("Ray Hit With Cube!");
-					}
-					break;
-				case UPrimitiveComponent::EType::Sphere:
-					bIsCollidedWithRay = RayCaster.RayCastToSphere(1.0f) != DONT_INTERSECT;
-					if (bIsCollidedWithRay)
-					{
-						EditorUI.AddDebugLog("Ray Hit With Sphere!");
-					}
-					break;
-				case UPrimitiveComponent::EType::Triangle:
-					bIsCollidedWithRay = RayCaster.RayCastToTriangle() != DONT_INTERSECT;
-					if (bIsCollidedWithRay)
-					{
-						EditorUI.AddDebugLog("Ray Hit With Triangle!");
-					}
-					break;
-				default:
-					// NOTE: Do Nothing
-					break;
-				}
-
-				*/
-			}
-			// ------------------------------------------------------------- //
-
 			FMatrix MVP = ModelMatrix * ViewMatrix * ProjectionMatrix;
 
 			auto VertexShader = PrimitiveComponent->GetVertexShader();
@@ -205,9 +238,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(MVP.M)
 			);
 
+			int bIsSelected = Actor == CurrentScene->GetCurrentActor();
+			PixelShader->UpdateConstantBuffer(
+				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(&bIsSelected)
+			);
+
 			// NOTE: Shader Binding
 			VertexShader->Bind(Renderer.GetDeviceContext(), "constants");
-			PixelShader->Bind(Renderer.GetDeviceContext());
+			PixelShader->Bind(Renderer.GetDeviceContext(), "constants");
+			// PixelShader->Bind(Renderer.GetDeviceContext());
 
 			// NOTE: Render Call
 			PrimitiveComponent->Render(Renderer.GetDeviceContext());

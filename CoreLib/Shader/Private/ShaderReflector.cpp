@@ -75,10 +75,20 @@ UShaderReflector::FConstantBufferInfo
 	}
 }
 
-void UShaderReflector::Bind(ID3D11DeviceContext* DeviceContext, const FString& BufferName)
+void UShaderReflector::BindVertexShader(ID3D11DeviceContext* DeviceContext, const FString& BufferName)
 {
 	auto ConstantBufferInfo = GetConstantBufferInfo(BufferName);
 	DeviceContext->VSSetConstantBuffers(
+		ConstantBufferInfo.BindPoint,
+		1,
+		ConstantBufferInfo.ConstantBuffer.GetAddressOf()
+	);
+}
+
+void UShaderReflector::BindPixelShader(ID3D11DeviceContext* DeviceContext, const FString& BufferName)
+{
+	auto ConstantBufferInfo = GetConstantBufferInfo(BufferName);
+	DeviceContext->PSSetConstantBuffers(
 		ConstantBufferInfo.BindPoint,
 		1,
 		ConstantBufferInfo.ConstantBuffer.GetAddressOf()

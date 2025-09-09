@@ -185,6 +185,15 @@ AActor* USceneManager::GetMainCameraActor() const
     return nullptr;
 }
 
+AActor* USceneManager::GetCurrentActor() const
+{
+    if (CurrentScene)
+    {
+        return CurrentScene->GetCurrentActor();
+    }
+    return nullptr;
+}
+
 // Helper functions
 void USceneManager::SavePrimitive(json::JSON& Obj, int Index, const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type)
 {
