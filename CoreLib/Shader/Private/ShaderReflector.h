@@ -30,7 +30,8 @@ public:
 
 	FConstantBufferInfo GetConstantBufferInfo(const FString& BufferName);
 
-	void Bind(ID3D11DeviceContext* DeviceContext, const FString& BufferName);
+	void BindVertexShader(ID3D11DeviceContext* DeviceContext, const FString& BufferName);
+	void BindPixelShader(ID3D11DeviceContext* DeviceContext, const FString& BufferName);
 
 private:
 	TMap<FString, FConstantBufferInfo> ConstantBufferInfoMap;

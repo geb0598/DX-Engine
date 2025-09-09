@@ -1,244 +1,293 @@
+﻿// ------------------------------- C++ Headers -------------------------------- //
+#include <limits>
+
+// ----------------------------- ImGui Headers -------------------------------- //
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_impl_win32.h"
 #include "ImGui/imgui_impl_dx11.h"
 #include "ImGui/imgui_internal.h"
 
-// ---------------------------------------------------------- //
+// --------------------------------- Modules ---------------------------------- //
 #include "Actor/Actor.h"
 #include "Component/Component.h"
+#include "RayCaster/Raycaster.h"
 #include "Renderer/Renderer.h"
+#include "Scene/Scene.h"
+#include "TIme/Time.h"
+#include "UI/UI.h"
+#include "Utilities/Utilities.h"
 #include "Window/Window.h"
 
-// ---------------------------------------------------------- //
-#include <chrono>
-#include "Sphere.h"
-
-FVertexSimple triangle_vertices[] =
-{
-	{  0.0f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f, 1.0f }, // Top vertex (red)
-	{ -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f },  // Bottom-left vertex (blue)
-	{  1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f } // Bottom-right vertex (green)
-};
-
-FVertexSimple cube_vertices[] =
-{
-	// Front face (Z+)
-	{ -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f }, // Bottom-left (red)
-	{ -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-left (yellow)
-	{  0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
-	{ -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-left (yellow)
-	{  0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-right (blue)
-	{  0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
-
-	// Back face (Z-)
-	{ -0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f, 1.0f }, // Bottom-left (cyan)
-	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f, 1.0f }, // Bottom-right (magenta)
-	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
-	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
-	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f, 1.0f }, // Bottom-right (magenta)
-	{  0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-right (yellow)
-
-	// Left face (X-)
-	{ -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f, 1.0f }, // Bottom-left (purple)
-	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
-	{ -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
-	{ -0.5f,  0.5f, -0.5f,  0.0f, 0.0f, 1.0f, 1.0f }, // Top-left (blue)
-	{ -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f, 1.0f }, // Top-right (yellow)
-	{ -0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right (green)
-
-	// Right face (X+)
-	{  0.5f, -0.5f, -0.5f,  1.0f, 0.5f, 0.0f, 1.0f }, // Bottom-left (orange)
-	{  0.5f, -0.5f,  0.5f,  0.5f, 0.5f, 0.5f, 1.0f }, // Bottom-right (gray)
-	{  0.5f,  0.5f, -0.5f,  0.5f, 0.0f, 0.5f, 1.0f }, // Top-left (purple)
-	{  0.5f,  0.5f, -0.5f,  0.5f, 0.0f, 0.5f, 1.0f }, // Top-left (purple)
-	{  0.5f, -0.5f,  0.5f,  0.5f, 0.5f, 0.5f, 1.0f }, // Bottom-right (gray)
-	{  0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 0.5f, 1.0f }, // Top-right (dark blue)
-
-	// Top face (Y+)
-	{ -0.5f,  0.5f, -0.5f,  0.0f, 1.0f, 0.5f, 1.0f }, // Bottom-left (light green)
-	{ -0.5f,  0.5f,  0.5f,  0.0f, 0.5f, 1.0f, 1.0f }, // Top-left (cyan)
-	{  0.5f,  0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f }, // Bottom-right (white)
-	{ -0.5f,  0.5f,  0.5f,  0.0f, 0.5f, 1.0f, 1.0f }, // Top-left (cyan)
-	{  0.5f,  0.5f,  0.5f,  0.5f, 0.5f, 0.0f, 1.0f }, // Top-right (brown)
-	{  0.5f,  0.5f, -0.5f,  0.5f, 1.0f, 1.0f, 1.0f }, // Bottom-right (white)
-
-	// Bottom face (Y-)
-	{ -0.5f, -0.5f, -0.5f,  0.5f, 0.5f, 0.0f, 1.0f }, // Bottom-left (brown)
-	{ -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f }, // Top-left (red)
-	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.5f, 1.0f }, // Bottom-right (purple)
-	{ -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f, 1.0f }, // Top-left (red)
-	{  0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f, 1.0f }, // Top-right (green)
-	{  0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.5f, 1.0f }, // Bottom-right (purple)
-};
+// ---------------------------------------------------------------------------- //
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
-	UWindow Window(1024, 1024, "Hello World!");
+	// ------------------------------- Initial Setup ------------------------------- //
+	// #0. Logger Add File Output
+	CLogger::Instance().AddOutput(std::make_unique<CFileOutput>("JungleEngine.log"));
+	UE_LOG(Info, "Hello World %d", 2025);
 
-	URenderer& Renderer = URenderer::GetInstance(Window.GethWnd());
-
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	ImGui_ImplWin32_Init((void*)Window.GethWnd());
-	ImGui_ImplDX11_Init(Renderer.GetDevice(), Renderer.GetDeviceContext());
-
-	UINT numVerticesTriangle = sizeof(triangle_vertices) / sizeof(FVertexSimple);
-	UINT numVerticesCube = sizeof(cube_vertices) / sizeof(FVertexSimple);
-	UINT numVerticesSphere = sizeof(sphere_vertices) / sizeof(FVertexSimple);
-
-	float scaleMod = 0.1f;
-
-	for (UINT i = 0; i < numVerticesSphere; ++i)
+	// #1. Window Creation with Settings
+	FWindowSettings windowSettings;
+	const FString settingsPath = "WindowSettings.ini";
+	
+	// #1.1 If Load File Exists, Load Settings
+	if (!windowSettings.LoadFromFile(settingsPath))
 	{
-		sphere_vertices[i].x *= scaleMod;
-		sphere_vertices[i].y *= scaleMod;
-		sphere_vertices[i].z *= scaleMod;
+		// # If Load File Not Exists, Create with Default Settings
+		windowSettings.Width = 1600;
+		windowSettings.Height = 900;
+		windowSettings.WindowTitle = "Jungle Engine";
+		windowSettings.bIsMaximized = false;
 	}
+	
+	// #1.2 Set SettingsFilePath to Window
+	UWindow Window(windowSettings);
+	Window.SetSettingsFilePath(settingsPath);
 
+	// #2. Renderer
+	URenderer& Renderer = URenderer::GetInstance();
+	// NOTE: Renderer should be initialized before use
+	Renderer.Create(Window.GethWnd());
+
+	// #3. UI Manager
+	UIManager& EditorUI = UIManager::Instance();
+	// NOTE: UIManager should be initialized before use
+	EditorUI.Initialize(Window.GethWnd(), Renderer.GetDevice(), Renderer.GetDeviceContext());
+	// TODO: Should follow Naming Convention
+
+	// #4. Time Manager
+	TimeManager& Timer = TimeManager::Instance();
+	Timer.Initialize();
+	// TODO: Should follow Naming Convention
+
+	// #5. Ray Caster
+	URayCaster& RayCaster = URayCaster::Instance();
+
+	// #6. Scene Manager
+	USceneManager& SceneManager = USceneManager::GetInstance();
+	SceneManager.NewScene("Default Scene");
+
+	AActor* MainCamera = SceneManager.GetMainCameraActor();
+
+	// ------------------------------- Axis Setup ------------------------------- //
+
+	// TODO
+	
+	// ------------------------------- Misc Setup ------------------------------- //
+
+	ImGuiIO& ImIO = ImGui::GetIO();
+
+	// -------------------------------- Main Loop -------------------------------- //
 	bool bIsExit = false;
-
-	enum ETypePrimitive
-	{
-		EPT_Triangle,
-		EPT_Cube,
-		EPT_Sphere,
-		EPT_Max,
-	};
-
-	ETypePrimitive typePrimitive = EPT_Triangle;
-	FVector offset(0.0f);
-
-	// ----------------------------------------------------------------------------- //
-									/* TEST CODE */
-	// ----------------------------------------------------------------------------- //
-
-	AActor Actor;
-
-	TArray<FVertex> VertexArray;
-	for (size_t i = 0; i < sizeof(triangle_vertices) / sizeof(FVertexSimple); ++i)
-	{
-		VertexArray.push_back(static_cast<FVertex>(triangle_vertices[i]));
-	}
-
-	std::shared_ptr<UMesh> Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
-
-	TArray<D3D11_INPUT_ELEMENT_DESC> InputLayoutDesc(
-		std::begin(FVertex::InputLayoutDesc), 
-		std::end(FVertex::InputLayoutDesc)
-	);
-
-	std::shared_ptr<UVertexShader> VertexShader = std::make_shared<UVertexShader>(
-		Renderer.GetDevice(),
-		"./Shader/VertexShader.hlsl", 
-		"main",
-		InputLayoutDesc
-	);
-
-	std::shared_ptr<UPixelShader> PixelShader = std::make_shared<UPixelShader>(
-		Renderer.GetDevice(),
-		"./Shader/PixelShader.hlsl",
-		"main"
-	);
-
-	Actor.AddComponent<UPrimitiveComponent>(&Actor, Mesh, VertexShader, PixelShader);
-	Actor.AddComponent<USceneComponent>(&Actor, FVector(0.0f, 0.0f, 20.0f), FVector(0.0f, 60.0f, 0.0f), FVector(1.0f, 1.0f, 1.0f));
-
-	// -------------------------- Add Input Component -------------------------------- //
-	AActor CameraActor;
-	CameraActor.AddComponent<UInputComponent>(&CameraActor, Window.GetKeyboard(), Window.GetMouse());
-	CameraActor.AddComponent<USceneComponent>(&CameraActor, FVector(0.0f, 0.0f, -1.0f), FVector(0.0f, 0.0f, 0.0f), FVector(0.0f, 0.0f, 0.0f));
-	CameraActor.AddComponent<UCameraComponent>(&CameraActor);
-
-	Window.GetKeyboard().EnableAutoRepeat();
-	// ----------------------------------------------------------------------------- //
-
-	// ---------------------------- Temporary Timer -------------------------------- //
-	auto LastTime = std::chrono::high_resolution_clock::now();
-	// ----------------------------------------------------------------------------- //
 	while (bIsExit == false)
 	{
-		MSG msg;
-		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+		// ------------------------- Message Loop  ----------------------------- //
+		MSG Msg;
+		while (PeekMessage(&Msg, nullptr, 0, 0, PM_REMOVE))
 		{
-			TranslateMessage(&msg);
-			DispatchMessage(&msg);
+			TranslateMessage(&Msg);
+			DispatchMessage(&Msg);
 
-			if (msg.message == WM_QUIT)
+			if (Msg.message == WM_QUIT)
 			{
 				bIsExit = true;
 				break;
 			}
 		}
 
-		// ------------------------- Temporary Timer ---------------------------------- //
-		auto CurrentTime = std::chrono::high_resolution_clock::now();
-		auto DeltaTime = LastTime - CurrentTime;
-		LastTime = CurrentTime;
-		CameraActor.GetComponent<UInputComponent>()->Update(
-			std::chrono::duration_cast<std::chrono::duration<double>>(DeltaTime).count()
-		);
-		/*
-		CameraActor.GetComponent<USceneComponent>()->RotateTranform({ 0.0f,
-			float(180 * std::chrono::duration_cast<std::chrono::duration<double>>(DeltaTime).count()),
-			0.0f });
-			*/
-		// ---------------------------------------------------------------------------- //
+		// ------------------------- Window Resize Handling -------------------- //
+		if (Window.IsResized())
+		{
+			Renderer.ResizeBuffers(Window.GetWidth(), Window.GetHeight());
+			Window.ResetResizeFlag();
+		}
+
+		// ------------------------- Scene Load ------------------------------- //
+		Timer.Update();
+
+		// NOTE: Load Scene from here
+		UScene* CurrentScene = SceneManager.GetCurrentScene();
+
+		// NOTE: Update Main Camera
+		MainCamera = SceneManager.GetMainCameraActor();
+
+		auto CameraComponent = MainCamera->GetComponent<UCameraComponent>();
+		auto CameraInputComponent = MainCamera->GetComponent<UInputComponent>();
+
+		// TODO: Mouse and Keyboard are updated in every loop
+		CameraInputComponent->SetMouse(&Window.GetMouse());
+		CameraInputComponent->SetKeyboard(&Window.GetKeyboard());
+
+		// ------------------------- Input Handling ---------------------------- //
+		if (MainCamera && CameraInputComponent)
+		{
+			 CameraInputComponent->Update(Timer.GetDeltaTimeInSecond());
+		}
+
+		// ------------------------- Rendering Loop ---------------------------- //
+		assert(CurrentScene && MainCamera);
 
 		Renderer.Prepare();
 
-		// ---------------------------------------------------------------------------- //
-		FMatrix M = Actor.GetComponent<USceneComponent>()->GetModelingMatrix();
-		FMatrix V = CameraActor.GetComponent<UCameraComponent>()->GetViewMatrix();
-		FMatrix P = CameraActor.GetComponent<UCameraComponent>()->GetProjectionMatrix(Window.getAspectRatio());
+		FMatrix ModelMatrix;
+		FMatrix ViewMatrix = CameraComponent->GetViewMatrix();
+		FMatrix ProjectionMatrix;
 
-		FMatrix MVP = M * V * P;
-		// ---------------------------------------------------------------------------- //
-
-		ImGui_ImplDX11_NewFrame();
-		ImGui_ImplWin32_NewFrame();
-		ImGui::NewFrame();
-
-		ImGui::Begin("Jungle Property Window");
-		ImGui::Text("Hello Jungle World!");
-
-		if (ImGui::Button("Change primitive"))
+		if (CameraComponent->IsOrthogonal())
 		{
-			switch (typePrimitive)
+			// TODO: These values are arbitrarily hard-coded values
+			constexpr float LEFT = -20.0f;
+			constexpr float RIGHT = 20.0f;
+			constexpr float BOTTOM = -20.0f;
+			constexpr float TOP = 20.0f;
+			ProjectionMatrix = CameraComponent->GetOrthographicMatrix(LEFT, RIGHT, BOTTOM, TOP);
+		}
+		else
+		{
+			// TODO: Change name of getter to PascalCase
+			ProjectionMatrix = CameraComponent->GetProjectionMatrix(Window.getAspectRatio());
+		}
+
+		const TArray<AActor*> SceneActors = CurrentScene->GetActors();
+
+		// #1. Object Picking
+		AActor* PickedActor = nullptr;
+		float PickedActorDistance = (std::numeric_limits<float>::max)();
+
+		// TODO: Improve performance with caching
+		if (!ImIO.WantCaptureMouse && Window.GetMouse().IsLeftPressed())
+		{
+			for (auto Actor : SceneActors)
 			{
-			case EPT_Triangle:
-				typePrimitive = EPT_Cube;
-				break;
-			case EPT_Cube:
-				typePrimitive = EPT_Sphere;
-				break;
-			case EPT_Sphere:
-				typePrimitive = EPT_Triangle;
-				break;
+				if (Actor == nullptr)
+				{
+					continue;
+				}
+
+				auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
+				if (PrimitiveComponent == nullptr)
+				{
+					continue;
+				}
+
+				// NOTE: Actor with no scene component is ignored quietely
+				auto SceneComponent = Actor->GetComponent<USceneComponent>();
+				if (SceneComponent == nullptr)
+				{
+					continue;
+				}
+				ModelMatrix = SceneComponent->GetModelingMatrix();
+
+				// --------------------- Object Picking------------------------- //
+				auto [MouseX, MouseY] = Window.GetMouse().GetPosition();
+
+				auto HitResult = PrimitiveComponent->GetHitResultAtScreenPosition(
+					RayCaster,
+					MouseX,
+					MouseY,
+					Window.GetWidth(),
+					Window.GetHeight(),
+					ModelMatrix,
+					ViewMatrix,
+					ProjectionMatrix
+				);
+
+				if (HitResult && PickedActorDistance > *HitResult)
+				{
+					PickedActor = Actor;
+					PickedActorDistance = *HitResult;
+				}
+
+				// ------------------------- Debug ---------------------------- //
+				if (!HitResult)
+				{
+					continue;
+				}
+
+				switch (PrimitiveComponent->GetType())
+				{
+				case UPrimitiveComponent::EType::Triangle:
+					EditorUI.AddDebugLog("Triangle Hit!");
+					EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+					break;
+				case UPrimitiveComponent::EType::Cube:
+					EditorUI.AddDebugLog("Cube Hit!");
+					EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+					break;
+				case UPrimitiveComponent::EType::Sphere:
+					EditorUI.AddDebugLog("Sphere Hit!");
+					EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+					break;
+				default:
+					EditorUI.AddDebugLog("Unknown Hit!");
+					EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+					break;
+				}
+				// ----------------------------------------------------------- //
+
+			}
+
+			if (PickedActor)
+			{
+				CurrentScene->SetCurrentActor(PickedActor);
+				EditorUI.AddDebugLog("Selected Dist: " + std::to_string(PickedActorDistance));
 			}
 		}
 
-		ImGui::End();
+		// #2. Object Rendering
+		for (auto Actor : SceneActors)
+		{
+			if (Actor == nullptr)
+			{
+				continue;
+			}
 
-		ImGui::Render();
-		ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+			auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
+			if (PrimitiveComponent == nullptr)
+			{
+				continue;
+			}
 
-		auto PrimitiveComponent = Actor.GetComponent<UPrimitiveComponent>();
-		PrimitiveComponent->GetVertexShader()->UpdateConstantBuffer(
-			Renderer.GetDeviceContext(),
-			"constants",
-			reinterpret_cast<void*>(MVP.M)
-		);
-		PrimitiveComponent->GetVertexShader()->Bind(Renderer.GetDeviceContext(), "constants");
-		PrimitiveComponent->GetPixelShader()->Bind(Renderer.GetDeviceContext());
-		PrimitiveComponent->Render(Renderer.GetDeviceContext());
+			// NOTE: Actor with no scene component is ignored quietely
+			auto SceneComponent = Actor->GetComponent<USceneComponent>();
+			if (SceneComponent == nullptr)
+			{
+				continue;
+			}
+			ModelMatrix = SceneComponent->GetModelingMatrix();
+
+			FMatrix MVP = ModelMatrix * ViewMatrix * ProjectionMatrix;
+
+			auto VertexShader = PrimitiveComponent->GetVertexShader();
+			auto PixelShader = PrimitiveComponent->GetPixelShader();
+
+			VertexShader->UpdateConstantBuffer(
+				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(MVP.M)
+			);
+
+			int bIsSelected = Actor == CurrentScene->GetCurrentActor();
+			PixelShader->UpdateConstantBuffer(
+				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(&bIsSelected)
+			);
+
+			// NOTE: Shader Binding
+			VertexShader->Bind(Renderer.GetDeviceContext(), "constants");
+			PixelShader->Bind(Renderer.GetDeviceContext(), "constants");
+			// PixelShader->Bind(Renderer.GetDeviceContext());
+
+			// NOTE: Render Call
+			PrimitiveComponent->Render(Renderer.GetDeviceContext());
+		}
+
+		// #2. Rendering UI
+		EditorUI.RenderUI();
 
 		Renderer.SwapBuffer();
 	}
 
-	ImGui_ImplDX11_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
+	// NOTE: Release UI Manager
+	EditorUI.Release();
 
 	return 0;
 }

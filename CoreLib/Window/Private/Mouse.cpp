@@ -13,7 +13,7 @@ void UMouse::Flush()
 	MouseEventBuffer = std::queue<UEvent>();
 }
 
-std::pair<int, int> UMouse::GetPosition() const
+std::pair<int32, int32> UMouse::GetPosition() const
 {
 	return { GetXPosition(), GetYPosition() };
 }

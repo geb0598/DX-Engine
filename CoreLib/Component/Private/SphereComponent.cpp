@@ -1,6 +1,6 @@
-﻿// © 2024 KRAFTON, Inc. ALL RIGHTS RESERVED.
-
-#pragma once
+#include "Component/Public/SphereComponent.h"
+#include "RayCaster/Raycaster.h"
+#include "Renderer/Renderer.h"
 
 FVertexSimple sphere_vertices[] = {
 	{ 0.000000f, 1.000000f, 0.000000f, 0.500000f, 1.000000f, 0.500000f, 1.000000f },
@@ -2404,3 +2404,46 @@ FVertexSimple sphere_vertices[] = {
 	{ -0.000000f, -1.000000f, -0.000000f, 0.500000f, 0.000000f, 0.500000f, 1.000000f },
 	{ 0.156434f, -0.987688f, 0.000000f, 0.578217f, 0.006156f, 0.500000f, 1.000000f },
 };
+
+USphereComponent::USphereComponent(AActor* Actor, 
+	std::shared_ptr<UVertexShader> VertexShader, 
+	std::shared_ptr<UPixelShader> PixelShader
+) : UPrimitiveComponent(Actor, VertexShader, PixelShader)
+{
+	TArray<FVertex> VertexArray;
+	for (size_t i = 0; i < sizeof(sphere_vertices) / sizeof(FVertexSimple); ++i)
+	{
+		VertexArray.push_back(static_cast<FVertex>(sphere_vertices[i]));
+	}
+
+	auto& Renderer = URenderer::GetInstance();
+	Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
+}
+
+USphereComponent::EType USphereComponent::GetType() const
+{
+	return EType::Sphere;
+}
+
+std::optional<float> USphereComponent::GetHitResultAtScreenPosition(
+	URayCaster& RayCaster,
+	int32 MouseX,
+	int32 MouseY,
+	int32 ScreenWidth,
+	int32 ScreenHeight,
+	const FMatrix& ModelingMatrix,
+	const FMatrix& ViewMatrix,
+	const FMatrix& ProjectionMatrix
+)
+{
+	return RayCaster.GetHitResultAtScreenPosition(
+		*this,
+		MouseX, 
+		MouseY,
+		ScreenWidth,
+		ScreenHeight,
+		ModelingMatrix,
+		ViewMatrix,
+		ProjectionMatrix
+	);
+}

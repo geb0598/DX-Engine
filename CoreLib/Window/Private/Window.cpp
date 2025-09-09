@@ -3,6 +3,7 @@
 #include "ImGui/imgui_impl_win32.h"
 
 #include "Window/Public/Window.h"
+#include "Utilities/Utilities.h"
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 
@@ -53,7 +54,7 @@ UWindow::UWindow(int Width, int Height, const FString& WindowName)
 	hWnd = CreateWindowW(
 		UWindowClass::GetWindowClassName(),
 		std::wstring(WindowName.begin(), WindowName.end()).c_str(),
-		WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU,
+		WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_MAXIMIZEBOX,
 		CW_USEDEFAULT, 
 		CW_USEDEFAULT,
 		Width, 
@@ -65,6 +66,43 @@ UWindow::UWindow(int Width, int Height, const FString& WindowName)
 	);
 
 	ShowWindow(hWnd, SW_SHOWDEFAULT);
+}
+
+UWindow::UWindow(const FWindowSettings& Settings)
+	: Width(Settings.Width), Height(Settings.Height), 
+	  bWasMaximized(Settings.bIsMaximized),
+	  RestoredWidth(Settings.RestoredWidth), RestoredHeight(Settings.RestoredHeight),
+	  RestoredPosX(Settings.RestoredPosX), RestoredPosY(Settings.RestoredPosY)
+{
+	RECT windowRect = { 0, 0, Settings.Width, Settings.Height };
+	DWORD style = WS_CAPTION | WS_MINIMIZEBOX | WS_SYSMENU | WS_SIZEBOX | WS_MAXIMIZEBOX;
+	AdjustWindowRect(&windowRect, style, FALSE);
+	
+	int windowWidth = windowRect.right - windowRect.left;
+	int windowHeight = windowRect.bottom - windowRect.top;
+	
+	hWnd = CreateWindowW(
+		UWindowClass::GetWindowClassName(),
+		std::wstring(Settings.WindowTitle.begin(), Settings.WindowTitle.end()).c_str(),
+		style,
+		Settings.PosX,
+		Settings.PosY,
+		windowWidth,
+		windowHeight,
+		nullptr,
+		nullptr,
+		UWindowClass::GetInstance(),
+		this
+	);
+
+	if (Settings.bIsMaximized)
+	{
+		ShowWindow(hWnd, SW_SHOWMAXIMIZED);
+	}
+	else
+	{
+		ShowWindow(hWnd, SW_SHOWDEFAULT);
+	}
 }
 
 HWND UWindow::GethWnd() const
@@ -92,9 +130,86 @@ const UMouse& UWindow::GetMouse() const
 	return Mouse;
 }
 
+int32 UWindow::GetWidth() const
+{
+	return Width;
+}
+
+int32 UWindow::GetHeight() const
+{
+	return Height;
+}
+
 void UWindow::SetWindowTitle(const FString& WindowTitle)
 {
 	SetWindowTextW(hWnd, std::wstring(WindowTitle.begin(), WindowTitle.end()).c_str());
+}
+
+void UWindow::SaveWindowSettings(const FString& FilePath) const
+{
+	FWindowSettings Settings;
+	
+	// Save Window Size
+	RECT clientRect;
+	if (GetClientRect(hWnd, &clientRect))
+	{
+		Settings.Width = clientRect.right - clientRect.left;
+		Settings.Height = clientRect.bottom - clientRect.top;
+	}
+	else
+	{
+		Settings.Width = Width;
+		Settings.Height = Height;
+	}
+
+	// Save Window Position
+	RECT windowRect;
+	if (GetWindowRect(hWnd, &windowRect))
+	{
+		Settings.PosX = windowRect.left;
+		Settings.PosY = windowRect.top;
+	}
+	else
+	{
+		Settings.PosX = 100;
+		Settings.PosY = 100;
+	}
+
+	// Save Maximized State
+	Settings.bIsMaximized = IsMaximized();
+	
+	// Save Restored Size and Position
+	Settings.RestoredWidth = RestoredWidth;
+	Settings.RestoredHeight = RestoredHeight;
+	Settings.RestoredPosX = RestoredPosX;
+	Settings.RestoredPosY = RestoredPosY;
+	
+	// Save Window Title
+	WCHAR Title[256];
+	if (GetWindowTextW(hWnd, Title, sizeof(Title) / sizeof(WCHAR)))
+	{
+		std::wstring WTitleStr(Title);
+		Settings.WindowTitle = FString(WTitleStr.begin(), WTitleStr.end());
+	}
+	else
+	{
+		Settings.WindowTitle = "Jungle Engine";
+	}
+
+	Settings.SaveToFile(FilePath);
+}
+
+void UWindow::SetSettingsFilePath(const FString& FilePath)
+{
+	SettingsFilePath = FilePath;
+}
+
+bool UWindow::IsMaximized() const
+{
+	WINDOWPLACEMENT wp = {};
+	wp.length = sizeof(WINDOWPLACEMENT);
+	GetWindowPlacement(hWnd, &wp);
+	return (wp.showCmd == SW_SHOWMAXIMIZED);
 }
 
 LRESULT UWindow::WndProcSetUp(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
@@ -130,6 +245,10 @@ LRESULT UWindow::WndProcImpl(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 	switch (Msg)
 	{
 	case WM_CLOSE:
+		if (!SettingsFilePath.empty())
+		{
+			SaveWindowSettings(SettingsFilePath);
+		}
 		PostQuitMessage(0);
 		break;
 	case WM_KILLFOCUS:
@@ -217,6 +336,46 @@ LRESULT UWindow::WndProcImpl(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 		const POINTS Points = MAKEPOINTS(lParam);
 		int Delta = GET_WHEEL_DELTA_WPARAM(wParam);
 		Mouse.OnWheelDelta(Points.x, Points.y, Delta);
+		break;
+	}
+	case WM_SIZE:
+	{
+		if (wParam != SIZE_MINIMIZED)
+		{
+			bool isCurrentlyMaximized = IsMaximized();
+			
+			// Maximized State Change Detection
+			if (isCurrentlyMaximized != bWasMaximized)
+			{
+				if (isCurrentlyMaximized && !bWasMaximized)
+				{
+					// Changed to Maximized
+					RECT rect;
+					if (GetWindowRect(hWnd, &rect))
+					{
+						// Save Current Size and Position
+						RECT clientRect;
+						if (GetClientRect(hWnd, &clientRect))
+						{
+							RestoredWidth = clientRect.right - clientRect.left;
+							RestoredHeight = clientRect.bottom - clientRect.top;
+						}
+						else
+						{
+							RestoredWidth = Width;
+							RestoredHeight = Height;
+						}
+						RestoredPosX = rect.left;
+						RestoredPosY = rect.top;
+					}
+				}
+				bWasMaximized = isCurrentlyMaximized;
+			}
+			
+			Width = LOWORD(lParam);
+			Height = HIWORD(lParam);
+			bIsResized = true;
+		}
 		break;
 	}
 	}

@@ -10,7 +10,7 @@
 class URenderer
 {
 public:
-	static URenderer& GetInstance(HWND hWnd);
+	static URenderer & GetInstance();
 
 	~URenderer();
 
@@ -20,16 +20,17 @@ public:
 	URenderer& operator=(const URenderer&) = delete;
 	URenderer& operator=(URenderer&&) = delete;
 
+	void Create(HWND hWindow);						// 렌더러 초기화 함수
 	void Prepare();									// 그래픽 파이프라인에 필요한 정보를 전달하고 바인드
 	void SwapBuffer();								// 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
+	void ResizeBuffers(int Width, int Height);		// 윈도우 크기 변경 시 버퍼 크기 조정
 
 	ID3D11Device* GetDevice();
 	ID3D11DeviceContext* GetDeviceContext();
 
 private:
-	URenderer(HWND hWnd);
+	URenderer();
 
-	void Create(HWND hWindow);						// 렌더러 초기화 함수
 	void CreateDeviceAndSwapChain(HWND hWindow);	// Direct3D 장치 및 스왑 체인을 생성하는 함수
 	void CreateFrameBuffer();						// 프레임 버퍼를 생성하는 함수
 	void CreateRasterizerState();					// 래스터라이저 상태를 생성하는 함수
@@ -43,6 +44,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> FrameBuffer;			// 화면 출력용 텍스처
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> FrameBufferRTV;	// 텍스처를 렌더 타켓으로 사용하는 뷰
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> RasterizerState;	// 래스터라이저 상태(컬링, 채우기 모드 등 정의)
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> DepthStencilBuffer;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> DepthStencilView;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> DepthStencilState;
 
 	FLOAT ClearColor[4] = {0.025f, 0.025f, 0.025f, 1.0f};			// 화면을 초기화(clear)할 때 사용할 색상 (RGBA)
 	D3D11_VIEWPORT ViewportInfo;									// 렌더링 영역을 정의하는 뷰포트 정보

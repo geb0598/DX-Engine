@@ -1,49 +1,97 @@
 #include "../Public/UCameraComponent.h"
 
-const double UCameraComponent::DefaultFOV = 90.0;
-const double UCameraComponent::DefaultNearPlane = 0.1;
-const double UCameraComponent::DefaultFarPlane = 1000.0;
+const float UCameraComponent::DefaultFieldOfView = 90.0f;
+const float UCameraComponent::DefaultNearPlane = 0.1;
+const float UCameraComponent::DefaultFarPlane = 1000.0;
 
 UCameraComponent::UCameraComponent(AActor* Actor)
 	: UActorComponent(Actor),
-	FOV(DefaultFOV),
+	FieldOfView(DefaultFieldOfView),
 	NearPlane(DefaultNearPlane),
-	FarPlane(DefaultFarPlane)
+	FarPlane(DefaultFarPlane),
+	bIsOrthogonal(false)
 {}
 
 UCameraComponent::UCameraComponent(AActor* Actor,
-	double FOVToSet,
-	double NPToSet,
-	double FPToSet)
+	float FieldOfViewToSet,
+	float NearPlaneToSet,
+	float FarPlaneToSet)
 	: UActorComponent(Actor),
-	FOV(FOVToSet),
-	NearPlane(NPToSet),
-	FarPlane(FPToSet)
+	FieldOfView(FieldOfViewToSet),
+	NearPlane(NearPlaneToSet),
+	FarPlane(FarPlaneToSet)
 {}
 
-double UCameraComponent::GetFOV() const { return FOV; }
-void UCameraComponent::SetFOV(double FOVToSet) { FOV = FOVToSet; }
+float UCameraComponent::GetFieldOfView() const 
+{ 
+	return FieldOfView;
+}
 
-double UCameraComponent::GetNearPlane() const { return NearPlane; }
-void UCameraComponent::SetNearPlane(double NPToSet) { NearPlane = NPToSet; }
+void UCameraComponent::SetFieldOfView(float FOVToSet) 
+{ 
+	FieldOfView = FOVToSet; 
+}
 
-double UCameraComponent::GetFarPlane() const { return FarPlane; }
-void UCameraComponent::SetFarPlane(double FPToSet) { FarPlane = FPToSet; }
+float UCameraComponent::GetNearPlane() const 
+{
+	return NearPlane;
+}
+
+void UCameraComponent::SetNearPlane(float NPToSet) 
+{ 
+	NearPlane = NPToSet;
+}
+
+float UCameraComponent::GetFarPlane() const 
+{
+	return FarPlane; 
+}
+
+void UCameraComponent::SetFarPlane(float FPToSet) 
+{
+	FarPlane = FPToSet; 
+}
+
+bool UCameraComponent::IsOrthogonal() const
+{
+	return bIsOrthogonal;
+}
+
+bool UCameraComponent::EnableOrthogonal()
+{
+	return bIsOrthogonal = true;
+}
+
+bool UCameraComponent::DisableOrthogonal()
+{
+	return bIsOrthogonal = false;
+}
 
 FMatrix UCameraComponent::GetViewMatrix()
 {
-	// Get the info of scene component from camera's owner, actor
-	AActor* Actor = GetActor();
-	assert(Actor != nullptr);
-	USceneComponent* SC = Actor->GetComponent<USceneComponent>();
+	auto SceneComponent = GetActor()->GetComponent<USceneComponent>();
+	auto Rotation = SceneComponent->GetRotation();
 
-	assert(SC != nullptr);
+	// NOTE: Angle should be sent as radian to these functions
+	auto PitchMatrix = FMatrix::CreateRotationX(DEG_TO_RAD(Rotation.X));
+	auto YawMatrix = FMatrix::CreateRotationY(DEG_TO_RAD(Rotation.Y));
+	auto RollMatrix = FMatrix::CreateRotationZ(DEG_TO_RAD(Rotation.Z));
 
-	FVector CamLocation = SC->GetLocation();
-	FVector CamRotation = SC->GetRotation();
+	auto Eye = SceneComponent->GetLocation();
+	//auto At = Eye + (FVector(0.0f, 0.0f, 1.0f) * RollMatrix * PitchMatrix * YawMatrix);
+	auto At = Eye + (FVector(0.0f, 0.0f, 1.0f) * RollMatrix * PitchMatrix * YawMatrix);
+	auto Up = (FVector(0.0f, 1.0f, 0.0f) * RollMatrix * PitchMatrix * YawMatrix);
 
-	return FMatrix::CreateView(CamLocation, CamRotation);
+	return FMatrix::CreateLookAt(Eye, At, Up);
 }
 
-FMatrix UCameraComponent::GetProjectionMatrix(float AspectRatio) { return FMatrix::CreatePerspective(DEG_TO_RAD(FOV), AspectRatio, NearPlane, FarPlane); }
+FMatrix UCameraComponent::GetProjectionMatrix(float AspectRatio) 
+{ 
+	return FMatrix::CreatePerspective(DEG_TO_RAD(FieldOfView), AspectRatio, NearPlane, FarPlane);
+}
+
+FMatrix UCameraComponent::GetOrthographicMatrix(float Left, float Right, float Bottom, float Top)
+{
+	return FMatrix::CreateOrthographic(Left, Right, Bottom, Top, NearPlane, FarPlane);
+}
 

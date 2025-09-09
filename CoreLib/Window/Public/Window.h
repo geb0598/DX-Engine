@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <Windows.h>
 
@@ -6,6 +6,7 @@
 #include "Types/Types.h"
 #include "Window/Public/Keyboard.h"
 #include "Window/Public/Mouse.h"
+#include "Window/Public/WindowSettings.h"
 
 class UWindow
 {
@@ -36,6 +37,7 @@ public:
 	~UWindow();
 
 	UWindow(int Width, int Height, const FString& WindowTitle);
+	UWindow(const FWindowSettings& Settings);
 
 	UWindow(const UWindow&) = delete;
 	UWindow(UWindow&&) = delete;
@@ -50,13 +52,23 @@ public:
 	const UKeyboard& GetKeyboard() const;
 	const UMouse& GetMouse() const;
 
+	int32 GetWidth() const;
+	int32 GetHeight() const;
+
 	void SetWindowTitle(const FString& WindowTitle);
 
 	float getAspectRatio()
 	{
 		return static_cast<float>(Width) / static_cast<float>(Height);
 	}
-
+	
+	bool IsResized() const { return bIsResized; }
+	void ResetResizeFlag() { bIsResized = false; }
+	
+	void SaveWindowSettings(const FString& FilePath) const;
+	void SetSettingsFilePath(const FString& FilePath);
+	bool IsMaximized() const;
+	
 private:
 	static LRESULT CALLBACK WndProcSetUp(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -64,8 +76,17 @@ private:
 
 	HWND hWnd;
 
-	int Width;
-	int Height;
+	int32 Width;
+	int32 Height;
+	bool bIsResized = false;
+	FString SettingsFilePath;
+	
+	// 최대화 상태 관리
+	bool bWasMaximized = false;
+	int32 RestoredWidth = 1024;
+	int32 RestoredHeight = 1024;
+	int32 RestoredPosX = 100;
+	int32 RestoredPosY = 100;
 
 	UKeyboard Keyboard;
 	UMouse Mouse;

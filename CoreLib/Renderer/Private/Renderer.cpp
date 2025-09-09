@@ -1,9 +1,9 @@
-#include "Renderer/Public/Renderer.h"
+﻿#include "Renderer/Public/Renderer.h"
 
 // NOTE: Renderer is initialized once per execution as a singleton
-URenderer& URenderer::GetInstance(HWND hWnd)
+URenderer & URenderer::GetInstance()
 {
-	static URenderer Renderer(hWnd);
+	static URenderer Renderer;
 	return Renderer;
 }
 
@@ -18,12 +18,14 @@ URenderer::~URenderer()
 void URenderer::Prepare()
 {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV.Get(), ClearColor);
+	DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
 	DeviceContext->RSSetState(RasterizerState.Get());
 
-	DeviceContext->OMSetRenderTargets(1, FrameBufferRTV.GetAddressOf(), nullptr);
+	DeviceContext->OMSetRenderTargets(1, FrameBufferRTV.GetAddressOf(), DepthStencilView.Get());
 	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 1);
 }
 
 void URenderer::SwapBuffer()
@@ -41,9 +43,31 @@ ID3D11DeviceContext* URenderer::GetDeviceContext()
 	return DeviceContext.Get();
 }
 
-URenderer::URenderer(HWND hWnd)
+void URenderer::ResizeBuffers(int Width, int Height)
 {
-	Create(hWnd);
+	// 렌더 타겟 뷰를 해제
+	FrameBufferRTV.Reset();
+	FrameBuffer.Reset();
+	
+	// 스왑 체인 버퍼 크기 조정
+	HRESULT hr = SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
+	if (FAILED(hr))
+	{
+		// 에러 처리
+		return;
+	}
+	
+	// 새로운 크기로 프레임 버퍼 다시 생성
+	CreateFrameBuffer();
+	
+	// 뷰포트 크기 업데이트
+	ViewportInfo.Width = (float)Width;
+	ViewportInfo.Height = (float)Height;
+}
+
+URenderer::URenderer()
+{
+
 }
 
 void URenderer::Create(HWND hWnd)
@@ -100,6 +124,32 @@ void URenderer::CreateDeviceAndSwapChain(HWND hWnd)
 	ViewportInfo.Height = (float)SwapChainDesc.BufferDesc.Height;
 	ViewportInfo.MinDepth = 0.0f;
 	ViewportInfo.MaxDepth = 1.0f;
+
+	//------------------ Create Depth Stencil Buffer ------------------//
+	D3D11_TEXTURE2D_DESC DepthStencilDesc = {};
+	DepthStencilDesc.Width = SwapChainDesc.BufferDesc.Width;
+	DepthStencilDesc.Height = SwapChainDesc.BufferDesc.Height;
+	DepthStencilDesc.MipLevels = 1;
+	DepthStencilDesc.ArraySize = 1;
+	DepthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DepthStencilDesc.SampleDesc.Count = 1;
+	DepthStencilDesc.SampleDesc.Quality = 0;
+	DepthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+	DepthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	DepthStencilDesc.CPUAccessFlags = 0;
+	DepthStencilDesc.MiscFlags = 0;
+
+	Device->CreateTexture2D(&DepthStencilDesc, nullptr, DepthStencilBuffer.ReleaseAndGetAddressOf());
+
+	Device->CreateDepthStencilView(DepthStencilBuffer.Get(), nullptr, DepthStencilView.ReleaseAndGetAddressOf());
+
+	D3D11_DEPTH_STENCIL_DESC DepthStencilStateDesc = {};
+	DepthStencilStateDesc.DepthEnable = TRUE;
+	DepthStencilStateDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	DepthStencilStateDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	DepthStencilStateDesc.StencilEnable = FALSE;
+
+	Device->CreateDepthStencilState(&DepthStencilStateDesc, DepthStencilState.ReleaseAndGetAddressOf());
 }
 
 void URenderer::CreateFrameBuffer()
@@ -125,6 +175,7 @@ void URenderer::CreateRasterizerState()
 
 	RasterizerDesc.FillMode = D3D11_FILL_SOLID;	// 채우기 모드
 	RasterizerDesc.CullMode = D3D11_CULL_BACK;	// 백 페이스 컬링
+	RasterizerDesc.FrontCounterClockwise = true;
 
 	Device->CreateRasterizerState(&RasterizerDesc, RasterizerState.ReleaseAndGetAddressOf());
 }

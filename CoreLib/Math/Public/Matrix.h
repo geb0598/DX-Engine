@@ -1,8 +1,6 @@
 ﻿#pragma once
 #include "Vector.h"
-
-#define DEG_TO_RAD(degrees) ((degrees) * 3.14159265359f / 180.0f)
-#define RAD_TO_DEG(radians) ((radians) * 180.0f / 3.14159265359f)
+#include "../Public/MathUtilities.h"
 
 __declspec(align(16)) struct FMatrix
 {
@@ -72,7 +70,15 @@ __declspec(align(16)) struct FMatrix
             M[3][0] * V.X + M[3][1] * V.Y + M[3][2] * V.Z + M[3][3] * V.W
         );
     }
-
+    friend FVector4 operator*(const FVector4& V, const FMatrix& M)
+    {
+        return FVector4(
+            V.X * M[0][0] + V.Y * M[1][0] + V.Z * M[2][0] + V.W * M[3][0],
+            V.X * M[0][1] + V.Y * M[1][1] + V.Z * M[2][1] + V.W * M[3][1],
+            V.X * M[0][2] + V.Y * M[1][2] + V.Z * M[2][2] + V.W * M[3][2],
+            V.X * M[0][3] + V.Y * M[1][3] + V.Z * M[2][3] + V.W * M[3][3]
+        );
+    }
     FMatrix Inverse() const;
     void SetIdentity()
     {
@@ -84,14 +90,16 @@ __declspec(align(16)) struct FMatrix
             }
         }
     }
-    FVector TransformPosition(const FVector& V) const
+	// 행렬을 이용해 위치 벡터 변환 (평행 이동 포함)
+    FVector TransformPosition(const FVector& Vector) const
     {
-        FVector4 V4 = *this * FVector4(V.X, V.Y, V.Z, 1.0f);
+        FVector4 V4 = *this * FVector4(Vector.X, Vector.Y, Vector.Z, 1.0f);
         return FVector(V4.X, V4.Y, V4.Z);
     }
-    FVector TransformDirection(const FVector& V) const
+	// 행렬을 이용해 방향 벡터 변환 (평행 이동 미포함)
+    FVector TransformDirection(const FVector& Vector) const
     {
-        FVector4 V4 = *this * FVector4(V.X, V.Y, V.Z, 0.0f);
+        FVector4 V4 = *this * FVector4(Vector.X, Vector.Y, Vector.Z, 0.0f);
         return FVector(V4.X, V4.Y, V4.Z);
     }
     FMatrix Transpose() const
@@ -177,6 +185,7 @@ __declspec(align(16)) struct FMatrix
         Result.M[1][1] = Cos;
         return Result;
     }
+    // NOTE: Roll -> Pitch -> Yaw
     static FMatrix CreateRotationFromEuler(const FVector& EulerDegrees)
     {
         float X = DEG_TO_RAD(EulerDegrees.X);
@@ -187,9 +196,13 @@ __declspec(align(16)) struct FMatrix
         FMatrix RotY = CreateRotationY(Y);
         FMatrix RotZ = CreateRotationZ(Z);
 
+        // TODO: Is this correct? -> Junyong Lee
         // Z-Up, Left-Hand = Yaw(Z) → Pitch(Y) → Roll(X)
-        return RotZ * RotY * RotX;
+        //return RotZ * RotY * RotX;
+
+        return RotZ * RotX * RotY;
     }
+	// 쿼터니언으로부터 회전 행렬 생성
     static FMatrix CreateRotationFromQuaternion(const FVector4& Quat)
     {
         float X = Quat.X, Y = Quat.Y, Z = Quat.Z, W = Quat.W;
@@ -206,6 +219,7 @@ __declspec(align(16)) struct FMatrix
 
         return Result;
     }
+	// 주어진 축과 각도로 회전 행렬 생성
     static FMatrix CreateRotationAxis(const FVector& Axis, float Angle)
     {
         FVector NormalizedAxis = Axis.GetNormalized();
@@ -244,7 +258,6 @@ __declspec(align(16)) struct FMatrix
     {
         FMatrix ScaleMatrix = CreateScale(Scale);
         FMatrix RotationMatrix = CreateRotationFromEuler(RotationDegrees);
-        //FMatrix RotationMatrix = CreateRotationFromQuaternion(RotationDegrees);
         FMatrix TranslationMatrix = CreateTranslation(Translation);
 
         return ScaleMatrix * RotationMatrix * TranslationMatrix;
@@ -262,29 +275,17 @@ __declspec(align(16)) struct FMatrix
         Result.M[2][0] = N.X;   Result.M[2][1] = N.Y;   Result.M[2][2] = N.Z;   Result.M[2][3] = -N.Dot(Eye);
         Result.M[3][0] = 0.0f;  Result.M[3][1] = 0.0f;  Result.M[3][2] = 0.0f;  Result.M[3][3] = 1.0f;
 
-        return Result;
+        // TODO: Must Check whether this transpose is required or not
+        return Result.Transpose();
     }
-    static FMatrix CreateView(const FVector& CamLocation, const FVector& CamRotation)
+    static FMatrix CreateViewMatrix(const FVector& CamLocation, const FVector& CamRotation)
     {
-        // 카메라 회전 행렬 (월드 → 카메라 좌표, 역회전 필요하므로 전치)
-        FMatrix R = FMatrix::CreateRotationFromEuler(CamRotation);
-
-        // 카메라 위치를 원점으로 이동
-        FMatrix T = FMatrix::CreateTranslation(CamLocation);
-
-        for (int i = 0; i < 4; i++)
-        {
-            R[i][0] *= -1;
-            R[i][2] *= -1;   // Z축 반전
-        }
-
-        // 뷰 행렬 = Rᵀ * T
-        return R.Inverse() * T.Inverse();
+		return CreateModelTransform(CamLocation, CamRotation, FVector(1.0f, 1.0f, 1.0f)).Inverse();
     }
 
-    static FMatrix CreatePerspective(float FOV, float AspectRatio, float Near, float Far)
+    static FMatrix CreatePerspective(float FieldOfViewRad, float AspectRatio, float Near, float Far)
     {
-        float TanHalfFOV = tanf(FOV * 0.5f);
+        float TanHalfFOV = tanf(FieldOfViewRad * 0.5f);
 
         FMatrix Result;
         Result.M[0][0] = 1.0f / (AspectRatio * TanHalfFOV);
@@ -307,7 +308,8 @@ __declspec(align(16)) struct FMatrix
         Result.M[3][2] = 1.0f;
         Result.M[3][3] = 0.0f;
 
-        return Result;
+        // TODO: Must Check whether this transpose is required or not
+        return Result.Transpose();
     }
     static FMatrix CreateOrthographic(float Left, float Right, float Bottom, float Top, float Near, float Far)
     {
@@ -332,6 +334,28 @@ __declspec(align(16)) struct FMatrix
         Result.M[3][2] = 0.0f;
         Result.M[3][3] = 1.0f;
 
-        return Result;
+        // TODO: Must Check whether this transpose is required or not
+        return Result.Transpose();
     }
 };
+
+inline FVector operator*(const FVector& V, const FMatrix& M)
+{
+    return FVector(
+        M[0][0] * V.X + M[1][0] * V.Y + M[2][0] * V.Z,
+        M[0][1] * V.X + M[1][1] * V.Y + M[2][1] * V.Z,
+        M[0][2] * V.X + M[1][2] * V.Y + M[2][2] * V.Z
+    );
+}
+
+/*
+inline FVector4 operator*(const FVector4& V, const FMatrix& M)
+{
+    return FVector4(
+        M[0][0] * V.X + M[1][0] * V.Y + M[2][0] * V.Z + M[3][0] * V.W,
+        M[0][1] * V.X + M[1][1] * V.Y + M[2][1] * V.Z + M[3][1] * V.W,
+        M[0][2] * V.X + M[1][2] * V.Y + M[2][2] * V.Z + M[3][2] * V.W,
+        M[0][3] * V.X + M[1][3] * V.Y + M[2][3] * V.Z + M[3][3] * V.W
+    );
+}
+*/

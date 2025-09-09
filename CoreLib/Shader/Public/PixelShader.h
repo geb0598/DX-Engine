@@ -55,5 +55,5 @@ void UPixelShader::Bind(ID3D11DeviceContext* DeviceContext, TBufferNames && ...B
 {
 	DeviceContext->PSSetShader(PixelShader.Get(), nullptr, 0);
 
-	(ShaderReflector->Bind(DeviceContext, std::forward<TBufferNames>(BufferNames)), ...);
+	(ShaderReflector->BindPixelShader(DeviceContext, std::forward<TBufferNames>(BufferNames)), ...);
 }

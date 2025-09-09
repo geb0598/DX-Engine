@@ -2,9 +2,9 @@
 
 #include "Object/Public/Object.h"
 
-uint32 UObject::UEngineStatics::NextUUID = 0;
+uint32 UEngineStatics::NextUUID = 0;
 
-uint32 UObject::UEngineStatics::GenUUID()
+uint32 UEngineStatics::GenUUID()
 {
 	return NextUUID++;
 }
