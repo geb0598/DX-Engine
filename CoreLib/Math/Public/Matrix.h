@@ -185,7 +185,7 @@ __declspec(align(16)) struct FMatrix
         Result.M[1][1] = Cos;
         return Result;
     }
-    // NOTE: Yaw -> Pitch -> Roll
+    // NOTE: Roll -> Pitch -> Yaw
     static FMatrix CreateRotationFromEuler(const FVector& EulerDegrees)
     {
         float X = DEG_TO_RAD(EulerDegrees.X);
@@ -200,7 +200,7 @@ __declspec(align(16)) struct FMatrix
         // Z-Up, Left-Hand = Yaw(Z) → Pitch(Y) → Roll(X)
         //return RotZ * RotY * RotX;
 
-        return RotY * RotX * RotZ;
+        return RotZ * RotX * RotY;
     }
 	// 쿼터니언으로부터 회전 행렬 생성
     static FMatrix CreateRotationFromQuaternion(const FVector4& Quat)
