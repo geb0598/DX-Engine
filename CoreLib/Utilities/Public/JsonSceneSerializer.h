@@ -8,12 +8,12 @@
 
 namespace json { class JSON; }
 
-FString PrimitiveTypeToString(EPrimitiveType Type);
-EPrimitiveType StringToPrimitiveType(const FString& TypeStr);
+FString PrimitiveTypeToString(UPrimitiveComponent::EType Type);
+UPrimitiveComponent::EType StringToPrimitiveType(const FString& TypeStr);
 
 void NewScene();
 void SaveScene(const FString& FilePath, int32 Version);
-void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, EPrimitiveType Type);
+void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, UPrimitiveComponent::EType Type);
 void LoadScene(const FString& FilePath);
 
-AActor * CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, EPrimitiveType Type);
+AActor * CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type);

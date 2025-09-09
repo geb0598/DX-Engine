@@ -41,8 +41,8 @@ public:
     
 private:
     // Helper functions for serialization
-    void SavePrimitive(json::JSON& Obj, int Index, const FVector& Location, const FVector& Rotation, const FVector& Scale, EPrimitiveType Type);
-    AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, EPrimitiveType Type);
-    FString PrimitiveTypeToString(EPrimitiveType Type);
-    EPrimitiveType StringToPrimitiveType(const FString& TypeStr);
+    void SavePrimitive(json::JSON& Obj, int Index, const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type);
+    AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type);
+    FString PrimitiveTypeToString(UPrimitiveComponent::EType Type);
+    UPrimitiveComponent::EType StringToPrimitiveType(const FString& TypeStr);
 };

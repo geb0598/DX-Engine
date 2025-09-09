@@ -89,25 +89,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		CameraInputComponent->SetKeyboard(&Window.GetKeyboard());
 
 		// ------------------------- Input Handling ---------------------------- //
-		if (Window.GetMouse().IsLeftPressed())
-		{
-			auto [MouseX, MouseY] = Window.GetMouse().GetPosition();
-
-			/*
-			RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, MTriangle, V, P);
-			if (RayCaster.RayCastToTriangle() != DONT_INTERSECT)
-				UI.AddDebugLog("Ray hit triangle");
-
-			RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, MSphere, V, P);
-			if (RayCaster.RayCastToSphere(1) != DONT_INTERSECT)
-				UI.AddDebugLog("Ray hit sphere");
-
-			RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, MCube, V, P);
-			if (RayCaster.RayCastToCube() != DONT_INTERSECT)
-				UI.AddDebugLog("Ray hit Cube");
-			*/
-		}
-
 		if (MainCamera && CameraInputComponent)
 		{
 			 CameraInputComponent->Update(Timer.GetDeltaTimeInSecond());
@@ -166,10 +147,37 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				auto [MouseX, MouseY] = Window.GetMouse().GetPosition();
 
 				RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, ModelMatrix, ViewMatrix, ProjectionMatrix);
-				if (RayCaster.RayCastToCube() != DONT_INTERSECT)
+				bool bIsCollidedWithRay = false;
+				switch (PrimitiveComponent->GetType())
 				{
-					EditorUI.AddDebugLog("Clicked!");
-					EditorUI.AddDebugLog("Ray hit");
+				case UPrimitiveComponent::EType::Cube:
+					bIsCollidedWithRay = RayCaster.RayCastToCube() != DONT_INTERSECT;
+					if (bIsCollidedWithRay)
+					{
+						EditorUI.AddDebugLog("Ray Hit With Cube!");
+					}
+					break;
+				case UPrimitiveComponent::EType::Sphere:
+					bIsCollidedWithRay = RayCaster.RayCastToSphere(1.0f) != DONT_INTERSECT;
+					if (bIsCollidedWithRay)
+					{
+						EditorUI.AddDebugLog("Ray Hit With Sphere!");
+					}
+					break;
+				case UPrimitiveComponent::EType::Triangle:
+					bIsCollidedWithRay = RayCaster.RayCastToTriangle() != DONT_INTERSECT;
+					if (bIsCollidedWithRay)
+					{
+						EditorUI.AddDebugLog("Ray Hit With Triangle!");
+					}
+					break;
+				default:
+					// NOTE: Do Nothing
+					break;
+				}
+
+				if (bIsCollidedWithRay)
+				{
 				}
 			}
 			// ------------------------------------------------------------- //

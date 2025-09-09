@@ -1,35 +1,38 @@
 ﻿#include "Utilities/Public/JsonSceneSerializer.h"
 #include "Renderer/Renderer.h"
 #include "Json/json.hpp"
+#include "Component/Public/CubeComponent.h"
+#include "Component/Public/TriangleComponent.h"
+#include "Component/Public/SphereComponent.h"
 
-FString PrimitiveTypeToString(EPrimitiveType Type)
+FString PrimitiveTypeToString(UPrimitiveComponent::EType Type)
 {
 	switch (Type)
 	{
-	case EPrimitiveType::EPT_Triangle:
+	case UPrimitiveComponent::EType::Triangle:
 		return "Triangle";
-	case EPrimitiveType::EPT_Cube:
+	case UPrimitiveComponent::EType::Cube:
 		return "Cube";
-	case EPrimitiveType::EPT_Sphere:
+	case UPrimitiveComponent::EType::Sphere:
 		return "Sphere";
 	default:
 		return "Triangle";
 	}
 }
 
-EPrimitiveType StringToPrimitiveType(const FString& TypeStr)
+UPrimitiveComponent::EType StringToPrimitiveType(const FString& TypeStr)
 {
 	if (TypeStr == "Triangle")
-		return EPrimitiveType::EPT_Triangle;
+		return UPrimitiveComponent::EType::Triangle;
 	else if (TypeStr == "Cube")
-		return EPrimitiveType::EPT_Cube;
+		return UPrimitiveComponent::EType::Cube;
 	else if (TypeStr == "Sphere")
-		return EPrimitiveType::EPT_Sphere;
+		return UPrimitiveComponent::EType::Sphere;
 	else
-		return EPrimitiveType::EPT_Triangle;
+		return UPrimitiveComponent::EType::Triangle;
 }
 
-void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, EPrimitiveType Type)
+void SavePrimitive(json::JSON& Obj, int Index, FVector Location, FVector Rotation, FVector Scale, UPrimitiveComponent::EType Type)
 {
 	FString IndexStr = std::to_string(Index);
 	Obj["Primitives"][IndexStr] = json::Object();
@@ -84,7 +87,7 @@ void SaveScene(const FString& FilePath, int32 Version)
 				FVector Location = SceneComponent->GetLocation();
 				FVector Rotation = SceneComponent->GetRotation();
 				FVector Scale = SceneComponent->GetScale();
-				EPrimitiveType Type = PrimitiveComponent->GetPrimitiveType();
+				auto Type = PrimitiveComponent->GetType();
 				
 				SavePrimitive(Obj, static_cast<int>(i), Location, Rotation, Scale, Type);
 			}
@@ -145,13 +148,13 @@ void LoadScene(const FString& FilePath)
 
 		FString PrimitiveType = Primitive["Type"].ToString();
 
-		EPrimitiveType Type = StringToPrimitiveType(PrimitiveType);
+		auto Type = StringToPrimitiveType(PrimitiveType);
 		
 		AActor* LoadedActor = CreateActorFromPrimitive(Location, Rotation, Scale, Type);
 	}
 }
 
-AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, EPrimitiveType Type)
+AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type)
 {
 	URenderer& Renderer = URenderer::GetInstance();
 
@@ -175,7 +178,22 @@ AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotatio
 		"main"
 	);
 
-	NewActor->AddComponent<UPrimitiveComponent>(NewActor, Type, VertexShader, PixelShader);
+	switch (Type)
+	{
+	case UPrimitiveComponent::EType::Triangle:
+		NewActor->AddComponent<UTriangleComponent>(NewActor, VertexShader, PixelShader);
+		break;
+	case UPrimitiveComponent::EType::Cube:
+		NewActor->AddComponent<UCubeComponent>(NewActor, VertexShader, PixelShader);
+		break;
+	case UPrimitiveComponent::EType::Sphere:
+		NewActor->AddComponent<USphereComponent>(NewActor, VertexShader, PixelShader);
+		break;
+	default:
+		// TODO: LOG or WARN Unknown Primitive Type
+		NewActor->AddComponent<UTriangleComponent>(NewActor, VertexShader, PixelShader);
+		break;
+	}
 	NewActor->AddComponent<USceneComponent>(NewActor, Location, Rotation, Scale);
 
 	return NewActor;
