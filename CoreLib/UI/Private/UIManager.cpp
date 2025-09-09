@@ -6,7 +6,7 @@
 UIManager::UIManager() {}
 UIManager::~UIManager() {}
 
-const uint32 UIManager::LogLegionSize = 5;
+const uint32 UIManager::LogLegionSize = 15;
 
 /* public */
 

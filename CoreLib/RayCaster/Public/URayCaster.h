@@ -21,6 +21,10 @@ private:
 	};
 private:
 	Ray CurrentRay;
+
+	FMatrix M;
+	FMatrix V;
+	FMatrix P;
 private:
 	URayCaster() = default;
 	~URayCaster() = default;
@@ -28,14 +32,17 @@ private:
 private:
 	void SetRayWithMouseAndMVP(int X, int Y, FMatrix Modeling, FMatrix View, FMatrix Projection)
 	{
-		const float SCREENWIDTH = 1000.0f;
-		const float SCREENHEIGHT = 1000.0f;
+		const float SCREENWIDTH = 1024.0f;
+		const float SCREENHEIGHT = 1024.0f;
 
 		float NDCX = 2.0f * X / SCREENWIDTH - 1.0f;
 		float NDCY = 1.0f - 2.0f * Y / SCREENHEIGHT;
 
 		// near/far in NDC
-		FMatrix InverseMVP = (Modeling * View * Projection).Inverse();
+		M = Modeling;
+		V = View;
+		P = Projection;
+		FMatrix InverseMVP = (M * V * P).Inverse();
 		FVector4 NDCNear(NDCX, NDCY, 0.0f, 1.0f); // DirectX ��Ÿ�� (0~1)
 		FVector4 NDCFar(NDCX, NDCY, 1.0f, 1.0f);
 
@@ -53,6 +60,7 @@ private:
 		// change point and vector because world is mirrored
 		CurrentRay.Point = WorldNear.ToVector3();
 		CurrentRay.Vector = (WorldFar - WorldNear).ToVector3().GetNormalized();
+
 		return;
 	}
 
@@ -89,66 +97,95 @@ private:
 
 	std::optional<float> RayCastToCube()
 	{
-		float XHalf = 0.5f;
-		float YHalf = 0.5f;
-		float ZHalf = 0.5f;
+		const float XHalf = 0.5f;
+		const float YHalf = 0.5f;
+		const float ZHalf = 0.5f;
+
+		const float EPSILON = 1e-5f;
+
+		float T1, T2, T3, T4, T5, T6;
 
 		FVector P = CurrentRay.Point;
 		FVector V = CurrentRay.Vector;
 
+
 		// when x = +-cube's x len * 0.5
-		float T1 = (XHalf - P.X) / V.X;
-		float T2 = (-XHalf - P.X) / V.X;
-
-		// is point in valid yz range?
-		if (P.Y + T1 * V.Y < -YHalf || P.Y + T1 * V.Y > YHalf)
+		if (V.X > EPSILON || V.X < -EPSILON)
+		{
+			T1 = (XHalf - P.X) / V.X;
+			// is point in valid yz range?
+			if (P.Y + T1 * V.Y < -YHalf || P.Y + T1 * V.Y > YHalf)
+				T1 = DONT_INTERSECT;
+			if (P.Z + T1 * V.Z < -ZHalf || P.Z + T1 * V.Z > ZHalf)
+				T1 = DONT_INTERSECT;
+			if (T1 < 0.0f)
+				T1 = DONT_INTERSECT;
+			
+			T2 = (-XHalf - P.X) / V.X;
+			if (P.Y + T2 * V.Y < -YHalf || P.Y + T2 * V.Y > YHalf)
+				T2 = DONT_INTERSECT;
+			if (P.Z + T2 * V.Z < -ZHalf || P.Z + T2 * V.Z > ZHalf)
+				T2 = DONT_INTERSECT;
+			if (T2 < 0.0f)
+				T2 = DONT_INTERSECT;
+		}
+		else
+		{
 			T1 = DONT_INTERSECT;
-		if (P.Z + T1 * V.Z < -ZHalf || P.Z + T1 * V.Z > ZHalf)
-			T1 = DONT_INTERSECT;
-		if (T1 < 0.0f)
-			T1 = DONT_INTERSECT;
-		if (P.Y + T2 * V.Y < -YHalf || P.Y + T2 * V.Y > YHalf)
 			T2 = DONT_INTERSECT;
-		if (P.Z + T2 * V.Z < -ZHalf || P.Z + T2 * V.Z > ZHalf)
-			T2 = DONT_INTERSECT;
-		if (T2 < 0.0f)
-			T2 = DONT_INTERSECT;
+		}
 
-		// when y = +-cube's y len * 0.5
-		float T3 = (YHalf - P.Y) / V.Y;
-		float T4 = (-YHalf - P.Y) / V.Y;
+		if (V.Y > EPSILON || V.Y < -EPSILON)
+		{
+			// when y = +-cube's y len * 0.5
+			T3 = (YHalf - P.Y) / V.Y;
+			T4 = (-YHalf - P.Y) / V.Y;
 
-		// is point in valid xz range?
-		if (P.X + T3 * V.X < -XHalf || P.X + T3 * V.X > XHalf)
+			// is point in valid xz range?
+			if (P.X + T3 * V.X < -XHalf || P.X + T3 * V.X > XHalf)
+				T3 = DONT_INTERSECT;
+			if (P.Z + T3 * V.Z < -ZHalf || P.Z + T3 * V.Z > ZHalf)
+				T3 = DONT_INTERSECT;
+			if (T3 < 0.0f)
+				T3 = DONT_INTERSECT;
+			if (P.X + T4 * V.X < -XHalf || P.X + T4 * V.X > XHalf)
+				T4 = DONT_INTERSECT;
+			if (P.Z + T4 * V.Z < -ZHalf || P.Z + T4 * V.Z > ZHalf)
+				T4 = DONT_INTERSECT;
+			if (T4 < 0.0f)
+				T4 = DONT_INTERSECT;
+		}
+		else
+		{
 			T3 = DONT_INTERSECT;
-		if (P.Z + T3 * V.Z < -ZHalf || P.Z + T3 * V.Z > ZHalf)
-			T3 = DONT_INTERSECT;
-		if (T3 < 0.0f)
-			T3 = DONT_INTERSECT;
-		if (P.X + T4 * V.X < -XHalf || P.X + T4 * V.X > XHalf)
 			T4 = DONT_INTERSECT;
-		if (P.Z + T4 * V.Z < -ZHalf || P.Z + T4 * V.Z > ZHalf)
-			T4 = DONT_INTERSECT;
-		if (T4 < 0.0f)
-			T4 = DONT_INTERSECT;
+		}
 
-		// when z = +-cube's z len * 0.5
-		float T5 = (ZHalf - P.Z) / V.Z;
-		float T6 = (-ZHalf - P.Z) / V.Z;
+		if (V.Z > EPSILON || V.Z < -EPSILON)
+		{
+			// when z = +-cube's z len * 0.5
+			T5 = (ZHalf - P.Z) / V.Z;
+			T6 = (-ZHalf - P.Z) / V.Z;
 
-		// is point in valid xy range?
-		if (P.X + T5 * V.X < -XHalf || P.X + T5 * V.X > XHalf)
+			// is point in valid xy range?
+			if (P.X + T5 * V.X < -XHalf || P.X + T5 * V.X > XHalf)
+				T5 = DONT_INTERSECT;
+			if (P.Y + T5 * V.Y < -YHalf || P.Y + T5 * V.Y > YHalf)
+				T5 = DONT_INTERSECT;
+			if (T5 < 0.0f)
+				T5 = DONT_INTERSECT;
+			if (P.X + T6 * V.X < -XHalf || P.X + T6 * V.X > XHalf)
+				T6 = DONT_INTERSECT;
+			if (P.Y + T6 * V.Y < -YHalf || P.Y + T6 * V.Y > YHalf)
+				T6 = DONT_INTERSECT;
+			if (T6 < 0.0f)
+				T6 = DONT_INTERSECT;
+		}
+		else
+		{
 			T5 = DONT_INTERSECT;
-		if (P.Y + T5 * V.Y < -YHalf || P.Y + T5 * V.Y > YHalf)
-			T5 = DONT_INTERSECT;
-		if (T5 < 0.0f)
-			T5 = DONT_INTERSECT;
-		if (P.X + T6 * V.X < -XHalf || P.X + T6 * V.X > XHalf)
 			T6 = DONT_INTERSECT;
-		if (P.Y + T6 * V.Y < -YHalf || P.Y + T6 * V.Y > YHalf)
-			T6 = DONT_INTERSECT;
-		if (T6 < 0.0f)
-			T6 = DONT_INTERSECT;
+		}
 
 		TArray<float> Answers;
 
@@ -271,6 +308,16 @@ private:
 	}
 
 	bool RayCastToTorus();
+
+	std::optional<float> GetRealWorldDistance(std::optional<float> T)
+	{
+		if (!T)
+			return T;
+		FVector CameraPos = CurrentRay.Point * M;
+		FVector IntersectionPos = (CurrentRay.Point + *T * CurrentRay.Vector) * M;
+
+		return (IntersectionPos).Distance(CameraPos);
+	}
 
 public:
 	static URayCaster& Instance()

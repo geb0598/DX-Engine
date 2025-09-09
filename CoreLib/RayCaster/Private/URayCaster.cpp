@@ -11,7 +11,7 @@ std::optional<float> URayCaster::GetHitResultAtScreenPosition(
 {
 	SetRayWithMouseAndMVP(X, Y, ModelingMatrix, ViewMatrix, ProjectionMatrix);
 
-	return RayCastToTriangle();
+	return GetRealWorldDistance(RayCastToTriangle());
 }
 
 std::optional<float> URayCaster::GetHitResultAtScreenPosition(
@@ -25,12 +25,12 @@ std::optional<float> URayCaster::GetHitResultAtScreenPosition(
 {
 	SetRayWithMouseAndMVP(X, Y, ModelingMatrix, ViewMatrix, ProjectionMatrix);
 
-	return RayCastToCube();
+	return GetRealWorldDistance(RayCastToCube());
 }
 
 std::optional<float> URayCaster::GetHitResultAtScreenPosition(USphereComponent& SphereComponent, int32 X, int32 Y, const FMatrix& ModelingMatrix, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix)
 {
 	SetRayWithMouseAndMVP(X, Y, ModelingMatrix, ViewMatrix, ProjectionMatrix);
 
-	return RayCastToSphere(1.0f);
+	return GetRealWorldDistance(RayCastToSphere(1.0f));
 }
