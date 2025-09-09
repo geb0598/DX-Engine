@@ -43,7 +43,7 @@ public:
 		return EventType;
 	}
 
-	std::pair<int, int> GetPosition() const
+	std::pair<int32, int32> GetPosition() const
 	{
 		return { MouseState.X, MouseState.Y };
 	}

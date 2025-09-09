@@ -1,7 +1,11 @@
-﻿#include "../Public/SceneManager.h"
+#include <fstream>
+
+#include "../Public/SceneManager.h"
 #include "Renderer/Renderer.h"
 #include "Json/json.hpp"
-#include <fstream>
+#include "Component/Public/CubeComponent.h"
+#include "Component/Public/TriangleComponent.h"
+#include "Component/Public/SphereComponent.h"
 
 // Static member initialization
 USceneManager* USceneManager::Instance = nullptr;
@@ -70,7 +74,7 @@ void USceneManager::SaveScene(const FString& FilePath)
                 FVector Location = SceneComponent->GetLocation();
                 FVector Rotation = SceneComponent->GetRotation();
                 FVector Scale = SceneComponent->GetScale();
-                EPrimitiveType Type = PrimitiveComponent->GetPrimitiveType();
+                auto Type = PrimitiveComponent->GetType();
                 
                 SavePrimitive(Obj, primitiveIndex++, Location, Rotation, Scale, Type);
             }
@@ -137,7 +141,7 @@ void USceneManager::LoadScene(const FString& FilePath)
             );
             
             FString PrimitiveType = Primitive["Type"].ToString();
-            EPrimitiveType Type = StringToPrimitiveType(PrimitiveType);
+            auto Type = StringToPrimitiveType(PrimitiveType);
             
             AActor* LoadedActor = CreateActorFromPrimitive(Location, Rotation, Scale, Type);
             if (LoadedActor)
@@ -181,8 +185,17 @@ AActor* USceneManager::GetMainCameraActor() const
     return nullptr;
 }
 
+AActor* USceneManager::GetCurrentActor() const
+{
+    if (CurrentScene)
+    {
+        return CurrentScene->GetCurrentActor();
+    }
+    return nullptr;
+}
+
 // Helper functions
-void USceneManager::SavePrimitive(json::JSON& Obj, int Index, const FVector& Location, const FVector& Rotation, const FVector& Scale, EPrimitiveType Type)
+void USceneManager::SavePrimitive(json::JSON& Obj, int Index, const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type)
 {
     FString IndexStr = std::to_string(Index);
     Obj["Primitives"][IndexStr] = json::Object();
@@ -192,7 +205,7 @@ void USceneManager::SavePrimitive(json::JSON& Obj, int Index, const FVector& Loc
     Obj["Primitives"][IndexStr]["Type"] = PrimitiveTypeToString(Type);
 }
 
-AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, EPrimitiveType Type)
+AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type)
 {
     URenderer& Renderer = URenderer::GetInstance();
     
@@ -202,7 +215,9 @@ AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const F
         std::begin(FVertex::InputLayoutDesc), 
         std::end(FVertex::InputLayoutDesc)
     );
-    
+
+    // -------------------------------------------------------------------------- //
+    // TODO: Shader can be shared across Actors
     std::shared_ptr<UVertexShader> VertexShader = std::make_shared<UVertexShader>(
         Renderer.GetDevice(),
         "./Shader/VertexShader.hlsl", 
@@ -215,36 +230,53 @@ AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const F
         "./Shader/PixelShader.hlsl",
         "main"
     );
+    //
+    // -------------------------------------------------------------------------- //
     
-    NewActor->AddComponent<UPrimitiveComponent>(NewActor, Type, VertexShader, PixelShader);
+    switch (Type)
+    {
+    case UPrimitiveComponent::EType::Triangle:
+        NewActor->AddComponent<UPrimitiveComponent, UTriangleComponent>(NewActor, VertexShader, PixelShader);
+        break;
+    case UPrimitiveComponent::EType::Cube:
+        NewActor->AddComponent<UPrimitiveComponent, UCubeComponent>(NewActor, VertexShader, PixelShader);
+        break;
+    case UPrimitiveComponent::EType::Sphere:
+        NewActor->AddComponent<UPrimitiveComponent, USphereComponent>(NewActor, VertexShader, PixelShader);
+        break;
+    default:
+        // TODO: LOG or WARN Unknown Primitive Type
+        NewActor->AddComponent<UPrimitiveComponent, UTriangleComponent>(NewActor, VertexShader, PixelShader);
+        break;
+    }
     NewActor->AddComponent<USceneComponent>(NewActor, Location, Rotation, Scale);
     
     return NewActor;
 }
 
-FString USceneManager::PrimitiveTypeToString(EPrimitiveType Type)
+FString USceneManager::PrimitiveTypeToString(UPrimitiveComponent::EType Type)
 {
     switch (Type)
     {
-    case EPrimitiveType::EPT_Triangle:
+    case UPrimitiveComponent::EType::Triangle:
         return "Triangle";
-    case EPrimitiveType::EPT_Cube:
+    case UPrimitiveComponent::EType::Cube:
         return "Cube";
-    case EPrimitiveType::EPT_Sphere:
+    case UPrimitiveComponent::EType::Sphere:
         return "Sphere";
     default:
         return "Triangle";
     }
 }
 
-EPrimitiveType USceneManager::StringToPrimitiveType(const FString& TypeStr)
+UPrimitiveComponent::EType USceneManager::StringToPrimitiveType(const FString& TypeStr)
 {
     if (TypeStr == "Triangle")
-        return EPrimitiveType::EPT_Triangle;
+        return UPrimitiveComponent::EType::Triangle;
     else if (TypeStr == "Cube")
-        return EPrimitiveType::EPT_Cube;
+        return UPrimitiveComponent::EType::Cube;
     else if (TypeStr == "Sphere")
-        return EPrimitiveType::EPT_Sphere;
+        return UPrimitiveComponent::EType::Sphere;
     else
-        return EPrimitiveType::EPT_Triangle;
+        return UPrimitiveComponent::EType::Triangle;
 }

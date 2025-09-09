@@ -1,33 +1,41 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
 #include <d3d11.h>
 
 #include "Component/Public/ActorComponent.h"
+#include "Math/Math.h"
 #include "Mesh/Mesh.h"
 #include "Shader/Shader.h"
 #include "Types/Types.h"
 
-enum class EPrimitiveType
-{
-	EPT_Triangle,
-	EPT_Cube,
-	EPT_Sphere,
-	EPT_Max,
-};
-
+// Forward Declaration
 class AActor;
+class URayCaster;
 
 class UPrimitiveComponent : public UActorComponent
 {
 public:
+	enum class EType
+	{
+		Primitive,
+		Triangle,
+		Cube,
+		Sphere,
+		Max
+	};
+
+public:
 	virtual ~UPrimitiveComponent() = default;
 
-	UPrimitiveComponent(AActor* Actor, 
-		EPrimitiveType PrimitiveType,
+	UPrimitiveComponent(AActor* Actor);
+
+	UPrimitiveComponent(AActor* Actor,
 		std::shared_ptr<UVertexShader> VertexShader,
-		std::shared_ptr<UPixelShader> PixelShader
+		std::shared_ptr<UPixelShader> PixelShader,
+		std::shared_ptr<UMesh> Mesh = nullptr
 	);
 
 	UPrimitiveComponent(const UPrimitiveComponent&) = delete;
@@ -36,19 +44,25 @@ public:
 	UPrimitiveComponent& operator=(const UPrimitiveComponent&) = delete;
 	UPrimitiveComponent& operator=(UPrimitiveComponent&&) = delete;
 
+	UMesh* GetMesh();
 	UVertexShader* GetVertexShader();
 	UPixelShader* GetPixelShader();
-	EPrimitiveType GetPrimitiveType() const { return PrimitiveType; }
+
+	virtual EType GetType() const;
+	// NOTE: Visitor Pattern using double dispatch
+	virtual std::optional<float> GetHitResultAtScreenPosition(
+		URayCaster& RayCaster,
+		int32 X, 
+		int32 Y,
+		const FMatrix& ModelingMatrix,
+		const FMatrix& ViewMatrix,
+		const FMatrix& ProjectionMatrix
+	);
 
 	void Render(ID3D11DeviceContext* DeviceContext);
 
-private:
-	void CreateMesh(EPrimitiveType PrimitiveType);
-
-private:
-	EPrimitiveType PrimitiveType;
-
-	std::shared_ptr<UMesh> Mesh;
+protected:
 	std::shared_ptr<UVertexShader> VertexShader;
 	std::shared_ptr<UPixelShader> PixelShader;
+	std::shared_ptr<UMesh> Mesh;
 };

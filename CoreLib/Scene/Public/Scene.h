@@ -13,6 +13,7 @@ private:
     TArray<AActor*> SceneActors;
     int32 SceneVersion;
     AActor* MainCameraActor;  // 메인 카메라 참조
+    AActor* CurrentActor;     // Current Selected Actor
 
 public:
     UScene();
@@ -30,6 +31,8 @@ public:
     
     const TArray<AActor*>& GetActors() const { return SceneActors; }
     AActor* GetMainCameraActor() const { return MainCameraActor; }
+    AActor* GetCurrentActor() const { return CurrentActor;  }
+    void SetCurrentActor(AActor* Actor) { CurrentActor = Actor;  }
 
     int32 GetVersion() const { return SceneVersion; }
     void SetVersion(int32 Version) { SceneVersion = Version; }

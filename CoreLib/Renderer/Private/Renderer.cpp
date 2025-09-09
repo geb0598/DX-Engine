@@ -18,12 +18,14 @@ URenderer::~URenderer()
 void URenderer::Prepare()
 {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV.Get(), ClearColor);
+	DeviceContext->ClearDepthStencilView(DepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
 
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
 	DeviceContext->RSSetState(RasterizerState.Get());
 
-	DeviceContext->OMSetRenderTargets(1, FrameBufferRTV.GetAddressOf(), nullptr);
+	DeviceContext->OMSetRenderTargets(1, FrameBufferRTV.GetAddressOf(), DepthStencilView.Get());
 	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 1);
 }
 
 void URenderer::SwapBuffer()
@@ -65,6 +67,7 @@ void URenderer::ResizeBuffers(int Width, int Height)
 
 URenderer::URenderer()
 {
+
 }
 
 void URenderer::Create(HWND hWnd)
@@ -121,6 +124,32 @@ void URenderer::CreateDeviceAndSwapChain(HWND hWnd)
 	ViewportInfo.Height = (float)SwapChainDesc.BufferDesc.Height;
 	ViewportInfo.MinDepth = 0.0f;
 	ViewportInfo.MaxDepth = 1.0f;
+
+	//------------------ Create Depth Stencil Buffer ------------------//
+	D3D11_TEXTURE2D_DESC DepthStencilDesc = {};
+	DepthStencilDesc.Width = SwapChainDesc.BufferDesc.Width;
+	DepthStencilDesc.Height = SwapChainDesc.BufferDesc.Height;
+	DepthStencilDesc.MipLevels = 1;
+	DepthStencilDesc.ArraySize = 1;
+	DepthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DepthStencilDesc.SampleDesc.Count = 1;
+	DepthStencilDesc.SampleDesc.Quality = 0;
+	DepthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+	DepthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	DepthStencilDesc.CPUAccessFlags = 0;
+	DepthStencilDesc.MiscFlags = 0;
+
+	Device->CreateTexture2D(&DepthStencilDesc, nullptr, DepthStencilBuffer.ReleaseAndGetAddressOf());
+
+	Device->CreateDepthStencilView(DepthStencilBuffer.Get(), nullptr, DepthStencilView.ReleaseAndGetAddressOf());
+
+	D3D11_DEPTH_STENCIL_DESC DepthStencilStateDesc = {};
+	DepthStencilStateDesc.DepthEnable = TRUE;
+	DepthStencilStateDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	DepthStencilStateDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	DepthStencilStateDesc.StencilEnable = FALSE;
+
+	Device->CreateDepthStencilState(&DepthStencilStateDesc, DepthStencilState.ReleaseAndGetAddressOf());
 }
 
 void URenderer::CreateFrameBuffer()
@@ -146,6 +175,7 @@ void URenderer::CreateRasterizerState()
 
 	RasterizerDesc.FillMode = D3D11_FILL_SOLID;	// 채우기 모드
 	RasterizerDesc.CullMode = D3D11_CULL_BACK;	// 백 페이스 컬링
+	RasterizerDesc.FrontCounterClockwise = true;
 
 	Device->CreateRasterizerState(&RasterizerDesc, RasterizerState.ReleaseAndGetAddressOf());
 }

@@ -21,8 +21,11 @@
   <ItemGroup>
     <ClCompile Include="Axis\Private\UAxis.cpp" />
     <ClCompile Include="Component\Private\ActorComponent.cpp" />
+    <ClCompile Include="Component\Private\CubeComponent.cpp" />
     <ClCompile Include="Component\Private\InputComponent.cpp" />
     <ClCompile Include="Component\Private\PrimitiveComponent.cpp" />
+    <ClCompile Include="Component\Private\SphereComponent.cpp" />
+    <ClCompile Include="Component\Private\TriangleComponent.cpp" />
     <ClCompile Include="Component\Private\UCameraComponent.cpp" />
     <ClCompile Include="Component\Private\USceneComponent.cpp" />
     <ClCompile Include="Component\Public\USceneComponent.h" />
@@ -60,8 +63,11 @@
     <ClInclude Include="Axis\Public\UAxis.h" />
     <ClInclude Include="Component\Component.h" />
     <ClInclude Include="Component\Public\ActorComponent.h" />
+    <ClInclude Include="Component\Public\CubeComponent.h" />
     <ClInclude Include="Component\Public\InputComponent.h" />
     <ClInclude Include="Component\Public\PrimitiveComponent.h" />
+    <ClInclude Include="Component\Public\SphereComponent.h" />
+    <ClInclude Include="Component\Public\TriangleComponent.h" />
     <ClInclude Include="Component\Public\UCameraComponent.h" />
     <ClInclude Include="Containers\Containers.h" />
     <ClInclude Include="Math\Math.h" />
