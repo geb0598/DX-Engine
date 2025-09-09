@@ -18,7 +18,8 @@
 #include "Utilities/Utilities.h"
 #include "Window/Window.h"
 
-// ---------------------------------------------------------------------------- //
+// ------------------------------------Gizmo------------------------------------- //
+#include "Component/Public/LocationGizmoComponent.h"
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
@@ -69,6 +70,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SceneManager.NewScene("Default Scene");
 
 	AActor* MainCamera = SceneManager.GetMainCameraActor();
+	// [추가] 기즈모를 담을 전용 액터를 생성하고 LocationGizmoComponent를 부착합니다.
+	// 이 액터는 씬에 추가하지 않습니다. 컴포넌트가 직접 렌더링을 관리하기 때문입니다.
+	AActor* GizmoActor = new AActor();
+	GizmoActor->AddComponent<ULocationGizmoComponent>(GizmoActor);
 
 	// ------------------------------- Axis Setup ------------------------------- //
 
@@ -152,54 +157,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		const TArray<AActor*> SceneActors = CurrentScene->GetActors();
 
-		// #1. Object Picking
-		AActor* PickedActor = nullptr;
-		float PickedActorDistance = (std::numeric_limits<float>::max)();
+		// [추가1] 기즈모 컴포넌트의 포인터를 가져옵니다.
+		auto GizmoComponent = GizmoActor->GetComponent<ULocationGizmoComponent>();
 
-		// TODO: Improve performance with caching
-		if (!ImIO.WantCaptureMouse && Window.GetMouse().IsLeftPressed())
+		//// #1. Object Picking
+		//AActor* PickedActor = nullptr;
+		//float PickedActorDistance = (std::numeric_limits<float>::max)();
+
+		if (!ImIO.WantCaptureMouse && Window.GetMouse().IsLeftPressed() && !GizmoComponent->IsDragging())
 		{
+			AActor* PickedActor = nullptr;
+			float PickedActorDistance = (std::numeric_limits<float>::max)();
+
 			for (auto Actor : SceneActors)
 			{
-				if (Actor == nullptr)
-				{
-					continue;
-				}
-
+				if (Actor == nullptr) continue;
 				auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
-				if (PrimitiveComponent == nullptr)
-				{
-					continue;
-				}
-
-				// NOTE: Actor with no scene component is ignored quietely
+				if (PrimitiveComponent == nullptr) continue;
 				auto SceneComponent = Actor->GetComponent<USceneComponent>();
-				if (SceneComponent == nullptr)
-				{
-					continue;
-				}
+				if (SceneComponent == nullptr) continue;
+
 				ModelMatrix = SceneComponent->GetModelingMatrix();
-
-				// --------------------- Object Picking------------------------- //
 				auto [MouseX, MouseY] = Window.GetMouse().GetPosition();
+				auto HitResult = PrimitiveComponent->GetHitResultAtScreenPosition(RayCaster, MouseX, MouseY, Window.GetWidth(), Window.GetHeight(), ModelMatrix, ViewMatrix, ProjectionMatrix);
 
-				auto HitResult = PrimitiveComponent->GetHitResultAtScreenPosition(
-					RayCaster,
-					MouseX,
-					MouseY,
-					Window.GetWidth(),
-					Window.GetHeight(),
-					ModelMatrix,
-					ViewMatrix,
-					ProjectionMatrix
-				);
-
-				if (HitResult && PickedActorDistance > *HitResult)
+				if (HitResult && *HitResult < PickedActorDistance)
 				{
 					PickedActor = Actor;
 					PickedActorDistance = *HitResult;
 				}
-
 				// ------------------------- Debug ---------------------------- //
 				if (!HitResult)
 				{
@@ -225,16 +211,100 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
 					break;
 				}
-				// ----------------------------------------------------------- //
-
+				// [삭제] 기존 디버그 로그는 피킹 로직과 분리되어 있어 삭제합니다. (필요시 UIManager에서 확인 가능)
 			}
+
+			// [추가1] 피킹 결과를 Scene과 Gizmo에 전달하고, 선택 해제까지 처리하는 통합 로직입니다.
+			CurrentScene->SetCurrentActor(PickedActor);
+			GizmoComponent->SetTarget(PickedActor);
 
 			if (PickedActor)
 			{
-				CurrentScene->SetCurrentActor(PickedActor);
 				EditorUI.AddDebugLog("Selected Dist: " + std::to_string(PickedActorDistance));
 			}
 		}
+		// [추가1] 기즈모 입력(드래그) 처리를 호출합니다.
+		GizmoComponent->HandleInput(RayCaster, Window, ViewMatrix, ProjectionMatrix);
+
+		//// TODO: Improve performance with caching
+		//if (!ImIO.WantCaptureMouse && Window.GetMouse().IsLeftPressed())
+		//{
+		//	for (auto Actor : SceneActors)
+		//	{
+		//		if (Actor == nullptr)
+		//		{
+		//			continue;
+		//		}
+
+		//		auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
+		//		if (PrimitiveComponent == nullptr)
+		//		{
+		//			continue;
+		//		}
+
+		//		// NOTE: Actor with no scene component is ignored quietely
+		//		auto SceneComponent = Actor->GetComponent<USceneComponent>();
+		//		if (SceneComponent == nullptr)
+		//		{
+		//			continue;
+		//		}
+		//		ModelMatrix = SceneComponent->GetModelingMatrix();
+
+		//		// --------------------- Object Picking------------------------- //
+		//		auto [MouseX, MouseY] = Window.GetMouse().GetPosition();
+
+		//		auto HitResult = PrimitiveComponent->GetHitResultAtScreenPosition(
+		//			RayCaster,
+		//			MouseX,
+		//			MouseY,
+		//			Window.GetWidth(),
+		//			Window.GetHeight(),
+		//			ModelMatrix,
+		//			ViewMatrix,
+		//			ProjectionMatrix
+		//		);
+
+		//		if (HitResult && PickedActorDistance > *HitResult)
+		//		{
+		//			PickedActor = Actor;
+		//			PickedActorDistance = *HitResult;
+		//		}
+
+		//		// ------------------------- Debug ---------------------------- //
+		//		if (!HitResult)
+		//		{
+		//			continue;
+		//		}
+
+		//		switch (PrimitiveComponent->GetType())
+		//		{
+		//		case UPrimitiveComponent::EType::Triangle:
+		//			EditorUI.AddDebugLog("Triangle Hit!");
+		//			EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+		//			break;
+		//		case UPrimitiveComponent::EType::Cube:
+		//			EditorUI.AddDebugLog("Cube Hit!");
+		//			EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+		//			break;
+		//		case UPrimitiveComponent::EType::Sphere:
+		//			EditorUI.AddDebugLog("Sphere Hit!");
+		//			EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+		//			break;
+		//		default:
+		//			EditorUI.AddDebugLog("Unknown Hit!");
+		//			EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
+		//			break;
+		//		}
+		//		// ----------------------------------------------------------- //
+
+		//	}
+
+		//	if (PickedActor)
+		//	{
+		//		CurrentScene->SetCurrentActor(PickedActor);
+		//		EditorUI.AddDebugLog("Selected Dist: " + std::to_string(PickedActorDistance));
+		//	}
+		//}
 
 		// #2. Object Rendering
 		for (auto Actor : SceneActors)
@@ -263,14 +333,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			auto VertexShader = PrimitiveComponent->GetVertexShader();
 			auto PixelShader = PrimitiveComponent->GetPixelShader();
 
-			VertexShader->UpdateConstantBuffer(
+			/*VertexShader->UpdateConstantBuffer(
 				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(MVP.M)
 			);
 
 			int bIsSelected = Actor == CurrentScene->GetCurrentActor();
 			PixelShader->UpdateConstantBuffer(
 				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(&bIsSelected)
-			);
+			);*/
 
 			// NOTE: Shader Binding
 			VertexShader->Bind(Renderer.GetDeviceContext(), "constants");
@@ -281,12 +351,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			PrimitiveComponent->Render(Renderer.GetDeviceContext());
 		}
 
+		// [추가2] 모든 씬 액터를 렌더링한 후, 기즈모를 렌더링합니다.
+		GizmoComponent->Render(Renderer, ViewMatrix, ProjectionMatrix);
+
 		// #2. Rendering UI
 		EditorUI.RenderUI();
 
 		Renderer.SwapBuffer();
 	}
 
+	// [추가2] 프로그램 종료 시 GizmoActor 메모리를 해제합니다.
+	delete GizmoActor;
 	// NOTE: Release UI Manager
 	EditorUI.Release();
 

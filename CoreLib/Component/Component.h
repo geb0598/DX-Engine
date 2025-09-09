@@ -5,3 +5,6 @@
 #include "Public/USceneComponent.h"
 #include "Public/PrimitiveComponent.h"
 #include "Public/InputComponent.h"
+#include "Public/StaticMeshComponent.h"
+#include "Public/GizmoComponent.h"
+#include "Public/LocationGizmoComponent.h"
