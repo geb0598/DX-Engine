@@ -1,5 +1,7 @@
 #include "Renderer/Renderer.h"
 #include "Component/Public/TriangleComponent.h"
+#include "Renderer/Renderer.h"
+#include "RayCaster/Raycaster.h"
 
 FVertexSimple triangle_vertices[] =
 {
@@ -26,4 +28,23 @@ UTriangleComponent::UTriangleComponent(AActor* Actor,
 UTriangleComponent::EType UTriangleComponent::GetType() const
 {
 	return EType::Triangle;
+}
+
+std::optional<float> UTriangleComponent::GetHitResultAtScreenPosition(
+	URayCaster& RayCaster, 
+	int32 X, 
+	int32 Y, 
+	const FMatrix& ModelingMatrix, 
+	const FMatrix& ViewMatrix, 
+	const FMatrix& ProjectionMatrix
+)
+{
+	return RayCaster.GetHitResultAtScreenPosition(
+		*this,
+		X, 
+		Y,
+		ModelingMatrix,
+		ViewMatrix,
+		ProjectionMatrix
+	);
 }

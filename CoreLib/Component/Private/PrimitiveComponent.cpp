@@ -1,4 +1,5 @@
 #include "Component/Public/PrimitiveComponent.h"
+#include "RayCaster/Raycaster.h"
 
 UPrimitiveComponent::UPrimitiveComponent(AActor* Actor)
 	: UActorComponent(Actor)
@@ -37,6 +38,18 @@ UPixelShader* UPrimitiveComponent::GetPixelShader()
 UPrimitiveComponent::EType UPrimitiveComponent::GetType() const
 {
 	return EType::Primitive;
+}
+
+std::optional<float> UPrimitiveComponent::GetHitResultAtScreenPosition(
+	URayCaster& RayCaster,
+	int32 X, 
+	int32 Y, 
+	const FMatrix& ModelingMatrix, 
+	const FMatrix& ViewMatrix, 
+	const FMatrix& ProjectionMatrix
+)
+{
+	return std::nullopt;
 }
 
 void UPrimitiveComponent::Render(ID3D11DeviceContext* DeviceContext)

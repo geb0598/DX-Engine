@@ -1,5 +1,6 @@
-#include "Renderer/Renderer.h"
 #include "Component/Public/CubeComponent.h"
+#include "RayCaster/Raycaster.h"
+#include "Renderer/Renderer.h"
 
 FVertexSimple cube_vertices[] =
 {
@@ -70,4 +71,16 @@ UCubeComponent::UCubeComponent(AActor* Actor,
 UCubeComponent::EType UCubeComponent::GetType() const
 {
 	return EType::Cube;
+}
+
+std::optional<float> UCubeComponent::GetHitResultAtScreenPosition(URayCaster& RayCaster, int32 X, int32 Y, const FMatrix& ModelingMatrix, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix)
+{
+	return RayCaster.GetHitResultAtScreenPosition(
+		*this,
+		X, 
+		Y,
+		ModelingMatrix,
+		ViewMatrix,
+		ProjectionMatrix
+	);
 }

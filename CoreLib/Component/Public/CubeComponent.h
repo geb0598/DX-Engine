@@ -23,4 +23,13 @@ public:
 	UCubeComponent operator=(UCubeComponent&&) = delete;
 
 	virtual EType GetType() const override;
+
+	virtual std::optional<float> GetHitResultAtScreenPosition(
+		URayCaster& RayCaster,
+		int32 X, 
+		int32 Y,
+		const FMatrix& ModelingMatrix,
+		const FMatrix& ViewMatrix,
+		const FMatrix& ProjectionMatrix
+	) override;
 };

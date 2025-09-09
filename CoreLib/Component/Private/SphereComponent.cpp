@@ -1,5 +1,6 @@
-#include "Renderer/Renderer.h"
 #include "Component/Public/SphereComponent.h"
+#include "RayCaster/Raycaster.h"
+#include "Renderer/Renderer.h"
 
 FVertexSimple sphere_vertices[] = {
 	{ 0.000000f, 1.000000f, 0.000000f, 0.500000f, 1.000000f, 0.500000f, 1.000000f },
@@ -2422,4 +2423,16 @@ USphereComponent::USphereComponent(AActor* Actor,
 USphereComponent::EType USphereComponent::GetType() const
 {
 	return EType::Sphere;
+}
+
+std::optional<float> USphereComponent::GetHitResultAtScreenPosition(URayCaster& RayCaster, int32 X, int32 Y, const FMatrix& ModelingMatrix, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix)
+{
+	return RayCaster.GetHitResultAtScreenPosition(
+		*this,
+		X, 
+		Y,
+		ModelingMatrix,
+		ViewMatrix,
+		ProjectionMatrix
+	);
 }

@@ -1,9 +1,13 @@
 #pragma once
 
 #include <algorithm>
+#include <optional>
 
 #include "Math/Math.h"
 #include "Containers/Containers.h"
+#include "Component/Public/SphereComponent.h"
+#include "Component/Public/CubeComponent.h"
+#include "Component/Public/TriangleComponent.h"
 
 #define DONT_INTERSECT -1.0f
 
@@ -21,7 +25,7 @@ private:
 	URayCaster() = default;
 	~URayCaster() = default;
 
-public:
+private:
 	void SetRayWithMouseAndMVP(int X, int Y, FMatrix Modeling, FMatrix View, FMatrix Projection)
 	{
 		const float SCREENWIDTH = 1000.0f;
@@ -52,7 +56,7 @@ public:
 		return;
 	}
 
-	float RayCastToSphere(float Radius)
+	std::optional<float> RayCastToSphere(float Radius)
 	{
 		// Components for Quadratic Formula
 		FVector V = CurrentRay.Vector;
@@ -71,7 +75,7 @@ public:
 			float T2 = (-B - std::sqrtf(D)) / 2.0f * A;
 
 			if (T1 < 0.0f && T2 < 0.0f)
-				return DONT_INTERSECT;
+				return std::nullopt;
 			else if (T1 >= 0.0f && T2 < 0.0f)
 				return T1;
 			else if (T1 < 0.0f && T2 >= 0.0f)
@@ -80,10 +84,10 @@ public:
 				return (std::min)(T1, T2);
 		}
 		else
-			return DONT_INTERSECT;
+			return std::nullopt;
 	}
 
-	float RayCastToCube()
+	std::optional<float> RayCastToCube()
 	{
 		float XHalf = 0.5f;
 		float YHalf = 0.5f;
@@ -168,12 +172,21 @@ public:
 				Closest = (std::min)(Closest, Answers[i]);
 		}
 
-		return Closest;
+		// TODO: It's too hard to change all vars into std::optional, 
+		//		 so I left this one for further modification
+		
+		if (Closest == DONT_INTERSECT)
+		{
+			return std::nullopt;
+		}
+		else
+		{
+			return Closest;
+		}
 	}
 
-	float RayCastToTriangle()
+	std::optional<float> RayCastToTriangle()
 	{
-		// �ε��Ҽ��� ���� ����
 		const float EPSILON = 1e-5f;
 
 		FVector P = CurrentRay.Point;
@@ -189,7 +202,7 @@ public:
 		
 		// when ray is parellel to triangle
 		if (V.Dot(N) >= -EPSILON && V.Dot(N) <= EPSILON)
-			return DONT_INTERSECT;
+			return std::nullopt;
 
 		// find t when ray intersect with Plane.
 		// Plane includes triangle
@@ -197,7 +210,7 @@ public:
 
 		// when triangle is behind camera
 		if (T < 0.0f)
-			return DONT_INTERSECT;
+			return std::nullopt;
 
 		// R is intersection point between ray and plane
 		FVector R = P + T * V;
@@ -205,7 +218,7 @@ public:
 		if ((T1 - T0).Cross(R - T0).Dot(N) < 0.0f ||
 			(T2 - T1).Cross(R - T1).Dot(N) < 0.0f ||
 			(T0 - T2).Cross(R - T2).Dot(N) < 0.0f)
-			return DONT_INTERSECT;
+			return std::nullopt;
 
 		return T;
 	}
@@ -259,9 +272,35 @@ public:
 
 	bool RayCastToTorus();
 
+public:
 	static URayCaster& Instance()
 	{
 		static URayCaster RayCaster;
 		return RayCaster;
 	}
+
+public:
+	std::optional<float> GetHitResultAtScreenPosition(
+		UTriangleComponent& TriangleComponent,
+		int32 X, int32 Y,
+		const FMatrix& ModelingMatrix,
+		const FMatrix& ViewMatrix,
+		const FMatrix& ProjectionMatrix
+	);
+
+	std::optional<float> GetHitResultAtScreenPosition(
+		UCubeComponent& CubeComponent,
+		int32 X, int32 Y,
+		const FMatrix& ModelingMatrix,
+		const FMatrix& ViewMatrix,
+		const FMatrix& ProjectionMatrix
+	);
+
+	std::optional<float> GetHitResultAtScreenPosition(
+		USphereComponent& SphereComponent,
+		int32 X, int32 Y,
+		const FMatrix& ModelingMatrix,
+		const FMatrix& ViewMatrix,
+		const FMatrix& ProjectionMatrix
+	);
 };

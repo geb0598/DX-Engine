@@ -1,15 +1,19 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
 #include <d3d11.h>
 
 #include "Component/Public/ActorComponent.h"
+#include "Math/Math.h"
 #include "Mesh/Mesh.h"
 #include "Shader/Shader.h"
 #include "Types/Types.h"
 
+// Forward Declaration
 class AActor;
+class URayCaster;
 
 class UPrimitiveComponent : public UActorComponent
 {
@@ -45,6 +49,15 @@ public:
 	UPixelShader* GetPixelShader();
 
 	virtual EType GetType() const;
+	// NOTE: Visitor Pattern using double dispatch
+	virtual std::optional<float> GetHitResultAtScreenPosition(
+		URayCaster& RayCaster,
+		int32 X, 
+		int32 Y,
+		const FMatrix& ModelingMatrix,
+		const FMatrix& ViewMatrix,
+		const FMatrix& ProjectionMatrix
+	);
 
 	void Render(ID3D11DeviceContext* DeviceContext);
 

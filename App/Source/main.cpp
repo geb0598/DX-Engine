@@ -146,6 +146,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			{
 				auto [MouseX, MouseY] = Window.GetMouse().GetPosition();
 
+				auto HitResult = PrimitiveComponent->GetHitResultAtScreenPosition(
+					RayCaster,
+					MouseX,
+					MouseY,
+					ModelMatrix,
+					ViewMatrix,
+					ProjectionMatrix
+				);
+
+				if (HitResult)
+				{
+					EditorUI.AddDebugLog("Ray Hit!");
+				}
+
+				/* Legacy Code
+
 				RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, ModelMatrix, ViewMatrix, ProjectionMatrix);
 				bool bIsCollidedWithRay = false;
 				switch (PrimitiveComponent->GetType())
@@ -176,9 +192,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					break;
 				}
 
-				if (bIsCollidedWithRay)
-				{
-				}
+				*/
 			}
 			// ------------------------------------------------------------- //
 
