@@ -41,6 +41,28 @@ ID3D11DeviceContext* URenderer::GetDeviceContext()
 	return DeviceContext.Get();
 }
 
+void URenderer::ResizeBuffers(int Width, int Height)
+{
+	// 렌더 타겟 뷰를 해제
+	FrameBufferRTV.Reset();
+	FrameBuffer.Reset();
+	
+	// 스왑 체인 버퍼 크기 조정
+	HRESULT hr = SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
+	if (FAILED(hr))
+	{
+		// 에러 처리
+		return;
+	}
+	
+	// 새로운 크기로 프레임 버퍼 다시 생성
+	CreateFrameBuffer();
+	
+	// 뷰포트 크기 업데이트
+	ViewportInfo.Width = (float)Width;
+	ViewportInfo.Height = (float)Height;
+}
+
 URenderer::URenderer()
 {
 }

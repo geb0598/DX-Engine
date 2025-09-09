@@ -6,6 +6,7 @@
 #include "Types/Types.h"
 #include "Window/Public/Keyboard.h"
 #include "Window/Public/Mouse.h"
+#include "Window/Public/WindowSettings.h"
 
 class UWindow
 {
@@ -36,6 +37,7 @@ public:
 	~UWindow();
 
 	UWindow(int Width, int Height, const FString& WindowTitle);
+	UWindow(const FWindowSettings& Settings);
 
 	UWindow(const UWindow&) = delete;
 	UWindow(UWindow&&) = delete;
@@ -59,7 +61,14 @@ public:
 	{
 		return static_cast<float>(Width) / static_cast<float>(Height);
 	}
-
+	
+	bool IsResized() const { return bIsResized; }
+	void ResetResizeFlag() { bIsResized = false; }
+	
+	void SaveWindowSettings(const FString& FilePath) const;
+	void SetSettingsFilePath(const FString& FilePath);
+	bool IsMaximized() const;
+	
 private:
 	static LRESULT CALLBACK WndProcSetUp(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
 	static LRESULT CALLBACK WndProc(HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam);
@@ -69,6 +78,8 @@ private:
 
 	int32 Width;
 	int32 Height;
+	bool bIsResized = false;
+	FString SettingsFilePath;
 
 	UKeyboard Keyboard;
 	UMouse Mouse;

@@ -51,6 +51,7 @@
     <ClCompile Include="Window\Private\Keyboard.cpp" />
     <ClCompile Include="Window\Private\Mouse.cpp" />
     <ClCompile Include="Window\Private\Window.cpp" />
+    <ClCompile Include="Window\Private\WindowSettings.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Actor\Actor.h" />
@@ -100,6 +101,7 @@
     <ClInclude Include="Window\Public\Keyboard.h" />
     <ClInclude Include="Window\Public\Mouse.h" />
     <ClInclude Include="Window\Public\Window.h" />
+    <ClInclude Include="Window\Public\WindowSettings.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

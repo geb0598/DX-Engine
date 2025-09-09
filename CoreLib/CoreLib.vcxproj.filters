@@ -114,6 +114,9 @@
     <ClCompile Include="Memory\Private\FMemory.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Window\Private\WindowSettings.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h">
@@ -258,6 +261,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Memory\Public\FMemory.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Window\Public\WindowSettings.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

@@ -23,6 +23,7 @@ public:
 	void Create(HWND hWindow);						// 렌더러 초기화 함수
 	void Prepare();									// 그래픽 파이프라인에 필요한 정보를 전달하고 바인드
 	void SwapBuffer();								// 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
+	void ResizeBuffers(int Width, int Height);		// 윈도우 크기 변경 시 버퍼 크기 조정
 
 	ID3D11Device* GetDevice();
 	ID3D11DeviceContext* GetDeviceContext();

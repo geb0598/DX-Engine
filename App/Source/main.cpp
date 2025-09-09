@@ -24,9 +24,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	CLogger::Instance().AddOutput(std::make_unique<CFileOutput>("JungleEngine.log"));
 	UE_LOG(Info, "Hello World %d", 2025);
 
-	// #1. Window Creation
-	UWindow Window(1024, 1024, "Jungle Engine");
+	// #1. Window Creation with Settings
+	FWindowSettings windowSettings;
+	const FString settingsPath = "WindowSettings.ini";
+	
+	// #1.1 If Load File Exists, Load Settings
+	if (!windowSettings.LoadFromFile(settingsPath))
+	{
+		// # If Load File Not Exists, Create with Default Settings
+		windowSettings.Width = 1600;
+		windowSettings.Height = 900;
+		windowSettings.WindowTitle = "Jungle Engine";
+		windowSettings.bIsMaximized = false;
+	}
+	
+	// #1.2 Set SettingsFilePath to Window
+	UWindow Window(windowSettings);
+	Window.SetSettingsFilePath(settingsPath);
 
+	// #2. Renderer
 	URenderer& Renderer = URenderer::GetInstance();
 	// NOTE: Renderer should be initialized before use
 	Renderer.Create(Window.GethWnd());
@@ -73,6 +89,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				bIsExit = true;
 				break;
 			}
+		}
+
+		// ------------------------- Window Resize Handling -------------------- //
+		if (Window.IsResized())
+		{
+			Renderer.ResizeBuffers(Window.GetWidth(), Window.GetHeight());
+			Window.ResetResizeFlag();
 		}
 
 		// ------------------------- Scene Load ------------------------------- //
