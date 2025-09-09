@@ -37,3 +37,8 @@ UINT UMesh::GetStride() const
 {
 	return Stride;
 }
+
+const TArray<FVertex>& UMesh::GetVertices() const
+{
+	return Vertices;
+}
