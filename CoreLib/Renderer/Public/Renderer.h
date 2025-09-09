@@ -33,6 +33,7 @@ private:
 
 	void CreateDeviceAndSwapChain(HWND hWindow);	// Direct3D 장치 및 스왑 체인을 생성하는 함수
 	void CreateFrameBuffer();						// 프레임 버퍼를 생성하는 함수
+	void CreateDepthStencilBuffer(int Width, int Height);	// 깊이 스텐실 버퍼를 생성하는 함수
 	void CreateRasterizerState();					// 래스터라이저 상태를 생성하는 함수
 
 	// Direct3D 11 장치(Device)와 장치 컨텍스트(Device Context) 및 스왑 체인(Swap Chain)을 관리하기 위한 포인터들

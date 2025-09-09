@@ -49,6 +49,10 @@ void URenderer::ResizeBuffers(int Width, int Height)
 	FrameBufferRTV.Reset();
 	FrameBuffer.Reset();
 	
+	// 깊이 스텐실 뷰와 버퍼도 해제
+	DepthStencilView.Reset();
+	DepthStencilBuffer.Reset();
+	
 	// 스왑 체인 버퍼 크기 조정
 	HRESULT hr = SwapChain->ResizeBuffers(0, Width, Height, DXGI_FORMAT_UNKNOWN, 0);
 	if (FAILED(hr))
@@ -59,7 +63,10 @@ void URenderer::ResizeBuffers(int Width, int Height)
 	
 	// 새로운 크기로 프레임 버퍼 다시 생성
 	CreateFrameBuffer();
-	
+
+	// 새로운 크기로 깊이 스텐실 버퍼 다시 생성
+	CreateDepthStencilBuffer(Width, Height);
+
 	// 뷰포트 크기 업데이트
 	ViewportInfo.Width = (float)Width;
 	ViewportInfo.Height = (float)Height;
@@ -80,8 +87,6 @@ void URenderer::Create(HWND hWnd)
 
 	// 래스터라이저 상태 생성
 	CreateRasterizerState();
-
-	// 깊이 스텐실 버퍼 및 블렌드 상태는 이 코드에서는 다루지 않음
 }
 
 void URenderer::CreateDeviceAndSwapChain(HWND hWnd)
@@ -125,23 +130,8 @@ void URenderer::CreateDeviceAndSwapChain(HWND hWnd)
 	ViewportInfo.MinDepth = 0.0f;
 	ViewportInfo.MaxDepth = 1.0f;
 
-	//------------------ Create Depth Stencil Buffer ------------------//
-	D3D11_TEXTURE2D_DESC DepthStencilDesc = {};
-	DepthStencilDesc.Width = SwapChainDesc.BufferDesc.Width;
-	DepthStencilDesc.Height = SwapChainDesc.BufferDesc.Height;
-	DepthStencilDesc.MipLevels = 1;
-	DepthStencilDesc.ArraySize = 1;
-	DepthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	DepthStencilDesc.SampleDesc.Count = 1;
-	DepthStencilDesc.SampleDesc.Quality = 0;
-	DepthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-	DepthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	DepthStencilDesc.CPUAccessFlags = 0;
-	DepthStencilDesc.MiscFlags = 0;
-
-	Device->CreateTexture2D(&DepthStencilDesc, nullptr, DepthStencilBuffer.ReleaseAndGetAddressOf());
-
-	Device->CreateDepthStencilView(DepthStencilBuffer.Get(), nullptr, DepthStencilView.ReleaseAndGetAddressOf());
+	// 깊이 스텐실 버퍼 생성
+	CreateDepthStencilBuffer(SwapChainDesc.BufferDesc.Width, SwapChainDesc.BufferDesc.Height);
 
 	D3D11_DEPTH_STENCIL_DESC DepthStencilStateDesc = {};
 	DepthStencilStateDesc.DepthEnable = TRUE;
@@ -167,6 +157,26 @@ void URenderer::CreateFrameBuffer()
 		&FramebufferRTVdesc,
 		FrameBufferRTV.ReleaseAndGetAddressOf()
 	);
+}
+
+void URenderer::CreateDepthStencilBuffer(int Width, int Height)
+{
+	D3D11_TEXTURE2D_DESC DepthStencilDesc = {};
+	DepthStencilDesc.Width = Width;
+	DepthStencilDesc.Height = Height;
+	DepthStencilDesc.MipLevels = 1;
+	DepthStencilDesc.ArraySize = 1;
+	DepthStencilDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	DepthStencilDesc.SampleDesc.Count = 1;
+	DepthStencilDesc.SampleDesc.Quality = 0;
+	DepthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+	DepthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	DepthStencilDesc.CPUAccessFlags = 0;
+	DepthStencilDesc.MiscFlags = 0;
+
+	Device->CreateTexture2D(&DepthStencilDesc, nullptr, DepthStencilBuffer.ReleaseAndGetAddressOf());
+
+	Device->CreateDepthStencilView(DepthStencilBuffer.Get(), nullptr, DepthStencilView.ReleaseAndGetAddressOf());
 }
 
 void URenderer::CreateRasterizerState()
