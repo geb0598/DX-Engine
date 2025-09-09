@@ -2,6 +2,7 @@
 
 #include "../Public/SceneManager.h"
 #include "Renderer/Renderer.h"
+#include "ResourceManager/ResourceManager.h"
 #include "Json/json.hpp"
 #include "Component/Public/CubeComponent.h"
 #include "Component/Public/TriangleComponent.h"
@@ -207,7 +208,7 @@ void USceneManager::SavePrimitive(json::JSON& Obj, int Index, const FVector& Loc
 
 AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type)
 {
-    URenderer& Renderer = URenderer::GetInstance();
+    UResourceManager& ResourceManager = UResourceManager::GetInstance();
     
     AActor* NewActor = new AActor();
     
@@ -217,20 +218,18 @@ AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const F
     );
 
     // -------------------------------------------------------------------------- //
-    // TODO: Shader can be shared across Actors
-    std::shared_ptr<UVertexShader> VertexShader = std::make_shared<UVertexShader>(
-        Renderer.GetDevice(),
+    std::shared_ptr<UVertexShader> VertexShader = ResourceManager.GetOrCreateVertexShader(
+        "DefaultVertexShader",
         "./Shader/VertexShader.hlsl", 
         "main",
         InputLayoutDesc
     );
     
-    std::shared_ptr<UPixelShader> PixelShader = std::make_shared<UPixelShader>(
-        Renderer.GetDevice(),
+    std::shared_ptr<UPixelShader> PixelShader = ResourceManager.GetOrCreatePixelShader(
+        "DefaultPixelShader",
         "./Shader/PixelShader.hlsl",
         "main"
     );
-    //
     // -------------------------------------------------------------------------- //
     
     switch (Type)

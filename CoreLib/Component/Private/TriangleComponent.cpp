@@ -1,6 +1,6 @@
 #include "Renderer/Renderer.h"
 #include "Component/Public/TriangleComponent.h"
-#include "Renderer/Renderer.h"
+#include "ResourceManager/ResourceManager.h"
 #include "RayCaster/Raycaster.h"
 
 FVertexSimple triangle_vertices[] =
@@ -21,8 +21,8 @@ UTriangleComponent::UTriangleComponent(AActor* Actor,
 		VertexArray.push_back(static_cast<FVertex>(triangle_vertices[i]));
 	}
 
-	auto& Renderer = URenderer::GetInstance();
-	Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
+	UResourceManager& ResourceManager = UResourceManager::GetInstance();
+	Mesh = ResourceManager.GetOrCreateMesh("TriangleMesh", VertexArray);
 }
 
 UTriangleComponent::EType UTriangleComponent::GetType() const
