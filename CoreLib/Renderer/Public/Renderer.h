@@ -44,6 +44,10 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> FrameBufferRTV;	// 텍스처를 렌더 타켓으로 사용하는 뷰
 	Microsoft::WRL::ComPtr<ID3D11RasterizerState> RasterizerState;	// 래스터라이저 상태(컬링, 채우기 모드 등 정의)
 
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> DepthStencilBuffer;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> DepthStencilView;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> DepthStencilState;
+
 	FLOAT ClearColor[4] = {0.025f, 0.025f, 0.025f, 1.0f};			// 화면을 초기화(clear)할 때 사용할 색상 (RGBA)
 	D3D11_VIEWPORT ViewportInfo;									// 렌더링 영역을 정의하는 뷰포트 정보
 };
