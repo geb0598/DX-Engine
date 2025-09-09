@@ -28,6 +28,7 @@
     <ClCompile Include="Component\Public\USceneComponent.h" />
     <ClCompile Include="Math\Private\Matrix.cpp" />
     <ClCompile Include="Math\Private\Vector.cpp" />
+    <ClCompile Include="Memory\Private\FMemory.cpp" />
     <ClCompile Include="Mesh\Private\Mesh.cpp" />
     <ClCompile Include="Object\Private\Object.cpp" />
     <ClCompile Include="Renderer\Private\Renderer.cpp" />
@@ -44,9 +45,9 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_impl_win32.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
-    <ClCompile Include="Utilities\Private\JsonSceneSerializer.cpp" />
     <ClCompile Include="Time\Private\TimeManager.cpp" />
     <ClCompile Include="UI\Private\UIManager.cpp" />
+    <ClCompile Include="Utilities\Private\Logger.cpp" />
     <ClCompile Include="Window\Private\Keyboard.cpp" />
     <ClCompile Include="Window\Private\Mouse.cpp" />
     <ClCompile Include="Window\Private\Window.cpp" />
@@ -66,6 +67,8 @@
     <ClInclude Include="Math\Public\MathUtilities.h" />
     <ClInclude Include="Math\Public\Matrix.h" />
     <ClInclude Include="Math\Public\Vector.h" />
+    <ClInclude Include="Memory\Memory.h" />
+    <ClInclude Include="Memory\Public\FMemory.h" />
     <ClInclude Include="Mesh\Public\Mesh.h" />
     <ClInclude Include="Mesh\Public\Vertex.h" />
     <ClInclude Include="Object\Public\Object.h" />
@@ -91,6 +94,7 @@
     <ClInclude Include="UI\Public\UIManager.h" />
     <ClInclude Include="UI\UI.h" />
     <ClInclude Include="Utilities\Public\JsonSceneSerializer.h" />
+    <ClInclude Include="Utilities\Public\Logger.h" />
     <ClInclude Include="Utilities\Public\Utilities.h" />
     <ClInclude Include="Types\Types.h" />
     <ClInclude Include="Window\Public\Keyboard.h" />
@@ -185,7 +189,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)ThirdParty;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -200,6 +204,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

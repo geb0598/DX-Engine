@@ -20,6 +20,10 @@
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	// ------------------------------- Initial Setup ------------------------------- //
+	// #0. Logger Add File Output
+	CLogger::Instance().AddOutput(std::make_unique<CFileOutput>("JungleEngine.log"));
+	UE_LOG(Info, "Hello World %d", 2025);
+
 	// #1. Window Creation
 	UWindow Window(1024, 1024, "Jungle Engine");
 
@@ -167,8 +171,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, ModelMatrix, ViewMatrix, ProjectionMatrix);
 				if (RayCaster.RayCastToCube() != DONT_INTERSECT)
 				{
-					EditorUI.AddDebugLog("Clicked!");
-					EditorUI.AddDebugLog("Ray hit");
+					UE_LOG(Info, "Clicked on object!");
 				}
 			}
 			// ------------------------------------------------------------- //

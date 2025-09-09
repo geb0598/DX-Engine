@@ -16,7 +16,7 @@ void UIManager::Initialize(HWND HWnd, ID3D11Device* Device, ID3D11DeviceContext*
 	ImGuiIO& io = ImGui::GetIO();
 	ImGui_ImplWin32_Init((void*)HWnd);
 	ImGui_ImplDX11_Init(Device, DeviceContext);
-	
+
 	// 초록색 테마 설정
 	SetGreenTheme();
 }
@@ -30,7 +30,7 @@ void UIManager::RenderControlPanel()
 	}
 
 	ImGui::Text("Hello Jungle World!");
-	
+
 	/* Show FPS */
 	TimeManager& Timer = TimeManager::Instance();
 
@@ -165,7 +165,7 @@ void UIManager::RenderPropertyWindow()
 
 	/* Set object translation */
 
-	 float ObjectTranslationX = 0.0f;
+	float ObjectTranslationX = 0.0f;
 	static float ObjectTranslationY = 0.0f;
 	static float ObjectTranslationZ = 0.0f;
 
@@ -243,7 +243,6 @@ void UIManager::RenderConsole()
 	ImGui::SameLine();
 	if (ImGui::SmallButton("Clear"))
 	{
-		std::lock_guard<std::mutex> lock(CConsoleOutput::GetConsoleMutex());
 		CConsoleOutput::GetConsoleMessages().clear();
 	}
 	ImGui::SameLine();
@@ -270,7 +269,7 @@ void UIManager::RenderConsole()
 	ImGui::SameLine();
 	ImGui::Checkbox("FATAL", &showFatal);
 
-	// 검색창
+	// Search
 	static char searchText[256] = {};
 	ImGui::SetNextItemWidth(300);
 	ImGui::InputTextWithHint("##Search", "Search messages...", searchText, sizeof(searchText));
@@ -283,28 +282,26 @@ void UIManager::RenderConsole()
 
 	if (ImGui::BeginChild("ScrollingRegion", ImVec2(0, 100), ImGuiChildFlags_NavFlattened, ImGuiWindowFlags_HorizontalScrollbar))
 	{
-		// ConsoleOutput에서 메시지를 가져와서 표시
 		{
-			std::lock_guard<std::mutex> lock(CConsoleOutput::GetConsoleMutex());
 			const auto& messages = CConsoleOutput::GetConsoleMessages();
-			
+
 			FString searchString = searchText;
 			std::transform(searchString.begin(), searchString.end(), searchString.begin(), ::tolower);
-			
+
 			for (const auto& consoleMsg : messages) {
-				// 로그 레벨 필터링
+				// Log Level Filtering
 				bool shouldShow = false;
 				switch (consoleMsg.level) {
-					case ELogLevel::DebugLevel:   shouldShow = showDebug; break;
-					case ELogLevel::InfoLevel:    shouldShow = showInfo; break;
-					case ELogLevel::WarningLevel: shouldShow = showWarning; break;
-					case ELogLevel::ErrorLevel:   shouldShow = showError; break;
-					case ELogLevel::FatalLevel:   shouldShow = showFatal; break;
+				case ELogLevel::DebugLevel:   shouldShow = showDebug; break;
+				case ELogLevel::InfoLevel:    shouldShow = showInfo; break;
+				case ELogLevel::WarningLevel: shouldShow = showWarning; break;
+				case ELogLevel::ErrorLevel:   shouldShow = showError; break;
+				case ELogLevel::FatalLevel:   shouldShow = showFatal; break;
 				}
-				
+
 				if (!shouldShow) continue;
-				
-				// 검색 필터링
+
+				// Serach Filtering
 				if (searchString.length() > 0) {
 					FString messageLower = consoleMsg.message;
 					std::transform(messageLower.begin(), messageLower.end(), messageLower.begin(), ::tolower);
@@ -312,29 +309,29 @@ void UIManager::RenderConsole()
 						continue;
 					}
 				}
-				
-				// 줄바꿈 문자 제거하여 깔끔하게 표시
+
+				// Remove \n at the end if exists
 				FString displayMessage = consoleMsg.message;
 				if (!displayMessage.empty() && displayMessage.back() == '\n') {
 					displayMessage.pop_back();
 				}
-				
-				// 로그 레벨에 따른 색상 적용
+
+				// Color coding based on log level
 				ImVec4 color;
 				switch (consoleMsg.level) {
-					case ELogLevel::DebugLevel:   color = ImVec4(0.7f, 0.7f, 0.7f, 1.0f); break; // 회색
-					case ELogLevel::InfoLevel:    color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); break; // 흰색
-					case ELogLevel::WarningLevel: color = ImVec4(1.0f, 1.0f, 0.0f, 1.0f); break; // 노란색
-					case ELogLevel::ErrorLevel:   color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f); break; // 빨간색
-					case ELogLevel::FatalLevel:   color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); break; // 진한 빨간색
+				case ELogLevel::DebugLevel:   color = ImVec4(0.7f, 0.7f, 0.7f, 1.0f); break; // 회색
+				case ELogLevel::InfoLevel:    color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); break; // 흰색
+				case ELogLevel::WarningLevel: color = ImVec4(1.0f, 1.0f, 0.0f, 1.0f); break; // 노란색
+				case ELogLevel::ErrorLevel:   color = ImVec4(1.0f, 0.4f, 0.4f, 1.0f); break; // 빨간색
+				case ELogLevel::FatalLevel:   color = ImVec4(1.0f, 0.0f, 0.0f, 1.0f); break; // 진한 빨간색
 				}
-				
+
 				ImGui::PushStyleColor(ImGuiCol_Text, color);
 				ImGui::TextUnformatted(displayMessage.c_str());
 				ImGui::PopStyleColor();
 			}
-			
-			// 자동 스크롤 - 새 메시지가 있을 때 맨 아래로
+
+			// Auto-scroll to bottom
 			if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
 				ImGui::SetScrollHereY(1.0f);
 		}
@@ -342,7 +339,7 @@ void UIManager::RenderConsole()
 	ImGui::EndChild();
 
 	ImGui::Separator();
-	
+
 	static char UserInput[200] = {};
 
 	ImGui::SetNextItemWidth(300);
@@ -370,17 +367,17 @@ void UIManager::RenderUI()
 
 void UIManager::RenderStatWindow()
 {
-    if (!ImGui::Begin("Memory Statistics:", nullptr))
-    {
-        ImGui::End();
-        return;
-    }
+	if (!ImGui::Begin("Memory Statistics:", nullptr))
+	{
+		ImGui::End();
+		return;
+	}
 
 	ImGui::Text("Memory Statistics:");
-    ImGui::Text("Total Allocation Count: %u", FMemory::TotalAllocationCount);
-    ImGui::Text("Total Allocation Bytes: %u bytes", FMemory::TotalAllocationBytes);
+	ImGui::Text("Total Allocation Count: %u", FMemory::TotalAllocationCount);
+	ImGui::Text("Total Allocation Bytes: %u bytes", FMemory::TotalAllocationBytes);
 
-    ImGui::End();
+	ImGui::End();
 }
 
 void UIManager::Release()
