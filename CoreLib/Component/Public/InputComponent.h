@@ -50,7 +50,7 @@ private:
 	UKeyboard* Keyboard;
 	UMouse* Mouse;
 
-	float MoveSensitivity = 5.0f;
+	float MoveSensitivity = 10.0f;
 	float HorizontalTurnSensitivity = 5.0f;;
 	float VerticalTurnSensitivity = 5.0f;
 
