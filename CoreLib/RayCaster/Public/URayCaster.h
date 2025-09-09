@@ -8,8 +8,12 @@
 #include "Component/Public/SphereComponent.h"
 #include "Component/Public/CubeComponent.h"
 #include "Component/Public/TriangleComponent.h"
+#include <limits>
 
 #define DONT_INTERSECT -1.0f
+
+// [추가]
+class UStaticMeshComponent;
 
 class URayCaster
 {
@@ -434,6 +438,62 @@ private:
 
 		return (IntersectionPos).Distance(CameraPos);
 	}
+	// [추가] 일반 메시에 대한 레이캐스팅 함수 구현
+	std::optional<float> RayCastToMesh(UMesh* Mesh)
+	{
+		if (!Mesh) return std::nullopt;
+
+		const auto& Vertices = Mesh->GetVertices();
+		if (Vertices.empty()) return std::nullopt;
+
+		float ClosestT = (std::numeric_limits<float>::max)();
+		bool bHasHit = false;
+
+		for (size_t i = 0; i < Vertices.size(); i += 3)
+		{
+			const FVector& V0 = Vertices[i].Position;
+			const FVector& V1 = Vertices[i + 1].Position;
+			const FVector& V2 = Vertices[i + 2].Position;
+
+			FVector Edge1 = V1 - V0;
+			FVector Edge2 = V2 - V0;
+			FVector h = CurrentRay.Vector.Cross(Edge2);
+			float a = Edge1.Dot(h);
+
+			if (a > -1e-6 && a < 1e-6)
+				continue;
+
+			float f = 1.0f / a;
+			FVector s = CurrentRay.Point - V0;
+			float u = f * s.Dot(h);
+
+			if (u < 0.0f || u > 1.0f)
+				continue;
+
+			FVector q = s.Cross(Edge1);
+			float v = f * CurrentRay.Vector.Dot(q);
+
+			if (v < 0.0f || u + v > 1.0f)
+				continue;
+
+			float t = f * Edge2.Dot(q);
+			if (t > 1e-6)
+			{
+				if (t < ClosestT)
+				{
+					ClosestT = t;
+					bHasHit = true;
+				}
+			}
+		}
+
+		if (bHasHit)
+		{
+			return ClosestT;
+		}
+
+		return std::nullopt;
+	}
 
 public:
 	static URayCaster& Instance()
@@ -467,6 +527,17 @@ public:
 
 	std::optional<float> GetHitResultAtScreenPosition(
 		USphereComponent& SphereComponent,
+		int32 MouseX,
+		int32 MouseY,
+		int32 ScreenWidth,
+		int32 ScreenHeight,
+		const FMatrix& ModelingMatrix,
+		const FMatrix& ViewMatrix,
+		const FMatrix& ProjectionMatrix
+	);
+	// [추가] UStaticMeshComponent를 위한 오버로드
+	std::optional<float> GetHitResultAtScreenPosition(
+		UStaticMeshComponent& StaticMeshComponent,
 		int32 MouseX,
 		int32 MouseY,
 		int32 ScreenWidth,

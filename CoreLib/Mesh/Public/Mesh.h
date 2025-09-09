@@ -26,9 +26,15 @@ public:
 	UINT GetVertexCount() const;
 	UINT GetStride() const;
 
+	// [추가] 정점 데이터에 접근하기 위한 Getter 함수
+	const TArray<FVertex>& GetVertices() const;
+
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> VertexBuffer;
 
 	const UINT VertexCount;
 	const UINT Stride;
+
+	// [추가] 원본 정점 데이터를 멤버로 저장
+	TArray<FVertex> Vertices;
 };

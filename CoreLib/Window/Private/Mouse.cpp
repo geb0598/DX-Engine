@@ -61,6 +61,12 @@ std::optional<UMouse::UEvent> UMouse::Read()
 
 void UMouse::OnMouseMove(int X, int Y)
 {
+	// [수정] 델타 계산 로직 추가
+	DeltaX = X - LastX;
+	DeltaY = Y - LastY;
+	LastX = X;
+	LastY = Y;
+
 	MouseState.X = X;
 	MouseState.Y = Y;
 	UEvent Event{ UEvent::EEventType::MOVE, MouseState };
@@ -152,3 +158,6 @@ void UMouse::OnWheelDelta(int X, int Y, int Delta)
 		OnWheelDown(X, Y);
 	}
 }
+
+int32 UMouse::GetXPositionDelta() const { return DeltaX; }
+int32 UMouse::GetYPositionDelta() const { return DeltaY; }

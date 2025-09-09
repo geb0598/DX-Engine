@@ -22,9 +22,12 @@
     <ClCompile Include="Axis\Private\UAxis.cpp" />
     <ClCompile Include="Component\Private\ActorComponent.cpp" />
     <ClCompile Include="Component\Private\CubeComponent.cpp" />
+    <ClCompile Include="Component\Private\GizmoComponent.cpp" />
     <ClCompile Include="Component\Private\InputComponent.cpp" />
+    <ClCompile Include="Component\Private\LocationGizmoComponent.cpp" />
     <ClCompile Include="Component\Private\PrimitiveComponent.cpp" />
     <ClCompile Include="Component\Private\SphereComponent.cpp" />
+    <ClCompile Include="Component\Private\StaticMeshComponent.cpp" />
     <ClCompile Include="Component\Private\TriangleComponent.cpp" />
     <ClCompile Include="Component\Private\UCameraComponent.cpp" />
     <ClCompile Include="Component\Private\USceneComponent.cpp" />
@@ -64,9 +67,12 @@
     <ClInclude Include="Component\Component.h" />
     <ClInclude Include="Component\Public\ActorComponent.h" />
     <ClInclude Include="Component\Public\CubeComponent.h" />
+    <ClInclude Include="Component\Public\GizmoComponent.h" />
     <ClInclude Include="Component\Public\InputComponent.h" />
+    <ClInclude Include="Component\Public\LocationGizmoComponent.h" />
     <ClInclude Include="Component\Public\PrimitiveComponent.h" />
     <ClInclude Include="Component\Public\SphereComponent.h" />
+    <ClInclude Include="Component\Public\StaticMeshComponent.h" />
     <ClInclude Include="Component\Public\TriangleComponent.h" />
     <ClInclude Include="Component\Public\UCameraComponent.h" />
     <ClInclude Include="Containers\Containers.h" />
@@ -76,6 +82,7 @@
     <ClInclude Include="Math\Public\Vector.h" />
     <ClInclude Include="Memory\Memory.h" />
     <ClInclude Include="Memory\Public\FMemory.h" />
+    <ClInclude Include="Mesh\Public\GizmoShapes.h" />
     <ClInclude Include="Mesh\Public\Mesh.h" />
     <ClInclude Include="Mesh\Public\Vertex.h" />
     <ClInclude Include="Object\Public\Object.h" />

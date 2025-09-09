@@ -92,6 +92,10 @@ public:
 	int32 GetXPosition() const;
 	int32 GetYPosition() const;
 
+	// [추가] 마우스 위치 델타값 Getter
+	int32 GetXPositionDelta() const;
+	int32 GetYPositionDelta() const;
+
 	bool IsInsideWindow() const;
 	bool IsLeftPressed() const;
 	bool IsRightPressed() const;
@@ -116,4 +120,10 @@ private:
 
 	FMouseState MouseState;
 	TQueue<UEvent> MouseEventBuffer;
+
+	// [추가] 델타 계산을 위한 이전 위치 저장
+	int32 LastX = 0;
+	int32 LastY = 0;
+	int32 DeltaX = 0;
+	int32 DeltaY = 0;
 };

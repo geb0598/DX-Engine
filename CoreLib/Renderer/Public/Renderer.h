@@ -28,6 +28,9 @@ public:
 	ID3D11Device* GetDevice();
 	ID3D11DeviceContext* GetDeviceContext();
 
+	// [추가] DepthStencilView를 반환하는 Getter 함수
+	ID3D11DepthStencilView* GetDepthStencilView();
+
 private:
 	URenderer();
 
