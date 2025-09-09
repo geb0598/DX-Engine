@@ -77,7 +77,7 @@ void ULocationGizmoComponent::Render(URenderer& Renderer, const FMatrix& View, c
         SceneComp->SetScale(GetScale());
         //// Y축과 Z축은 모델 자체를 회전시켜 방향을 맞춤
         //if (i == 1) SceneComp->SetRotation({ 0, 0, 90 }); // Y-axis
-        //if (i == 2) SceneComp->SetRotation({ 0, -90, 0 }); // Z-axis
+        if (i == 2) SceneComp->SetRotation({ 0, -180, 0 }); // Z-axis
 
         FMatrix ModelMatrix = SceneComp->GetModelingMatrix();
         FMatrix MVP = ModelMatrix * View * Proj;
@@ -205,7 +205,7 @@ void ULocationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
         float MoveAmount = MouseDeltaVec.Dot(ScreenAxisVec);
 
         float Distance = (TargetPos - CameraSceneComp->GetLocation()).Length();
-        MoveAmount *= Distance * 0.003f;
+        MoveAmount *= Distance * 0.001f;
 
         TargetSceneComp->TranslateTransform(AxisDirection * MoveAmount);
     }
