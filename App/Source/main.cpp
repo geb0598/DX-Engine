@@ -333,14 +333,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			auto VertexShader = PrimitiveComponent->GetVertexShader();
 			auto PixelShader = PrimitiveComponent->GetPixelShader();
 
-			/*VertexShader->UpdateConstantBuffer(
+			VertexShader->UpdateConstantBuffer(
 				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(MVP.M)
 			);
 
 			int bIsSelected = Actor == CurrentScene->GetCurrentActor();
 			PixelShader->UpdateConstantBuffer(
 				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(&bIsSelected)
-			);*/
+			);
 
 			// NOTE: Shader Binding
 			VertexShader->Bind(Renderer.GetDeviceContext(), "constants");

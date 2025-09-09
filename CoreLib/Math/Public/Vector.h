@@ -132,6 +132,46 @@ struct FVector
 	}
 };
 
+struct FVector2D
+{
+	float X;
+	float Y;
+
+	FVector2D(float InX = 0.0f, float InY = 0.0f) : X(InX), Y(InY) {}
+
+	// 내적 (Dot Product)
+	float Dot(const FVector2D& Other) const
+	{
+		return X * Other.X + Y * Other.Y;
+	}
+
+	// 벡터의 길이
+	float Length() const
+	{
+		return sqrtf(X * X + Y * Y);
+	}
+
+	// 벡터 정규화 (자신을 변경)
+	void Normalize()
+	{
+		float Len = Length();
+		if (Len > 1e-6f) // 0으로 나누는 것을 방지
+		{
+			X /= Len;
+			Y /= Len;
+		}
+	}
+
+	// 정규화된 벡터를 새로 만들어 반환
+	FVector2D GetNormalized() const
+	{
+		FVector2D Result = *this;
+		Result.Normalize();
+		return Result;
+	}
+};
+
+
 struct FVector4
 {
 	float X;
