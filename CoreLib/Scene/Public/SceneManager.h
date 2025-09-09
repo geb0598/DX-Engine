@@ -40,11 +40,12 @@ public:
     AActor* GetMainCameraActor() const;
     // Current Actor Access
     AActor* GetCurrentActor() const;
+
+    AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type);
     
 private:
     // Helper functions for serialization
     void SavePrimitive(json::JSON& Obj, int Index, const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type);
-    AActor* CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type);
     FString PrimitiveTypeToString(UPrimitiveComponent::EType Type);
     UPrimitiveComponent::EType StringToPrimitiveType(const FString& TypeStr);
 };

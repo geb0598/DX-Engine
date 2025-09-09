@@ -137,11 +137,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		if (CameraComponent->IsOrthogonal())
 		{
 			// TODO: These values are arbitrarily hard-coded values
-			constexpr float LEFT = -20.0f;
-			constexpr float RIGHT = 20.0f;
-			constexpr float BOTTOM = -20.0f;
-			constexpr float TOP = 20.0f;
-			ProjectionMatrix = CameraComponent->GetOrthographicMatrix(LEFT, RIGHT, BOTTOM, TOP);
+			float AspectRatio = Window.getAspectRatio();
+			float Height = 20.0f;
+			float Width = Height * AspectRatio;
+			ProjectionMatrix = CameraComponent->GetOrthographicMatrix(
+				-Width, Width, -Height, Height
+			);
 		}
 		else
 		{
