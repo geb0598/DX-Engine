@@ -1,9 +1,8 @@
 #pragma once
 #include "Types/Types.h"
 
-class FMemory
+struct FMemory
 {
-public:
 	static uint32 TotalAllocationBytes;
 	static uint32 TotalAllocationCount;
 };
