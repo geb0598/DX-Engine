@@ -27,6 +27,8 @@ private:
 
     FVector DragStartPoint_World;
     FVector DragStartActorRotation;
+    float DragStartMouseX = 0.0f;
+    float DragStartMouseY = 0.0f;
 
     void CreateGizmoActors(URenderer& Renderer);
 

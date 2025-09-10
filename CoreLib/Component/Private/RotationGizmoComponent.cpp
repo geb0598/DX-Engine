@@ -17,12 +17,8 @@ URotationGizmoComponent::URotationGizmoComponent(AActor* Actor)
     CreateGizmoActors(URenderer::GetInstance());
 }
 
-// [Ãß°¡] ¼Ò¸êÀÚÀÇ ½ÇÁ¦ ±¸Çö. ¿©±â¼­ ¸Þ¸ð¸®¸¦ ÇØÁ¦ÇÕ´Ï´Ù.
 URotationGizmoComponent::~URotationGizmoComponent()
 {
-    delete RingActorX;
-    delete RingActorY;
-    delete RingActorZ;
 }
 
 void URotationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window, const FMatrix& View, const FMatrix& Proj)
@@ -39,14 +35,12 @@ void URotationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
     RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, Window.GetWidth(), Window.GetHeight(), FMatrix::Identity, View, Proj);
     FVector RayDir = RayCaster.CurrentRay.Vector;
 
-    // µå·¡±× Á¾·á Ã³¸®
     if (!Mouse.IsLeftPressed() && bIsDragging)
     {
         bIsDragging = false;
         ActiveAxis = EAxis::None;
     }
 
-    // µå·¡±× ½ÃÀÛ Ã³¸®
     if (Mouse.IsLeftPressed() && !bIsDragging)
     {
         float ClosestHitDistance = (std::numeric_limits<float>::max)();
@@ -87,77 +81,68 @@ void URotationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
             ActiveAxis = NewActiveAxis;
             DragStartPoint_World = HitPoint;
             DragStartActorRotation = TargetActor->GetComponent<USceneComponent>()->GetRotation();
+            DragStartMouseX = MouseX;
+            DragStartMouseY = MouseY;
         }
     }
 
-    // µå·¡±× Áß È¸Àü Ã³¸®
     if (bIsDragging)
     {
-        FVector PlaneNormal;
+        float TotalDeltaX = MouseX - DragStartMouseX;
+        float TotalDeltaY = MouseY - DragStartMouseY;
+        
+        float RotationSpeed = 0.5f;
+        float AngleDelta = 0.0f;
+        
         switch (ActiveAxis)
         {
-        case EAxis::X: PlaneNormal = FVector(1, 0, 0); break;
-        case EAxis::Y: PlaneNormal = FVector(0, 1, 0); break;
-        case EAxis::Z: PlaneNormal = FVector(0, 0, 1); break;
+        case EAxis::X: 
+            AngleDelta = -TotalDeltaY * RotationSpeed; 
+            break;
+        case EAxis::Y: 
+            AngleDelta = TotalDeltaX * RotationSpeed; 
+            break;
+        case EAxis::Z: 
+            AngleDelta = TotalDeltaX * RotationSpeed; 
+            break;
         default: return;
         }
-
-        float Denominator = RayDir.Dot(PlaneNormal);
-        if (abs(Denominator) > 1e-6f)
+        
+        auto TargetSceneComp = TargetActor->GetComponent<USceneComponent>();
+        FVector NewRotation = DragStartActorRotation;
+        
+        switch (ActiveAxis)
         {
-            float t = (GizmoOrigin - RayOrigin).Dot(PlaneNormal) / Denominator;
-            FVector CurrentPoint_World = RayOrigin + RayDir * t;
-
-            FVector StartVec = (DragStartPoint_World - GizmoOrigin).GetNormalized();
-            FVector CurrentVec = (CurrentPoint_World - GizmoOrigin).GetNormalized();
-
-            float DotProduct = StartVec.Dot(CurrentVec);
-            float Angle = acosf(std::clamp(DotProduct, -1.0f, 1.0f));
-
-            FVector Cross = StartVec.Cross(CurrentVec);
-            if (Cross.Dot(PlaneNormal) < 0)
-            {
-                Angle = -Angle;
-            }
-
-            auto TargetSceneComp = TargetActor->GetComponent<USceneComponent>();
-            //FVector NewRotation = DragStartActorRotation;
-            FVector NewRotation = FVector::Zero;
-
-            float AngleDegrees = RAD_TO_DEG(Angle);
-            switch (ActiveAxis)
-            {
-            case EAxis::X: NewRotation.X += AngleDegrees; break;
-            case EAxis::Y: NewRotation.Y += AngleDegrees; break;
-            case EAxis::Z: NewRotation.Z += AngleDegrees; break;
-            }
-            TargetSceneComp->SetRotation(NewRotation);
+        case EAxis::X: NewRotation.X += AngleDelta; break;
+        case EAxis::Y: NewRotation.Y += AngleDelta; break;
+        case EAxis::Z: NewRotation.Z += AngleDelta; break;
         }
+        TargetSceneComp->SetRotation(NewRotation);
     }
 }
 
 void URotationGizmoComponent::Render(URenderer& Renderer, const FMatrix& View, const FMatrix& Proj)
 {
-    // 1. Å¸°Ù ¾×ÅÍ°¡ ¾øÀ¸¸é ¾Æ¹«°Íµµ ±×¸®Áö ¾Ê½À´Ï´Ù.
+    // 1. Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½Í°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Æ¹ï¿½ï¿½Íµï¿½ ï¿½×¸ï¿½ï¿½ï¿½ ï¿½Ê½ï¿½ï¿½Ï´ï¿½.
     if (!TargetActor) return;
 
     auto* DeviceContext = Renderer.GetDeviceContext();
     auto* DepthStencilView = Renderer.GetDepthStencilView();
 
-    // ±âÁî¸ð°¡ ´Ù¸¥ ¹°Ã¼¿¡ °¡·ÁÁöÁö ¾Êµµ·Ï µª½º ¹öÆÛ¸¦ ÃÊ±âÈ­ÇÕ´Ï´Ù.
+    // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ù¸ï¿½ ï¿½ï¿½Ã¼ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Êµï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Û¸ï¿½ ï¿½Ê±ï¿½È­ï¿½Õ´Ï´ï¿½.
     DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
 
-    // 2. ±âÁî¸ðÀÇ À§Ä¡¿Í Å©±â¸¦ ¼³Á¤ÇÕ´Ï´Ù.
+    // 2. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ Å©ï¿½â¸¦ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
     auto TargetSceneComp = TargetActor->GetComponent<USceneComponent>();
-    SetLocation(TargetSceneComp->GetLocation()); // ±âÁî¸ð À§Ä¡ = Å¸°Ù ¾×ÅÍ À§Ä¡
+    SetLocation(TargetSceneComp->GetLocation()); // ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡ = Å¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡
 
- auto CameraLocation = USceneManager::GetInstance().GetMainCameraActor()->GetComponent<USceneComponent>()->GetLocation();    // Ä«¸Þ¶ó¿ÍÀÇ °Å¸®¿¡ µû¶ó ±âÁî¸ð Å©±â¸¦ Á¶ÀýÇÕ´Ï´Ù.
+ auto CameraLocation = USceneManager::GetInstance().GetMainCameraActor()->GetComponent<USceneComponent>()->GetLocation();    // Ä«ï¿½Þ¶ï¿½ï¿½ï¿½ï¿½ ï¿½Å¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ Å©ï¿½â¸¦ ï¿½ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
    
     float Distance = (GetLocation() - CameraLocation).Length();
     float ScaleFactor = Distance * 0.1f;
     SetScale({ ScaleFactor, ScaleFactor, ScaleFactor });
 
-    // 3. °¢ ¸µ(¾×ÅÍ)¿¡ ´ëÇØ ·»´õ¸µ ÀÛ¾÷À» ¹Ýº¹ÇÕ´Ï´Ù.
+    // 3. ï¿½ï¿½ ï¿½ï¿½(ï¿½ï¿½ï¿½ï¿½)ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Û¾ï¿½ï¿½ï¿½ ï¿½Ýºï¿½ï¿½Õ´Ï´ï¿½.
     AActor* RingActors[] = { RingActorX, RingActorY, RingActorZ };
     for (int i = 0; i < 3; ++i)
     {
@@ -167,28 +152,28 @@ void URotationGizmoComponent::Render(URenderer& Renderer, const FMatrix& View, c
         SceneComp->SetLocation(GetLocation());
         SceneComp->SetScale(GetScale());
 
-        // 4. °¢ Ãà¿¡ ¸Â´Â È¸Àü Çà·ÄÀ» °è»êÇÕ´Ï´Ù.
-        FMatrix RotationMatrix; // ´ÜÀ§ Çà·Ä·Î ÃÊ±âÈ­
-        const float PI_HALF = 1.57079632679f; // 90µµ
+        // 4. ï¿½ï¿½ ï¿½à¿¡ ï¿½Â´ï¿½ È¸ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
+        FMatrix RotationMatrix; // ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä·ï¿½ ï¿½Ê±ï¿½È­
+        const float PI_HALF = 1.57079632679f; // 90ï¿½ï¿½
 
-        if (i == 0) // XÃà ¸µ (»¡°£»ö) -> YÃàÀ¸·Î 90µµ È¸ÀüÇÏ¿© YZ Æò¸é¿¡ ³õ½À´Ï´Ù.
+        if (i == 0) // Xï¿½ï¿½ ï¿½ï¿½ (ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½) -> Yï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 90ï¿½ï¿½ È¸ï¿½ï¿½ï¿½Ï¿ï¿½ YZ ï¿½ï¿½é¿¡ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.
         {
             RotationMatrix = FMatrix::CreateRotationY(PI_HALF);
         }
-        else if (i == 1) // YÃà ¸µ (ÃÊ·Ï»ö) -> XÃàÀ¸·Î 90µµ È¸ÀüÇÏ¿© XZ Æò¸é¿¡ ³õ½À´Ï´Ù.
+        else if (i == 1) // Yï¿½ï¿½ ï¿½ï¿½ (ï¿½Ê·Ï»ï¿½) -> Xï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ 90ï¿½ï¿½ È¸ï¿½ï¿½ï¿½Ï¿ï¿½ XZ ï¿½ï¿½é¿¡ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.
         {
             RotationMatrix = FMatrix::CreateRotationX(PI_HALF);
         }
-        // ZÃà ¸µÀº ±âº»ÀûÀ¸·Î XY Æò¸é¿¡ »ý¼ºµÇ¹Ç·Î Ãß°¡ È¸ÀüÀÌ ÇÊ¿ä ¾ø½À´Ï´Ù.
+        // Zï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½âº»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ XY ï¿½ï¿½é¿¡ ï¿½ï¿½ï¿½ï¿½ï¿½Ç¹Ç·ï¿½ ï¿½ß°ï¿½ È¸ï¿½ï¿½ï¿½ï¿½ ï¿½Ê¿ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï´ï¿½.
 
-        // 5. ÃÖÁ¾ ¸ðµ¨¸µ Çà·Ä(TRS)À» °è»êÇÕ´Ï´Ù.
+        // 5. ï¿½ï¿½ï¿½ï¿½ ï¿½ðµ¨¸ï¿½ ï¿½ï¿½ï¿½(TRS)ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
         FMatrix ScaleMatrix = FMatrix::CreateScale(GetScale());
         FMatrix TranslationMatrix = FMatrix::CreateTranslation(GetLocation());
         FMatrix ModelMatrix = ScaleMatrix * RotationMatrix * TranslationMatrix;
 
         FMatrix MVP = ModelMatrix * View * Proj;
 
-        // 6. ¼ÎÀÌ´õ¿¡ µ¥ÀÌÅÍ¸¦ ¾÷µ¥ÀÌÆ®ÇÏ°í ·»´õ¸µÀ» È£ÃâÇÕ´Ï´Ù.
+        // 6. ï¿½ï¿½ï¿½Ì´ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Í¸ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ®ï¿½Ï°ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ È£ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
         int bIsSelected = (static_cast<int>(ActiveAxis) == i + 1) ? 1 : 0;
         PrimComp->GetVertexShader()->UpdateConstantBuffer(DeviceContext, "constants", &MVP);
         PrimComp->GetPixelShader()->UpdateConstantBuffer(DeviceContext, "constants", &bIsSelected);
@@ -208,7 +193,7 @@ void URotationGizmoComponent::CreateGizmoActors(URenderer& Renderer)
     auto GizmoVertexShader = std::make_shared<UVertexShader>(Device, "./Shader/VertexShader.hlsl", "main", LayoutDesc);
     auto GizmoPixelShader = std::make_shared<UPixelShader>(Device, "./Shader/PixelShader.hlsl", "main");
 
-    // [¼öÁ¤] axis ÆÄ¶ó¹ÌÅÍ ¾øÀÌ »ö»ó¸¸ Àü´ÞÇÏ¿© È£ÃâÇÕ´Ï´Ù.
+    // [ï¿½ï¿½ï¿½ï¿½] axis ï¿½Ä¶ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ï¿ï¿½ È£ï¿½ï¿½ï¿½Õ´Ï´ï¿½.
     std::vector<FVertexSimple> TorusVerticesX, TorusVerticesY, TorusVerticesZ;
     CreateTorusVertices(TorusVerticesX, 1.0f, 0.025f, 64, 16, FVector(1, 0, 0)); // Red
     CreateTorusVertices(TorusVerticesY, 1.0f, 0.025f, 64, 16, FVector(0, 1, 0)); // Green
