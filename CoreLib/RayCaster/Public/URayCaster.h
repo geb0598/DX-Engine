@@ -422,14 +422,15 @@ private:
 		FVector V = CurrentRay.Vector;
 
 		// find T value of ray equation when z = 0
-		// P.z + t * V.z = 0
-		// t = -V.z / P.z
 
 		if (P.Z >= -EPSILON && P.Z <= EPSILON)
 			return std::nullopt;
 
 		float T = -P.Z / V.Z;
 		
+		if (T <= 0.0f)
+			return std::nullopt;
+
 		float RayX = P.X + T * V.X;
 		if (RayX > XHalf || RayX < -XHalf)
 			return std::nullopt;
