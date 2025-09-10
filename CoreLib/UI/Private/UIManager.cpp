@@ -71,7 +71,7 @@ void UIManager::RenderControlPanel()
 
 		std::random_device RandomDevice;
 		std::mt19937 Generator(RandomDevice());
-		std::uniform_real_distribution<float> UniformDist(-10.0f, 10.0f);
+		std::uniform_real_distribution<float> UniformDist(-100.0f, 100.0f);
 
 		for (int i = 0; i < NumberOfSpawns; ++i)
 		{

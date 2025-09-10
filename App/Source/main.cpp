@@ -150,15 +150,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		PSConstants GridInfo = {};
 
-		GridInfo.FadeDistance = 1000.0f;
+		GridInfo.FadeDistance = 100.0f;
 		GridInfo.ScreenSize[0] = (float)Window.GetWidth();
 		GridInfo.ScreenSize[1] = (float)Window.GetHeight();
 		
 		FVector CameraVector = MainCamera->GetComponent<USceneComponent>()->GetLocation();
 		
-		GridInfo.GridColor[0] = 1.0f;
-		GridInfo.GridColor[1] = 0.0f;
-		GridInfo.GridColor[2] = 1.0f;
+		GridInfo.GridColor[0] = 0.15f;
+		GridInfo.GridColor[1] = 0.15f;
+		GridInfo.GridColor[2] = 0.15f;
 		memcpy(GridInfo.InvViewProj, VP.Inverse().M, sizeof(GridInfo.InvViewProj));
 
 		GridManager.Bind(GridInfo);
