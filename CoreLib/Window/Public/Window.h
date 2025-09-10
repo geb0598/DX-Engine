@@ -57,7 +57,7 @@ public:
 
 	void SetWindowTitle(const FString& WindowTitle);
 
-	float GetAspectRatio()
+	float getAspectRatio()
 	{
 		return static_cast<float>(Width) / static_cast<float>(Height);
 	}

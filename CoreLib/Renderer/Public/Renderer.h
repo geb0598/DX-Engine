@@ -38,7 +38,6 @@ private:
 	void CreateFrameBuffer();						// 프레임 버퍼를 생성하는 함수
 	void CreateDepthStencilBuffer(int Width, int Height);	// 깊이 스텐실 버퍼를 생성하는 함수
 	void CreateRasterizerState();					// 래스터라이저 상태를 생성하는 함수
-	void CreateBlendState();
 
 	// Direct3D 11 장치(Device)와 장치 컨텍스트(Device Context) 및 스왑 체인(Swap Chain)을 관리하기 위한 포인터들
 	Microsoft::WRL::ComPtr<ID3D11Device> Device;					// GPU와 통신하기 위한 Direct3D 장치
@@ -53,8 +52,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> DepthStencilBuffer;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> DepthStencilView;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> DepthStencilState;
-
-	Microsoft::WRL::ComPtr<ID3D11BlendState> AlphaBlendState;
 
 	FLOAT ClearColor[4] = {0.025f, 0.025f, 0.025f, 1.0f};			// 화면을 초기화(clear)할 때 사용할 색상 (RGBA)
 	D3D11_VIEWPORT ViewportInfo;									// 렌더링 영역을 정의하는 뷰포트 정보

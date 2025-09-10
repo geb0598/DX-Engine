@@ -2,12 +2,10 @@
 
 #include "../Public/SceneManager.h"
 #include "Renderer/Renderer.h"
-#include "AssetManager/AssetManager.h"
 #include "Json/json.hpp"
 #include "Component/Public/CubeComponent.h"
 #include "Component/Public/TriangleComponent.h"
 #include "Component/Public/SphereComponent.h"
-#include "Component/Public/PlaneComponent.h"
 
 // Static member initialization
 USceneManager* USceneManager::Instance = nullptr;
@@ -209,7 +207,7 @@ void USceneManager::SavePrimitive(json::JSON& Obj, int Index, const FVector& Loc
 
 AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type)
 {
-    UAssetManager& ResourceManager = UAssetManager::GetInstance();
+    URenderer& Renderer = URenderer::GetInstance();
     
     AActor* NewActor = new AActor();
     
@@ -219,18 +217,20 @@ AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const F
     );
 
     // -------------------------------------------------------------------------- //
-    std::shared_ptr<UVertexShader> VertexShader = ResourceManager.GetOrCreateVertexShader(
-        "DefaultVertexShader",
+    // TODO: Shader can be shared across Actors
+    std::shared_ptr<UVertexShader> VertexShader = std::make_shared<UVertexShader>(
+        Renderer.GetDevice(),
         "./Shader/VertexShader.hlsl", 
         "main",
         InputLayoutDesc
     );
     
-    std::shared_ptr<UPixelShader> PixelShader = ResourceManager.GetOrCreatePixelShader(
-        "DefaultPixelShader",
+    std::shared_ptr<UPixelShader> PixelShader = std::make_shared<UPixelShader>(
+        Renderer.GetDevice(),
         "./Shader/PixelShader.hlsl",
         "main"
     );
+    //
     // -------------------------------------------------------------------------- //
     
     switch (Type)
@@ -243,9 +243,6 @@ AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const F
         break;
     case UPrimitiveComponent::EType::Sphere:
         NewActor->AddComponent<UPrimitiveComponent, USphereComponent>(NewActor, VertexShader, PixelShader);
-        break;
-    case UPrimitiveComponent::EType::Plane:
-        NewActor->AddComponent<UPrimitiveComponent, UPlaneComponent>(NewActor, VertexShader, PixelShader);
         break;
     default:
         // TODO: LOG or WARN Unknown Primitive Type
@@ -267,8 +264,6 @@ FString USceneManager::PrimitiveTypeToString(UPrimitiveComponent::EType Type)
         return "Cube";
     case UPrimitiveComponent::EType::Sphere:
         return "Sphere";
-	case UPrimitiveComponent::EType::Plane:
-		return "Plane";
     default:
         return "Triangle";
     }
@@ -282,8 +277,6 @@ UPrimitiveComponent::EType USceneManager::StringToPrimitiveType(const FString& T
         return UPrimitiveComponent::EType::Cube;
     else if (TypeStr == "Sphere")
         return UPrimitiveComponent::EType::Sphere;
-	else if (TypeStr == "Plane")
-		return UPrimitiveComponent::EType::Plane;
     else
         return UPrimitiveComponent::EType::Triangle;
 }

@@ -10,7 +10,6 @@
 #include "RayCaster/Public/URayCaster.h"
 #include <limits>
 #include <algorithm>
-#include "RayCaster/Raycaster.h"
 
 URotationGizmoComponent::URotationGizmoComponent(AActor* Actor)
     : UGizmoComponent(Actor)
@@ -37,6 +36,7 @@ void URotationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
     FVector RayOrigin = CameraActor->GetComponent<USceneComponent>()->GetLocation();
     FVector GizmoOrigin = TargetActor->GetComponent<USceneComponent>()->GetLocation();
 
+    RayCaster.SetRayWithMouseAndMVP(MouseX, MouseY, Window.GetWidth(), Window.GetHeight(), FMatrix::Identity, View, Proj);
     FVector RayDir = RayCaster.CurrentRay.Vector;
 
     // 드래그 종료 처리
@@ -46,78 +46,49 @@ void URotationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
         ActiveAxis = EAxis::None;
     }
 
-    
     // 드래그 시작 처리
     if (Mouse.IsLeftPressed() && !bIsDragging)
     {
-        // [NEW] 가장 가까운 축/거리/히트지점 월드 좌표를 추적
-        float ClosestWorldDist = (std::numeric_limits<float>::max)();
+        float ClosestHitDistance = (std::numeric_limits<float>::max)();
         EAxis NewActiveAxis = EAxis::None;
-        FVector HitPointWorld = FVector::Zero;
+        FVector HitPoint;
 
-        // [NEW] 렌더와 동일한 스케일(카메라 거리 비례) 계산  :contentReference[oaicite:3]{index=3}
-        auto CameraActor = USceneManager::GetInstance().GetMainCameraActor();
-        FVector CameraLocation = CameraActor->GetComponent<USceneComponent>()->GetLocation();
-        float Distance = (GetLocation() - CameraLocation).Length();
-        float ScaleFactor = Distance * 0.1f;
+        FVector PlaneNormals[] = { FVector(1, 0, 0), FVector(0, 1, 0), FVector(0, 0, 1) };
+        float GizmoRadius = (GetLocation() - CameraActor->GetComponent<USceneComponent>()->GetLocation()).Length() * 0.1f;
 
-        // [NEW] 축별 회전 행렬 (렌더와 동일)  :contentReference[oaicite:4]{index=4}
-        const float PI_HALF = 1.57079632679f; // 90도
-        FMatrix AxisRotation[3] = {
-            FMatrix::CreateRotationY(PI_HALF), // X 링: Y축 90°
-            FMatrix::CreateRotationX(PI_HALF), // Y 링: X축 90°
-            FMatrix::Identity                  // Z 링: 추가 회전 없음
-        };
-
-        // [NEW] 축별로 레이를 '로컬'로 세팅하고 토러스 교차 검사
         for (int i = 0; i < 3; ++i)
         {
-            // [NEW] 렌더와 동일한 TRS(ModelMatrix = S * R * T)  :contentReference[oaicite:5]{index=5}
-            FMatrix S = FMatrix::CreateScale({ ScaleFactor, ScaleFactor, ScaleFactor });
-            FMatrix R = AxisRotation[i];
-            FMatrix T = FMatrix::CreateTranslation(GetLocation());
-            FMatrix ModelMatrix = S * R * T;
-
-            // [NEW] 이 축의 로컬공간으로 레이 보냄 (M*V*P)^-1 로 역투영됨)  :contentReference[oaicite:6]{index=6}
-            RayCaster.SetRayWithMouseAndMVP(
-                MouseX, MouseY, Window.GetWidth(), Window.GetHeight(),
-                ModelMatrix, View, Proj
-            );
-
-            // [NEW] 토러스 근사 피킹 t 구하기  :contentReference[oaicite:7]{index=7}
-            float tLocal = RayCaster.RayCastToAnalogousTorus();
-
-            // [NEW] 교차 없으면 스킵 (DONT_INTERSECT = -1.0f 관례)
-            if (tLocal < 0.0f)
-                continue;
-
-            // [NEW] 월드 거리로 변환하여 가장 가까운 축 선택  :contentReference[oaicite:8]{index=8}
-            std::optional<float> distOpt = RayCaster.GetRealWorldDistance(std::optional<float>{ tLocal });
-            if (!distOpt)
-                continue;
-
-            if (*distOpt < ClosestWorldDist)
+            FVector PlaneNormal = PlaneNormals[i];
+            float Denominator = RayDir.Dot(PlaneNormal);
+            if (abs(Denominator) > 1e-6f)
             {
-                ClosestWorldDist = *distOpt;
-                NewActiveAxis = static_cast<EAxis>(i + 1);
+                float t = (GizmoOrigin - RayOrigin).Dot(PlaneNormal) / Denominator;
+                if (t > 0)
+                {
+                    FVector IntersectionPoint = RayOrigin + RayDir * t;
+                    float DistanceFromOrigin = (IntersectionPoint - GizmoOrigin).Length();
 
-                // [NEW] 로컬 히트점 → 월드 히트점 계산 (수학 라이브러리 관례에 맞춰 v * M)  :contentReference[oaicite:9]{index=9}
-                const auto& ray = RayCaster.CurrentRay; // SetRay...가 채움
-                FVector localHit = ray.Point + tLocal * ray.Vector;
-                HitPointWorld = localHit * ModelMatrix;
+                    if (abs(DistanceFromOrigin - GizmoRadius) < 0.05f * GizmoRadius)
+                    {
+                        if (t < ClosestHitDistance)
+                        {
+                            ClosestHitDistance = t;
+                            NewActiveAxis = static_cast<EAxis>(i + 1);
+                            HitPoint = IntersectionPoint;
+                        }
+                    }
+                }
             }
         }
 
-        // [NEW] 최종 결정 반영
         if (NewActiveAxis != EAxis::None)
         {
             bIsDragging = true;
             ActiveAxis = NewActiveAxis;
-            DragStartPoint_World = HitPointWorld; // ★ 토러스 실제 히트 위치 저장
+            DragStartPoint_World = HitPoint;
             DragStartActorRotation = TargetActor->GetComponent<USceneComponent>()->GetRotation();
         }
     }
-
 
     // 드래그 중 회전 처리
     if (bIsDragging)

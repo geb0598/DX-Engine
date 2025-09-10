@@ -99,6 +99,9 @@
     <ClCompile Include="Scene\Private\SceneManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Axis\Private\UAxis.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
     <ClCompile Include="Time\Private\TimeManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -123,7 +126,6 @@
     <ClCompile Include="Component\Private\TriangleComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-<<<<<<< HEAD
     <ClCompile Include="Component\Private\StaticMeshComponent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -134,18 +136,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Component\Private\RotationGizmoComponent.cpp">
-=======
-    <ClCompile Include="Line\Private\ULineDrawer.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Grid\Private\UGridManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="AssetManager\Public\AssetManager.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Component\Private\PlaneComponent.cpp">
->>>>>>> origin/main
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -264,6 +254,12 @@
     <ClInclude Include="Utilities\Public\Utilities.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Axis\Public\UAxis.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Axis\Axis.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
     <ClInclude Include="Component\Public\InputComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -300,7 +296,6 @@
     <ClInclude Include="Component\Public\TriangleComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-<<<<<<< HEAD
     <ClInclude Include="Mesh\Public\GizmoShapes.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -314,27 +309,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Component\Public\RotationGizmoComponent.h">
-=======
-    <ClInclude Include="Line\Line.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Line\Public\ULineDrawer.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Grid\Public\UGridManager.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Grid\Grid.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="AssetManager\Public\AssetManager.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="AssetManager\AssetManager.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Component\Public\PlaneComponent.h">
->>>>>>> origin/main
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

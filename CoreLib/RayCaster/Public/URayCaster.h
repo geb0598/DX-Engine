@@ -8,11 +8,7 @@
 #include "Component/Public/SphereComponent.h"
 #include "Component/Public/CubeComponent.h"
 #include "Component/Public/TriangleComponent.h"
-<<<<<<< HEAD
 #include <limits>
-=======
-#include "Component/Public/PlaneComponent.h"
->>>>>>> origin/main
 
 #define DONT_INTERSECT -1.0f
 
@@ -29,23 +25,7 @@ public:
 		FVector Vector;
 	};
 	Ray CurrentRay;
-<<<<<<< HEAD
 	void SetRayWithMouseAndMVP(int MouseX, int MouseY, int ScreenWidth, int ScreenHeight, FMatrix Modeling, FMatrix View, FMatrix Projection)
-=======
-
-	FMatrix M;
-	FMatrix V;
-	FMatrix P;
-
-	// resolve floating point error
-	static const float EPSILON;
-private:
-	URayCaster() = default;
-	~URayCaster() = default;
-
-private:
-	void SetRayWithMouseAndMVP(int MouseX, int MouseY, int ScreenWidth, int ScreenHeight ,FMatrix Modeling, FMatrix View, FMatrix Projection)
->>>>>>> origin/main
 	{
 		float NDCX = 2.0f * MouseX / ScreenWidth - 1.0f;
 		float NDCY = 1.0f - 2.0f * MouseY / ScreenHeight;
@@ -83,15 +63,9 @@ private:
 	URayCaster() = default;
 	~URayCaster() = default;
 
-<<<<<<< HEAD
 private:
 	std::optional<float> RayCastToSphere(float Radius)
-=======
-	std::optional<float> RayCastToSphere()
->>>>>>> origin/main
 	{
-		const float Radius = 1.0f;
-
 		// Components for Quadratic Formula
 		FVector V = CurrentRay.Vector;
 		FVector P = CurrentRay.Point;
@@ -105,8 +79,8 @@ private:
 
 		if (D >= 0.0f)
 		{
-			float T1 = (-B + std::sqrtf(D)) / (2.0f * A);
-			float T2 = (-B - std::sqrtf(D)) / (2.0f * A);
+			float T1 = (-B + std::sqrtf(D)) / 2.0f * A;
+			float T2 = (-B - std::sqrtf(D)) / 2.0f * A;
 
 			if (T1 < 0.0f && T2 < 0.0f)
 				return std::nullopt;
@@ -126,6 +100,8 @@ private:
 		const float XHalf = 0.5f;
 		const float YHalf = 0.5f;
 		const float ZHalf = 0.5f;
+
+		const float EPSILON = 1e-5f;
 
 		float T1, T2, T3, T4, T5, T6;
 
@@ -258,6 +234,9 @@ private:
 
 		// Normal of Triangle
 		FVector N = (T1 - T0).Cross(T2 - T0);
+		
+		// resolve floating point error
+		const float EPSILON = 1e-5f;
 
 		// when ray is parellel to triangle
 		if (V.Dot(N) >= -EPSILON && V.Dot(N) <= EPSILON)
@@ -318,8 +297,8 @@ private:
 		if (D < 0.0f)
 			return DONT_INTERSECT;
 
-		T1 = (-B + std::sqrtf(D)) / (2.0f * A);
-		T2 = (-B - std::sqrtf(D)) / (2.0f * A);
+		T1 = (-B + std::sqrtf(D)) / 2.0f * A;
+		T2 = (-B - std::sqrtf(D)) / 2.0f * A;
 
 		if (T1 > 0.0f)
 		{
@@ -392,6 +371,7 @@ private:
 		float PZ = CurrentRay.Point.Z;
 		float VZ = CurrentRay.Vector.Z;
 
+		const float EPSILON = 1e-5f;
 		// when ray is parellel to annulus
 		if (VZ >= -EPSILON && VZ <= EPSILON)
 			return DONT_INTERSECT;
@@ -436,41 +416,9 @@ private:
 		return T;
 	}
 
-<<<<<<< HEAD
-	/*float RayCastToAnalogousTorus()
-=======
-	float RayCastToQuad()
-	{
-		const float XHalf = 0.5f;
-		const float YHalf = 0.5f;
-
-		FVector P = CurrentRay.Point;
-		FVector V = CurrentRay.Vector;
-
-		// find T value of ray equation when z = 0
-		// P.z + t * V.z = 0
-		// t = -V.z / P.z
-
-		if (P.Z >= -EPSILON && P.Z <= EPSILON)
-			return DONT_INTERSECT;
-
-		float T = -V.Z / P.Z;
-		
-		float RayX = P.X + T * V.X;
-		if (RayX > XHalf || RayX < -XHalf)
-			return DONT_INTERSECT;
-
-		float RayY = P.Y + T * V.Y;
-		if (RayY > YHalf || RayY < -YHalf)
-			return DONT_INTERSECT;
-
-		return T;
-	}
-
 	float RayCastToAnalogousTorus()
->>>>>>> origin/main
 	{
-		const float InnerRadius = 0.025f;
+		const float InnerRadius = 0.1f;
 		const float OuterRadius = 1.0f;
 		const float Height = 0.1f;
 
@@ -478,9 +426,9 @@ private:
 		float THorizontalAnnulus = RayCastToAnnulus(InnerRadius, OuterRadius, Height);
 
 		return GetCloserT(TVerticalAnnulus, THorizontalAnnulus);
-	}*/
+	}
 
-	/*std::optional<float> GetRealWorldDistance(std::optional<float> T)
+	std::optional<float> GetRealWorldDistance(std::optional<float> T)
 	{
 		if (!T)
 			return T;
@@ -488,7 +436,7 @@ private:
 		FVector IntersectionPos = (CurrentRay.Point + *T * CurrentRay.Vector) * M;
 
 		return (IntersectionPos).Distance(CameraPos);
-	}*/
+	}
 	// [추가] 일반 메시에 대한 레이캐스팅 함수 구현
 	std::optional<float> RayCastToMesh(UMesh* Mesh)
 	{
@@ -554,101 +502,6 @@ public:
 	}
 
 public:
-	float RayCastToAnalogousTorus()
-	{
-		const float InnerRadius = 0.025f;
-		const float OuterRadius = 1.0f;
-		const float Height = 0.1f;
-
-		float TVerticalAnnulus = RayCastToCylinderSide((InnerRadius + OuterRadius) / 2.0f, Height);
-		float THorizontalAnnulus = RayCastToAnnulus(InnerRadius, OuterRadius, Height);
-
-		return GetCloserT(TVerticalAnnulus, THorizontalAnnulus);
-	}
-
-	std::optional<float> GetRealWorldDistance(std::optional<float> T)
-	{
-		if (!T)
-			return T;
-		FVector CameraPos = CurrentRay.Point * M;
-		FVector IntersectionPos = (CurrentRay.Point + *T * CurrentRay.Vector) * M;
-
-		return (IntersectionPos).Distance(CameraPos);
-	}
-
-<<<<<<< HEAD
-=======
-	struct FMollerTrumboreResult
-	{
-		float UParam; // Barycentric Coordinate U
-		float VParam; // Barycentric Coordinate V
-		float TParam; // T
-	};
-
-	std::optional<FMollerTrumboreResult> MollerTrumbore(
-		// NOTE: Triangle Position, CCW Order
-		const FVector& PositionA,
-		const FVector& PositionB,
-		const FVector& PositionC
-	)
-	{
-		FVector EdgeA = PositionB - PositionA;
-		FVector EdgeB = PositionC - PositionA;
-
-		FVector QVector = CurrentRay.Vector.Cross(EdgeB);
-		double Determinant = EdgeA.Dot(QVector);
-
-		// NOTE: Check determinant with Epsilone Value
-		if (Determinant < 1e-9)
-		{
-			return std::nullopt;
-		}
-
-		FVector TVector = (CurrentRay.Point - PositionA);
-		FVector PVector = TVector.Cross(EdgeA);
-		FMollerTrumboreResult Result = {};
-		Result.UParam = TVector.Dot(QVector) / Determinant;
-		Result.VParam = CurrentRay.Vector.Dot(PVector) / Determinant;
-		Result.TParam = PVector.Dot(EdgeB) / Determinant;
-
-		if (!(0.0 < Result.UParam && Result.UParam < 1.0))
-		{
-			return std::nullopt;
-		}
-
-		if (!(0.0 < Result.VParam && Result.VParam < 1.0))
-		{
-			return std::nullopt;
-		}
-
-		if (Result.TParam < 1e-9)
-		{
-			return std::nullopt;
-		}
-
-		return Result;
-	}
-
-public:
-	static URayCaster& Instance()
-	{
-		static URayCaster RayCaster;
-		return RayCaster;
-	}
-
-public:
->>>>>>> origin/main
-	std::optional<float> GetHitResultAtScreenPosition(
-		UPrimitiveComponent& PrimitiveComponent,
-		int32 MouseX,
-		int32 MouseY,
-		int32 ScreenWidth,
-		int32 ScreenHeight,
-		const FMatrix& ModelingMatrix,
-		const FMatrix& ViewMatrix,
-		const FMatrix& ProjectionMatrix
-	);
-
 	std::optional<float> GetHitResultAtScreenPosition(
 		UTriangleComponent& TriangleComponent,
 		int32 MouseX,
@@ -681,15 +534,9 @@ public:
 		const FMatrix& ViewMatrix,
 		const FMatrix& ProjectionMatrix
 	);
-<<<<<<< HEAD
 	// UStaticMeshComponent를 위한 오버로드
 	std::optional<float> GetHitResultAtScreenPosition(
 		UStaticMeshComponent& StaticMeshComponent,
-=======
-
-	std::optional<float> GetHitResultAtScreenPosition(
-		UPlaneComponent& PlaneComponent,
->>>>>>> origin/main
 		int32 MouseX,
 		int32 MouseY,
 		int32 ScreenWidth,

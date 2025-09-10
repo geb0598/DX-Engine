@@ -1,6 +1,6 @@
 #include "Component/Public/SphereComponent.h"
 #include "RayCaster/Raycaster.h"
-#include "AssetManager/AssetManager.h"
+#include "Renderer/Renderer.h"
 
 FVertexSimple sphere_vertices[] = {
 	{ 0.000000f, 1.000000f, 0.000000f, 0.500000f, 1.000000f, 0.500000f, 1.000000f },
@@ -2416,8 +2416,8 @@ USphereComponent::USphereComponent(AActor* Actor,
 		VertexArray.push_back(static_cast<FVertex>(sphere_vertices[i]));
 	}
 
-	UAssetManager& ResourceManager = UAssetManager::GetInstance();
-	Mesh = ResourceManager.GetOrCreateMesh("SphereMesh", VertexArray);
+	auto& Renderer = URenderer::GetInstance();
+	Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
 }
 
 USphereComponent::EType USphereComponent::GetType() const
