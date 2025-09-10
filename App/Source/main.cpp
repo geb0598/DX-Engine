@@ -17,6 +17,8 @@
 #include "UI/UI.h"
 #include "Utilities/Utilities.h"
 #include "Window/Window.h"
+#include "Line/Line.h"
+#include "Grid/Grid.h"
 
 // ---------------------------------------------------------------------------- //
 
@@ -68,8 +70,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	USceneManager& SceneManager = USceneManager::GetInstance();
 	SceneManager.NewScene("Default Scene");
 
-	AActor* MainCamera = SceneManager.GetMainCameraActor();
+	// #7. Grid Manager
+	UGridManager GridManager(Renderer.GetDevice(), Renderer.GetDeviceContext());
+	GridManager.Initialize();
 
+	AActor* MainCamera = SceneManager.GetMainCameraActor();
+	
 	// ------------------------------- Axis Setup ------------------------------- //
 
 	// TODO
@@ -130,14 +136,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		Renderer.Prepare();
 
+		// #0. Render World Grid
 		FMatrix ModelMatrix;
 		FMatrix ViewMatrix = CameraComponent->GetViewMatrix();
-		FMatrix ProjectionMatrix;
+		FMatrix ProjectionMatrix = CameraComponent->GetProjectionMatrix(Window.GetAspectRatio());
+
+		FMatrix VP = ViewMatrix * ProjectionMatrix;
+
+		PSConstants GridInfo = {};
+
+		GridInfo.FadeDistance = 1000.0f;
+		GridInfo.ScreenSize[0] = (float)Window.GetWidth();
+		GridInfo.ScreenSize[1] = (float)Window.GetHeight();
+		
+		GridInfo.GridColor[0] = 1.0f;
+		GridInfo.GridColor[1] = 0.0f;
+		GridInfo.GridColor[2] = 1.0f;
+		memcpy(GridInfo.InvViewProj, VP.Inverse().M, sizeof(GridInfo.InvViewProj));
+
+		GridManager.Bind(GridInfo);
+		GridManager.Render();
 
 		if (CameraComponent->IsOrthogonal())
 		{
 			// TODO: These values are arbitrarily hard-coded values
-			float AspectRatio = Window.getAspectRatio();
+			float AspectRatio = Window.GetAspectRatio();
 			float Height = 20.0f;
 			float Width = Height * AspectRatio;
 			ProjectionMatrix = CameraComponent->GetOrthographicMatrix(
@@ -147,7 +170,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		else
 		{
 			// TODO: Change name of getter to PascalCase
-			ProjectionMatrix = CameraComponent->GetProjectionMatrix(Window.getAspectRatio());
+			ProjectionMatrix = CameraComponent->GetProjectionMatrix(Window.GetAspectRatio());
 		}
 
 		const TArray<AActor*> SceneActors = CurrentScene->GetActors();
@@ -258,24 +281,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 			ModelMatrix = SceneComponent->GetModelingMatrix();
 
-			FMatrix MVP = ModelMatrix * ViewMatrix * ProjectionMatrix;
-
 			auto VertexShader = PrimitiveComponent->GetVertexShader();
 			auto PixelShader = PrimitiveComponent->GetPixelShader();
-
-			VertexShader->UpdateConstantBuffer(
-				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(MVP.M)
-			);
-
-			int bIsSelected = Actor == CurrentScene->GetCurrentActor();
-			PixelShader->UpdateConstantBuffer(
-				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(&bIsSelected)
-			);
 
 			// NOTE: Shader Binding
 			VertexShader->Bind(Renderer.GetDeviceContext(), "constants");
 			PixelShader->Bind(Renderer.GetDeviceContext(), "constants");
 			// PixelShader->Bind(Renderer.GetDeviceContext());
+
+			// --------------------- Draw XYZ Axis first-------------------- //
+
+			VertexShader->UpdateConstantBuffer(
+				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(VP.M)
+			);
+
+			ULineDrawer::RenderXYZAxis(Renderer.GetDevice(), Renderer.GetDeviceContext());
+
+			// --------------------- Then Draw Primitives------------------- //
+
+			FMatrix MVP = ModelMatrix * ViewMatrix * ProjectionMatrix;
+
+			VertexShader->UpdateConstantBuffer(
+				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(MVP.M)
+			);
+
+			// --------------------- Highlight when clicked------------------- //
+
+			int bIsSelected = Actor == CurrentScene->GetCurrentActor();
+			PixelShader->UpdateConstantBuffer(
+				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(&bIsSelected)
+			);
 
 			// NOTE: Render Call
 			PrimitiveComponent->Render(Renderer.GetDeviceContext());
@@ -286,6 +321,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		Renderer.SwapBuffer();
 	}
+
+	GridManager.Release();
 
 	// NOTE: Release UI Manager
 	EditorUI.Release();

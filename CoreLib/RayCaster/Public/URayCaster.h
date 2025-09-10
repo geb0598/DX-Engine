@@ -76,8 +76,8 @@ private:
 
 		if (D >= 0.0f)
 		{
-			float T1 = (-B + std::sqrtf(D)) / 2.0f * A;
-			float T2 = (-B - std::sqrtf(D)) / 2.0f * A;
+			float T1 = (-B + std::sqrtf(D)) / (2.0f * A);
+			float T2 = (-B - std::sqrtf(D)) / (2.0f * A);
 
 			if (T1 < 0.0f && T2 < 0.0f)
 				return std::nullopt;
@@ -294,8 +294,8 @@ private:
 		if (D < 0.0f)
 			return DONT_INTERSECT;
 
-		T1 = (-B + std::sqrtf(D)) / 2.0f * A;
-		T2 = (-B - std::sqrtf(D)) / 2.0f * A;
+		T1 = (-B + std::sqrtf(D)) / (2.0f * A);
+		T2 = (-B - std::sqrtf(D)) / (2.0f * A);
 
 		if (T1 > 0.0f)
 		{
