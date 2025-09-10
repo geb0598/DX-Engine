@@ -1,4 +1,4 @@
-﻿// ------------------------------- C++ Headers -------------------------------- //
+// ------------------------------- C++ Headers -------------------------------- //
 #include <limits>
 
 // ----------------------------- ImGui Headers -------------------------------- //
@@ -12,11 +12,14 @@
 #include "Component/Component.h"
 #include "RayCaster/Raycaster.h"
 #include "Renderer/Renderer.h"
+#include "AssetManager/AssetManager.h"
 #include "Scene/Scene.h"
 #include "TIme/Time.h"
 #include "UI/UI.h"
 #include "Utilities/Utilities.h"
 #include "Window/Window.h"
+#include "Line/Line.h"
+#include "Grid/Grid.h"
 
 // ------------------------------------Gizmo------------------------------------- //
 #include "Component/Public/LocationGizmoComponent.h"
@@ -62,10 +65,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	Timer.Initialize();
 	// TODO: Should follow Naming Convention
 
-	// #5. Ray Caster
+	// #5. Resource Manager
+	UAssetManager& ResourceManager = UAssetManager::GetInstance();
+	ResourceManager.Initialize(Renderer.GetDevice());
+
+	// #6. Ray Caster
 	URayCaster& RayCaster = URayCaster::Instance();
 
-	// #6. Scene Manager
+	// #7. Scene Manager
 	USceneManager& SceneManager = USceneManager::GetInstance();
 	SceneManager.NewScene("Default Scene");
 
@@ -74,7 +81,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// 이 액터는 씬에 추가하지 않습니다. 컴포넌트가 직접 렌더링을 관리하기 때문입니다.
 	AActor* GizmoActor = new AActor();
 	GizmoActor->AddComponent<ULocationGizmoComponent>(GizmoActor);
+	// #7. Grid Manager
+	UGridManager GridManager(Renderer.GetDevice(), Renderer.GetDeviceContext());
+	GridManager.Initialize();
 
+	// #8. Initialize XYZ Axis (once per application)
+	ULineDrawer::InitializeXYZAxis(Renderer.GetDevice());
+
+	//AActor* MainCamera = SceneManager.GetMainCameraActor();
+	
 	// ------------------------------- Axis Setup ------------------------------- //
 
 	// TODO
@@ -115,7 +130,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		UScene* CurrentScene = SceneManager.GetCurrentScene();
 
 		// NOTE: Update Main Camera
-		MainCamera = SceneManager.GetMainCameraActor();
+		AActor* MainCamera = SceneManager.GetMainCameraActor();
 
 		auto CameraComponent = MainCamera->GetComponent<UCameraComponent>();
 		auto CameraInputComponent = MainCamera->GetComponent<UInputComponent>();
@@ -135,6 +150,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		Renderer.Prepare();
 
+		// #0. Render World Grid
 		FMatrix ModelMatrix;
 		FMatrix ViewMatrix = CameraComponent->GetViewMatrix();
 		FMatrix ProjectionMatrix;
@@ -142,7 +158,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		if (CameraComponent->IsOrthogonal())
 		{
 			// TODO: These values are arbitrarily hard-coded values
-			float AspectRatio = Window.getAspectRatio();
+			float AspectRatio = Window.GetAspectRatio();
 			float Height = 20.0f;
 			float Width = Height * AspectRatio;
 			ProjectionMatrix = CameraComponent->GetOrthographicMatrix(
@@ -152,7 +168,51 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		else
 		{
 			// TODO: Change name of getter to PascalCase
-			ProjectionMatrix = CameraComponent->GetProjectionMatrix(Window.getAspectRatio());
+			ProjectionMatrix = CameraComponent->GetProjectionMatrix(Window.GetAspectRatio());
+		}
+
+		FMatrix VP = ViewMatrix * ProjectionMatrix;
+
+		// #1. Draw World Grid once per frame (before object rendering)
+		PSConstants GridInfo = {};
+
+		GridInfo.FadeDistance = 100.0f;
+		GridInfo.ScreenSize[0] = (float)Window.GetWidth();
+		GridInfo.ScreenSize[1] = (float)Window.GetHeight();
+
+		FVector CameraVector = MainCamera->GetComponent<USceneComponent>()->GetLocation();
+		
+		GridInfo.GridColor[0] = 0.15f;
+		GridInfo.GridColor[1] = 0.15f;
+		GridInfo.GridColor[2] = 0.15f;
+		memcpy(GridInfo.InvViewProj, VP.Inverse().M, sizeof(GridInfo.InvViewProj));
+
+		GridManager.Bind(GridInfo);
+		GridManager.Render();
+
+		// #1.5. Draw XYZ Axis once per frame (before object rendering)
+		{
+			auto& AssetManager = UAssetManager::GetInstance();
+			auto VertexShader = AssetManager.GetVertexShader("DefaultVertexShader");
+			auto PixelShader = AssetManager.GetPixelShader("DefaultPixelShader");
+
+			if (VertexShader && PixelShader)
+			{
+				VertexShader->Bind(Renderer.GetDeviceContext(), "constants");
+				PixelShader->Bind(Renderer.GetDeviceContext(), "constants");
+
+				VertexShader->UpdateConstantBuffer(
+					Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(VP.M)
+				);
+
+				// Default pixel shader constant (not selected)
+				int bIsSelected = 0;
+				PixelShader->UpdateConstantBuffer(
+					Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(&bIsSelected)
+				);
+
+				ULineDrawer::RenderXYZAxis(Renderer.GetDeviceContext());
+			}
 		}
 
 		const TArray<AActor*> SceneActors = CurrentScene->GetActors();
@@ -224,94 +284,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		//// TODO: Improve performance with caching
-		//if (!ImIO.WantCaptureMouse && Window.GetMouse().IsLeftPressed())
-		//{
-		//	for (auto Actor : SceneActors)
-		//	{
-		//		if (Actor == nullptr)
-		//		{
-		//			continue;
-		//		}
-
-		//		auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
-		//		if (PrimitiveComponent == nullptr)
-		//		{
-		//			continue;
-		//		}
-
-		//		// NOTE: Actor with no scene component is ignored quietely
-		//		auto SceneComponent = Actor->GetComponent<USceneComponent>();
-		//		if (SceneComponent == nullptr)
-		//		{
-		//			continue;
-		//		}
-		//		ModelMatrix = SceneComponent->GetModelingMatrix();
-
-		//		// --------------------- Object Picking------------------------- //
-		//		auto [MouseX, MouseY] = Window.GetMouse().GetPosition();
-
-		//		auto HitResult = PrimitiveComponent->GetHitResultAtScreenPosition(
-		//			RayCaster,
-		//			MouseX,
-		//			MouseY,
-		//			Window.GetWidth(),
-		//			Window.GetHeight(),
-		//			ModelMatrix,
-		//			ViewMatrix,
-		//			ProjectionMatrix
-		//		);
-
-		//		if (HitResult && PickedActorDistance > *HitResult)
-		//		{
-		//			PickedActor = Actor;
-		//			PickedActorDistance = *HitResult;
-		//		}
-
-		//		// ------------------------- Debug ---------------------------- //
-		//		if (!HitResult)
-		//		{
-		//			continue;
-		//		}
-
-		//		switch (PrimitiveComponent->GetType())
-		//		{
-		//		case UPrimitiveComponent::EType::Triangle:
-		//			EditorUI.AddDebugLog("Triangle Hit!");
-		//			EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
-		//			break;
-		//		case UPrimitiveComponent::EType::Cube:
-		//			EditorUI.AddDebugLog("Cube Hit!");
-		//			EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
-		//			break;
-		//		case UPrimitiveComponent::EType::Sphere:
-		//			EditorUI.AddDebugLog("Sphere Hit!");
-		//			EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
-		//			break;
-		//		default:
-		//			EditorUI.AddDebugLog("Unknown Hit!");
-		//			EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
-		//			break;
-		//		}
-		//		// ----------------------------------------------------------- //
-
-		//	}
-
-		//	if (PickedActor)
-		//	{
-		//		CurrentScene->SetCurrentActor(PickedActor);
-		//		EditorUI.AddDebugLog("Selected Dist: " + std::to_string(PickedActorDistance));
-		//	}
-		//}
-
-		// #2. Object Rendering
+		// #3. Object Rendering
 		for (auto Actor : SceneActors)
 		{
 			if (Actor == nullptr)
 			{
 				continue;
 			}
-
+			 
 			auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
 			if (PrimitiveComponent == nullptr)
 			{
@@ -326,24 +306,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 			ModelMatrix = SceneComponent->GetModelingMatrix();
 
-			FMatrix MVP = ModelMatrix * ViewMatrix * ProjectionMatrix;
-
 			auto VertexShader = PrimitiveComponent->GetVertexShader();
 			auto PixelShader = PrimitiveComponent->GetPixelShader();
-
-			VertexShader->UpdateConstantBuffer(
-				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(MVP.M)
-			);
-
-			int bIsSelected = Actor == CurrentScene->GetCurrentActor();
-			PixelShader->UpdateConstantBuffer(
-				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(&bIsSelected)
-			);
 
 			// NOTE: Shader Binding
 			VertexShader->Bind(Renderer.GetDeviceContext(), "constants");
 			PixelShader->Bind(Renderer.GetDeviceContext(), "constants");
 			// PixelShader->Bind(Renderer.GetDeviceContext());
+
+			// --------------------- Draw Primitives------------------- //
+
+			FMatrix MVP = ModelMatrix * ViewMatrix * ProjectionMatrix;
+
+			VertexShader->UpdateConstantBuffer(
+				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(MVP.M)
+			);
+
+			// --------------------- Highlight when clicked------------------- //
+
+			int bIsSelected = Actor == CurrentScene->GetCurrentActor();
+			PixelShader->UpdateConstantBuffer(
+				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(&bIsSelected)
+			);
 
 			// NOTE: Render Call
 			PrimitiveComponent->Render(Renderer.GetDeviceContext());
@@ -357,6 +341,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		Renderer.SwapBuffer();
 	}
+
+	USceneManager::DestroyInstance();
+
+	UAssetManager::GetInstance().ClearAllResources();
+
+	GridManager.Release();
+
+	// Release XYZ Axis resources
+	ULineDrawer::ReleaseXYZAxis();
 
 	// [추가2] 프로그램 종료 시 GizmoActor 메모리를 해제합니다.
 	delete GizmoActor;

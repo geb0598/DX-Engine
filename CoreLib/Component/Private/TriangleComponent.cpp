@@ -1,13 +1,18 @@
 #include "Renderer/Renderer.h"
 #include "Component/Public/TriangleComponent.h"
-#include "Renderer/Renderer.h"
+#include "AssetManager/AssetManager.h"
 #include "RayCaster/Raycaster.h"
 
 FVertexSimple triangle_vertices[] =
 {
 	{  0.0f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f, 1.0f }, // Top vertex (red)
 	{ -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f },  // Bottom-left vertex (blue)
-	{  1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f } // Bottom-right vertex (green)
+	{  1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right vertex (green)
+
+	// should be seen on opposite side
+	{ 0.0f,  1.0f, 0.0f,  1.0f, 0.0f, 0.0f, 1.0f }, // Top vertex (red)
+	{  1.0f, -1.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f }, // Bottom-right vertex (green)
+	{ -1.0f, -1.0f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f },  // Bottom-left vertex (blue)
 };
 
 UTriangleComponent::UTriangleComponent(AActor* Actor, 
@@ -21,8 +26,8 @@ UTriangleComponent::UTriangleComponent(AActor* Actor,
 		VertexArray.push_back(static_cast<FVertex>(triangle_vertices[i]));
 	}
 
-	auto& Renderer = URenderer::GetInstance();
-	Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
+	UAssetManager& AssetManager = UAssetManager::GetInstance();
+	Mesh = AssetManager.GetOrCreateMesh("TriangleMesh", VertexArray);
 }
 
 UTriangleComponent::EType UTriangleComponent::GetType() const
