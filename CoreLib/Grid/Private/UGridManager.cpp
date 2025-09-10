@@ -116,7 +116,7 @@ void UGridManager::Initialize()
 	if (PixelShaderErrorBlob)
 		PixelShaderErrorBlob->Release();
 
-	float VertexArray[3][2] = { {-1.0f, -1.0f}, {-1.0, 3.0f}, {3.0f, -1.0f} };
+	float VertexArray[3][2] = { {-1.0f, -1.0f}, {3.0f, -1.0f}, {-1.0, 3.0f} };
 
 	// create vertex buffer
 
