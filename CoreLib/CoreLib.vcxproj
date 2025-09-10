@@ -26,6 +26,7 @@
     <ClCompile Include="Component\Private\InputComponent.cpp" />
     <ClCompile Include="Component\Private\PlaneComponent.cpp" />
     <ClCompile Include="Component\Private\PrimitiveComponent.cpp" />
+    <ClCompile Include="Component\Private\RotationGizmoComponent.cpp" />
     <ClCompile Include="Component\Private\SphereComponent.cpp" />
     <ClCompile Include="Component\Private\StaticMeshComponent.cpp" />
     <ClCompile Include="Component\Private\TriangleComponent.cpp" />
@@ -73,6 +74,7 @@
     <ClInclude Include="Component\Public\InputComponent.h" />
     <ClInclude Include="Component\Public\PlaneComponent.h" />
     <ClInclude Include="Component\Public\PrimitiveComponent.h" />
+    <ClInclude Include="Component\Public\RotationGizmoComponent.h" />
     <ClInclude Include="Component\Public\SphereComponent.h" />
     <ClInclude Include="Component\Public\StaticMeshComponent.h" />
     <ClInclude Include="Component\Public\TriangleComponent.h" />

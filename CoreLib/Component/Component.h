@@ -8,3 +8,4 @@
 #include "Public/StaticMeshComponent.h"
 #include "Public/GizmoComponent.h"
 #include "Public/LocationGizmoComponent.h"
+#include "Public/RotationGizmoComponent.h"

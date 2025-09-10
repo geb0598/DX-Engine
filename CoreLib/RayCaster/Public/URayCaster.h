@@ -17,13 +17,13 @@ class UStaticMeshComponent;
 
 class URayCaster
 {
-private:
+public:
+	// [수정] CurrentRay를 public으로 이동
 	struct Ray
 	{
 		FVector Point;
 		FVector Vector;
 	};
-private:
 	Ray CurrentRay;
 
 	FMatrix M;
@@ -67,6 +67,13 @@ private:
 
 		return;
 	}
+private:
+	FMatrix M;
+	FMatrix V;
+	FMatrix P;
+private:
+	URayCaster() = default;
+	~URayCaster() = default;
 
 	std::optional<float> RayCastToSphere()
 	{
@@ -522,7 +529,7 @@ public:
 		const FMatrix& ViewMatrix,
 		const FMatrix& ProjectionMatrix
 	);
-	// [추가] UStaticMeshComponent를 위한 오버로드
+	// UStaticMeshComponent를 위한 오버로드
 	std::optional<float> GetHitResultAtScreenPosition(
 		UStaticMeshComponent& StaticMeshComponent,
 		int32 MouseX,

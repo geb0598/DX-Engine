@@ -24,6 +24,14 @@
 // ------------------------------------Gizmo------------------------------------- //
 #include "Component/Public/LocationGizmoComponent.h"
 
+//[추가] 기즈모 모드 열거형
+enum class EGizmoMode
+{
+	Location,
+	Rotation,
+	Max
+};
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
 	// ------------------------------- Initial Setup ------------------------------- //
@@ -77,13 +85,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SceneManager.NewScene("Default Scene");
 
 	AActor* MainCamera = SceneManager.GetMainCameraActor();
-	// [추가] 기즈모를 담을 전용 액터를 생성하고 LocationGizmoComponent를 부착합니다.
-	// 이 액터는 씬에 추가하지 않습니다. 컴포넌트가 직접 렌더링을 관리하기 때문입니다.
+	// 기즈모를 담을 전용 액터를 생성하고 LocationGizmoComponent를 부착합니다.
 	AActor* GizmoActor = new AActor();
 	GizmoActor->AddComponent<ULocationGizmoComponent>(GizmoActor);
 	// #7. Grid Manager
 	UGridManager GridManager(Renderer.GetDevice(), Renderer.GetDeviceContext());
 	GridManager.Initialize();
+	GizmoActor->AddComponent<URotationGizmoComponent>(GizmoActor);
 
 	// #8. Initialize XYZ Axis (once per application)
 	ULineDrawer::InitializeXYZAxis(Renderer.GetDevice());
@@ -97,6 +105,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// ------------------------------- Misc Setup ------------------------------- //
 
 	ImGuiIO& ImIO = ImGui::GetIO();
+	// [추가] 현재 기즈모 모드를 저장할 변수 (기본값은 위치 기즈모)
+	EGizmoMode CurrentGizmoMode = EGizmoMode::Location;
 
 	// -------------------------------- Main Loop -------------------------------- //
 	bool bIsExit = false;
@@ -125,6 +135,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		// ------------------------- Scene Load ------------------------------- //
 		Timer.Update();
+
+		// [추가] 키보드 이벤트를 확인하여 스페이스바가 눌렸는지 감지
+		while (auto Event = Window.GetKeyboard().ReadKey())
+		{
+			if (Event->IsPress() && Event->GetKeyCode() == VK_SPACE)
+			{
+				// 다음 모드로 순환 (Location -> Rotation -> Location ...)
+				int NextModeIndex = (static_cast<int>(CurrentGizmoMode) + 1) % static_cast<int>(EGizmoMode::Max);
+				CurrentGizmoMode = static_cast<EGizmoMode>(NextModeIndex);
+			}
+		}
+
 
 		// NOTE: Load Scene from here
 		UScene* CurrentScene = SceneManager.GetCurrentScene();
@@ -217,13 +239,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		const TArray<AActor*> SceneActors = CurrentScene->GetActors();
 
-		// [추가1] 기즈모 컴포넌트의 포인터를 가져옵니다.
+		// 기즈모 컴포넌트의 포인터를 가져옵니다.
 		auto GizmoComponent = GizmoActor->GetComponent<ULocationGizmoComponent>();
 
-		// [수정] 기즈모 입력을 먼저 처리하여, 기즈모 클릭 시 오브젝트 피킹이 무시되도록 합니다.
-		GizmoComponent->HandleInput(RayCaster, Window, ViewMatrix, ProjectionMatrix);
+		// [수정] 기즈모 컴포넌트 포인터를 가져오고, 현재 모드에 따라 활성화할 기즈모를 선택합니다.
+		// 기즈모 입력을 먼저 처리하여, 기즈모 클릭 시 오브젝트 피킹이 무시되도록 합니다.
+		auto LocationGizmo = GizmoActor->GetComponent<ULocationGizmoComponent>();
+		auto RotationGizmo = GizmoActor->GetComponent<URotationGizmoComponent>();
+		UGizmoComponent* ActiveGizmo = nullptr;
+		switch (CurrentGizmoMode)
+		{
+		case EGizmoMode::Location:
+			ActiveGizmo = LocationGizmo;
+			break;
+		case EGizmoMode::Rotation:
+			ActiveGizmo = RotationGizmo;
+			break;
+		}
 
-		// [수정] 기즈모가 드래그 상태가 아닐 때만 오브젝트 피킹을 수행합니다.
+		// [수정] 활성화된 기즈모의 입력만 처리합니다.
+		if (ActiveGizmo)
+		{
+			ActiveGizmo->HandleInput(RayCaster, Window, ViewMatrix, ProjectionMatrix);
+		}
+
+		// 기즈모가 드래그 상태가 아닐 때만 오브젝트 피킹을 수행합니다.
 		if (!ImIO.WantCaptureMouse && Window.GetMouse().IsLeftPressed() && !GizmoComponent->IsDragging())
 		{
 			AActor* PickedActor = nullptr;
@@ -271,12 +311,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 					EditorUI.AddDebugLog("Dist: " + std::to_string(*HitResult));
 					break;
 				}
-				// [삭제] 기존 디버그 로그는 피킹 로직과 분리되어 있어 삭제합니다. (필요시 UIManager에서 확인 가능)
+				
 			}
 
-			// [추가1] 피킹 결과를 Scene과 Gizmo에 전달하고, 선택 해제까지 처리하는 통합 로직입니다.
+			// 피킹 결과를 Scene과 Gizmo에 전달하고, 선택 해제까지 처리하는 통합 로직입니다.
 			CurrentScene->SetCurrentActor(PickedActor);
-			GizmoComponent->SetTarget(PickedActor);
+			// [수정수정수정수정수정]
+			/*GizmoComponent->SetTarget(PickedActor);*/
+			if (ActiveGizmo)
+			{
+				ActiveGizmo->SetTarget(PickedActor);
+			}
 
 			if (PickedActor)
 			{
@@ -333,8 +378,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			PrimitiveComponent->Render(Renderer.GetDeviceContext());
 		}
 
-		// [추가2] 모든 씬 액터를 렌더링한 후, 기즈모를 렌더링합니다.
-		GizmoComponent->Render(Renderer, ViewMatrix, ProjectionMatrix);
+		// 모든 씬 액터를 렌더링한 후, 기즈모를 렌더링합니다.
+		if (ActiveGizmo)
+		{
+			ActiveGizmo->Render(Renderer, ViewMatrix, ProjectionMatrix);
+		}
 
 		// #2. Rendering UI
 		EditorUI.RenderUI();

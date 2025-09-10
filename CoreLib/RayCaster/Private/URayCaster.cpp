@@ -117,5 +117,5 @@ std::optional<float> URayCaster::GetHitResultAtScreenPosition(
 )
 {
 	SetRayWithMouseAndMVP(MouseX, MouseY, ScreenWidth, ScreenHeight, ModelingMatrix, ViewMatrix, ProjectionMatrix);
-	return RayCastToMesh(StaticMeshComponent.GetMesh());
+	return GetRealWorldDistance(RayCastToMesh(StaticMeshComponent.GetMesh()));
 }
