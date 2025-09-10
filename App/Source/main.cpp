@@ -264,7 +264,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 
 		// 기즈모가 드래그 상태가 아닐 때만 오브젝트 피킹을 수행합니다.
-		if (!ImIO.WantCaptureMouse && Window.GetMouse().IsLeftPressed() && !GizmoComponent->IsDragging())
+		auto MouseEvent = Window.GetMouse().Read();
+		if (!ImIO.WantCaptureMouse && MouseEvent && MouseEvent->GetEventType() == UMouse::UEvent::EEventType::L_PRESS)
 		{
 			AActor* PickedActor = nullptr;
 			float PickedActorDistance = (std::numeric_limits<float>::max)();
