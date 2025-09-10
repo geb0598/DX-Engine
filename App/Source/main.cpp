@@ -144,25 +144,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		// #0. Render World Grid
 		FMatrix ModelMatrix;
 		FMatrix ViewMatrix = CameraComponent->GetViewMatrix();
-		FMatrix ProjectionMatrix = CameraComponent->GetProjectionMatrix(Window.GetAspectRatio());
-
-		FMatrix VP = ViewMatrix * ProjectionMatrix;
-
-		PSConstants GridInfo = {};
-
-		GridInfo.FadeDistance = 1000.0f;
-		GridInfo.ScreenSize[0] = (float)Window.GetWidth();
-		GridInfo.ScreenSize[1] = (float)Window.GetHeight();
-		
-		FVector CameraVector = MainCamera->GetComponent<USceneComponent>()->GetLocation();
-		
-		GridInfo.GridColor[0] = 1.0f;
-		GridInfo.GridColor[1] = 0.0f;
-		GridInfo.GridColor[2] = 1.0f;
-		memcpy(GridInfo.InvViewProj, VP.Inverse().M, sizeof(GridInfo.InvViewProj));
-
-		GridManager.Bind(GridInfo);
-		GridManager.Render();
+		FMatrix ProjectionMatrix;
 
 		if (CameraComponent->IsOrthogonal())
 		{
@@ -179,6 +161,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			// TODO: Change name of getter to PascalCase
 			ProjectionMatrix = CameraComponent->GetProjectionMatrix(Window.GetAspectRatio());
 		}
+
+		FMatrix VP = ViewMatrix * ProjectionMatrix;
+
+		PSConstants GridInfo = {};
+
+		GridInfo.FadeDistance = 1000.0f;
+		GridInfo.ScreenSize[0] = (float)Window.GetWidth();
+		GridInfo.ScreenSize[1] = (float)Window.GetHeight();
+
+		FVector CameraVector = MainCamera->GetComponent<USceneComponent>()->GetLocation();
+
+		GridInfo.GridColor[0] = 1.0f;
+		GridInfo.GridColor[1] = 0.0f;
+		GridInfo.GridColor[2] = 1.0f;
+		memcpy(GridInfo.InvViewProj, VP.Inverse().M, sizeof(GridInfo.InvViewProj));
+
+		GridManager.Bind(GridInfo);
+		GridManager.Render();
 
 		const TArray<AActor*> SceneActors = CurrentScene->GetActors();
 

@@ -8,6 +8,7 @@
 #include "Component/Public/SphereComponent.h"
 #include "Component/Public/CubeComponent.h"
 #include "Component/Public/TriangleComponent.h"
+#include "Component/Public/PlaneComponent.h"
 
 #define DONT_INTERSECT -1.0f
 
@@ -25,6 +26,9 @@ private:
 	FMatrix M;
 	FMatrix V;
 	FMatrix P;
+
+	// resolve floating point error
+	static const float EPSILON;
 private:
 	URayCaster() = default;
 	~URayCaster() = default;
@@ -61,8 +65,10 @@ private:
 		return;
 	}
 
-	std::optional<float> RayCastToSphere(float Radius)
+	std::optional<float> RayCastToSphere()
 	{
+		const float Radius = 1.0f;
+
 		// Components for Quadratic Formula
 		FVector V = CurrentRay.Vector;
 		FVector P = CurrentRay.Point;
@@ -97,8 +103,6 @@ private:
 		const float XHalf = 0.5f;
 		const float YHalf = 0.5f;
 		const float ZHalf = 0.5f;
-
-		const float EPSILON = 1e-5f;
 
 		float T1, T2, T3, T4, T5, T6;
 
@@ -231,9 +235,6 @@ private:
 
 		// Normal of Triangle
 		FVector N = (T1 - T0).Cross(T2 - T0);
-		
-		// resolve floating point error
-		const float EPSILON = 1e-5f;
 
 		// when ray is parellel to triangle
 		if (V.Dot(N) >= -EPSILON && V.Dot(N) <= EPSILON)
@@ -368,7 +369,6 @@ private:
 		float PZ = CurrentRay.Point.Z;
 		float VZ = CurrentRay.Vector.Z;
 
-		const float EPSILON = 1e-5f;
 		// when ray is parellel to annulus
 		if (VZ >= -EPSILON && VZ <= EPSILON)
 			return DONT_INTERSECT;
@@ -413,7 +413,35 @@ private:
 		return T;
 	}
 
-	bool RayCastToAnalogousTorus()
+	float RayCastToQuad()
+	{
+		const float XHalf = 0.5f;
+		const float YHalf = 0.5f;
+
+		FVector P = CurrentRay.Point;
+		FVector V = CurrentRay.Vector;
+
+		// find T value of ray equation when z = 0
+		// P.z + t * V.z = 0
+		// t = -V.z / P.z
+
+		if (P.Z >= -EPSILON && P.Z <= EPSILON)
+			return DONT_INTERSECT;
+
+		float T = -V.Z / P.Z;
+		
+		float RayX = P.X + T * V.X;
+		if (RayX > XHalf || RayX < -XHalf)
+			return DONT_INTERSECT;
+
+		float RayY = P.Y + T * V.Y;
+		if (RayY > YHalf || RayY < -YHalf)
+			return DONT_INTERSECT;
+
+		return T;
+	}
+
+	float RayCastToAnalogousTorus()
 	{
 		const float InnerRadius = 0.1f;
 		const float OuterRadius = 1.0f;
@@ -467,6 +495,17 @@ public:
 
 	std::optional<float> GetHitResultAtScreenPosition(
 		USphereComponent& SphereComponent,
+		int32 MouseX,
+		int32 MouseY,
+		int32 ScreenWidth,
+		int32 ScreenHeight,
+		const FMatrix& ModelingMatrix,
+		const FMatrix& ViewMatrix,
+		const FMatrix& ProjectionMatrix
+	);
+
+	std::optional<float> GetHitResultAtScreenPosition(
+		UPlaneComponent& PlaneComponent,
 		int32 MouseX,
 		int32 MouseY,
 		int32 ScreenWidth,

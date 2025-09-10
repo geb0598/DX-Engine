@@ -132,6 +132,9 @@
     <ClCompile Include="AssetManager\Public\AssetManager.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="Component\Private\PlaneComponent.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_win32.h">
@@ -300,6 +303,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="AssetManager\AssetManager.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Component\Public\PlaneComponent.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

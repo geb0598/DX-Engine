@@ -7,6 +7,7 @@
 #include "Component/Public/CubeComponent.h"
 #include "Component/Public/TriangleComponent.h"
 #include "Component/Public/SphereComponent.h"
+#include "Component/Public/PlaneComponent.h"
 
 // Static member initialization
 USceneManager* USceneManager::Instance = nullptr;
@@ -150,6 +151,15 @@ void USceneManager::LoadScene(const FString& FilePath)
                 CurrentScene->AddActor(LoadedActor);
             }
         }
+
+        /* Plane Actor Test Code*/
+        AActor* ActorForPlaneTest = CreateActorFromPrimitive(
+            FVector(0.0f, 0.0f, 0.0f),
+            FVector(0.0f, 0.0f, 0.0f),
+            FVector(1.0f, 1.0f, 1.0f),
+            UPrimitiveComponent::EType::Plane
+        );
+        CurrentScene->AddActor(ActorForPlaneTest);
     }
     
     if (Obj.hasKey("NextUUID"))
@@ -242,6 +252,9 @@ AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const F
         break;
     case UPrimitiveComponent::EType::Sphere:
         NewActor->AddComponent<UPrimitiveComponent, USphereComponent>(NewActor, VertexShader, PixelShader);
+        break;
+    case UPrimitiveComponent::EType::Plane:
+        NewActor->AddComponent<UPrimitiveComponent, UPlaneComponent>(NewActor, VertexShader, PixelShader);
         break;
     default:
         // TODO: LOG or WARN Unknown Primitive Type
