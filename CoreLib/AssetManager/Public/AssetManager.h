@@ -14,18 +14,18 @@ class UVertexShader;
 class UPixelShader;
 struct FVertex;
 
-class UResourceManager
+class UAssetManager
 {
 public:
-	static UResourceManager& GetInstance();
+	static UAssetManager& GetInstance();
 
-	~UResourceManager() = default;
+	~UAssetManager() = default;
 
-	UResourceManager(const UResourceManager&) = delete;
-	UResourceManager(UResourceManager&&) = delete;
+	UAssetManager(const UAssetManager&) = delete;
+	UAssetManager(UAssetManager&&) = delete;
 
-	UResourceManager& operator=(const UResourceManager&) = delete;
-	UResourceManager& operator=(UResourceManager&&) = delete;
+	UAssetManager& operator=(const UAssetManager&) = delete;
+	UAssetManager& operator=(UAssetManager&&) = delete;
 
 	void Initialize(ID3D11Device* Device);
 
@@ -49,7 +49,7 @@ public:
 	void ClearAllResources();
 
 private:
-	UResourceManager() = default;
+	UAssetManager() = default;
 
 	ID3D11Device* Device = nullptr;
 

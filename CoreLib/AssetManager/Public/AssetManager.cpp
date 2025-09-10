@@ -1,20 +1,20 @@
-#include "ResourceManager/Public/ResourceManager.h"
+#include "../Public/AssetManager.h"
 #include "Mesh/Public/Mesh.h"
 #include "Shader/Public/VertexShader.h"
 #include "Shader/Public/PixelShader.h"
 
-UResourceManager& UResourceManager::GetInstance()
+UAssetManager& UAssetManager::GetInstance()
 {
-	static UResourceManager Instance;
+	static UAssetManager Instance;
 	return Instance;
 }
 
-void UResourceManager::Initialize(ID3D11Device* InDevice)
+void UAssetManager::Initialize(ID3D11Device* InDevice)
 {
 	Device = InDevice;
 }
 
-std::shared_ptr<UMesh> UResourceManager::GetOrCreateMesh(const FString& MeshName, const TArray<FVertex>& VertexArray)
+std::shared_ptr<UMesh> UAssetManager::GetOrCreateMesh(const FString& MeshName, const TArray<FVertex>& VertexArray)
 {
 	auto It = Meshes.find(MeshName);
 	if (It != Meshes.end())
@@ -32,7 +32,7 @@ std::shared_ptr<UMesh> UResourceManager::GetOrCreateMesh(const FString& MeshName
 	return NewMesh;
 }
 
-std::shared_ptr<UVertexShader> UResourceManager::GetOrCreateVertexShader(
+std::shared_ptr<UVertexShader> UAssetManager::GetOrCreateVertexShader(
 	const FString& ShaderName,
 	const std::filesystem::path& VertexShaderFilePath,
 	const FString& VertexShaderMain,
@@ -54,7 +54,7 @@ std::shared_ptr<UVertexShader> UResourceManager::GetOrCreateVertexShader(
 	return NewVertexShader;
 }
 
-std::shared_ptr<UPixelShader> UResourceManager::GetOrCreatePixelShader(
+std::shared_ptr<UPixelShader> UAssetManager::GetOrCreatePixelShader(
 	const FString& ShaderName,
 	const std::filesystem::path& PixelShaderFilePath,
 	const FString& PixelShaderMain)
@@ -75,7 +75,7 @@ std::shared_ptr<UPixelShader> UResourceManager::GetOrCreatePixelShader(
 	return NewPixelShader;
 }
 
-std::shared_ptr<UMesh> UResourceManager::GetMesh(const FString& MeshName)
+std::shared_ptr<UMesh> UAssetManager::GetMesh(const FString& MeshName)
 {
 	auto It = Meshes.find(MeshName);
 	if (It != Meshes.end())
@@ -85,7 +85,7 @@ std::shared_ptr<UMesh> UResourceManager::GetMesh(const FString& MeshName)
 	return nullptr;
 }
 
-std::shared_ptr<UVertexShader> UResourceManager::GetVertexShader(const FString& ShaderName)
+std::shared_ptr<UVertexShader> UAssetManager::GetVertexShader(const FString& ShaderName)
 {
 	auto It = VertexShaders.find(ShaderName);
 	if (It != VertexShaders.end())
@@ -95,7 +95,7 @@ std::shared_ptr<UVertexShader> UResourceManager::GetVertexShader(const FString& 
 	return nullptr;
 }
 
-std::shared_ptr<UPixelShader> UResourceManager::GetPixelShader(const FString& ShaderName)
+std::shared_ptr<UPixelShader> UAssetManager::GetPixelShader(const FString& ShaderName)
 {
 	auto It = PixelShaders.find(ShaderName);
 	if (It != PixelShaders.end())
@@ -105,7 +105,7 @@ std::shared_ptr<UPixelShader> UResourceManager::GetPixelShader(const FString& Sh
 	return nullptr;
 }
 
-void UResourceManager::ClearAllResources()
+void UAssetManager::ClearAllResources()
 {
 	Meshes.clear();
 	VertexShaders.clear();

@@ -2,7 +2,7 @@
 
 #include "../Public/SceneManager.h"
 #include "Renderer/Renderer.h"
-#include "ResourceManager/ResourceManager.h"
+#include "AssetManager/AssetManager.h"
 #include "Json/json.hpp"
 #include "Component/Public/CubeComponent.h"
 #include "Component/Public/TriangleComponent.h"
@@ -208,7 +208,7 @@ void USceneManager::SavePrimitive(json::JSON& Obj, int Index, const FVector& Loc
 
 AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type)
 {
-    UResourceManager& ResourceManager = UResourceManager::GetInstance();
+    UAssetManager& ResourceManager = UAssetManager::GetInstance();
     
     AActor* NewActor = new AActor();
     

@@ -12,7 +12,7 @@
 #include "Component/Component.h"
 #include "RayCaster/Raycaster.h"
 #include "Renderer/Renderer.h"
-#include "ResourceManager/ResourceManager.h"
+#include "AssetManager/AssetManager.h"
 #include "Scene/Scene.h"
 #include "TIme/Time.h"
 #include "UI/UI.h"
@@ -65,7 +65,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// TODO: Should follow Naming Convention
 
 	// #5. Resource Manager
-	UResourceManager& ResourceManager = UResourceManager::GetInstance();
+	UAssetManager& ResourceManager = UAssetManager::GetInstance();
 	ResourceManager.Initialize(Renderer.GetDevice());
 
 	// #6. Ray Caster
