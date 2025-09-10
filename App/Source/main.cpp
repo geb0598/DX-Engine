@@ -134,7 +134,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		CameraInputComponent->SetKeyboard(&Window.GetKeyboard());
 
 		// ------------------------- Input Handling ---------------------------- //
-		if (MainCamera && CameraInputComponent)
+		if (!ImIO.WantCaptureKeyboard && MainCamera && CameraInputComponent)
 		{
 			 CameraInputComponent->Update(Timer.GetDeltaTimeInSecond());
 		}
