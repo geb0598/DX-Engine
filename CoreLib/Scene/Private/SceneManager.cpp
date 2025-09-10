@@ -7,6 +7,7 @@
 #include "Component/Public/CubeComponent.h"
 #include "Component/Public/TriangleComponent.h"
 #include "Component/Public/SphereComponent.h"
+#include "Component/Public/PlaneComponent.h"
 
 // Static member initialization
 USceneManager* USceneManager::Instance = nullptr;
@@ -243,6 +244,9 @@ AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const F
     case UPrimitiveComponent::EType::Sphere:
         NewActor->AddComponent<UPrimitiveComponent, USphereComponent>(NewActor, VertexShader, PixelShader);
         break;
+    case UPrimitiveComponent::EType::Plane:
+        NewActor->AddComponent<UPrimitiveComponent, UPlaneComponent>(NewActor, VertexShader, PixelShader);
+        break;
     default:
         // TODO: LOG or WARN Unknown Primitive Type
         NewActor->AddComponent<UPrimitiveComponent, UTriangleComponent>(NewActor, VertexShader, PixelShader);
@@ -263,6 +267,8 @@ FString USceneManager::PrimitiveTypeToString(UPrimitiveComponent::EType Type)
         return "Cube";
     case UPrimitiveComponent::EType::Sphere:
         return "Sphere";
+	case UPrimitiveComponent::EType::Plane:
+		return "Plane";
     default:
         return "Triangle";
     }
@@ -276,6 +282,8 @@ UPrimitiveComponent::EType USceneManager::StringToPrimitiveType(const FString& T
         return UPrimitiveComponent::EType::Cube;
     else if (TypeStr == "Sphere")
         return UPrimitiveComponent::EType::Sphere;
+	else if (TypeStr == "Plane")
+		return UPrimitiveComponent::EType::Plane;
     else
         return UPrimitiveComponent::EType::Triangle;
 }
