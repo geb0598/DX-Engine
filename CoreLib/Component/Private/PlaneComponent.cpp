@@ -4,13 +4,20 @@
 
 FVertexSimple PlaneVertices[] =
 {
-    // Front face (Z+)
     { -0.5f, -0.5f,  0.0f,  1.0f, 0.0f, 0.0f, 1.0f },
     { -0.5f,  0.5f,  0.0f,  1.0f, 1.0f, 0.0f, 1.0f },
     {  0.5f,  0.5f,  0.0f,  0.0f, 0.0f, 1.0f, 1.0f },
     { -0.5f, -0.5f,  0.0f,  1.0f, 0.0f, 0.0f, 1.0f },
     {  0.5f,  0.5f,  0.0f,  0.0f, 0.0f, 1.0f, 1.0f },
     {  0.5f, -0.5f,  0.0f,  0.0f, 1.0f, 0.0f, 1.0f },
+
+    // should be seen on opposite side
+    { -0.5f, -0.5f,  0.0f,  1.0f, 0.0f, 0.0f, 1.0f },
+    {  0.5f,  0.5f,  0.0f,  0.0f, 0.0f, 1.0f, 1.0f },
+    { -0.5f,  0.5f,  0.0f,  1.0f, 1.0f, 0.0f, 1.0f },
+    { -0.5f, -0.5f,  0.0f,  1.0f, 0.0f, 0.0f, 1.0f },
+    {  0.5f, -0.5f,  0.0f,  0.0f, 1.0f, 0.0f, 1.0f },
+    {  0.5f,  0.5f,  0.0f,  0.0f, 0.0f, 1.0f, 1.0f },
 };
 
 UPlaneComponent::UPlaneComponent(AActor* Actor,
