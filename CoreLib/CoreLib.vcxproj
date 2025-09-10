@@ -24,6 +24,7 @@
     <ClCompile Include="Component\Private\CubeComponent.cpp" />
     <ClCompile Include="Component\Private\GizmoComponent.cpp" />
     <ClCompile Include="Component\Private\InputComponent.cpp" />
+    <ClCompile Include="Component\Private\LocationGizmoComponent.cpp" />
     <ClCompile Include="Component\Private\PlaneComponent.cpp" />
     <ClCompile Include="Component\Private\PrimitiveComponent.cpp" />
     <ClCompile Include="Component\Private\RotationGizmoComponent.cpp" />
@@ -72,6 +73,7 @@
     <ClInclude Include="Component\Public\CubeComponent.h" />
     <ClInclude Include="Component\Public\GizmoComponent.h" />
     <ClInclude Include="Component\Public\InputComponent.h" />
+    <ClInclude Include="Component\Public\LocationGizmoComponent.h" />
     <ClInclude Include="Component\Public\PlaneComponent.h" />
     <ClInclude Include="Component\Public\PrimitiveComponent.h" />
     <ClInclude Include="Component\Public\RotationGizmoComponent.h" />

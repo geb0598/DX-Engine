@@ -30,7 +30,7 @@ public:
 	// resolve floating point error
 	static const float EPSILON;
 
-private:
+public:
 	void SetRayWithMouseAndMVP(int MouseX, int MouseY, int ScreenWidth, int ScreenHeight ,FMatrix Modeling, FMatrix View, FMatrix Projection)
 	{
 		float NDCX = 2.0f * MouseX / ScreenWidth - 1.0f;
@@ -458,6 +458,57 @@ private:
 		return GetCloserT(TVerticalAnnulus, THorizontalAnnulus);
 	}
 
+	struct FMollerTrumboreResult
+	{
+		float UParam; // Barycentric Coordinate U
+		float VParam; // Barycentric Coordinate V
+		float TParam; // T
+	};
+
+	std::optional<FMollerTrumboreResult> MollerTrumbore(
+		// NOTE: Triangle Position, CCW Order
+		const FVector& PositionA,
+		const FVector& PositionB,
+		const FVector& PositionC
+	)
+	{
+		FVector EdgeA = PositionB - PositionA;
+		FVector EdgeB = PositionC - PositionA;
+
+		FVector QVector = CurrentRay.Vector.Cross(EdgeB);
+		double Determinant = EdgeA.Dot(QVector);
+
+		// NOTE: Check determinant with Epsilone Value
+		if (Determinant < 1e-9)
+		{
+			return std::nullopt;
+		}
+
+		FVector TVector = (CurrentRay.Point - PositionA);
+		FVector PVector = TVector.Cross(EdgeA);
+		FMollerTrumboreResult Result = {};
+		Result.UParam = TVector.Dot(QVector) / Determinant;
+		Result.VParam = CurrentRay.Vector.Dot(PVector) / Determinant;
+		Result.TParam = PVector.Dot(EdgeB) / Determinant;
+
+		if (!(0.0 < Result.UParam && Result.UParam < 1.0))
+		{
+			return std::nullopt;
+		}
+
+		if (!(0.0 < Result.VParam && Result.VParam < 1.0))
+		{
+			return std::nullopt;
+		}
+
+		if (Result.TParam < 1e-9)
+		{
+			return std::nullopt;
+		}
+
+		return Result;
+	}
+
 	std::optional<float> GetRealWorldDistance(std::optional<float> T)
 	{
 		if (!T)
@@ -516,6 +567,16 @@ public:
 
 	std::optional<float> GetHitResultAtScreenPosition(
 		USphereComponent& SphereComponent,
+		int32 MouseX,
+		int32 MouseY,
+		int32 ScreenWidth,
+		int32 ScreenHeight,
+		const FMatrix& ModelingMatrix,
+		const FMatrix& ViewMatrix,
+		const FMatrix& ProjectionMatrix
+	);
+	std::optional<float> GetHitResultAtScreenPosition(
+		UPlaneComponent& PlaneComponent,
 		int32 MouseX,
 		int32 MouseY,
 		int32 ScreenWidth,
