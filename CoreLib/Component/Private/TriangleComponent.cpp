@@ -21,8 +21,8 @@ UTriangleComponent::UTriangleComponent(AActor* Actor,
 		VertexArray.push_back(static_cast<FVertex>(triangle_vertices[i]));
 	}
 
-	UAssetManager& ResourceManager = UAssetManager::GetInstance();
-	Mesh = ResourceManager.GetOrCreateMesh("TriangleMesh", VertexArray);
+	UAssetManager& AssetManager = UAssetManager::GetInstance();
+	Mesh = AssetManager.GetOrCreateMesh("TriangleMesh", VertexArray);
 }
 
 UTriangleComponent::EType UTriangleComponent::GetType() const

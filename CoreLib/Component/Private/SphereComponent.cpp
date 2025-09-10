@@ -2416,8 +2416,8 @@ USphereComponent::USphereComponent(AActor* Actor,
 		VertexArray.push_back(static_cast<FVertex>(sphere_vertices[i]));
 	}
 
-	UAssetManager& ResourceManager = UAssetManager::GetInstance();
-	Mesh = ResourceManager.GetOrCreateMesh("SphereMesh", VertexArray);
+	UAssetManager& AssetManager = UAssetManager::GetInstance();
+	Mesh = AssetManager.GetOrCreateMesh("SphereMesh", VertexArray);
 }
 
 USphereComponent::EType USphereComponent::GetType() const

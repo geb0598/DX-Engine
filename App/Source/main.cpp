@@ -79,7 +79,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	UGridManager GridManager(Renderer.GetDevice(), Renderer.GetDeviceContext());
 	GridManager.Initialize();
 
-	AActor* MainCamera = SceneManager.GetMainCameraActor();
+	// #8. Initialize XYZ Axis (once per application)
+	ULineDrawer::InitializeXYZAxis(Renderer.GetDevice());
+
+	//AActor* MainCamera = SceneManager.GetMainCameraActor();
 	
 	// ------------------------------- Axis Setup ------------------------------- //
 
@@ -121,7 +124,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		UScene* CurrentScene = SceneManager.GetCurrentScene();
 
 		// NOTE: Update Main Camera
-		MainCamera = SceneManager.GetMainCameraActor();
+		AActor* MainCamera = SceneManager.GetMainCameraActor();
 
 		auto CameraComponent = MainCamera->GetComponent<UCameraComponent>();
 		auto CameraInputComponent = MainCamera->GetComponent<UInputComponent>();
@@ -164,6 +167,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 		FMatrix VP = ViewMatrix * ProjectionMatrix;
 
+		// #1. Draw World Grid once per frame (before object rendering)
 		PSConstants GridInfo = {};
 
 		GridInfo.FadeDistance = 100.0f;
@@ -180,9 +184,34 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		GridManager.Bind(GridInfo);
 		GridManager.Render();
 
+		// #1.5. Draw XYZ Axis once per frame (before object rendering)
+		{
+			auto& AssetManager = UAssetManager::GetInstance();
+			auto VertexShader = AssetManager.GetVertexShader("DefaultVertexShader");
+			auto PixelShader = AssetManager.GetPixelShader("DefaultPixelShader");
+
+			if (VertexShader && PixelShader)
+			{
+				VertexShader->Bind(Renderer.GetDeviceContext(), "constants");
+				PixelShader->Bind(Renderer.GetDeviceContext(), "constants");
+
+				VertexShader->UpdateConstantBuffer(
+					Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(VP.M)
+				);
+
+				// Default pixel shader constant (not selected)
+				int bIsSelected = 0;
+				PixelShader->UpdateConstantBuffer(
+					Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(&bIsSelected)
+				);
+
+				ULineDrawer::RenderXYZAxis(Renderer.GetDeviceContext());
+			}
+		}
+
 		const TArray<AActor*> SceneActors = CurrentScene->GetActors();
 
-		// #1. Object Picking
+		// #2. Object Picking
 		AActor* PickedActor = nullptr;
 		float PickedActorDistance = (std::numeric_limits<float>::max)();
 
@@ -266,7 +295,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 		}
 
-		// #2. Object Rendering
+		// #3. Object Rendering
 		for (auto Actor : SceneActors)
 		{
 			if (Actor == nullptr)
@@ -296,15 +325,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			PixelShader->Bind(Renderer.GetDeviceContext(), "constants");
 			// PixelShader->Bind(Renderer.GetDeviceContext());
 
-			// --------------------- Draw XYZ Axis first-------------------- //
-
-			VertexShader->UpdateConstantBuffer(
-				Renderer.GetDeviceContext(), "constants", reinterpret_cast<void*>(VP.M)
-			);
-
-			ULineDrawer::RenderXYZAxis(Renderer.GetDevice(), Renderer.GetDeviceContext());
-
-			// --------------------- Then Draw Primitives------------------- //
+			// --------------------- Draw Primitives------------------- //
 
 			FMatrix MVP = ModelMatrix * ViewMatrix * ProjectionMatrix;
 
@@ -323,13 +344,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			PrimitiveComponent->Render(Renderer.GetDeviceContext());
 		}
 
-		// #2. Rendering UI
+		// #4. Rendering UI
 		EditorUI.RenderUI();
 
 		Renderer.SwapBuffer();
 	}
 
+	USceneManager::DestroyInstance();
+
+	UAssetManager::GetInstance().ClearAllResources();
+
 	GridManager.Release();
+
+	// Release XYZ Axis resources
+	ULineDrawer::ReleaseXYZAxis();
 
 	// NOTE: Release UI Manager
 	EditorUI.Release();

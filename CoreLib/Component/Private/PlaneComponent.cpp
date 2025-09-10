@@ -24,8 +24,8 @@ UPlaneComponent::UPlaneComponent(AActor* Actor,
         VertexArray.push_back(static_cast<FVertex>(PlaneVertices[i]));
     }
 
-    UAssetManager& ResourceManager = UAssetManager::GetInstance();
-    Mesh = ResourceManager.GetOrCreateMesh("PlaneMesh", VertexArray);
+    UAssetManager& AssetManager = UAssetManager::GetInstance();
+    Mesh = AssetManager.GetOrCreateMesh("PlaneMesh", VertexArray);
 }
 
 UPlaneComponent::EType UPlaneComponent::GetType() const

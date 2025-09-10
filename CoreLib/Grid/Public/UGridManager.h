@@ -3,6 +3,7 @@
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
+#include <memory>
 
 #include "Types/Types.h"
 
@@ -20,6 +21,10 @@ struct PSConstants
 	float InvViewProj[4][4]; // 64
 };
 
+// Forward declarations
+class UVertexShader;
+class UPixelShader;
+
 // didn't use VertexShader and PixelShader because this function use shader differently.
 // for example, this function does not use constant buffer on vertex shader
 // but use it on pixel shader
@@ -29,9 +34,9 @@ private:
 	ID3D11Device* Device;
 	ID3D11DeviceContext* DeviceContext;
 
-	ID3D11VertexShader* VertexShader;
-	ID3D11PixelShader* PixelShader;
-	ID3D11InputLayout* InputLayout;
+	// Use shared_ptr to reference shaders from AssetManager
+	std::shared_ptr<UVertexShader> GridVertexShader;
+	std::shared_ptr<UPixelShader> GridPixelShader;
 	ID3D11Buffer* VertexBuffer;
 	ID3D11Buffer* PSConstantBuffer;
 	ID3D11DepthStencilState* GridDepthStencilState;

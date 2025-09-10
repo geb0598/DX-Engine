@@ -64,8 +64,8 @@ UCubeComponent::UCubeComponent(AActor* Actor,
 		VertexArray.push_back(static_cast<FVertex>(cube_vertices[i]));
 	}
 
-	UAssetManager& ResourceManager = UAssetManager::GetInstance();
-	Mesh = ResourceManager.GetOrCreateMesh("CubeMesh", VertexArray);
+	UAssetManager& AssetManager = UAssetManager::GetInstance();
+	Mesh = AssetManager.GetOrCreateMesh("CubeMesh", VertexArray);
 }
 
 UCubeComponent::EType UCubeComponent::GetType() const

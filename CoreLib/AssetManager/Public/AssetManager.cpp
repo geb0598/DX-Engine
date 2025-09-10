@@ -12,6 +12,24 @@ UAssetManager& UAssetManager::GetInstance()
 void UAssetManager::Initialize(ID3D11Device* InDevice)
 {
 	Device = InDevice;
+
+	TArray<D3D11_INPUT_ELEMENT_DESC> InputLayoutDesc(
+		std::begin(FVertex::InputLayoutDesc),
+		std::end(FVertex::InputLayoutDesc)
+	);
+
+	GetOrCreateVertexShader(
+		"DefaultVertexShader",
+		"./Shader/VertexShader.hlsl",
+		"main",
+		InputLayoutDesc
+	);
+
+	GetOrCreatePixelShader(
+		"DefaultPixelShader",
+		"./Shader/PixelShader.hlsl",
+		"main"
+	);
 }
 
 std::shared_ptr<UMesh> UAssetManager::GetOrCreateMesh(const FString& MeshName, const TArray<FVertex>& VertexArray)

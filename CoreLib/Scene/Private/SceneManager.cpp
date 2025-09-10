@@ -18,6 +18,7 @@ USceneManager::USceneManager()
 
 USceneManager::~USceneManager()
 {
+	CurrentScene.reset();
 }
 
 USceneManager& USceneManager::GetInstance()
@@ -209,7 +210,7 @@ void USceneManager::SavePrimitive(json::JSON& Obj, int Index, const FVector& Loc
 
 AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const FVector& Rotation, const FVector& Scale, UPrimitiveComponent::EType Type)
 {
-    UAssetManager& ResourceManager = UAssetManager::GetInstance();
+    UAssetManager& AssetManager = UAssetManager::GetInstance();
     
     AActor* NewActor = new AActor();
     
@@ -219,14 +220,14 @@ AActor* USceneManager::CreateActorFromPrimitive(const FVector& Location, const F
     );
 
     // -------------------------------------------------------------------------- //
-    std::shared_ptr<UVertexShader> VertexShader = ResourceManager.GetOrCreateVertexShader(
+    std::shared_ptr<UVertexShader> VertexShader = AssetManager.GetOrCreateVertexShader(
         "DefaultVertexShader",
         "./Shader/VertexShader.hlsl", 
         "main",
         InputLayoutDesc
     );
     
-    std::shared_ptr<UPixelShader> PixelShader = ResourceManager.GetOrCreatePixelShader(
+    std::shared_ptr<UPixelShader> PixelShader = AssetManager.GetOrCreatePixelShader(
         "DefaultPixelShader",
         "./Shader/PixelShader.hlsl",
         "main"

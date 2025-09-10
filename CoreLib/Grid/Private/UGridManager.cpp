@@ -1,11 +1,13 @@
 #include "../Public/UGridManager.h"
+#include "AssetManager/Public/AssetManager.h"
+#include "Shader/Shader.h"
+#include "Mesh/Public/Vertex.h"
 
 UGridManager::UGridManager(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext)
 	: Device(Device),
 	DeviceContext(DeviceContext),
-	VertexShader(nullptr),
-	PixelShader(nullptr),
-	InputLayout(nullptr),
+	GridVertexShader(nullptr),
+	GridPixelShader(nullptr),
 	VertexBuffer(nullptr),
 	PSConstantBuffer(nullptr),
 	GridDepthStencilState(nullptr),
@@ -20,103 +22,38 @@ void UGridManager::Initialize()
 	// Recieve function return
 	HRESULT HResult;
 
-	// compile vertex shaders
-	ID3DBlob* VertexShaderBlob = nullptr;
-	ID3DBlob* VertexShaderErrorBlob = nullptr;
-
-	HResult = D3DCompileFromFile(
-		L"./Shader/GridVertexShader.hlsl",
-		nullptr,
-		nullptr,
-		"GridVS",
-		"vs_5_0",
-		0,
-		0,
-		&VertexShaderBlob,
-		&VertexShaderErrorBlob
-	);
-
-	// TODO: Improve Error Handling
-	if (FAILED(HResult))
-	{
-		exit(1);
-	}
-
-	HResult = Device->CreateVertexShader(
-		VertexShaderBlob->GetBufferPointer(),
-		VertexShaderBlob->GetBufferSize(),
-		nullptr,
-		&VertexShader
-	);
-
-	// TODO: Improve Error Handling
-	if (FAILED(HResult))
-	{
-		exit(1);
-	}
-
+	// Define Input Layout
 	D3D11_INPUT_ELEMENT_DESC InputLayoutDesc[] =
 	{
 		{"POSITION", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
 	};
 
-	HResult = Device->CreateInputLayout(
-		InputLayoutDesc,
-		ARRAYSIZE(InputLayoutDesc),
-		VertexShaderBlob->GetBufferPointer(),
-		VertexShaderBlob->GetBufferSize(),
-		&InputLayout
+	TArray<D3D11_INPUT_ELEMENT_DESC> InputLayoutDescArray(
+		std::begin(InputLayoutDesc),
+		std::end(InputLayoutDesc)
 	);
 
-	if (FAILED(HResult))
-		exit(1);
-
-	if (VertexShaderBlob)
-		VertexShaderBlob->Release();
-
-	if (VertexShaderErrorBlob)
-		VertexShaderErrorBlob->Release();
-
-	// create pixelshader
-
-	ID3DBlob* PixelShaderBlob = nullptr;
-	ID3DBlob* PixelShaderErrorBlob = nullptr;
-
-	HResult = D3DCompileFromFile(
-		L"./Shader/GridPixelShader.hlsl",
-		nullptr,
-		nullptr,
-		"GridPS",
-		"ps_5_0",
-		0,
-		0,
-		&PixelShaderBlob,
-		&PixelShaderErrorBlob
+	// Get Grid shaders from AssetManager instead of creating them
+	auto& AssetManager = UAssetManager::GetInstance();
+	GridVertexShader = AssetManager.GetOrCreateVertexShader(
+		"GridVertexShader",
+		"./Shader/GridVertexShader.hlsl",
+		"GridVS",
+		InputLayoutDescArray
 	);
 
-	// TODO: Improve Error Handling
-	if (FAILED(HResult))
+	GridPixelShader = AssetManager.GetOrCreatePixelShader(
+		"GridPixelShader",
+		"./Shader/GridPixelShader.hlsl",
+		"GridPS"
+	);
+
+	if (!GridVertexShader || !GridPixelShader)
 	{
-		exit(1);
+		exit(1); // TODO: Improve Error Handling
 	}
 
-	HResult = Device->CreatePixelShader(
-		PixelShaderBlob->GetBufferPointer(),
-		PixelShaderBlob->GetBufferSize(),
-		nullptr,
-		&PixelShader
-	);
-
-	// TODO: Improve Error Handling
-	if (FAILED(HResult))
-	{
-		exit(1);
-	}
-
-	if (PixelShaderBlob)
-		PixelShaderBlob->Release();
-	if (PixelShaderErrorBlob)
-		PixelShaderErrorBlob->Release();
+	// InputLayout is managed by AssetManager's VertexShader, no need to create separately
 
 	float VertexArray[3][2] = { {-1.0f, -1.0f}, {3.0f, -1.0f}, {-1.0, 3.0f} };
 
@@ -144,7 +81,7 @@ void UGridManager::Initialize()
 
 	D3D11_BUFFER_DESC cbDesc = {};
 	cbDesc.ByteWidth = sizeof(PSConstants);
-	cbDesc.Usage = D3D11_USAGE_DEFAULT;        // GPU¿¡¼­ ¾÷µ¥ÀÌÆ® °¡´É
+	cbDesc.Usage = D3D11_USAGE_DEFAULT;        // GPUï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ® ï¿½ï¿½ï¿½ï¿½
 	cbDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	cbDesc.CPUAccessFlags = 0;
 	cbDesc.MiscFlags = 0;
@@ -178,18 +115,21 @@ void UGridManager::Initialize()
 
 void UGridManager::Bind(PSConstants GridInfo)
 {
-	DeviceContext->IASetInputLayout(InputLayout);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	UINT Offset = 0;
 	DeviceContext->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 
-	DeviceContext->VSSetShader(VertexShader, nullptr, 0);
+	// Use shaders from AssetManager (InputLayout is handled by VertexShader->Bind())
+	if (GridVertexShader && GridPixelShader)
+	{
+		GridVertexShader->Bind(DeviceContext);
+		GridPixelShader->Bind(DeviceContext);
+	}
 
-	DeviceContext->PSSetShader(PixelShader, nullptr, 0);
 	DeviceContext->UpdateSubresource(PSConstantBuffer, 0, nullptr, &GridInfo, 0, 0);
 	DeviceContext->PSSetConstantBuffers(
-		1,              // slot num (HLSL¿¡¼­ register(bn))
+		1,              // slot num (HLSLï¿½ï¿½ï¿½ï¿½ register(bn))
 		1,              // buffer num
 		&PSConstantBuffer
 	);
@@ -205,21 +145,11 @@ void UGridManager::Render()
 
 void UGridManager::Release()
 {
-	if (VertexShader)
-	{
-		VertexShader->Release();
-		VertexShader = nullptr;
-	}
-	if (PixelShader)
-	{
-		PixelShader->Release();
-		PixelShader = nullptr;
-	}
-	if (InputLayout)
-	{
-		InputLayout->Release();
-		InputLayout = nullptr;
-	}
+	// Don't release shaders as they're managed by AssetManager
+	GridVertexShader = nullptr;
+	GridPixelShader = nullptr;
+
+	// InputLayout is managed by AssetManager's VertexShader, so don't release it here
 	if (VertexBuffer)
 	{
 		VertexBuffer->Release();

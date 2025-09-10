@@ -30,11 +30,12 @@ public:
 	ULineDrawer& operator=(const ULineDrawer&) = delete;
 	ULineDrawer& operator=(ULineDrawer&&) noexcept = default;
 
-	void Bind(const TArray<FVertex>& VertexArray);
 	void Render();
 	void Release();
 
-	static void RenderXYZAxis(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext);
+	static void InitializeXYZAxis(ID3D11Device* Device);
+	static void RenderXYZAxis(ID3D11DeviceContext* DeviceContext);
+	static void ReleaseXYZAxis();
 
 private:
 	ID3D11Buffer* VertexBuffer;
@@ -43,4 +44,10 @@ private:
 
 	UINT VertexCount;
 	UINT Stride;
+
+	// Static resources for XYZ axis rendering
+	static ID3D11Buffer* XAxisVertexBuffer;
+	static ID3D11Buffer* YAxisVertexBuffer;
+	static ID3D11Buffer* ZAxisVertexBuffer;
+	static bool bAxisInitialized;
 };
