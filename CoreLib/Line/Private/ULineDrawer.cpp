@@ -23,7 +23,7 @@ FVertexSimple ZAxisVertices[] =
 };
 
 ULineDrawer::ULineDrawer(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext)
-	: Device(Device), DeviceContext(DeviceContext)
+	: Device(Device), DeviceContext(DeviceContext), VertexBuffer(nullptr)
 {
 }
 
@@ -54,6 +54,15 @@ void ULineDrawer::Render()
 	DeviceContext->Draw(VertexCount, 0);
 }
 
+void ULineDrawer::Release()
+{
+	if (VertexBuffer)
+	{
+		VertexBuffer->Release();
+		VertexBuffer = nullptr;
+	}
+}
+
 void ULineDrawer::RenderXYZAxis(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext)
 {
 	ULineDrawer LineDrawer(Device, DeviceContext);
@@ -63,18 +72,22 @@ void ULineDrawer::RenderXYZAxis(ID3D11Device* Device, ID3D11DeviceContext* Devic
 		XAxisArray.push_back((FVertex)XAxisVertices[i]);
 	LineDrawer.Bind(XAxisArray);
 	LineDrawer.Render();
+	LineDrawer.Release();
 
 	TArray<FVertex> YAxisArray;
 	for (int i = 0; i < sizeof(YAxisVertices) / sizeof(FVertexSimple); i++)
 		YAxisArray.push_back((FVertex)YAxisVertices[i]);
 	LineDrawer.Bind(YAxisArray);
 	LineDrawer.Render();
+	LineDrawer.Release();
 
 	TArray<FVertex> ZAxisArray;
 	for (int i = 0; i < sizeof(ZAxisVertices) / sizeof(FVertexSimple); i++)
 		ZAxisArray.push_back((FVertex)ZAxisVertices[i]);
 	LineDrawer.Bind(ZAxisArray);
 	LineDrawer.Render();
+	LineDrawer.Release();
 
 	return;
 }
+

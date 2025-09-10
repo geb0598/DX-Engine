@@ -32,6 +32,7 @@ public:
 
 	void Bind(const TArray<FVertex>& VertexArray);
 	void Render();
+	void Release();
 
 	static void RenderXYZAxis(ID3D11Device* Device, ID3D11DeviceContext* DeviceContext);
 
