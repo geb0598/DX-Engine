@@ -1,6 +1,6 @@
 #include "Component/Public/CubeComponent.h"
 #include "RayCaster/Raycaster.h"
-#include "Renderer/Renderer.h"
+#include "ResourceManager/ResourceManager.h"
 
 FVertexSimple cube_vertices[] =
 {
@@ -64,8 +64,8 @@ UCubeComponent::UCubeComponent(AActor* Actor,
 		VertexArray.push_back(static_cast<FVertex>(cube_vertices[i]));
 	}
 
-	auto& Renderer = URenderer::GetInstance();
-	Mesh = std::make_shared<UMesh>(Renderer.GetDevice(), VertexArray);
+	UResourceManager& ResourceManager = UResourceManager::GetInstance();
+	Mesh = ResourceManager.GetOrCreateMesh("CubeMesh", VertexArray);
 }
 
 UCubeComponent::EType UCubeComponent::GetType() const

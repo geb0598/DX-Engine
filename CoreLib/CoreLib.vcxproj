@@ -37,6 +37,7 @@
     <ClCompile Include="Object\Private\Object.cpp" />
     <ClCompile Include="Renderer\Private\Renderer.cpp" />
     <ClCompile Include="RayCaster\Private\URayCaster.cpp" />
+    <ClCompile Include="ResourceManager\Private\ResourceManager.cpp" />
     <ClCompile Include="Scene\Private\Scene.cpp" />
     <ClCompile Include="Scene\Private\SceneManager.cpp" />
     <ClCompile Include="Shader\Private\PixelShader.cpp" />
@@ -85,6 +86,8 @@
     <ClInclude Include="Raycaster\Raycaster.h" />
     <ClInclude Include="Renderer\Public\Renderer.h" />
     <ClInclude Include="RayCaster\Public\URayCaster.h" />
+    <ClInclude Include="ResourceManager\Public\ResourceManager.h" />
+    <ClInclude Include="ResourceManager\ResourceManager.h" />
     <ClInclude Include="Scene\Public\Scene.h" />
     <ClInclude Include="Scene\Public\SceneManager.h" />
     <ClInclude Include="Scene\Scene.h" />
