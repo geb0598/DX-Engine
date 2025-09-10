@@ -139,30 +139,39 @@ struct FVector2D
 
 	FVector2D(float InX = 0.0f, float InY = 0.0f) : X(InX), Y(InY) {}
 
-	// 내적 (Dot Product)
+	FVector2D operator+(const FVector2D& Other) const { return FVector2D(X + Other.X, Y + Other.Y); }
+	FVector2D operator-(const FVector2D& Other) const { return FVector2D(X - Other.X, Y - Other.Y); }
+	FVector2D operator*(float Scalar) const { return FVector2D(X * Scalar, Y * Scalar); }
+
+	//  (Dot Product)
 	float Dot(const FVector2D& Other) const
 	{
 		return X * Other.X + Y * Other.Y;
 	}
 
-	// 벡터의 길이
+	//  
 	float Length() const
 	{
 		return sqrtf(X * X + Y * Y);
 	}
 
-	// 벡터 정규화 (자신을 변경)
+	float LengthSquared() const
+	{
+		return X * X + Y * Y;
+	}
+
+	//  화 (黴 )
 	void Normalize()
 	{
 		float Len = Length();
-		if (Len > 1e-6f) // 0으로 나누는 것을 방지
+		if (Len > 1e-6f) // 0   
 		{
 			X /= Len;
 			Y /= Len;
 		}
 	}
 
-	// 정규화된 벡터를 새로 만들어 반환
+	// 화 拷   환
 	FVector2D GetNormalized() const
 	{
 		FVector2D Result = *this;
@@ -194,7 +203,7 @@ struct FVector4
 	}
 	FVector4 operator*=(float Scalar)
 	{ 
-		X *= Scalar;
+		X *= Scalar; 
 		Y *= Scalar; 
 		Z *= Scalar;
 		W *= Scalar; 
@@ -218,11 +227,11 @@ struct FVector4
 	}
 	FVector4 operator+=(const FVector4& Other) 
 	{
-		X += Other.X;
+		X += Other.X; 
 		Y += Other.Y;
 		Z += Other.Z; 
 		W += Other.W; 
-		return *this;
+		return *this; 
 	}
 	FVector4 operator-(const FVector4& Other) const
 	{
@@ -234,7 +243,7 @@ struct FVector4
 		Y -= Other.Y;
 		Z -= Other.Z; 
 		W -= Other.W; 
-		return *this;
+		return *this; 
 	}
 	bool operator==(const FVector4& Other) const
 	{

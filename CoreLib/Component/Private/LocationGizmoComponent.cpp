@@ -7,6 +7,7 @@
 #include "RayCaster/Raycaster.h"
 #include "Utilities/Utilities.h"
 #include <limits>
+#include <algorithm>
 
 ULocationGizmoComponent::ULocationGizmoComponent(AActor* Actor)
     : UGizmoComponent(Actor)
@@ -64,10 +65,12 @@ void ULocationGizmoComponent::Render(URenderer& Renderer, const FMatrix& View, c
 
     auto CameraLocation = USceneManager::GetInstance().GetMainCameraActor()->GetComponent<USceneComponent>()->GetLocation();
     float Distance = (GetLocation() - CameraLocation).Length();
-    float ScaleFactor = Distance * 0.1f; // ũ  
+    float ScaleFactor = Distance * 0.1f;
     SetScale({ ScaleFactor, ScaleFactor, ScaleFactor });
 
     AActor* Axes[] = { XAxisActor, YAxisActor, ZAxisActor };
+    FVector CameraForward = (GetLocation() - CameraLocation).GetNormalized();
+
     for (int i = 0; i < 3; ++i)
     {
         auto SceneComp = Axes[i]->GetComponent<USceneComponent>();
@@ -75,11 +78,51 @@ void ULocationGizmoComponent::Render(URenderer& Renderer, const FMatrix& View, c
 
         SceneComp->SetLocation(GetLocation());
         SceneComp->SetScale(GetScale());
-        //// Y Z  ü ȸ  
-        //if (i == 1) SceneComp->SetRotation({ 0, 0, 90 }); // Y-axis
-        if (i == 2) SceneComp->SetRotation({ 0, -180, 0 }); // Z-axis
 
-        FMatrix ModelMatrix = SceneComp->GetModelingMatrix();
+       /* FMatrix ModelMatrix;*/
+        //if (i == 2) // Z-axis should face the camera
+        //{
+        //    FVector NewZ = CameraForward;
+        //    FVector Up = FVector(0, 1, 0);
+        //    // If NewZ is too close to World Up, use a different Up vector to avoid issues with cross product
+        //    if (abs(NewZ.Dot(Up)) > 0.99f)
+        //    {
+        //        Up = FVector(1, 0, 0);
+        //    }
+        //    FVector NewX = Up.Cross(NewZ).GetNormalized();
+        //    FVector NewY = NewZ.Cross(NewX).GetNormalized();
+
+        //    FMatrix RotationMatrix = FMatrix(
+        //        NewX.X, NewX.Y, NewX.Z, 0,
+        //        NewY.X, NewY.Y, NewY.Z, 0,
+        //        NewZ.X, NewZ.Y, NewZ.Z, 0,
+        //        0, 0, 0, 1
+        //    );
+        //    
+        //    FMatrix ScaleMatrix = FMatrix::CreateScale(GetScale());
+        //    FMatrix TranslationMatrix = FMatrix::CreateTranslation(GetLocation());
+        //    ModelMatrix = ScaleMatrix * RotationMatrix * TranslationMatrix;
+        //}
+        //else // X and Y axes remain world-aligned
+        //{
+        //    ModelMatrix = SceneComp->GetModelingMatrix();
+        //}
+
+        FMatrix ModelMatrix;
+        if (i == 2) // Z축 (파란색)일 경우에만 특별 처리
+        {
+            // 화살표 모델을 X축 기준으로 180도 회전시켜 방향을 뒤집습니다.
+            const float PI = 3.1415926535f;
+            FMatrix RotationMatrix = FMatrix::CreateRotationX(PI);
+
+            // 기본 모델 행렬에 추가로 회전 변환을 곱해줍니다.
+            ModelMatrix = RotationMatrix * SceneComp->GetModelingMatrix();
+        }
+        else // X, Y 축은 기존 방식 그대로 사용
+        {
+            ModelMatrix = SceneComp->GetModelingMatrix();
+        }
+
         FMatrix MVP = ModelMatrix * View * Proj;
 
         int bIsSelected = (static_cast<int>(ActiveAxis) == i + 1) ? 1 : 0;
@@ -102,37 +145,74 @@ void ULocationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
 
     auto CameraActor = USceneManager::GetInstance().GetMainCameraActor();
     auto CameraSceneComp = CameraActor->GetComponent<USceneComponent>();
+    FVector RayOrigin = CameraSceneComp->GetLocation();
+    FVector GizmoOrigin = TargetActor->GetComponent<USceneComponent>()->GetLocation();
 
     // 1. 드래그 시작 처리
     if (Mouse.IsLeftPressed() && !bIsDragging)
     {
-        // (기존과 동일한 축 선택 로직)
-        float MinSelectDistance = 0.2f;
-        float ClosestDistance = (std::numeric_limits<float>::max)();
+        // Z축은 카메라 방향을 기준으로 동적으로 계산
+        FVector CameraForward = (GizmoOrigin - RayOrigin).GetNormalized();
+        FVector AxesDirs[] = { FVector(1,0,0), FVector(0,1,0), FVector(0,0,-1) };
         EAxis ClosestAxis = EAxis::None;
 
-        FVector RayOrigin = CameraSceneComp->GetLocation();
-        float NDCX = 2.0f * MouseX / Window.GetWidth() - 1.0f;
-        float NDCY = 1.0f - 2.0f * MouseY / Window.GetHeight();
-        FMatrix InvViewProj = (View * Proj).Inverse();
-        FVector4 WorldNear = FVector4(NDCX, NDCY, 0.0f, 1.0f) * InvViewProj;
-        WorldNear /= WorldNear.W;
-        FVector RayDir = (WorldNear.ToVector3() - RayOrigin).GetNormalized();
+        float ClosestDistance2D = (std::numeric_limits<float>::max)();
+        const float MinPixelDistance = 10.0f;
 
-        FVector GizmoOrigin = TargetActor->GetComponent<USceneComponent>()->GetLocation();
-        FVector AxesDirs[] = { FVector(1,0,0), FVector(0,1,0), FVector(0,0,1) };
+        FMatrix VP = View * Proj;
+        float ScaleFactor = (GizmoOrigin - RayOrigin).Length() * 0.1f;
 
         for (int i = 0; i < 3; ++i)
         {
             FVector AxisDir = AxesDirs[i];
-            FVector CrossProduct = RayDir.Cross(AxisDir);
-            float Denom = CrossProduct.LengthSquared();
-            if (Denom < 1e-6f) continue;
-            float Dist = abs((GizmoOrigin - RayOrigin).Dot(CrossProduct)) / sqrt(Denom);
-            if (Dist < ClosestDistance)
+            
+            FVector AxisStart_World = GizmoOrigin;
+            // Z축 모델은 (0,0,1) 방향으로 만들어졌으므로, 월드 방향으로 변환 없이 그대로 사용
+            FVector AxisEnd_World = GizmoOrigin + (i == 2 ? FVector(0,0,-1) : AxisDir) * 1.0f * ScaleFactor;
+
+            //FMatrix ModelMatrix;
+            //if (i == 2) // Z축 렌더링과 동일한 회전 적용
+            //{
+            //     FVector NewZ = CameraForward;
+            //     FVector Up = FVector(0, 1, 0);
+            //     if (abs(NewZ.Dot(Up)) > 0.99f) { Up = FVector(1, 0, 0); }
+            //     FVector NewX = Up.Cross(NewZ).GetNormalized();
+            //     FVector NewY = NewZ.Cross(NewX).GetNormalized();
+            //     ModelMatrix = FMatrix(NewX.X, NewX.Y, NewX.Z, 0, NewY.X, NewY.Y, NewY.Z, 0, NewZ.X, NewZ.Y, NewZ.Z, 0, 0, 0, 0, 1);
+            //     AxisEnd_World = GizmoOrigin + ModelMatrix.TransformDirection(FVector(0,0,1)) * ScaleFactor;
+            //}
+
+
+            FVector4 AxisStart_Clip = FVector4(AxisStart_World, 1.0f) * VP;
+            FVector4 AxisEnd_Clip = FVector4(AxisEnd_World, 1.0f) * VP;
+
+            if (AxisStart_Clip.W <= 0 || AxisEnd_Clip.W <= 0) continue;
+
+            AxisStart_Clip /= AxisStart_Clip.W;
+            AxisEnd_Clip /= AxisEnd_Clip.W;
+
+            FVector2D AxisStart_Screen((AxisStart_Clip.X + 1.0f) * 0.5f * Window.GetWidth(), (1.0f - AxisStart_Clip.Y) * 0.5f * Window.GetHeight());
+            FVector2D AxisEnd_Screen((AxisEnd_Clip.X + 1.0f) * 0.5f * Window.GetWidth(), (1.0f - AxisEnd_Clip.Y) * 0.5f * Window.GetHeight());
+
+            FVector2D MousePos(static_cast<float>(MouseX), static_cast<float>(MouseY));
+            FVector2D LineVec = AxisEnd_Screen - AxisStart_Screen;
+            FVector2D PointVec = MousePos - AxisStart_Screen;
+            
+            float LineLenSq = LineVec.LengthSquared();
+            float t = 0.0f;
+            if (LineLenSq > 1e-6f)
             {
-                ClosestDistance = Dist;
-                if (Dist < MinSelectDistance)
+                t = PointVec.Dot(LineVec) / LineLenSq;
+                t = (std::max)(0.0f, (std::min)(1.0f, t));
+            }
+
+            FVector2D ClosestPointOnLine = AxisStart_Screen + LineVec * t;
+            float Dist2D = (MousePos - ClosestPointOnLine).Length();
+
+            if (Dist2D < ClosestDistance2D)
+            {
+                ClosestDistance2D = Dist2D;
+                if (Dist2D < MinPixelDistance)
                 {
                     ClosestAxis = static_cast<EAxis>(i + 1);
                 }
@@ -146,8 +226,13 @@ void ULocationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
             auto TargetSceneComp = TargetActor->GetComponent<USceneComponent>();
             DragStartActorLocation = TargetSceneComp->GetLocation();
 
-            // [수정] 드래그 평면 생성 및 시작점 계산
-            // 뷰 행렬의 세 번째 열이 카메라의 Forward 벡터입니다. (행렬이 Transpose 되어있으므로)
+            float NDCX = 2.0f * MouseX / Window.GetWidth() - 1.0f;
+            float NDCY = 1.0f - 2.0f * MouseY / Window.GetHeight();
+            FMatrix InvViewProj = (View * Proj).Inverse();
+            FVector4 WorldNear = FVector4(NDCX, NDCY, 0.0f, 1.0f) * InvViewProj;
+            WorldNear /= WorldNear.W;
+            FVector RayDir = (WorldNear.ToVector3() - RayOrigin).GetNormalized();
+
             DragPlaneNormal = FVector(View.M[0][2], View.M[1][2], View.M[2][2]);
 
             float Denominator = RayDir.Dot(DragPlaneNormal);
@@ -168,7 +253,6 @@ void ULocationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
     // 3. 드래그 중 이동 처리
     if (bIsDragging)
     {
-        FVector RayOrigin = CameraSceneComp->GetLocation();
         float NDCX = 2.0f * MouseX / Window.GetWidth() - 1.0f;
         float NDCY = 1.0f - 2.0f * MouseY / Window.GetHeight();
         FMatrix InvViewProj = (View * Proj).Inverse();
@@ -179,27 +263,20 @@ void ULocationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
         float Denominator = RayDir.Dot(DragPlaneNormal);
         if (abs(Denominator) > 1e-6f)
         {
-            // 현재 마우스 위치의 광선이 드래그 평면과 만나는 점을 계산
             float t = (DragStartActorLocation - RayOrigin).Dot(DragPlaneNormal) / Denominator;
             FVector CurrentWorldPoint = RayOrigin + RayDir * t;
-
-            // 드래그 시작점부터 현재점까지의 월드 공간에서의 이동 벡터
             FVector WorldDelta = CurrentWorldPoint - DragStartPoint_World;
 
-            // 선택된 축의 방향 벡터
             FVector AxisDirection;
             switch (ActiveAxis)
             {
             case EAxis::X: AxisDirection = FVector(1, 0, 0); break;
             case EAxis::Y: AxisDirection = FVector(0, 1, 0); break;
-            case EAxis::Z: AxisDirection = FVector(0, 0, 1); break;
+            case EAxis::Z: AxisDirection = FVector(0, 0, 1); break;  // Z축 이동 방향도 동적으로 계산
             default: return;
             }
 
-            // 월드 이동 벡터를 선택된 축에 투영하여 축 방향으로의 이동량만 추출
             FVector ProjectedDelta = AxisDirection * WorldDelta.Dot(AxisDirection);
-
-            // 오브젝트의 새 위치 계산 및 적용
             auto TargetSceneComp = TargetActor->GetComponent<USceneComponent>();
             TargetSceneComp->SetLocation(DragStartActorLocation + ProjectedDelta);
         }
