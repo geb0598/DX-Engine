@@ -18,8 +18,8 @@ FVertexSimple XAxisVertices[] =
 // green line
 FVertexSimple YAxisVertices[] =
 {
-	{ 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f },
-	{ 0.0f, AXIS_LENGTH, 0.0f,  0.0f, 1.0f, 0.0f, 1.0f }
+	{ 0.0f, 0.0f, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f },
+	{ 0.0f, AXIS_LENGTH, 0.0f,  0.0f, 0.0f, 1.0f, 1.0f }
 };
 
 // blue line
@@ -114,20 +114,20 @@ void ULineDrawer::RenderXYZAxis(ID3D11DeviceContext* DeviceContext)
 	UINT Stride = sizeof(FVertex);
 	UINT Offset = 0;
 
-	// Render X Axis
-	DeviceContext->IASetVertexBuffers(0, 1, &XAxisVertexBuffer, &Stride, &Offset);
-	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	DeviceContext->Draw(2, 0);
+	//// Render X Axis
+	//DeviceContext->IASetVertexBuffers(0, 1, &XAxisVertexBuffer, &Stride, &Offset);
+	//DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	//DeviceContext->Draw(2, 0);
 
 	// Render Y Axis
 	DeviceContext->IASetVertexBuffers(0, 1, &YAxisVertexBuffer, &Stride, &Offset);
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
 	DeviceContext->Draw(2, 0);
 
-	// Render Z Axis
-	DeviceContext->IASetVertexBuffers(0, 1, &ZAxisVertexBuffer, &Stride, &Offset);
-	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
-	DeviceContext->Draw(2, 0);
+	//// Render Z Axis
+	//DeviceContext->IASetVertexBuffers(0, 1, &ZAxisVertexBuffer, &Stride, &Offset);
+	//DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+	//DeviceContext->Draw(2, 0);
 }
 
 void ULineDrawer::ReleaseXYZAxis()
