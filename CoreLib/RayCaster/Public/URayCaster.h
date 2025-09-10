@@ -17,24 +17,15 @@ class UStaticMeshComponent;
 
 class URayCaster
 {
-private:
+public:
+	// [수정] CurrentRay를 public으로 이동
 	struct Ray
 	{
 		FVector Point;
 		FVector Vector;
 	};
-private:
 	Ray CurrentRay;
-
-	FMatrix M;
-	FMatrix V;
-	FMatrix P;
-private:
-	URayCaster() = default;
-	~URayCaster() = default;
-
-private:
-	void SetRayWithMouseAndMVP(int MouseX, int MouseY, int ScreenWidth, int ScreenHeight ,FMatrix Modeling, FMatrix View, FMatrix Projection)
+	void SetRayWithMouseAndMVP(int MouseX, int MouseY, int ScreenWidth, int ScreenHeight, FMatrix Modeling, FMatrix View, FMatrix Projection)
 	{
 		float NDCX = 2.0f * MouseX / ScreenWidth - 1.0f;
 		float NDCY = 1.0f - 2.0f * MouseY / ScreenHeight;
@@ -64,7 +55,15 @@ private:
 
 		return;
 	}
+private:
+	FMatrix M;
+	FMatrix V;
+	FMatrix P;
+private:
+	URayCaster() = default;
+	~URayCaster() = default;
 
+private:
 	std::optional<float> RayCastToSphere(float Radius)
 	{
 		// Components for Quadratic Formula
@@ -417,7 +416,7 @@ private:
 		return T;
 	}
 
-	bool RayCastToAnalogousTorus()
+	float RayCastToAnalogousTorus()
 	{
 		const float InnerRadius = 0.1f;
 		const float OuterRadius = 1.0f;
@@ -535,7 +534,7 @@ public:
 		const FMatrix& ViewMatrix,
 		const FMatrix& ProjectionMatrix
 	);
-	// [추가] UStaticMeshComponent를 위한 오버로드
+	// UStaticMeshComponent를 위한 오버로드
 	std::optional<float> GetHitResultAtScreenPosition(
 		UStaticMeshComponent& StaticMeshComponent,
 		int32 MouseX,

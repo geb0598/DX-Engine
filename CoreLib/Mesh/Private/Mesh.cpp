@@ -5,7 +5,7 @@
 #include "Mesh/Public/Mesh.h"
 
 UMesh::UMesh(ID3D11Device* Device, const TArray<FVertex>& VertexArray)
-	: VertexCount(VertexArray.size()), Stride(sizeof(FVertex))
+	: Vertices(VertexArray), VertexCount(VertexArray.size()), Stride(sizeof(FVertex))
 {
 	D3D11_BUFFER_DESC VertexBufferDesc = {};
 	VertexBufferDesc.ByteWidth = static_cast<UINT>(VertexCount * Stride);
