@@ -273,7 +273,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			{
 				continue;
 			}
-
+			 
 			auto PrimitiveComponent = Actor->GetComponent<UPrimitiveComponent>();
 			if (PrimitiveComponent == nullptr)
 			{

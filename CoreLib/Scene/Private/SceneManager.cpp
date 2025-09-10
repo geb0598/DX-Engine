@@ -151,15 +151,6 @@ void USceneManager::LoadScene(const FString& FilePath)
                 CurrentScene->AddActor(LoadedActor);
             }
         }
-
-        /* Plane Actor Test Code*/
-        AActor* ActorForPlaneTest = CreateActorFromPrimitive(
-            FVector(0.0f, 0.0f, 0.0f),
-            FVector(0.0f, 0.0f, 0.0f),
-            FVector(1.0f, 1.0f, 1.0f),
-            UPrimitiveComponent::EType::Plane
-        );
-        CurrentScene->AddActor(ActorForPlaneTest);
     }
     
     if (Obj.hasKey("NextUUID"))
@@ -276,6 +267,8 @@ FString USceneManager::PrimitiveTypeToString(UPrimitiveComponent::EType Type)
         return "Cube";
     case UPrimitiveComponent::EType::Sphere:
         return "Sphere";
+	case UPrimitiveComponent::EType::Plane:
+		return "Plane";
     default:
         return "Triangle";
     }
@@ -289,6 +282,8 @@ UPrimitiveComponent::EType USceneManager::StringToPrimitiveType(const FString& T
         return UPrimitiveComponent::EType::Cube;
     else if (TypeStr == "Sphere")
         return UPrimitiveComponent::EType::Sphere;
+	else if (TypeStr == "Plane")
+		return UPrimitiveComponent::EType::Plane;
     else
         return UPrimitiveComponent::EType::Triangle;
 }
