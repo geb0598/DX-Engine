@@ -16,7 +16,7 @@ class UObject
 private:
 	
 public:
-	~UObject();
+	virtual ~UObject();
 
 	UObject();
 

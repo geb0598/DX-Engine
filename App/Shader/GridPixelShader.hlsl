@@ -77,7 +77,7 @@ float4 GridPS(float4 screenPos : SV_POSITION) : SV_Target
     
     float3 xAxis = float3(1.0, 0.0, 0.0);
     float3 zAxis = float3(0.0, 0.0, 1.0);
-    
+
     // color is red when x axis
     if (dot(hitPos, zAxis) > -axisRange && dot(hitPos, zAxis) < axisRange)
         return float4(1.0, 0.0, 0.0, alpha);

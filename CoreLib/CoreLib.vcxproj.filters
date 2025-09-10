@@ -108,7 +108,7 @@
     <ClCompile Include="Utilities\Private\Logger.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Memory\Private\FMemory.cpp">
+    <ClCompile Include="Memory\Private\Memory.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Window\Private\WindowSettings.cpp">
@@ -272,7 +272,7 @@
     <ClInclude Include="Memory\Memory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Memory\Public\FMemory.h">
+    <ClInclude Include="Memory\Public\Memory.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Window\Public\WindowSettings.h">

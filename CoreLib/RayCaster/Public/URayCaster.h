@@ -416,7 +416,7 @@ private:
 		return T;
 	}
 
-	float RayCastToQuad()
+	std::optional<float> RayCastToQuad()
 	{
 		const float XHalf = 0.5f;
 		const float YHalf = 0.5f;
@@ -429,17 +429,17 @@ private:
 		// t = -V.z / P.z
 
 		if (P.Z >= -EPSILON && P.Z <= EPSILON)
-			return DONT_INTERSECT;
+			return std::nullopt;
 
-		float T = -V.Z / P.Z;
+		float T = -P.Z / V.Z;
 		
 		float RayX = P.X + T * V.X;
 		if (RayX > XHalf || RayX < -XHalf)
-			return DONT_INTERSECT;
+			return std::nullopt;
 
 		float RayY = P.Y + T * V.Y;
 		if (RayY > YHalf || RayY < -YHalf)
-			return DONT_INTERSECT;
+			return std::nullopt;
 
 		return T;
 	}

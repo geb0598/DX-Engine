@@ -36,7 +36,7 @@
     <ClCompile Include="Line\Private\ULineDrawer.cpp" />
     <ClCompile Include="Math\Private\Matrix.cpp" />
     <ClCompile Include="Math\Private\Vector.cpp" />
-    <ClCompile Include="Memory\Private\FMemory.cpp" />
+    <ClCompile Include="Memory\Private\Memory.cpp" />
     <ClCompile Include="Mesh\Private\Mesh.cpp" />
     <ClCompile Include="Object\Private\Object.cpp" />
     <ClCompile Include="Renderer\Private\Renderer.cpp" />
@@ -87,8 +87,7 @@
     <ClInclude Include="Math\Public\Matrix.h" />
     <ClInclude Include="Math\Public\Vector.h" />
     <ClInclude Include="Memory\Memory.h" />
-    <ClInclude Include="Memory\Public\FMemory.h" />
-    <ClInclude Include="Mesh\Public\GizmoShapes.h" />
+    <ClInclude Include="Memory\Public\Memory.h" />
     <ClInclude Include="Mesh\Public\Mesh.h" />
     <ClInclude Include="Mesh\Public\Vertex.h" />
     <ClInclude Include="Object\Public\Object.h" />

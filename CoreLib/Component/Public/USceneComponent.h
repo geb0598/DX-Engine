@@ -14,7 +14,7 @@ private:
 	const static FVector DefaultRotation;
 	const static FVector DefaultScale;
 public:
-	~USceneComponent() = default;
+	virtual ~USceneComponent() = default;
 
 	USceneComponent(AActor* Actor);
 
