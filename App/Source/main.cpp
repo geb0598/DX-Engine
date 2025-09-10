@@ -23,12 +23,15 @@
 
 // ------------------------------------Gizmo------------------------------------- //
 #include "Component/Public/LocationGizmoComponent.h"
+#include "Component/Public/RotationGizmoComponent.h"
+#include "Component/Public/ScaleGizmoComponent.h"
 
 //[추가] 기즈모 모드 열거형
 enum class EGizmoMode
 {
 	Location,
 	Rotation,
+	Scale,
 	Max
 };
 
@@ -88,10 +91,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// 기즈모를 담을 전용 액터를 생성하고 LocationGizmoComponent를 부착합니다.
 	AActor* GizmoActor = new AActor();
 	GizmoActor->AddComponent<ULocationGizmoComponent>(GizmoActor);
+	GizmoActor->AddComponent<URotationGizmoComponent>(GizmoActor);
+	GizmoActor->AddComponent<UScaleGizmoComponent>(GizmoActor);
 	// #7. Grid Manager
 	UGridManager GridManager(Renderer.GetDevice(), Renderer.GetDeviceContext());
 	GridManager.Initialize();
-	GizmoActor->AddComponent<URotationGizmoComponent>(GizmoActor);
 
 	// #8. Initialize XYZ Axis (once per application)
 	ULineDrawer::InitializeXYZAxis(Renderer.GetDevice());
@@ -246,6 +250,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		// 기즈모 입력을 먼저 처리하여, 기즈모 클릭 시 오브젝트 피킹이 무시되도록 합니다.
 		auto LocationGizmo = GizmoActor->GetComponent<ULocationGizmoComponent>();
 		auto RotationGizmo = GizmoActor->GetComponent<URotationGizmoComponent>();
+		auto ScaleGizmo = GizmoActor->GetComponent<UScaleGizmoComponent>();
 		UGizmoComponent* ActiveGizmo = nullptr;
 		switch (CurrentGizmoMode)
 		{
@@ -254,6 +259,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			break;
 		case EGizmoMode::Rotation:
 			ActiveGizmo = RotationGizmo;
+			break;
+		case EGizmoMode::Scale:
+			ActiveGizmo = ScaleGizmo;
 			break;
 		}
 

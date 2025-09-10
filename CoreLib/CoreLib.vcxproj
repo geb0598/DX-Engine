@@ -28,6 +28,7 @@
     <ClCompile Include="Component\Private\PlaneComponent.cpp" />
     <ClCompile Include="Component\Private\PrimitiveComponent.cpp" />
     <ClCompile Include="Component\Private\RotationGizmoComponent.cpp" />
+    <ClCompile Include="Component\Private\ScaleGizmoComponent.cpp" />
     <ClCompile Include="Component\Private\SphereComponent.cpp" />
     <ClCompile Include="Component\Private\StaticMeshComponent.cpp" />
     <ClCompile Include="Component\Private\TriangleComponent.cpp" />
@@ -77,6 +78,7 @@
     <ClInclude Include="Component\Public\PlaneComponent.h" />
     <ClInclude Include="Component\Public\PrimitiveComponent.h" />
     <ClInclude Include="Component\Public\RotationGizmoComponent.h" />
+    <ClInclude Include="Component\Public\ScaleGizmoComponent.h" />
     <ClInclude Include="Component\Public\SphereComponent.h" />
     <ClInclude Include="Component\Public\StaticMeshComponent.h" />
     <ClInclude Include="Component\Public\TriangleComponent.h" />
@@ -92,6 +94,7 @@
     <ClInclude Include="Math\Public\Vector.h" />
     <ClInclude Include="Memory\Memory.h" />
     <ClInclude Include="Memory\Public\Memory.h" />
+    <ClInclude Include="Mesh\Public\GizmoShapes.h" />
     <ClInclude Include="Mesh\Public\Mesh.h" />
     <ClInclude Include="Mesh\Public\Vertex.h" />
     <ClInclude Include="Object\Public\Object.h" />
