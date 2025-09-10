@@ -13,7 +13,7 @@ class UMesh
 public:
 	~UMesh() = default;
 
-	UMesh(ID3D11Device* Device, const TArray<FVertex>& VertexArray);
+	UMesh(ID3D11Device* Device, TArray<FVertex> VertexArray);
 
 	UMesh(const UMesh&) = delete;
 	UMesh(UMesh&&) noexcept = default;
@@ -23,6 +23,8 @@ public:
 
 	void Bind(ID3D11DeviceContext* DeviceContext) const;
 
+	const TArray<FVertex>& GetVertexArray() const;
+
 	UINT GetVertexCount() const;
 	UINT GetStride() const;
 
@@ -31,6 +33,8 @@ public:
 
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> VertexBuffer;
+
+	TArray<FVertex> VertexArray;
 
 	const UINT VertexCount;
 	const UINT Stride;

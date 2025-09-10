@@ -24,7 +24,8 @@ void URenderer::Prepare()
 	DeviceContext->RSSetState(RasterizerState.Get());
 
 	DeviceContext->OMSetRenderTargets(1, FrameBufferRTV.GetAddressOf(), DepthStencilView.Get());
-	DeviceContext->OMSetBlendState(nullptr, nullptr, 0xffffffff);
+	float BlendFactor[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	DeviceContext->OMSetBlendState(AlphaBlendState.Get(), BlendFactor, 0xffffffff);
 	DeviceContext->OMSetDepthStencilState(DepthStencilState.Get(), 1);
 }
 
@@ -93,6 +94,8 @@ void URenderer::Create(HWND hWnd)
 
 	// 래스터라이저 상태 생성
 	CreateRasterizerState();
+
+	CreateBlendState();
 }
 
 void URenderer::CreateDeviceAndSwapChain(HWND hWnd)
@@ -195,4 +198,26 @@ void URenderer::CreateRasterizerState()
 
 	Device->CreateRasterizerState(&RasterizerDesc, RasterizerState.ReleaseAndGetAddressOf());
 }
+
+void URenderer::CreateBlendState()
+{
+	D3D11_BLEND_DESC BlendDesc = {};
+	BlendDesc.AlphaToCoverageEnable = FALSE;
+	BlendDesc.IndependentBlendEnable = FALSE;
+
+	D3D11_RENDER_TARGET_BLEND_DESC RenderTargetBlendDesc = {};
+	RenderTargetBlendDesc.BlendEnable = TRUE;
+	RenderTargetBlendDesc.SrcBlend = D3D11_BLEND_SRC_ALPHA;
+	RenderTargetBlendDesc.DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	RenderTargetBlendDesc.BlendOp = D3D11_BLEND_OP_ADD;
+	RenderTargetBlendDesc.SrcBlendAlpha = D3D11_BLEND_ONE;
+	RenderTargetBlendDesc.DestBlendAlpha = D3D11_BLEND_ZERO;
+	RenderTargetBlendDesc.BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	RenderTargetBlendDesc.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+
+	BlendDesc.RenderTarget[0] = RenderTargetBlendDesc;
+
+	Device->CreateBlendState(&BlendDesc, AlphaBlendState.ReleaseAndGetAddressOf());
+}
+
 

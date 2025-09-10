@@ -4,8 +4,13 @@
 
 #include "Mesh/Public/Mesh.h"
 
+<<<<<<< HEAD
 UMesh::UMesh(ID3D11Device* Device, const TArray<FVertex>& VertexArray)
 	: Vertices(VertexArray), VertexCount(VertexArray.size()), Stride(sizeof(FVertex))
+=======
+UMesh::UMesh(ID3D11Device* Device, TArray<FVertex> VertexArray)
+	: VertexArray(std::move(VertexArray)), VertexCount(this->VertexArray.size()), Stride(sizeof(FVertex))
+>>>>>>> origin/main
 {
 	D3D11_BUFFER_DESC VertexBufferDesc = {};
 	VertexBufferDesc.ByteWidth = static_cast<UINT>(VertexCount * Stride);
@@ -15,7 +20,7 @@ UMesh::UMesh(ID3D11Device* Device, const TArray<FVertex>& VertexArray)
 	VertexBufferDesc.MiscFlags = 0;
 	VertexBufferDesc.StructureByteStride = 0;
 
-	D3D11_SUBRESOURCE_DATA VertexBufferSRD = { VertexArray.data() };
+	D3D11_SUBRESOURCE_DATA VertexBufferSRD = { this->VertexArray.data() };
 
 	Device->CreateBuffer(&VertexBufferDesc, &VertexBufferSRD, VertexBuffer.ReleaseAndGetAddressOf());
 }
@@ -26,6 +31,11 @@ void UMesh::Bind(ID3D11DeviceContext* DeviceContext) const
 	DeviceContext->IASetVertexBuffers(0, 1, VertexBuffer.GetAddressOf(), &Stride, &Offset);
 
 	DeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
+
+const TArray<FVertex>& UMesh::GetVertexArray() const
+{
+	return VertexArray;
 }
 
 UINT UMesh::GetVertexCount() const

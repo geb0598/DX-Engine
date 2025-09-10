@@ -24,6 +24,7 @@ public:
 		Triangle,
 		Cube,
 		Sphere,
+		Plane,
 		Max
 	};
 

@@ -19,12 +19,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Axis\Private\UAxis.cpp" />
+    <ClCompile Include="AssetManager\Public\AssetManager.cpp" />
     <ClCompile Include="Component\Private\ActorComponent.cpp" />
     <ClCompile Include="Component\Private\CubeComponent.cpp" />
     <ClCompile Include="Component\Private\GizmoComponent.cpp" />
     <ClCompile Include="Component\Private\InputComponent.cpp" />
+<<<<<<< HEAD
     <ClCompile Include="Component\Private\LocationGizmoComponent.cpp" />
+=======
+    <ClCompile Include="Component\Private\PlaneComponent.cpp" />
+>>>>>>> origin/main
     <ClCompile Include="Component\Private\PrimitiveComponent.cpp" />
     <ClCompile Include="Component\Private\RotationGizmoComponent.cpp" />
     <ClCompile Include="Component\Private\SphereComponent.cpp" />
@@ -33,6 +37,8 @@
     <ClCompile Include="Component\Private\UCameraComponent.cpp" />
     <ClCompile Include="Component\Private\USceneComponent.cpp" />
     <ClCompile Include="Component\Public\USceneComponent.h" />
+    <ClCompile Include="Grid\Private\UGridManager.cpp" />
+    <ClCompile Include="Line\Private\ULineDrawer.cpp" />
     <ClCompile Include="Math\Private\Matrix.cpp" />
     <ClCompile Include="Math\Private\Vector.cpp" />
     <ClCompile Include="Memory\Private\FMemory.cpp" />
@@ -63,14 +69,18 @@
   <ItemGroup>
     <ClInclude Include="Actor\Actor.h" />
     <ClInclude Include="Actor\Public\Actor.h" />
-    <ClInclude Include="Axis\Axis.h" />
-    <ClInclude Include="Axis\Public\UAxis.h" />
+    <ClInclude Include="AssetManager\AssetManager.h" />
+    <ClInclude Include="AssetManager\Public\AssetManager.h" />
     <ClInclude Include="Component\Component.h" />
     <ClInclude Include="Component\Public\ActorComponent.h" />
     <ClInclude Include="Component\Public\CubeComponent.h" />
     <ClInclude Include="Component\Public\GizmoComponent.h" />
     <ClInclude Include="Component\Public\InputComponent.h" />
+<<<<<<< HEAD
     <ClInclude Include="Component\Public\LocationGizmoComponent.h" />
+=======
+    <ClInclude Include="Component\Public\PlaneComponent.h" />
+>>>>>>> origin/main
     <ClInclude Include="Component\Public\PrimitiveComponent.h" />
     <ClInclude Include="Component\Public\RotationGizmoComponent.h" />
     <ClInclude Include="Component\Public\SphereComponent.h" />
@@ -78,6 +88,10 @@
     <ClInclude Include="Component\Public\TriangleComponent.h" />
     <ClInclude Include="Component\Public\UCameraComponent.h" />
     <ClInclude Include="Containers\Containers.h" />
+    <ClInclude Include="Grid\Grid.h" />
+    <ClInclude Include="Grid\Public\UGridManager.h" />
+    <ClInclude Include="Line\Line.h" />
+    <ClInclude Include="Line\Public\ULineDrawer.h" />
     <ClInclude Include="Math\Math.h" />
     <ClInclude Include="Math\Public\MathUtilities.h" />
     <ClInclude Include="Math\Public\Matrix.h" />

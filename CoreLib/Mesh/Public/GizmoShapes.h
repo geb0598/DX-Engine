@@ -1,7 +1,7 @@
 #pragma once
 #include "Mesh/Public/Vertex.h"
 #include "Math/Public/Vector.h"
-#include <vector>
+#include "Containers/Containers.h"
 #include <cmath>
 
 // X축 화살표 메시 (빨간색)

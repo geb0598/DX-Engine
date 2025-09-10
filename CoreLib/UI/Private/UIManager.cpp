@@ -43,7 +43,7 @@ void UIManager::RenderControlPanel()
 	/* Choose Primitive */
 
 	// kind
-	const char* Items[] = { "Cube", "Sphere", "Triangle" };
+	const char* Items[] = { "Cube", "Sphere", "Triangle", "Plane"};
 	// index
 	static int CurrentItem = 0;
 	// draw Combo Box
@@ -68,10 +68,14 @@ void UIManager::RenderControlPanel()
 		{
 			PrimitiveType = UPrimitiveComponent::EType::Triangle;
 		}
+		else if (Items[CurrentItem] == "Plane")
+		{
+			PrimitiveType = UPrimitiveComponent::EType::Plane;
+		}
 
 		std::random_device RandomDevice;
 		std::mt19937 Generator(RandomDevice());
-		std::uniform_real_distribution<float> UniformDist(-10.0f, 10.0f);
+		std::uniform_real_distribution<float> UniformDist(-100.0f, 100.0f);
 
 		for (int i = 0; i < NumberOfSpawns; ++i)
 		{
