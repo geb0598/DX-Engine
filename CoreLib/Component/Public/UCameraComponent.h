@@ -19,6 +19,8 @@ private:
 	const static float DefaultFarPlane;
 
 public:
+	virtual ~UCameraComponent() = default;
+
 	UCameraComponent(AActor* Actor);
 	UCameraComponent(AActor* Actor, float FieldOfViewToSet, float NearPlaneToSet, float FarPlaneToSet);
 
