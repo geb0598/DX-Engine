@@ -400,7 +400,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	ULineDrawer::ReleaseXYZAxis();
 
 	// [추가2] 프로그램 종료 시 GizmoActor 메모리를 해제합니다.
-	delete GizmoActor;
 	// NOTE: Release UI Manager
 	EditorUI.Release();
 

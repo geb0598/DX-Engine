@@ -46,9 +46,6 @@ ULocationGizmoComponent::ULocationGizmoComponent(AActor* Actor)
 
 ULocationGizmoComponent::~ULocationGizmoComponent()
 {
-    delete XAxisActor;
-    delete YAxisActor;
-    delete ZAxisActor;
 }
 
 void ULocationGizmoComponent::Render(URenderer& Renderer, const FMatrix& View, const FMatrix& Proj)
