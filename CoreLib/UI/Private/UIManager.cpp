@@ -167,10 +167,10 @@ void UIManager::RenderControlPanel()
 	ImGui::DragFloat("##CameraLocationX", &CameraLocation.X, 0.05f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##CameraLocationY", &CameraLocation.Y, 0.05f);
+	ImGui::DragFloat("##CameraLocationY", &CameraLocation.Z, 0.05f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##CameraLocationZ", &CameraLocation.Z, 0.05f);
+	ImGui::DragFloat("##CameraLocationZ", &CameraLocation.Y, 0.05f);
 	ImGui::SameLine();
 	ImGui::Text("Camera Location");
 
@@ -184,10 +184,10 @@ void UIManager::RenderControlPanel()
 	ImGui::DragFloat("##CameraRotationX", &CameraRotation.X, 0.05f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##CameraRotationY", &CameraRotation.Y, 0.05f);
+	ImGui::DragFloat("##CameraRotationY", &CameraRotation.Z, 0.05f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##CameraRotationZ", &CameraRotation.Z, 0.05f);
+	ImGui::DragFloat("##CameraRotationZ", &CameraRotation.Y, 0.05f);
 	ImGui::SameLine();
 	ImGui::Text("Camera Rotation");
 
@@ -221,10 +221,10 @@ void UIManager::RenderPropertyWindow()
 	ImGui::DragFloat("##ObjectTranslationX", &ObjectLocation.X, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectTranslationY", &ObjectLocation.Y, 0.2f);
+	ImGui::DragFloat("##ObjectTranslationY", &ObjectLocation.Z, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectTranslationZ", &ObjectLocation.Z, 0.2f);
+	ImGui::DragFloat("##ObjectTranslationZ", &ObjectLocation.Y, 0.2f);
 	ImGui::SameLine();
 	ImGui::Text("Translation");
 
@@ -238,10 +238,10 @@ void UIManager::RenderPropertyWindow()
 	ImGui::DragFloat("##ObjectRotationX", &ObjectRotation.X, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectRotationY", &ObjectRotation.Y, 0.2f);
+	ImGui::DragFloat("##ObjectRotationY", &ObjectRotation.Z, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectRotationZ", &ObjectRotation.Z, 0.2f);
+	ImGui::DragFloat("##ObjectRotationZ", &ObjectRotation.Y, 0.2f);
 	ImGui::SameLine();
 	ImGui::Text("Rotation");
 
@@ -255,10 +255,10 @@ void UIManager::RenderPropertyWindow()
 	ImGui::DragFloat("##ObjectScaleX", &ObjectScale.X, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectScaleY", &ObjectScale.Y, 0.2f);
+	ImGui::DragFloat("##ObjectScaleY", &ObjectScale.Z, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectScaleZ", &ObjectScale.Z, 0.2f);
+	ImGui::DragFloat("##ObjectScaleZ", &ObjectScale.Y, 0.2f);
 	ImGui::SameLine();
 	ImGui::Text("Scale");
 
