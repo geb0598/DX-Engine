@@ -100,7 +100,6 @@ void ULocationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
     auto& Mouse = Window.GetMouse();
     auto [MouseX, MouseY] = Mouse.GetPosition();
 
-    // [수정] 카메라 액터와 씬 컴포넌트를 직접, 한번만 가져옵니다.
     auto CameraActor = USceneManager::GetInstance().GetMainCameraActor();
     auto CameraSceneComp = CameraActor->GetComponent<USceneComponent>();
 
@@ -112,7 +111,6 @@ void ULocationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
         float ClosestDistance = (std::numeric_limits<float>::max)();
         EAxis ClosestAxis = EAxis::None;
 
-        // [수정] CameraSceneComp를 사용하여 RayOrigin을 구합니다.
         FVector RayOrigin = CameraSceneComp->GetLocation();
         float NDCX = 2.0f * MouseX / Window.GetWidth() - 1.0f;
         float NDCY = 1.0f - 2.0f * MouseY / Window.GetHeight();
@@ -148,9 +146,9 @@ void ULocationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
             auto TargetSceneComp = TargetActor->GetComponent<USceneComponent>();
             DragStartActorLocation = TargetSceneComp->GetLocation();
 
-            // [수정] CameraSceneComp를 사용하여 DragPlaneNormal을 구합니다.
-            FMatrix CamRotationMatrix = FMatrix::CreateRotationFromEuler(CameraSceneComp->GetRotation());
-            DragPlaneNormal = -CamRotationMatrix.TransformDirection(FVector::Forward);
+            // [수정] 드래그 평면 생성 및 시작점 계산
+            // 뷰 행렬의 세 번째 열이 카메라의 Forward 벡터입니다. (행렬이 Transpose 되어있으므로)
+            DragPlaneNormal = FVector(View.M[0][2], View.M[1][2], View.M[2][2]);
 
             float Denominator = RayDir.Dot(DragPlaneNormal);
             if (abs(Denominator) > 1e-6f)
@@ -170,7 +168,6 @@ void ULocationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
     // 3. 드래그 중 이동 처리
     if (bIsDragging)
     {
-        // [수정] CameraSceneComp를 사용하여 RayOrigin을 구합니다.
         FVector RayOrigin = CameraSceneComp->GetLocation();
         float NDCX = 2.0f * MouseX / Window.GetWidth() - 1.0f;
         float NDCY = 1.0f - 2.0f * MouseY / Window.GetHeight();
@@ -182,7 +179,7 @@ void ULocationGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window
         float Denominator = RayDir.Dot(DragPlaneNormal);
         if (abs(Denominator) > 1e-6f)
         {
-            //  
+            // 현재 마우스 위치의 광선이 드래그 평면과 만나는 점을 계산
             float t = (DragStartActorLocation - RayOrigin).Dot(DragPlaneNormal) / Denominator;
             FVector CurrentWorldPoint = RayOrigin + RayDir * t;
 
