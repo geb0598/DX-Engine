@@ -26,15 +26,9 @@ public:
 	};
 	Ray CurrentRay;
 
-	FMatrix M;
-	FMatrix V;
-	FMatrix P;
 
 	// resolve floating point error
 	static const float EPSILON;
-private:
-	URayCaster() = default;
-	~URayCaster() = default;
 
 private:
 	void SetRayWithMouseAndMVP(int MouseX, int MouseY, int ScreenWidth, int ScreenHeight ,FMatrix Modeling, FMatrix View, FMatrix Projection)
@@ -477,7 +471,7 @@ private:
 	{
 		if (!Mesh) return std::nullopt;
 
-
+	}
 public:
 	static URayCaster& Instance()
 	{
