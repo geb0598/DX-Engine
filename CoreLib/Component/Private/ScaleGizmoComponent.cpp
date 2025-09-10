@@ -231,6 +231,12 @@ void UScaleGizmoComponent::HandleInput(URayCaster& RayCaster, UWindow& Window, c
             }
 
             float ProjectedDistance = WorldDelta.Dot(AxisDirection);
+
+            if (ActiveAxis == EAxis::Z)
+            {
+                ProjectedDistance *= -1.0f;
+            }
+
             float ScaleFactor = 1.0f + ProjectedDistance * 0.5f;
             
             auto TargetSceneComp = TargetActor->GetComponent<USceneComponent>();

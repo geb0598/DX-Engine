@@ -216,6 +216,7 @@ void UIManager::RenderPropertyWindow()
 	auto CurrentActorSceneComponent = CurrentActor->GetComponent<USceneComponent>();
 
 	auto ObjectLocation = CurrentActorSceneComponent->GetLocation();
+	ObjectLocation.Z *= -1.0f;
 
 	ImGui::SetNextItemWidth(50);
 	ImGui::DragFloat("##ObjectTranslationX", &ObjectLocation.X, 0.2f);
@@ -228,6 +229,7 @@ void UIManager::RenderPropertyWindow()
 	ImGui::SameLine();
 	ImGui::Text("Translation");
 
+	ObjectLocation.Z *= -1.0f;
 	CurrentActorSceneComponent->SetLocation(ObjectLocation);
 
 	/* Set object rotation */
@@ -250,6 +252,7 @@ void UIManager::RenderPropertyWindow()
 	/* Set object translation */
 
 	auto ObjectScale = CurrentActorSceneComponent->GetScale();
+	ObjectScale.Z *= -1.0f;
 
 	ImGui::SetNextItemWidth(50);
 	ImGui::DragFloat("##ObjectScaleX", &ObjectScale.X, 0.2f);
@@ -262,6 +265,7 @@ void UIManager::RenderPropertyWindow()
 	ImGui::SameLine();
 	ImGui::Text("Scale");
 
+	ObjectScale.Z *= -1.0f;
 	CurrentActorSceneComponent->SetScale(ObjectScale);
 
 	ImGui::End();
