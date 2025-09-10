@@ -160,10 +160,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		// [추가1] 기즈모 컴포넌트의 포인터를 가져옵니다.
 		auto GizmoComponent = GizmoActor->GetComponent<ULocationGizmoComponent>();
 
-		//// #1. Object Picking
-		//AActor* PickedActor = nullptr;
-		//float PickedActorDistance = (std::numeric_limits<float>::max)();
+		// [수정] 기즈모 입력을 먼저 처리하여, 기즈모 클릭 시 오브젝트 피킹이 무시되도록 합니다.
+		GizmoComponent->HandleInput(RayCaster, Window, ViewMatrix, ProjectionMatrix);
 
+		// [수정] 기즈모가 드래그 상태가 아닐 때만 오브젝트 피킹을 수행합니다.
 		if (!ImIO.WantCaptureMouse && Window.GetMouse().IsLeftPressed() && !GizmoComponent->IsDragging())
 		{
 			AActor* PickedActor = nullptr;
@@ -223,8 +223,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				EditorUI.AddDebugLog("Selected Dist: " + std::to_string(PickedActorDistance));
 			}
 		}
-		// [추가1] 기즈모 입력(드래그) 처리를 호출합니다.
-		GizmoComponent->HandleInput(RayCaster, Window, ViewMatrix, ProjectionMatrix);
 
 		//// TODO: Improve performance with caching
 		//if (!ImIO.WantCaptureMouse && Window.GetMouse().IsLeftPressed())

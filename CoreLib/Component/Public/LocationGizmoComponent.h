@@ -15,12 +15,15 @@ public:
     virtual void Render(URenderer& Renderer, const FMatrix& View, const FMatrix& Proj) override;
 
 private:
-    // ±âÁî¸ğ ÃàÀ» ³ªÅ¸³»´Â º°µµÀÇ ¾×ÅÍµé
+    //   Å¸  Íµ
     AActor* XAxisActor;
     AActor* YAxisActor;
     AActor* ZAxisActor;
 
-    // µå·¡±× ½ÃÀÛ ½Ã °è»êµÇ´Â Á¤º¸
+    // å·¡   Ç´ 
     FVector DragStartPoint_World;
     FVector DragStartActorLocation;
+
+    // [ì¶”ê°€] ë“œë˜ê·¸ê°€ ì‹œì‘ë  ë•Œ ìƒì„±ë˜ëŠ” ê°€ìƒ í‰ë©´ì˜ ë²•ì„  ë²¡í„°
+    FVector DragPlaneNormal;
 };

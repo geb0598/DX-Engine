@@ -43,6 +43,12 @@ ID3D11DeviceContext* URenderer::GetDeviceContext()
 	return DeviceContext.Get();
 }
 
+// [추가] DepthStencilView를 반환하는 Getter 함수
+ID3D11DepthStencilView* URenderer::GetDepthStencilView()
+{
+    return DepthStencilView.Get();
+}
+
 void URenderer::ResizeBuffers(int Width, int Height)
 {
 	// 렌더 타겟 뷰를 해제
