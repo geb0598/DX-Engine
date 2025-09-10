@@ -154,6 +154,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		GridInfo.ScreenSize[0] = (float)Window.GetWidth();
 		GridInfo.ScreenSize[1] = (float)Window.GetHeight();
 		
+		FVector CameraVector = MainCamera->GetComponent<USceneComponent>()->GetLocation();
+		
 		GridInfo.GridColor[0] = 1.0f;
 		GridInfo.GridColor[1] = 0.0f;
 		GridInfo.GridColor[2] = 1.0f;

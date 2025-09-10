@@ -73,5 +73,18 @@ float4 GridPS(float4 screenPos : SV_POSITION) : SV_Target
     if (alpha < 0.01)
         discard;
     
+    float axisRange = 3e-3 * distanceFromCamera;
+    
+    float3 xAxis = float3(1.0, 0.0, 0.0);
+    float3 zAxis = float3(0.0, 0.0, 1.0);
+    
+    // color is red when x axis
+    if (dot(hitPos, zAxis) > -axisRange && dot(hitPos, zAxis) < axisRange)
+        return float4(1.0, 0.0, 0.0, alpha);
+    
+    // color is blue when z axis
+    if (dot(hitPos, xAxis) > -axisRange && dot(hitPos, xAxis) < axisRange)
+        return float4(0.0, 0.0, 1.0, alpha);
+    
     return float4(gridColor.rgb, alpha);
 }

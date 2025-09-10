@@ -34,6 +34,8 @@ private:
 	ID3D11InputLayout* InputLayout;
 	ID3D11Buffer* VertexBuffer;
 	ID3D11Buffer* PSConstantBuffer;
+	ID3D11DepthStencilState* GridDepthStencilState;
+	ID3D11DepthStencilState* ObjectDepthStencilState;
 	
 	UINT VertexCount;
 	UINT Stride;

@@ -8,6 +8,8 @@ UGridManager::UGridManager(ID3D11Device* Device, ID3D11DeviceContext* DeviceCont
 	InputLayout(nullptr),
 	VertexBuffer(nullptr),
 	PSConstantBuffer(nullptr),
+	GridDepthStencilState(nullptr),
+	ObjectDepthStencilState(nullptr),
 	VertexCount(0),
 	Stride(0)
 {
@@ -153,6 +155,25 @@ void UGridManager::Initialize()
 	{
 		exit(1);
 	}
+
+	// create depth stencil state for grid
+	D3D11_DEPTH_STENCIL_DESC gridDSDesc = {};
+	gridDSDesc.DepthEnable = true;                       // Remain Depth Stencil Test
+	gridDSDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO; // DepthWrite Off
+	gridDSDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	gridDSDesc.StencilEnable = false;
+
+	Device->CreateDepthStencilState(&gridDSDesc, &GridDepthStencilState);
+
+	// create depth stencil state for restore
+	gridDSDesc = {};
+	gridDSDesc.DepthEnable = true;                       // Remain Depth Stencil Test
+	gridDSDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; // DepthWrite Off
+	gridDSDesc.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
+	gridDSDesc.StencilEnable = false;
+
+	Device->CreateDepthStencilState(&gridDSDesc, &ObjectDepthStencilState);
+
 }
 
 void UGridManager::Bind(PSConstants GridInfo)
@@ -172,11 +193,14 @@ void UGridManager::Bind(PSConstants GridInfo)
 		1,              // buffer num
 		&PSConstantBuffer
 	);
+
+	DeviceContext->OMSetDepthStencilState(GridDepthStencilState, 0);
 }
 
 void UGridManager::Render()
 {
 	DeviceContext->Draw(3, 0);
+	DeviceContext->OMSetDepthStencilState(ObjectDepthStencilState, 0);
 }
 
 void UGridManager::Release()
@@ -205,5 +229,15 @@ void UGridManager::Release()
 	{
 		PSConstantBuffer->Release();
 		PSConstantBuffer = nullptr;
+	}
+	if (GridDepthStencilState)
+	{
+		GridDepthStencilState->Release();
+		GridDepthStencilState = nullptr;
+	}
+	if (ObjectDepthStencilState)
+	{
+		ObjectDepthStencilState->Release();
+		ObjectDepthStencilState = nullptr;
 	}
 }
