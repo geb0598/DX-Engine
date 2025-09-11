@@ -75,7 +75,7 @@ void UIManager::RenderControlPanel()
 
 		std::random_device RandomDevice;
 		std::mt19937 Generator(RandomDevice());
-		std::uniform_real_distribution<float> UniformDist(-100.0f, 100.0f);
+		std::uniform_real_distribution<float> UniformDist(-10.0f, 10.0f);
 
 		for (int i = 0; i < NumberOfSpawns; ++i)
 		{
@@ -219,10 +219,10 @@ void UIManager::RenderPropertyWindow()
 	ObjectLocation.Z *= -1.0f;
 
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectTranslationX", &ObjectLocation.X, 0.2f);
+	ImGui::DragFloat("##ObjectTranslationX", &ObjectLocation.Z, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectTranslationY", &ObjectLocation.Z, 0.2f);
+	ImGui::DragFloat("##ObjectTranslationY", &ObjectLocation.X, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
 	ImGui::DragFloat("##ObjectTranslationZ", &ObjectLocation.Y, 0.2f);
@@ -237,10 +237,10 @@ void UIManager::RenderPropertyWindow()
 	auto ObjectRotation = CurrentActorSceneComponent->GetRotation();
 
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectRotationX", &ObjectRotation.X, 0.2f);
+	ImGui::DragFloat("##ObjectRotationX", &ObjectRotation.Z, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectRotationY", &ObjectRotation.Z, 0.2f);
+	ImGui::DragFloat("##ObjectRotationY", &ObjectRotation.X, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
 	ImGui::DragFloat("##ObjectRotationZ", &ObjectRotation.Y, 0.2f);
@@ -255,10 +255,10 @@ void UIManager::RenderPropertyWindow()
 	ObjectScale.Z *= -1.0f;
 
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectScaleX", &ObjectScale.X, 0.2f);
+	ImGui::DragFloat("##ObjectScaleX", &ObjectScale.Z, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
-	ImGui::DragFloat("##ObjectScaleY", &ObjectScale.Z, 0.2f);
+	ImGui::DragFloat("##ObjectScaleY", &ObjectScale.X, 0.2f);
 	ImGui::SameLine();
 	ImGui::SetNextItemWidth(50);
 	ImGui::DragFloat("##ObjectScaleZ", &ObjectScale.Y, 0.2f);
