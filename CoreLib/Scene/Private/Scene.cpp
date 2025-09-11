@@ -27,8 +27,8 @@ void UScene::CreateMainCamera()
     // 메인 카메라 액터 생성
     MainCameraActor = new AActor();
     MainCameraActor->AddComponent<USceneComponent>(MainCameraActor, 
-        FVector(0.0f, 0.0f, -30.0f),  // 위치
-        FVector(0.0f, 0.0f, 0.0f),    // 회전
+        FVector(0.0f, 10.0f, -20.0f),  // 위치
+        FVector(10.0f, 0.0f, 0.0f),    // 회전
         FVector(1.0f, 1.0f, 1.0f)     // 스케일
     );
     MainCameraActor->AddComponent<UCameraComponent>(MainCameraActor);
