@@ -93,9 +93,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	GizmoActor->AddComponent<ULocationGizmoComponent>(GizmoActor);
 	GizmoActor->AddComponent<URotationGizmoComponent>(GizmoActor);
 	GizmoActor->AddComponent<UScaleGizmoComponent>(GizmoActor);
+	
 	// #7. Grid Manager
 	UGridManager GridManager(Renderer.GetDevice(), Renderer.GetDeviceContext());
 	GridManager.Initialize();
+
+	
 
 	// #8. Initialize XYZ Axis (once per application)
 	ULineDrawer::InitializeXYZAxis(Renderer.GetDevice());
