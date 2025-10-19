@@ -206,17 +206,17 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
 				RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &(TextureData->TextureSRV));
 			}
 
-			//RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(MaterialInfo), true, bHasTexture)); // PSSet도 해줌
+			RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(MaterialInfo), true, bHasTexture)); // PSSet도 해줌
 
-			// UberShader가 사용할 PerMaterial 상수 버퍼(b2)의 내용을 채웁니다.
-			FPerMaterialBufferType PerMaterialData;
-			PerMaterialData.MaterialAmbient = FVector4(MaterialInfo.AmbientColor, 1.0f);
-			PerMaterialData.MaterialDiffuse = FVector4(MaterialInfo.DiffuseColor, 1.0f);
-			PerMaterialData.MaterialSpecular = FVector4(MaterialInfo.SpecularColor, 1.0f);
-			PerMaterialData.MaterialEmissive = FVector4(MaterialInfo.EmissiveColor, 1.0f);
-			PerMaterialData.SpecularShininess = MaterialInfo.SpecularExponent;
-			// GPU 전송
-			UpdateSetCBuffer(PerMaterialData);
+			//// UberShader가 사용할 PerMaterial 상수 버퍼(b2)의 내용을 채웁니다.
+			//FPerMaterialBufferType PerMaterialData;
+			//PerMaterialData.MaterialAmbient = FVector4(MaterialInfo.AmbientColor, 1.0f);
+			//PerMaterialData.MaterialDiffuse = FVector4(MaterialInfo.DiffuseColor, 1.0f);
+			//PerMaterialData.MaterialSpecular = FVector4(MaterialInfo.SpecularColor, 1.0f);
+			//PerMaterialData.MaterialEmissive = FVector4(MaterialInfo.EmissiveColor, 1.0f);
+			//PerMaterialData.SpecularShininess = MaterialInfo.SpecularExponent;
+			//// GPU 전송
+			//UpdateSetCBuffer(PerMaterialData);
 
 
 			// DrawCall 수실행 및 통계 추가
@@ -226,13 +226,13 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
 	}
 	else
 	{
-		//FObjMaterialInfo ObjMaterialInfo;
-		//RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(ObjMaterialInfo), false, false)); // PSSet도 해줌
-		//RHIDevice->GetDeviceContext()->DrawIndexed(IndexCount, 0, 0);
-
-		FPerMaterialBufferType DefaultMaterialData{};
-		UpdateSetCBuffer(DefaultMaterialData);
+		FObjMaterialInfo ObjMaterialInfo;
+		RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(ObjMaterialInfo), false, false)); // PSSet도 해줌
 		RHIDevice->GetDeviceContext()->DrawIndexed(IndexCount, 0, 0);
+
+		/*FPerMaterialBufferType DefaultMaterialData{};
+		UpdateSetCBuffer(DefaultMaterialData);
+		RHIDevice->GetDeviceContext()->DrawIndexed(IndexCount, 0, 0);*/
 		StatsCollector.IncrementDrawCalls();
 	}
 }
@@ -721,23 +721,23 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 	USelectionManager& SelectionManager = USelectionManager::GetInstance();
 	AActor* SelectedActor = SelectionManager.GetSelectedActor();
 
-	UShader* ShaderToUse = UberShaders[CurrentViewMode];
-	if (!ShaderToUse)
-	{
-		ShaderToUse = UberShaders[EViewModeIndex::VMI_Unlit];
-		if (!ShaderToUse)
-		{
-			return;
-		}
-	}
+	//UShader* ShaderToUse = UberShaders[CurrentViewMode];
+	//if (!ShaderToUse)
+	//{
+	//	ShaderToUse = UberShaders[EViewModeIndex::VMI_Unlit];
+	//	if (!ShaderToUse)
+	//	{
+	//		return;
+	//	}
+	//}
 
-	PrepareShader(ShaderToUse);
-	// Lighting 상수 버퍼(b1) 설정
-	UpdateSetCBuffer(FLightingBufferType(LightingCBufferData));
+	//PrepareShader(ShaderToUse);
+	//// Lighting 상수 버퍼(b1) 설정
+	//UpdateSetCBuffer(FLightingBufferType(LightingCBufferData));
 
 	for (UPrimitiveComponent* PrimitiveComponent : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
 	{
-		/*FVector rgb(1.0f, 1.0f, 1.0f);
+		FVector rgb(1.0f, 1.0f, 1.0f);
 
 
 
@@ -750,9 +750,9 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 		{
 			bIsSelected = true;
 		}
-		UStaticMeshComponent* FireballComponent = Cast<UStaticMeshComponent>(PrimitiveComponent);*/
+		UStaticMeshComponent* FireballComponent = Cast<UStaticMeshComponent>(PrimitiveComponent);
 
-		/*if (FireballComponent)
+		if (FireballComponent)
 		{
 			if (!FireballComponent->GetStaticMesh()) {
 				return;
@@ -767,7 +767,7 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 			else {
 				UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
 			}
-		}*/
+		}
 
 		PrimitiveComponent->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
 	}
