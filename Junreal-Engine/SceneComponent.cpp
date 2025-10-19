@@ -188,6 +188,12 @@ FMatrix USceneComponent::GetWorldMatrix() const
     return GetWorldTransform().ToMatrixWithScaleLocalXYZ();
 }
 
+FVector USceneComponent::GetForwardVector() const
+{
+    // 월드 회전 쿼터니언을 가져와서 로컬 X축 벡터(1,0,0)를 회전
+    return GetWorldRotation().RotateVector(FVector(1.0f, 0.0f, 0.0f));
+}
+
 // ──────────────────────────────
 // Attach / Detach
 // ──────────────────────────────

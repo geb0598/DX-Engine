@@ -407,6 +407,7 @@ void UResourceManager::InitShaderILMap()
     ShaderToInputLayoutMap["StaticMeshShader.hlsl"] = layout;
     ShaderToInputLayoutMap["DecalShader.hlsl"] = layout;
     ShaderToInputLayoutMap["SpotLightShader.hlsl"] = layout;
+    ShaderToInputLayoutMap["UberShader.hlsl"] = layout;
     layout.clear();
 
     layout.Add({ "WORLDPOSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 });

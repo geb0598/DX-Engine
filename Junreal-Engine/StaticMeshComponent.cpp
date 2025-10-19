@@ -37,19 +37,28 @@ void UStaticMeshComponent::Render(URenderer* Renderer, const FMatrix& ViewMatrix
 
         Renderer->RSSetNoCullState();
 
-        // Normal transformation을 위한 inverse transpose matrix 계산
-        FMatrix WorldMatrix = GetWorldMatrix();
-        FMatrix NormalMatrix = WorldMatrix.Inverse().Transpose();
+        //// Normal transformation을 위한 inverse transpose matrix 계산
+        //FMatrix WorldMatrix = GetWorldMatrix();
+        //FMatrix NormalMatrix = WorldMatrix.Inverse().Transpose();
 
-        ModelBufferType ModelBuffer;
-        ModelBuffer.Model = WorldMatrix;
-        ModelBuffer.UUID = this->InternalIndex;
-        ModelBuffer.NormalMatrix = NormalMatrix;
+        //ModelBufferType ModelBuffer;
+        //ModelBuffer.Model = WorldMatrix;
+        //ModelBuffer.UUID = this->InternalIndex;
+        //ModelBuffer.NormalMatrix = NormalMatrix;
 
-        Renderer->UpdateSetCBuffer(ModelBuffer);
+        //Renderer->UpdateSetCBuffer(ModelBuffer);
       
-        
-        Renderer->PrepareShader(GetMaterial()->GetShader());
+        //
+        //Renderer->PrepareShader(GetMaterial()->GetShader());
+
+        // PerObject 상수 버퍼(b0) 채우기
+        FPerObjectBufferType PerObjectData;
+        PerObjectData.World = GetWorldMatrix();
+        PerObjectData.View = ViewMatrix;
+        PerObjectData.Projection = ProjectionMatrix;
+
+        Renderer->UpdateSetCBuffer(PerObjectData);
+
         Renderer->DrawIndexedPrimitiveComponent(GetStaticMesh(), D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, MaterailSlots);
     }
 }
