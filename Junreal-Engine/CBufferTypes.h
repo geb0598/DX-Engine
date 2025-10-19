@@ -231,6 +231,61 @@ struct FGammaBufferType
 //---//
 
 
-
-
+struct alignas(16) FAmbientLightInfo
+{
+    FVector4 Color; // light color
+    float Intensity;
+    FVector Pad0;
+};
+struct alignas(16) FDirectionalLightInfo
+{
+    FVector4 Color;
+    FVector Direction;
+    float Intensity;
+};
+struct alignas(16) FPointLightInfo
+{
+    FVector4 Color;
+    FVector Position;
+    float Intensity;
+    float AttenuationRadius;
+    float LightFalloffExponent;
+    FVector2D Pad0;
+};
+struct alignas(16) FSpotLightInfo
+{
+    FVector4 Color;
+    FVector  Position;
+    float    Intensity;
+    FVector  Direction;
+    float    AttenuationRadius;
+    float    InnerConeAngle;
+    float    OuterConeAngle;
+    float    LightFalloffExponent;
+    float    Pad0;
+};
+struct alignas(16) FPerObjectBufferType
+{
+    FVector4 World;
+    FVector4 View;
+    FVector4 Projection;
+    FVector CameraPos;
+    float Pad0;
+};
+struct alignas(16) FLightingBufferType
+{
+    FAmbientLightInfo      Ambient;
+    FDirectionalLightInfo  Directional;
+    FPointLightInfo        PointLights[4];
+    FSpotLightInfo         SpotLights[4];
+};
+struct alignas(16) FPerMaterialBufferType
+{
+    FVector4 MaterialAmbient; // k_a (rgb)
+    FVector4 MaterialDiffuse; // k_d (albedo, rgb)
+    FVector4 MaterialSpecular; // k_s (specular, rgb)
+    FVector4 MaterialEmissive; // emissive Color
+    float SpecularShininess; // alpha
+    FVector Pad1;
+};
 
