@@ -52,6 +52,9 @@ MACRO(FPointLightBufferType)                  \
 MACRO(CameraInfoBufferType)                  \
 MACRO(FXAABufferType)                  \
 MACRO(FGammaBufferType)                  \
+MACRO(FPerObjectBufferType) \
+MACRO(FLightingBufferType) \
+MACRO(FPerMaterialBufferType) \
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
 CBUFFER_INFO(ViewProjBufferType, 1, true, true)
@@ -70,6 +73,10 @@ CBUFFER_INFO(FPointLightBufferType, 9, false, true)
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
+
+CBUFFER_INFO(FPerObjectBufferType, 0, true, false)
+CBUFFER_INFO(FLightingBufferType, 1, true, true)
+CBUFFER_INFO(FPerMaterialBufferType, 2, false, true)
 
 
 //Create 
@@ -266,11 +273,9 @@ struct alignas(16) FSpotLightInfo
 };
 struct alignas(16) FPerObjectBufferType
 {
-    FVector4 World;
-    FVector4 View;
-    FVector4 Projection;
-    FVector CameraPos;
-    float Pad0;
+    FMatrix World;
+    FMatrix View;
+    FMatrix Projection;
 };
 struct alignas(16) FLightingBufferType
 {
@@ -278,6 +283,8 @@ struct alignas(16) FLightingBufferType
     FDirectionalLightInfo  Directional;
     FPointLightInfo        PointLights[4];
     FSpotLightInfo         SpotLights[4];
+    FVector CameraPos;
+    float Pad0;
 };
 struct alignas(16) FPerMaterialBufferType
 {

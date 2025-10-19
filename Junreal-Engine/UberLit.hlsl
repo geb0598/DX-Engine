@@ -1,9 +1,9 @@
 #define NUM_POINT_LIGHT 4
 #define NUM_SPOT_LIGHT 4
-#define LIGHTING_MODEL_GOURAUD 10
-#define LIGHTING_MODEL_LAMBERT 11
-#define LIGHTING_MODEL_PHONG 12
-#define HAS_NORMAL_MAP 1
+#define LIGHTING_MODEL_GOURAUD 1
+#define LIGHTING_MODEL_LAMBERT 1
+#define LIGHTING_MODEL_PHONG 1
+//#define HAS_NORMAL_MAP 1
 struct FAmbientLightInfo
 {
     float4 Color; // light color
@@ -46,8 +46,6 @@ cbuffer PerObject : register(b0)
     row_major float4x4 World;
     row_major float4x4 View;
     row_major float4x4 Projection;
-    float3 CameraPos; // world space camera position
-    float Pad0;
 };
 
 cbuffer Lighting : register(b1)
@@ -56,7 +54,8 @@ cbuffer Lighting : register(b1)
     FDirectionalLightInfo Directional;
     FPointLightInfo PointLights[NUM_POINT_LIGHT];
     FSpotLightInfo SpotLights[NUM_SPOT_LIGHT];
-
+    float3 CameraPos; // world space camera position
+    float Pad0;
 };
 cbuffer PerMaterial : register(b2)
 {
@@ -64,6 +63,7 @@ cbuffer PerMaterial : register(b2)
     float4 MaterialDiffuse; // k_d (albedo, rgb)
     float4 MaterialSpecular; // k_s (specular, rgb)
     float4 MaterialEmissive; // emissive Color
+   
     float SpecularShininess; // alpha
     float3 Pad1;
 };
@@ -169,7 +169,8 @@ struct VS_INPUT
 {
     // 공통 속성
     float3 Position : POSITION;
-    float3 Normal : NORMAL;
+    float3 Normal : NORMAL0;
+    float4 Color : COLOR;
     float2 UV : TEXCOORD0;
 };
 
@@ -187,7 +188,11 @@ struct VS_OUTPUT
     float3 Lit_Specular : COLOR2; // already multiplied by k_s in VS for Gouraud
 #endif 
 };
-
+struct PS_OUTPUT
+{
+    float4 Color : SV_Target0;
+    uint UUID : SV_Target1;
+};
 VS_OUTPUT Uber_VS(VS_INPUT Input)
 {
 //    VS_OUTPUT output = (VS_OUTPUT) 0;
@@ -247,8 +252,9 @@ VS_OUTPUT Uber_VS(VS_INPUT Input)
 Texture2D TextureColor : register(t0);
 SamplerState Sampler : register(s0);
 
-float4 Uber_PS(VS_OUTPUT Input) : SV_Target
+PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
 {
+    PS_OUTPUT output;
     float4 finalPixel = float4(0.0f, 0.0f, 0.0f, 1.0f);
     float3 albedoTexture = TextureColor.Sample(Sampler, Input.UV).rgb;
     
@@ -264,5 +270,7 @@ float4 Uber_PS(VS_OUTPUT Input) : SV_Target
     finalPixel = float4(final, 1.0f);
 
 #endif
-    return finalPixel;
+    output.Color = finalPixel;
+    output.UUID = 1;
+    return output;
 }

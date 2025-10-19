@@ -221,24 +221,45 @@ void SViewportWindow::RenderToolbar()
 
 		if (ImGui::Button("Reset")) { /* TODO: 카메라 Reset */ }
 
-		const char* viewModes[] = { "Lit", "Unlit", "Wireframe", "SceneDepth" };
-		int currentViewMode = static_cast<int>(ViewportClient-> GetViewModeIndex())-1; // 0=Lit, 1=Unlit, 2=Wireframe -1이유 1부터 시작이여서 
+		const char* viewModes[] = { "Lit_Gouraud", "Lit_Lambert", "Lit_Phong", "Unlit", "Wireframe", "SceneDepth"};
+		EViewModeIndex viewModeEnums[] = {
+			 EViewModeIndex::VMI_Lit_Gouraud,
+			 EViewModeIndex::VMI_Lit_Lambert,
+			 EViewModeIndex::VMI_Lit_Phong,
+			 EViewModeIndex::VMI_Unlit,
+			 EViewModeIndex::VMI_Wireframe,
+			 EViewModeIndex::VMI_SceneDepth
+		};
+		int currentModeIndex = 0;
+		EViewModeIndex currentEnum = ViewportClient->GetViewModeIndex();
+		for (int i = 0; i < IM_ARRAYSIZE(viewModeEnums); ++i)
+		{
+			if (viewModeEnums[i] == currentEnum)
+			{
+				currentModeIndex = i;
+				break;
+			}
+		}
+		//int currentViewMode = static_cast<int>(ViewportClient-> GetViewModeIndex())-1; // 0=Lit, 1=Unlit, 2=Wireframe -1이유 1부터 시작이여서 
 
 		ImGui::SameLine();
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 2)); // 버튼/콤보 내부 여백 축소
 		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6, 0)); // 아이템 간 간격 축소
 		ImGui::SetNextItemWidth(80.0f);                                // ✅ 폭 줄이기
-		bool changed = ImGui::Combo("##ViewMode", &currentViewMode, viewModes, IM_ARRAYSIZE(viewModes));
+		bool changed = ImGui::Combo("##ViewMode", &currentModeIndex, viewModes, IM_ARRAYSIZE(viewModes));
 		ImGui::PopStyleVar(2);
 
 		if (changed && ViewportClient)
 		{
-			switch (currentViewMode)
+			switch (currentModeIndex)
 			{
-			case 0: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Lit); break;
-			case 1: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Unlit); break;
-			case 2: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Wireframe); break;
-			case 3: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_SceneDepth); break;
+			//case 0: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Lit); break;
+			case 0: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Lit_Gouraud); break;
+			case 1: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Lit_Lambert); break;
+			case 2: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Lit_Phong); break;
+			case 3: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Unlit); break;
+			case 4: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Wireframe); break;
+			case 5: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_SceneDepth); break;
 			}
 		}
 
