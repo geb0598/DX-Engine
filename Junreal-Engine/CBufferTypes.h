@@ -76,7 +76,7 @@ CBUFFER_INFO(FGammaBufferType, 0, false, true)
 
 CBUFFER_INFO(FPerObjectBufferType, 0, true, false)
 CBUFFER_INFO(FLightingBufferType, 1, true, true)
-CBUFFER_INFO(FPerMaterialBufferType, 2, false, true)
+CBUFFER_INFO(FPerMaterialBufferType, 2, true, true)
 
 
 //Create 

@@ -265,10 +265,10 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     float shininess = SpecularShininess;
     
 #if defined(LIGHTING_MODEL_GOURAUD)
-    // material 계수는 이미 Vertex Shader에서 곱함
-    float3 final = Input.Lit_Ambient + Input.Lit_Diffuse * albedoTexture + Input.Lit_Specular + k_e;
-    finalPixel = float4(final, 1.0f);
-
+    // VS에서 이미 재질 계수(k_a, k_d, k_s)가 모두 곱해짐
+    float3 finalLighting = Input.Lit_Ambient + (Input.Lit_Diffuse * albedoTexture) + Input.Lit_Specular;
+    finalPixel.rgb = finalLighting + k_e;
+    finalPixel.a = 1.0f;
 #endif
     output.Color = finalPixel;
     output.UUID = 1;
