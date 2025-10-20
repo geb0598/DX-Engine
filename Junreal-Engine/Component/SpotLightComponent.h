@@ -1,26 +1,29 @@
-﻿// SpotLightComponent.h (Inheritance Version)
-#pragma once
+﻿#pragma once
 #include "Component/PointLightComponent.h"
 
 class USpotLightComponent : public UPointLightComponent
 {
 public:
-    DECLARE_CLASS(USpotLightComponent, UPointLightComponent)
+	DECLARE_CLASS(USpotLightComponent, UPointLightComponent)
 
-    USpotLightComponent();
-    ~USpotLightComponent();
+	USpotLightComponent();
+	~USpotLightComponent();
 
-    const float GetInnerConeAngle() const;
-    const float GetOuterConeAngle() const;
+	const float GetInnerConeAngle() const;
+	const float GetOuterConeAngle() const;
 
-    void SetInnerConeAngle(float InInnerConeAngle);
-    void SetOuterConeAngle(float InOuterConeAngle);
+	void SetInnerConeAngle(float InInnerConeAngle);
+	void SetOuterConeAngle(float InOuterConeAngle);
 
-    UObject* Duplicate() override;
+	void TickComponent(float DeltaTime) override;
+
+	UObject* Duplicate() override;
+
 protected:
-    void DuplicateSubObjects() override;
-    void CopyCommonProperties(UObject* InTarget) override;
+	void DuplicateSubObjects() override;
+	void CopyCommonProperties(UObject* InTarget) override;
+
 private:
-    float InnerConeAngle;
-    float OuterConeAngle;
+	float InnerConeAngle;
+	float OuterConeAngle;
 };
