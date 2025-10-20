@@ -138,7 +138,8 @@ void FTileLightManager::CreateShader(const FString& InFilePath, const FString& I
     {
         if (ErrorBlob)
         {
-            UE_LOG("셰이더 컴파일 실패: %s", (char*)ErrorBlob->GetBufferPointer());
+            OutputDebugStringA((char*)ErrorBlob->GetBufferPointer());
+            // UE_LOG("셰이더 컴파일 실패: %s", (char*)ErrorBlob->GetBufferPointer());
         }
         assert(false && "Failed to compile shader");
     }

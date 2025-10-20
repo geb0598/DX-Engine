@@ -120,7 +120,7 @@ FFrustum CreateViewFrustum(float2 TileMin, float2 TileMax, float Width, float He
     ViewCorners[0] = mul(float4(NDCMin.x, NDCMin.y, 1.0f, 1.0f), InverseProjectionMatrix); // Bottom Left
     ViewCorners[1] = mul(float4(NDCMax.x, NDCMin.y, 1.0f, 1.0f), InverseProjectionMatrix); // Bottom Right
     ViewCorners[2] = mul(float4(NDCMin.x, NDCMax.y, 1.0f, 1.0f), InverseProjectionMatrix); // Top Left
-    ViewCorners[3] = mul(float4(NDCMin.x, NDCMin.y, 1.0f, 1.0f), InverseProjectionMatrix); // Top Right
+    ViewCorners[3] = mul(float4(NDCMax.x, NDCMax.y, 1.0f, 1.0f), InverseProjectionMatrix); // Top Right
 
     // --- Perspective Division ---
     ViewCorners[0] /= ViewCorners[0].w;
@@ -159,7 +159,7 @@ bool IsSphereInsideFrustum(FSphere Sphere, FFrustum Frustum)
     return true;
 }
 
-void CullPointLight(uint Index, FSphere Sphere, FFrustum Frustum)
+void CullPointLight(uint Index, uint FlatTileIndex, FSphere Sphere, FFrustum Frustum)
 {
     if (!IsSphereInsideFrustum(Sphere, Frustum))
     {
@@ -168,7 +168,7 @@ void CullPointLight(uint Index, FSphere Sphere, FFrustum Frustum)
 
     uint BucketIndex = Index / BUCKET_SIZE;
     uint BitIndex = Index % BUCKET_SIZE;
-    InterlockedOr(PointLightMask[BUCKET_SIZE + BucketIndex], 1u << BitIndex);
+    InterlockedOr(PointLightMask[BUCKET_SIZE * FlatTileIndex + BucketIndex], 1u << BitIndex);
     InterlockedAdd(VisibleLightCount, 1u);
 }
 
@@ -223,6 +223,9 @@ void mainCS(uint3 GroupID : SV_GroupID, uint3 ThreadID : SV_GroupThreadID, uint3
     if (ThreadID.x == 0 && ThreadID.y == 0)
     {
         TileDepthMask = 0;
+        MinDepth = 0xFFFFFFFF;
+        MaxDepth = 0;
+        VisibleLightCount = 0;
     }
     GroupMemoryBarrierWithGroupSync();
 
@@ -249,29 +252,30 @@ void mainCS(uint3 GroupID : SV_GroupID, uint3 ThreadID : SV_GroupThreadID, uint3
     }
     GroupMemoryBarrierWithGroupSync();
 
-    if (ThreadID.x == 0 && ThreadID.y == 0)
-    {
-        float2 TileMin = GroupID.xy * float2(TILE_WIDTH, TILE_HEIGHT);
-        float2 TileMax = TileMin + float2(TILE_WIDTH, TILE_HEIGHT);
-
-        float Width;
-        float Height;
-        DepthTexture.GetDimensions(Width, Height);
-    
-        FFrustum Frustum = CreateViewFrustum(TileMin, TileMax, Width, Height);
-        for (uint i = 0; i < NumPointLights; ++i)
-        {
-            FSphere Sphere = {};
-            Sphere.Position = mul(float4(PointLights[i].Position, 1.0f), ViewMatrix);
-            Sphere.Radius = PointLights[i].AttenuationRadius;
-
-            CullPointLight(i, Sphere, Frustum);
-        }
-    }
+    // if (ThreadID.x == 0 && ThreadID.y == 0)
+    // {
+    //     uint FlatTileIndex = TILE_WIDTH * GroupID.x + GroupID.y;
+    //     float2 TileMin = GroupID.xy * float2(TILE_WIDTH, TILE_HEIGHT);
+    //     float2 TileMax = TileMin + float2(TILE_WIDTH, TILE_HEIGHT);
+    //
+    //     float Width;
+    //     float Height;
+    //     DepthTexture.GetDimensions(Width, Height);
+    //
+    //     FFrustum Frustum = CreateViewFrustum(TileMin, TileMax, Width, Height);
+    //     for (uint i = 0; i < NumPointLights; ++i)
+    //     {
+    //         FSphere Sphere;
+    //         Sphere.Position = mul(float4(PointLights[i].Position, 1.0f), ViewMatrix);
+    //         Sphere.Radius = PointLights[i].AttenuationRadius;
+    //
+    //         CullPointLight(i, FlatTileIndex, Sphere, Frustum);
+    //     }
+    // }
     
     // --- Depth Clustering Test ---
-    // VisualizeDepthSlices(TileDepthMask, PixelCoord, HeatmapTexture);
+    VisualizeDepthSlices(TileDepthMask, PixelCoord, HeatmapTexture);
     
     // --- Light Count Heatmap Visualization ---
-    VisualizeLightCount(VisibleLightCount, PixelCoord, HeatmapTexture);
+    // VisualizeLightCount(VisibleLightCount, PixelCoord, HeatmapTexture);
 }
