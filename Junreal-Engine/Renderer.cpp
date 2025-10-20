@@ -997,7 +997,7 @@ void URenderer::UpdateLightingBuffer(UWorld* InWorld, ACameraActor* InCameraActo
 
 			LightingCBufferData.Directional.Color = FVector4(Color.R / 255.0f, Color.G / 255.0f, Color.B / 255.0f, 1.0f);
 			LightingCBufferData.Directional.Intensity = Intensity;
-			LightingCBufferData.Directional.Direction = -DirectionalLightComponent->GetForwardVector();
+			LightingCBufferData.Directional.Direction = DirectionalLightComponent->GetForwardVector();
 
 		}
 	}

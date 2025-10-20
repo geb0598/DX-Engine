@@ -2,7 +2,7 @@
 #include "Component/LightComponentBase.h"
 
 ULightComponentBase::ULightComponentBase()
-	: Intensity(10.0f), LightColor({255, 0, 0, 255}), bVisible(true)
+	: Intensity(1.0f), LightColor(220, 220, 220, 255), bVisible(true)
 {
 
 }
