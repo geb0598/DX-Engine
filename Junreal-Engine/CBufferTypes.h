@@ -180,8 +180,8 @@ struct FPointLightData
     float FallOff;       // 감쇠 정도
     FVector Padding;    // 16바이트 정렬 맞추기용
 };
-#define MAX_POINT_LIGHTS 100
-#define MAX_SPOT_LIGHTS 100
+#define MAX_POINT_LIGHTS 1024
+#define MAX_SPOT_LIGHTS 1024
 // 전체 버퍼 (cbuffer b9 대응)
 struct FPointLightBufferType
 {

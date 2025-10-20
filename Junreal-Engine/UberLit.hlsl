@@ -62,8 +62,8 @@ cbuffer Lighting : register(b10)
     float3 Pad1;
 };
 
-StructuredBuffer<FPointLightInfo> PointLights : register(t1);
-StructuredBuffer<FSpotLightInfo> SpotLights : register(t2);
+StructuredBuffer<FPointLightInfo> PointLights : register(t2);
+StructuredBuffer<FSpotLightInfo> SpotLights : register(t3);
 
 cbuffer PerMaterial : register(b11)
 {

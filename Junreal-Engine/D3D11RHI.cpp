@@ -865,9 +865,10 @@ void D3D11RHI::UpdateAndBindLightBuffers(const TArray<FPointLightInfo>& InPointL
             DeviceContext->Unmap(SpotLightBuffer, 0);
         }
     }
-
-    DeviceContext->PSSetShaderResources(1, 1, &PointLightSRV);
-    DeviceContext->PSSetShaderResources(2, 1, &SpotLightSRV);
+    DeviceContext->VSSetShaderResources(2, 1, &PointLightSRV);
+    DeviceContext->VSSetShaderResources(3, 1, &SpotLightSRV);
+    DeviceContext->PSSetShaderResources(2, 1, &PointLightSRV);
+    DeviceContext->PSSetShaderResources(3, 1, &SpotLightSRV);
 }
 
 void D3D11RHI::PSSetDefaultSampler(UINT StartSlot)

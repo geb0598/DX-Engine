@@ -632,7 +632,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 	case EViewModeIndex::VMI_Unlit:
 	case EViewModeIndex::VMI_Wireframe:
 	{
-		RenderFireBallPass(World);
+		//RenderFireBallPass(World);
 		RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
 		RenderFogPass(World, Camera, Viewport);
 		RenderFXAAPaxx(World, Camera, Viewport);
@@ -845,7 +845,7 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 		{
 			AddLines(PrimitiveComponent->GetBoundingBoxLines(), PrimitiveComponent->GetBoundingBoxColor());
 		}
-		/*if (PrimitiveComponent->GetOwner() == SelectedActor)
+		if (PrimitiveComponent->GetOwner() == SelectedActor)
 		{
 			bIsSelected = true;
 		}
@@ -866,7 +866,7 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 			else {
 				UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
 			}
-		}*/
+		}
 
 		if (CurrentViewMode == EViewModeIndex::VMI_Unlit)
 		{
@@ -991,7 +991,7 @@ void URenderer::UpdateLightingBuffer(UWorld* InWorld, ACameraActor* InCameraActo
 
 			LightingCBufferData.Directional.Color = FVector4(Color.R / 255.0f, Color.G / 255.0f, Color.B / 255.0f, 1.0f);
 			LightingCBufferData.Directional.Intensity = Intensity;
-			LightingCBufferData.Directional.Direction = DirectionalLightComponent->GetForwardVector();
+			LightingCBufferData.Directional.Direction = -DirectionalLightComponent->GetForwardVector();
 
 		}
 	}
