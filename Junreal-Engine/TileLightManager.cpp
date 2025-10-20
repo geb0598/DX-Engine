@@ -81,14 +81,34 @@ void FTileLightManager::RenderPointLightHeatmap()
     assert(Renderer && "Initialization not done: Renderer is null");
     
     ID3D11DeviceContext* DeviceContext = Renderer->GetRHIDevice()->GetDeviceContext();
+
+    // --- Save original viewport ---
+    
+    D3D11_VIEWPORT OriginalViewport;
+    UINT NumViewports = 1;
+    DeviceContext->RSGetViewports(&NumViewports, &OriginalViewport);
+
+    // --- Set fullscreen viewport from the heatmap texture dimensions ---
+    
+    D3D11_TEXTURE2D_DESC HeatmapDesc;
+    HeatmapTexture->GetDesc(&HeatmapDesc);
+    D3D11_VIEWPORT FullscreenViewport = { 0 };
+    FullscreenViewport.Width = static_cast<float>(HeatmapDesc.Width);
+    FullscreenViewport.Height = static_cast<float>(HeatmapDesc.Height);
+    FullscreenViewport.MaxDepth = 1.0f;
+    DeviceContext->RSSetViewports(1, &FullscreenViewport);
     
     ID3D11ShaderResourceView* ShaderResourceViews[] = { HeatmapTextureSRV.Get() };
-        DeviceContext->PSSetShaderResources(2, 1, ShaderResourceViews);
-        
-        Renderer->RenderPostProcessing(UResourceManager::GetInstance().Load<UShader>("LightCullingDebugShader.hlsl"));    
+    DeviceContext->PSSetShaderResources(2, 1, ShaderResourceViews);
     
-        ID3D11ShaderResourceView* NullShaderResourceViews[] = { nullptr };
-        DeviceContext->PSSetShaderResources(2, 1, NullShaderResourceViews);
+    Renderer->RenderPostProcessing(UResourceManager::GetInstance().Load<UShader>("LightCullingDebugShader.hlsl"));    
+
+    ID3D11ShaderResourceView* NullShaderResourceViews[] = { nullptr };
+    DeviceContext->PSSetShaderResources(2, 1, NullShaderResourceViews);
+
+    // --- Restore original viewport ---
+    
+    DeviceContext->RSSetViewports(1, &OriginalViewport);
 }
 
 void FTileLightManager::CreateShader(const FString& InFilePath, const FString& InEntryPoint)

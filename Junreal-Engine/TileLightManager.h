@@ -59,6 +59,9 @@ public:
 public:
     void RenderPointLightHeatmap();
 
+    /** @note currently it sets viewport and restore it to make it compatible with texture size of heatmap.
+     *  @todo Revise it to make it consistent with postprocess logic.
+     */
     void RenderSpotLightHeatmap() {}
 
     uint32 GetCulledPointLightsCount() const { return 0; }
