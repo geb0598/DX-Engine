@@ -75,4 +75,8 @@ private:
 	void RenderRotationMovementComponentDetails(URotationMovementComponent* InComponent);
 	void RenderProjectileMovementComponentDetails(UProjectileMovementComponent* InComponent);
 	void RenderFXAAComponentDetails(UFXAAComponent* InComponent);
+	void RenderAmbientLightComponentDetails(UAmbientLightComponent* InComponent);
+	void RenderDirectionalLightComponentDetails(UDirectionalLightComponent* InComponent);
+	void RenderPointLightComponentDetails(UPointLightComponent* InComponent);
+	void RenderSpotLightComponentDetails(USpotLightComponent* InComponent);
 };

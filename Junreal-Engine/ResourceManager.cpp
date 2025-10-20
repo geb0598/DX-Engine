@@ -408,6 +408,7 @@ void UResourceManager::InitShaderILMap()
     ShaderToInputLayoutMap["StaticMeshShader.hlsl"] = layout;
     ShaderToInputLayoutMap["DecalShader.hlsl"] = layout;
     ShaderToInputLayoutMap["SpotLightShader.hlsl"] = layout;
+    ShaderToInputLayoutMap["UberLit.hlsl"] = layout;
     ShaderToInputLayoutMap["NormalViz.hlsl"] = layout;
     layout.clear();
 

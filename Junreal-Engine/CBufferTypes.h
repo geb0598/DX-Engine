@@ -53,6 +53,10 @@ MACRO(CameraInfoBufferType)                  \
 MACRO(FXAABufferType)                  \
 MACRO(FGammaBufferType)  \
 MACRO(FNormalVizCB)      \
+MACRO(FGammaBufferType)                  \
+MACRO(FPerObjectBufferType) \
+MACRO(FLightingBufferType) \
+MACRO(FPerMaterialBufferType) \
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
 CBUFFER_INFO(ViewProjBufferType, 1, true, true)
@@ -72,6 +76,10 @@ CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
 CBUFFER_INFO(FNormalVizCB, 10, true, true)
+
+CBUFFER_INFO(FPerObjectBufferType, 0, true, false)
+CBUFFER_INFO(FLightingBufferType, 10, true, true)
+CBUFFER_INFO(FPerMaterialBufferType, 11, true, true)
 
 
 //Create 
@@ -239,6 +247,62 @@ struct FNormalVizCB
     uint32 _pad[3];
 };
 
-
-
+struct alignas(16) FAmbientLightInfo
+{
+    FVector4 Color; // light color
+    float Intensity;
+    FVector Pad0;
+};
+struct alignas(16) FDirectionalLightInfo
+{
+    FVector4 Color;
+    FVector Direction;
+    float Intensity;
+};
+struct alignas(16) FPointLightInfo
+{
+    FVector4 Color;
+    FVector Position;
+    float Intensity;
+    float AttenuationRadius;
+    float LightFalloffExponent;
+    FVector2D Pad0;
+};
+struct alignas(16) FSpotLightInfo
+{
+    FVector4 Color;
+    FVector  Position;
+    float    Intensity;
+    FVector  Direction;
+    float    AttenuationRadius;
+    float    InnerConeAngle;
+    float    OuterConeAngle;
+    float    LightFalloffExponent;
+    float    Pad0;
+};
+struct alignas(16) FPerObjectBufferType
+{
+    FMatrix World;
+    FMatrix View;
+    FMatrix Projection;
+    FMatrix WorldInverseTranspose;
+};
+struct alignas(16) FLightingBufferType
+{
+    FAmbientLightInfo      Ambient;
+    FDirectionalLightInfo  Directional;
+    FPointLightInfo        PointLights[4];
+    FSpotLightInfo         SpotLights[4];
+    FVector CameraPos;
+    float Pad0;
+};
+struct alignas(16) FPerMaterialBufferType
+{
+    FVector4 MaterialAmbient; // k_a (rgb)
+    FVector4 MaterialDiffuse; // k_d (albedo, rgb)
+    FVector4 MaterialSpecular; // k_s (specular, rgb)
+    FVector4 MaterialEmissive; // emissive Color
+    float SpecularShininess; // alpha
+    FVector Pad1;
+};
 
