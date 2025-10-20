@@ -1,5 +1,5 @@
-#define NUM_POINT_LIGHT 4
-#define NUM_SPOT_LIGHT 4
+//#define NUM_POINT_LIGHT 4
+//#define NUM_SPOT_LIGHT 4
 #define LIGHTING_MODEL_GOURAUD 1
 #define LIGHTING_MODEL_LAMBERT 1
 #define LIGHTING_MODEL_PHONG 1
@@ -56,11 +56,15 @@ cbuffer Lighting : register(b10)
 {
     FAmbientLightInfo Ambient;
     FDirectionalLightInfo Directional;
-    FPointLightInfo PointLights[NUM_POINT_LIGHT];
-    FSpotLightInfo SpotLights[NUM_SPOT_LIGHT];
     float3 CameraPos; // world space camera position
-    float Pad1;
+    uint NumPointLights;
+    uint NumSpotLights;
+    float3 Pad1;
 };
+
+StructuredBuffer<FPointLightInfo> PointLights : register(t1);
+StructuredBuffer<FSpotLightInfo> SpotLights : register(t2);
+
 cbuffer PerMaterial : register(b11)
 {
     float4 MaterialAmbient; // k_a (rgb)
@@ -226,15 +230,15 @@ VS_OUTPUT Uber_VS(VS_INPUT Input)
     CalculateDirectionalLight(Directional, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
     diffuseRaw += diffuseTemp;
     specularRaw += specularTemp;
-    [unroll]
-    for (int i = 0; i < NUM_POINT_LIGHT; ++i)
+    
+    for (uint i = 0; i < NumPointLights; ++i)
     {
         CalculatePointLight(PointLights[i], worldPos, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;
         specularRaw += specularTemp;
     }
-    [unroll]
-    for (int j= 0; j < NUM_SPOT_LIGHT; ++j)
+    
+    for (uint j= 0; j < NumSpotLights; ++j)
     {
         CalculateSpotLight(SpotLights[j], worldPos, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;
@@ -287,15 +291,13 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     diffuseRaw += diffuseTemp;
     
     // Point
-    [unroll]
-    for (int i = 0; i < NUM_POINT_LIGHT; ++i)
+    for (uint i = 0; i < NumPointLights; ++i)
     {
         CalculatePointLight(PointLights[i], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;
     }
     // Spot
-    [unroll]
-    for (int j = 0; j < NUM_SPOT_LIGHT; ++j)
+    for (uint j = 0; j < NumSpotLights; ++j)
     {
         CalculateSpotLight(SpotLights[j], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;
@@ -321,16 +323,14 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     specularRaw += specularTemp;
     
     // Point
-    [unroll]
-    for (int i = 0; i < NUM_POINT_LIGHT; ++i)
+    for (uint i = 0; i < NumPointLights; ++i)
     {
         CalculatePointLight(PointLights[i], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;
         specularRaw += specularTemp;
     }
     // Spot
-    [unroll]
-    for (int j = 0; j < NUM_SPOT_LIGHT; ++j)
+    for (uint j = 0; j < NumSpotLights; ++j)
     {
         CalculateSpotLight(SpotLights[j], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;

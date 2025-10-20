@@ -989,53 +989,53 @@ void URenderer::UpdateLightingBuffer(UWorld* InWorld, ACameraActor* InCameraActo
 			const FColor& Color = DirectionalLightComponent->GetLightColor();
 			const float Intensity = DirectionalLightComponent->GetIntensity();
 
-			// [수정] FColor 정규화
 			LightingCBufferData.Directional.Color = FVector4(Color.R / 255.0f, Color.G / 255.0f, Color.B / 255.0f, 1.0f);
 			LightingCBufferData.Directional.Intensity = Intensity;
 			LightingCBufferData.Directional.Direction = DirectionalLightComponent->GetForwardVector();
 
 		}
 	}
-	int pointLightIndex = 0;
+	TArray<FPointLightInfo> PointLightData;
 	for (UPointLightComponent* PointLightComponent : CurrentLevel->GetComponentList<UPointLightComponent>())
 	{
-		if (pointLightIndex >= 4) break;
+		if (PointLightData.size() >= MAX_POINT_LIGHTS) break;
 		if (PointLightComponent && PointLightComponent->GetVisible())
 		{
-			auto& PointLightData = LightingCBufferData.PointLights[pointLightIndex];
+			FPointLightInfo& PointLight = PointLightData.emplace_back();
+			
 			const FColor& Color = PointLightComponent->GetLightColor();
+			PointLight.Color = FVector4(Color.R / 255.0f, Color.G / 255.0f, Color.B / 255.0f, 1.0f);
+			PointLight.Intensity = PointLightComponent->GetIntensity();
+			PointLight.Position = PointLightComponent->GetWorldLocation();
+			PointLight.AttenuationRadius = PointLightComponent->GetAttenuationRadius();
+			PointLight.LightFalloffExponent = PointLightComponent->GetLightFalloffExponent();
 
-			PointLightData.Color = FVector4(Color.R / 255.0f, Color.G / 255.0f, Color.B / 255.0f, 1.0f);
-			PointLightData.Intensity = PointLightComponent->GetIntensity();
-			PointLightData.Position = PointLightComponent->GetWorldLocation();
-			PointLightData.AttenuationRadius = PointLightComponent->GetAttenuationRadius();
-			PointLightData.LightFalloffExponent = PointLightComponent->GetLightFalloffExponent();
-
-			pointLightIndex++;
 		}
 	}
-	int spotLightIndex = 0;
+	TArray<FSpotLightInfo> SpotLightData;
 	for (USpotLightComponent* SpotLightComponent : CurrentLevel->GetComponentList<USpotLightComponent>())
 	{
-		if (spotLightIndex >= 4) break;
+		if (SpotLightData.size() >= MAX_SPOT_LIGHTS) break;
 		if (SpotLightComponent && SpotLightComponent->GetVisible())
 		{
-			auto& SpotLightData = LightingCBufferData.SpotLights[spotLightIndex];
+			FSpotLightInfo& SpotLight = SpotLightData.emplace_back();
+			
 			const FColor& Color = SpotLightComponent->GetLightColor();
+			SpotLight.Color = FVector4(Color.R / 255.0f, Color.G / 255.0f, Color.B / 255.0f, 1.0f);
+			SpotLight.Intensity = SpotLightComponent->GetIntensity();
+			SpotLight.Position = SpotLightComponent->GetWorldLocation();
+			SpotLight.Direction = SpotLightComponent->GetForwardVector();
+			SpotLight.AttenuationRadius = SpotLightComponent->GetAttenuationRadius();
+			SpotLight.LightFalloffExponent = SpotLightComponent->GetLightFalloffExponent();
 
-			SpotLightData.Color = FVector4(Color.R / 255.0f, Color.G / 255.0f, Color.B / 255.0f, 1.0f);
-			SpotLightData.Intensity = SpotLightComponent->GetIntensity();
-			SpotLightData.Position = SpotLightComponent->GetWorldLocation();
-			SpotLightData.Direction = SpotLightComponent->GetForwardVector();
-			SpotLightData.AttenuationRadius = SpotLightComponent->GetAttenuationRadius();
-			SpotLightData.LightFalloffExponent = SpotLightComponent->GetLightFalloffExponent();
-
-			SpotLightData.InnerConeAngle = cosf(DegreeToRadian(SpotLightComponent->GetInnerConeAngle()));
-			SpotLightData.OuterConeAngle = cosf(DegreeToRadian(SpotLightComponent->GetOuterConeAngle()));
-
-			spotLightIndex++;
+			SpotLight.InnerConeAngle = cosf(DegreeToRadian(SpotLightComponent->GetInnerConeAngle()));
+			SpotLight.OuterConeAngle = cosf(DegreeToRadian(SpotLightComponent->GetOuterConeAngle()));
 		}
 	}
+	// Structured Buffer 업데이트 및 바인딩 요청
+	RHIDevice->UpdateAndBindLightBuffers(PointLightData, SpotLightData);
+	LightingCBufferData.NumPointLights = PointLightData.size();
+	LightingCBufferData.NumSpotLights = SpotLightData.size();
 	LightingCBufferData.CameraPos = InCameraActor->GetActorLocation();
 }
 

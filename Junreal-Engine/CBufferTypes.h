@@ -181,6 +181,7 @@ struct FPointLightData
     FVector Padding;    // 16바이트 정렬 맞추기용
 };
 #define MAX_POINT_LIGHTS 100
+#define MAX_SPOT_LIGHTS 100
 // 전체 버퍼 (cbuffer b9 대응)
 struct FPointLightBufferType
 {
@@ -284,10 +285,12 @@ struct alignas(16) FLightingBufferType
 {
     FAmbientLightInfo      Ambient;
     FDirectionalLightInfo  Directional;
-    FPointLightInfo        PointLights[4];
-    FSpotLightInfo         SpotLights[4];
+    //FPointLightInfo        PointLights[4];
+    //FSpotLightInfo         SpotLights[4];
     FVector CameraPos;
-    float Pad1;
+    uint32 NumPointLights;
+    uint32 NumSpotLights;
+    FVector Pad1;
 };
 struct alignas(16) FPerMaterialBufferType
 {
