@@ -1,4 +1,5 @@
 Texture2D FrameColor : register(t0);
+Texture2D DepthTexture : register(t1);
 Texture2D Heatmap : register(t2);
 
 SamplerState LinearSampler : register(s0);
@@ -31,8 +32,14 @@ PS_Input mainVS(uint Input : SV_VertexID)
 
 float4 mainPS(PS_Input Input) : SV_Target
 {
-    float4 SampledFrameColor = FrameColor.Sample(LinearSampler, Input.UV);
-    float4 SampledHeatmapColor = Heatmap.Sample(LinearSampler, Input.UV);
+    uint Width, Height;
+    DepthTexture.GetDimensions(Width, Height);
+
+    /** @note Do not use Input.UV. Use UVPosition calculated from screen size instead. */
+    float2 UVPosition = Input.PositionCS.xy / float2(Width,Height); 
+
+    float4 SampledFrameColor = FrameColor.Sample(LinearSampler, UVPosition);
+    float4 SampledHeatmapColor = Heatmap.Sample(LinearSampler, UVPosition);
 
     float4 FinalColor = SampledFrameColor + SampledHeatmapColor;
 

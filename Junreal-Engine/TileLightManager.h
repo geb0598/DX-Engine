@@ -87,7 +87,7 @@ private:
     
     static constexpr uint32 MAX_NUM_LIGHT_PER_TILE = 1024;
 
-    static constexpr uint32 NUM_LIGHT_BUCKET_PER_TILE = MAX_NUM_LIGHT_PER_TILE / BUCKET_SIZE;
+    static constexpr uint32 NUM_LIGHT_PER_BUCKET = MAX_NUM_LIGHT_PER_TILE / BUCKET_SIZE;
 
     /*-----------------------------------------------------------------------------
         GPU Resources
