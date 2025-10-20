@@ -1,15 +1,38 @@
-﻿// SpotLightComponent.cpp (Inheritance Version)
-#include "pch.h"
+﻿#include "pch.h"
 #include "Component/SpotLightComponent.h"
+#include "Resource/DebugDrawManager.h"
 
 USpotLightComponent::USpotLightComponent()
-	: InnerConeAngle(30), OuterConeAngle(60)
+	: InnerConeAngle(10.0f), OuterConeAngle(20.0f)
 {
-
+	SetTickEnabled(true);
 }
 
 USpotLightComponent::~USpotLightComponent()
 {
+}
+
+void USpotLightComponent::TickComponent(float DeltaTime)
+{
+	UActorComponent::TickComponent(DeltaTime);
+	if (!GetWorld() || GetWorld()->IsPIEWorld())
+	{
+		return;
+	}
+
+	FDebugDrawManager& DebugDrawer = FDebugDrawManager::GetInstance();
+	const FVector Apex = GetWorldLocation();
+	const FVector Direction = GetForwardVector();
+	const float Height = GetAttenuationRadius();
+	const FColor Color = GetLightColor();
+	const FVector4 DrawColor(Color.R / 255.f, Color.G / 255.f, Color.B / 255.f, 1.f);
+	const FVector4 OuterColor((Color.R / 255.f) * 0.5f, (Color.G / 255.f) * 0.5f, (Color.B / 255.f) * 0.5f, 1.f);
+
+	// Draw Inner Cone
+	DebugDrawer.AddCone(Apex, Direction, Height, GetInnerConeAngle(), 16, DrawColor);
+
+	// Draw Outer Cone
+	DebugDrawer.AddCone(Apex, Direction, Height, GetOuterConeAngle(), 16, OuterColor);
 }
 
 const float USpotLightComponent::GetInnerConeAngle() const

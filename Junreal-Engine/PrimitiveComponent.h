@@ -27,7 +27,7 @@ public:
     // 컴포넌트 직렬화/역직렬화 (상대 트랜스폼 기준, V2용)
     virtual void Serialize(bool bIsLoading, FComponentData& InOut);
     virtual void Render(URenderer* Renderer, const FMatrix& View, const FMatrix& Proj, const EEngineShowFlags ShowFlags) {}
-
+    virtual void RenderWithLight(URenderer* Renderer, const FMatrix& View, const FMatrix& Proj, const EEngineShowFlags ShowFlags) {}
     virtual const FAABB GetWorldAABB() const;
     virtual const TArray<FVector> GetBoundingBoxLines() const;
     virtual const FVector4 GetBoundingBoxColor() const;

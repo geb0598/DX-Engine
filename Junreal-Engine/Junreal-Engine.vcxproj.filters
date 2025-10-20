@@ -945,6 +945,7 @@
     <FxCompile Include="Gamma.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>
+    <FxCompile Include="UberLit.hlsl" />
     <FxCompile Include="NormalViz.hlsl">
       <Filter>Shaders</Filter>
     </FxCompile>

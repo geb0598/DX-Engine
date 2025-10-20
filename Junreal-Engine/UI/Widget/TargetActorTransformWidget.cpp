@@ -23,6 +23,10 @@
 #include "ExponentialHeightFogComponent.h"
 #include "FXAAComponent.h"
 #include"FireballComponent.h"
+#include "Component/AmbientLightComponent.h"
+#include "Component/DirectionalLightComponent.h"
+#include "Component/PointLightComponent.h"
+#include "Component/SpotLightComponent.h"
 
 #include <filesystem>
 #include <vector>
@@ -263,7 +267,9 @@ void UTargetActorTransformWidget::RenderWidget()
 				ClassName.find("Cube") == FString::npos &&
 				ClassName.find("Sphere") == FString::npos &&
 				ClassName.find("Triangle") == FString::npos &&
-				ClassName.find("BoundingBox") == FString::npos)
+				ClassName.find("BoundingBox") == FString::npos &&
+				ClassName.find("LightComponent") == FString::npos
+				)
 			{
 				AddableSceneComponentTypes.push_back({ ClassName, Class });
 			}
@@ -283,6 +289,13 @@ void UTargetActorTransformWidget::RenderWidget()
 	static const TArray<TPair<FString, UClass*>> AddableActorComponentTypes = {
 		{ "Rotation Movement Component", URotationMovementComponent::StaticClass() },
 		{ "Projectile Movement Component", UProjectileMovementComponent::StaticClass() }
+	};
+
+	static const TArray<TPair<FString, UClass*>> AddableLightComponentTypes = {
+		{ "Ambient Light Component", UAmbientLightComponent::StaticClass() },
+		{ "Directional Light Component", UDirectionalLightComponent::StaticClass() },
+		{ "Point Light Component", UPointLightComponent::StaticClass() },
+		{ "Spot Light Component", USpotLightComponent::StaticClass() }
 	};
 
 	// +-+-+ Component Add/Delete Button +-+-+
@@ -360,6 +373,24 @@ void UTargetActorTransformWidget::RenderWidget()
 					// 컴포넌트를 누르면 생성 함수를 호출합니다.
 					USceneComponent* NewSceneComponent = SelectedActor->CreateAndAttachComponent(ParentComponent, Item.second);
 					// SelectedComponent를 생성된 컴포넌트로 교체합니다
+					SelectedComponent = NewSceneComponent;
+					ImGui::CloseCurrentPopup();
+				}
+			}
+
+			ImGui::Separator();
+			ImGui::Dummy(ImVec2(0.0f, 0.1f));
+
+			// Light Component 카테고리
+			ImGui::SetWindowFontScale(0.8f);
+			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "Light Components");
+			ImGui::SetWindowFontScale(1.0f);
+			for (const TPair<FString, UClass*>& Item : AddableLightComponentTypes)
+			{
+				if (ImGui::Selectable(Item.first.c_str()))
+				{
+					USceneComponent* ParentComponent = Cast<USceneComponent>(SelectedComponent);
+					USceneComponent* NewSceneComponent = SelectedActor->CreateAndAttachComponent(ParentComponent, Item.second);
 					SelectedComponent = NewSceneComponent;
 					ImGui::CloseCurrentPopup();
 				}
@@ -528,6 +559,22 @@ void UTargetActorTransformWidget::RenderWidget()
 		else if (UFXAAComponent* FXAAComp = Cast<UFXAAComponent>(SelectedComponent))
 		{
 			RenderFXAAComponentDetails(FXAAComp);
+		}
+		else if (UAmbientLightComponent* Comp = Cast<UAmbientLightComponent>(SelectedComponent))
+		{
+			RenderAmbientLightComponentDetails(Comp);
+		}
+		else if (UDirectionalLightComponent* Comp = Cast<UDirectionalLightComponent>(SelectedComponent))
+		{
+			RenderDirectionalLightComponentDetails(Comp);
+		}
+		else if (USpotLightComponent* Comp = Cast<USpotLightComponent>(SelectedComponent))
+		{
+			RenderSpotLightComponentDetails(Comp);
+		}
+		else if (UPointLightComponent* Comp = Cast<UPointLightComponent>(SelectedComponent))
+		{
+			RenderPointLightComponentDetails(Comp);
 		}
 		else
 		{
@@ -1268,4 +1315,158 @@ void UTargetActorTransformWidget::RenderFXAAComponentDetails(UFXAAComponent* InC
 	{
 		InComponent->SetReduceMul(ReduceMul);
 	}
+}
+
+void UTargetActorTransformWidget::RenderAmbientLightComponentDetails(UAmbientLightComponent* InComponent)
+{
+	ImGui::Text("Ambient Light Component");
+
+	// Intensity 조절
+	float Intensity = InComponent->GetIntensity();
+	if (ImGui::DragFloat("Intensity", &Intensity, 0.01f, 0.0f, 1000.0f))
+	{
+		InComponent->SetIntensity(Intensity);
+	}
+
+	// LightColor 조절 (FColor -> float[3] 변환)
+	FColor LightColor = InComponent->GetLightColor();
+	float color[3] = { LightColor.R / 255.0f, LightColor.G / 255.0f, LightColor.B / 255.0f };
+
+	if (ImGui::ColorEdit3("Light Color", color))
+	{
+		InComponent->SetLightColor(FColor(
+			static_cast<uint8>(color[0] * 255.0f),
+			static_cast<uint8>(color[1] * 255.0f),
+			static_cast<uint8>(color[2] * 255.0f),
+			LightColor.A // 기존 알파값 유지
+		));
+	}
+}
+
+void UTargetActorTransformWidget::RenderDirectionalLightComponentDetails(UDirectionalLightComponent* InComponent)
+{
+	ImGui::Text("Directional Light Component");
+
+	// Intensity 조절
+	float Intensity = InComponent->GetIntensity();
+	if (ImGui::DragFloat("Intensity", &Intensity, 0.01f, 0.0f, 1000.0f))
+	{
+		InComponent->SetIntensity(Intensity);
+	}
+
+	// LightColor 조절
+	FColor LightColor = InComponent->GetLightColor();
+	float color[3] = { LightColor.R / 255.0f, LightColor.G / 255.0f, LightColor.B / 255.0f };
+
+	if (ImGui::ColorEdit3("Light Color", color))
+	{
+		InComponent->SetLightColor(FColor(
+			static_cast<uint8>(color[0] * 255.0f),
+			static_cast<uint8>(color[1] * 255.0f),
+			static_cast<uint8>(color[2] * 255.0f),
+			LightColor.A
+		));
+	}
+
+	ImGui::TextDisabled("(Direction is controlled by the component's Rotation)");
+}
+
+void UTargetActorTransformWidget::RenderPointLightComponentDetails(UPointLightComponent* InComponent)
+{
+	ImGui::Text("Point Light Component");
+
+	// Intensity 및 LightColor (공통 속성)
+	float Intensity = InComponent->GetIntensity();
+	if (ImGui::DragFloat("Intensity", &Intensity, 0.01f, 0.0f, 1000.0f))
+	{
+		InComponent->SetIntensity(Intensity);
+	}
+
+	FColor LightColor = InComponent->GetLightColor();
+	float color[3] = { LightColor.R / 255.0f, LightColor.G / 255.0f, LightColor.B / 255.0f };
+	if (ImGui::ColorEdit3("Light Color", color))
+	{
+		InComponent->SetLightColor(FColor(
+			static_cast<uint8>(color[0] * 255.0f),
+			static_cast<uint8>(color[1] * 255.0f),
+			static_cast<uint8>(color[2] * 255.0f),
+			LightColor.A
+		));
+	}
+
+	// AttenuationRadius 조절 (ULocalLightComponent 속성)
+	float AttenuationRadius = InComponent->GetAttenuationRadius();
+	if (ImGui::DragFloat("Attenuation Radius", &AttenuationRadius, 1.0f, 0.0f, 10000.0f))
+	{
+		InComponent->SetAttenuationRadius(AttenuationRadius);
+	}
+
+	// LightFalloffExponent 조절 (UPointLightComponent 속성)
+	float LightFalloffExponent = InComponent->GetLightFalloffExponent();
+	if (ImGui::DragFloat("Falloff Exponent", &LightFalloffExponent, 0.1f, 0.1f, 16.0f))
+	{
+		InComponent->SetLightFalloffExponent(LightFalloffExponent);
+	}
+}
+
+void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComponent* InComponent)
+{
+	ImGui::Text("Spot Light Component");
+
+	// Intensity 및 LightColor (공통 속성)
+	float Intensity = InComponent->GetIntensity();
+	if (ImGui::DragFloat("Intensity", &Intensity, 0.01f, 0.0f, 1000.0f))
+	{
+		InComponent->SetIntensity(Intensity);
+	}
+
+	FColor LightColor = InComponent->GetLightColor();
+	float color[3] = { LightColor.R / 255.0f, LightColor.G / 255.0f, LightColor.B / 255.0f };
+	if (ImGui::ColorEdit3("Light Color", color))
+	{
+		InComponent->SetLightColor(FColor(
+			static_cast<uint8>(color[0] * 255.0f),
+			static_cast<uint8>(color[1] * 255.0f),
+			static_cast<uint8>(color[2] * 255.0f),
+			LightColor.A
+		));
+	}
+
+	// AttenuationRadius 및 LightFalloffExponent (부모 클래스 속성)
+	float AttenuationRadius = InComponent->GetAttenuationRadius();
+	if (ImGui::DragFloat("Attenuation Radius", &AttenuationRadius, 1.0f, 0.0f, 10000.0f))
+	{
+		InComponent->SetAttenuationRadius(AttenuationRadius);
+	}
+
+	float LightFalloffExponent = InComponent->GetLightFalloffExponent();
+	if (ImGui::DragFloat("Falloff Exponent", &LightFalloffExponent, 0.1f, 0.1f, 16.0f))
+	{
+		InComponent->SetLightFalloffExponent(LightFalloffExponent);
+	}
+
+	// Inner / Outer Cone Angles 조절 (USpotLightComponent 고유 속성)
+	float InnerConeAngle = InComponent->GetInnerConeAngle();
+	if (ImGui::SliderFloat("Inner Cone Angle", &InnerConeAngle, 0.0f, 90.0f, "%.1f deg"))
+	{
+		// Inner는 Outer보다 클 수 없음
+		if (InnerConeAngle > InComponent->GetOuterConeAngle())
+		{
+			InComponent->SetOuterConeAngle(InnerConeAngle);
+		}
+		InComponent->SetInnerConeAngle(InnerConeAngle);
+	}
+
+	float OuterConeAngle = InComponent->GetOuterConeAngle();
+	if (ImGui::SliderFloat("Outer Cone Angle", &OuterConeAngle, 0.0f, 90.0f, "%.1f deg"))
+	{
+		// Outer는 Inner보다 작을 수 없음
+		if (OuterConeAngle < InComponent->GetInnerConeAngle())
+		{
+			InComponent->SetInnerConeAngle(OuterConeAngle);
+		}
+		InComponent->SetOuterConeAngle(OuterConeAngle);
+	}
+
+	ImGui::TextDisabled("(Direction is controlled by the component's Rotation)");
 }
