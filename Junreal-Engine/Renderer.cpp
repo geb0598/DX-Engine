@@ -878,7 +878,14 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 			}
 		}*/
 
-		PrimitiveComponent->RenderWithLight(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
+		if (CurrentViewMode == EViewModeIndex::VMI_Unlit)
+		{
+			PrimitiveComponent->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
+		}
+		else
+		{
+			PrimitiveComponent->RenderWithLight(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
+		}
 	}
 }
 

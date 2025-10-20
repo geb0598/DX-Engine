@@ -3,6 +3,7 @@
 #define LIGHTING_MODEL_GOURAUD 1
 #define LIGHTING_MODEL_LAMBERT 1
 #define LIGHTING_MODEL_PHONG 1
+#define EPSILON 1e-6
 //#define HAS_NORMAL_MAP 1
 struct FAmbientLightInfo
 {
@@ -49,7 +50,7 @@ cbuffer PerObject : register(b0)
     row_major float4x4 WorldInverseTranspose;
 };
 
-cbuffer Lighting : register(b1)
+cbuffer Lighting : register(b10)
 {
     FAmbientLightInfo Ambient;
     FDirectionalLightInfo Directional;
@@ -58,7 +59,7 @@ cbuffer Lighting : register(b1)
     float3 CameraPos; // world space camera position
     float Pad0;
 };
-cbuffer PerMaterial : register(b2)
+cbuffer PerMaterial : register(b11)
 {
     float4 MaterialAmbient; // k_a (rgb)
     float4 MaterialDiffuse; // k_d (albedo, rgb)
@@ -96,7 +97,7 @@ void CalculatePointLight(FPointLightInfo info, float3 worldPos, float3 N, float3
 {
     float3 LDir = info.Position - worldPos;
     float distance = length(LDir);
-    if(distance <= 1e-5)
+    if(distance <= EPSILON || info.AttenuationRadius <= EPSILON || info.LightFalloffExponent <= EPSILON)
     {
         outDiffuse = float3(0.0f, 0.0f, 0.0f);
         outSpecular = float3(0.0f, 0.0f, 0.0f);
@@ -124,7 +125,7 @@ void CalculateSpotLight(FSpotLightInfo info, float3 worldPos, float3 N, float3 V
 {
     float3 LDir = info.Position - worldPos;
     float distance = length(LDir);
-    if(distance <= 1e-5)
+    if(distance <= EPSILON || info.AttenuationRadius <= EPSILON || info.LightFalloffExponent <= EPSILON)
     {
         outDiffuse = float3(0.0f, 0.0f, 0.0f);
         outSpecular = float3(0.0f, 0.0f, 0.0f);
