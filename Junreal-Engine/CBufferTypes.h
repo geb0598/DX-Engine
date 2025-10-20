@@ -285,6 +285,8 @@ struct alignas(16) FPerObjectBufferType
     FMatrix View;
     FMatrix Projection;
     FMatrix WorldInverseTranspose;
+    uint32 UUID = 0;
+    FVector _Pad_UUID;
 };
 struct alignas(16) FLightingBufferType
 {

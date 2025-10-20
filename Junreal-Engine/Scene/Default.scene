@@ -1,15 +1,31 @@
 {
   "Version" : 2,
-  "NextUUID" : 653,
+  "NextUUID" : 662,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-0.801376, -0.295569, 0.471811],
+    "Location" : [-3.836805, -2.914694, 4.214212],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 29.000004, 20.500002]
+    "Rotation" : [0.000000, 10.899994, 38.899994]
   },
   "Actors" : [
+    {
+      "UUID" : 654,
+      "Type" : "AStaticMeshActor",
+      "Name" : "rock-sl-2_0",
+      "RootComponentUUID" : 655
+    }
   ],
   "Components" : [
+    {
+      "UUID" : 655,
+      "OwnerActorUUID" : 654,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 3.550138],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [0.380000, 0.380000, 0.380000],
+      "StaticMesh" : "Data/ship/ship.obj"
+    }
   ]
 }

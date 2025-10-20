@@ -3,6 +3,9 @@
 cbuffer ModelBuffer : register(b0)
 {
     row_major float4x4 WorldMatrix;
+    uint UUID;
+    float3 Padding;
+    row_major float4x4 NormalMatrix;
 }
 
 cbuffer ViewProjBuffer : register(b1)
@@ -36,12 +39,19 @@ struct PS_INPUT
 {
     float4 position : SV_POSITION; // Transformed position to pass to the pixel shader
     float4 color : COLOR; // Color to pass to the pixel shader
+    uint   uuid : UUID;
+};
+
+struct PS_OUT
+{
+    float4 Color : SV_Target0;
+    uint UUID : SV_Target1;
 };
 
 PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
-    
+    output.uuid = UUID;
     // 상수버퍼를 통해 넘겨 받은 Offset을 더해서 버텍스를 이동 시켜 픽셀쉐이더로 넘김
     // float3 scaledPosition = input.position.xyz * Scale;
     // output.position = float4(Offset + scaledPosition, 1.0);
@@ -94,11 +104,14 @@ PS_INPUT mainVS(VS_INPUT input)
     return output;
 }
 
-float4 mainPS(PS_INPUT input) : SV_TARGET
+PS_OUT mainPS(PS_INPUT input)
 {
     // Lerp the incoming color with the global LerpColor
     float4 finalColor = input.color;
     finalColor.rgb = lerp(finalColor.rgb, LerpColor.rgb, LerpColor.a);
-    return finalColor;
+    PS_OUT o;
+    o.Color = finalColor;
+    o.UUID = input.uuid;
+    return o;
 }
 

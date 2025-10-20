@@ -83,7 +83,7 @@ void UStaticMeshComponent::RenderWithLight(URenderer* Renderer, const FMatrix& V
             Renderer->OMSetDepthStencilState(EComparisonFunc::LessEqual);
         }
 
-        Renderer->RSSetNoCullState();
+        //Renderer->RSSetNoCullState();
 
         // PerObject Cbuffer(b0) 채우기
         FPerObjectBufferType PerObjectData;
@@ -92,7 +92,8 @@ void UStaticMeshComponent::RenderWithLight(URenderer* Renderer, const FMatrix& V
         PerObjectData.Projection = Proj;
         // normal 월드 변환을 위함
         PerObjectData.WorldInverseTranspose = GetWorldMatrix().Inverse().Transpose();
-        
+        PerObjectData.UUID = this->InternalIndex;
+
         // b0에 업데이트
         Renderer->UpdateSetCBuffer(PerObjectData);
 

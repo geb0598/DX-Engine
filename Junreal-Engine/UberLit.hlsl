@@ -48,6 +48,8 @@ cbuffer PerObject : register(b0)
     row_major float4x4 View;
     row_major float4x4 Projection;
     row_major float4x4 WorldInverseTranspose;
+    uint UUID;
+    float3 _pad_uuid;
 };
 
 cbuffer Lighting : register(b10)
@@ -82,7 +84,7 @@ void CalculateDirectionalLight(FDirectionalLightInfo info, float3 N, float3 V, f
     float3 L = normalize(-info.Direction);
     float3 H = normalize(L + V);
     
-    // diffuse term
+    // diffuse term 
     float NdotL = saturate(dot(N, L));
     outDiffuse = info.Color.rgb * info.Intensity * NdotL; // diffuse 계수는 밖에서 곱
     
@@ -138,12 +140,8 @@ void CalculateSpotLight(FSpotLightInfo info, float3 worldPos, float3 N, float3 V
     float cosTheta = dot(L, spotAxis);
     
     float spot = 0.0f;
-    if (cosTheta >= info.InnerConeAngle)
-        spot = 1.0f;
-    else if(cosTheta <= info.OuterConeAngle)
-        spot = 0.0f;
-    else
-        spot = saturate((cosTheta - info.OuterConeAngle) / (info.InnerConeAngle - info.OuterConeAngle));
+    
+    spot = saturate((cosTheta - info.OuterConeAngle) / (info.InnerConeAngle - info.OuterConeAngle));
     
     float attenuation = pow(saturate(1 - distance / info.AttenuationRadius), info.LightFalloffExponent);
     
@@ -174,6 +172,7 @@ struct VS_INPUT
     float3 Normal : NORMAL0;
     float4 Color : COLOR;
     float2 UV : TEXCOORD0;
+    float4 Tangent : TANGENT;
 };
 
 struct VS_OUTPUT
@@ -183,6 +182,8 @@ struct VS_OUTPUT
     float3 WorldPosition : TEXCOORD0;
     float3 WorldNormal : TEXCOORD1;
     float2 UV : TEXCOORD2;
+    float4 Tangent : TANGENT0;
+    uint UUID : UUID;
     
 #if defined(LIGHTING_MODEL_GOURAUD)
     float3 Lit_Ambient : COLOR0; // already multiplied by k_a in VS for Gouraud
@@ -206,6 +207,9 @@ VS_OUTPUT Uber_VS(VS_INPUT Input)
     output.Position = mul(float4(Input.Position, 1.0f), World);
     output.Position = mul(output.Position, View);
     output.Position = mul(output.Position, Projection);
+    output.Tangent = Input.Tangent;
+    output.UUID = UUID;
+    
 #if defined(LIGHTING_MODEL_GOURAUD)
     // calculate in vertex
     float3 V = normalize(CameraPos - worldPos);
@@ -252,11 +256,28 @@ VS_OUTPUT Uber_VS(VS_INPUT Input)
 Texture2D TextureColor : register(t0);
 SamplerState Sampler : register(s0);
 
+Texture2D NormalMapTex : register(t1);
+
 PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
 {
     PS_OUTPUT output;
-    float4 finalPixel = float4(1.0f, 1.0f, 1.0f, 1.0f);
+    float4 FinalPixel = float4(1.0f, 1.0f, 1.0f, 1.0f);
     float3 albedoTexture = TextureColor.Sample(Sampler, Input.UV).rgb;
+    
+    // TBN과 NormalMap으로부터 월드 노말 구하기
+    float2 UV = Input.UV;
+    float3 N = NormalMapTex.Sample(Sampler, UV).xyz;
+    
+    N = 2.0f * N - 1.0f;
+    N = normalize(N);
+    
+    float3 Nw = normalize(Input.WorldNormal);
+    float3 Tw = normalize(Input.Tangent.xyz);
+    float h = Input.Tangent.w; // handedness (+1/-1)
+    float3 Bw = normalize(cross(Nw, Tw) * h);
+    
+    float3x3 TBN = float3x3(Tw, Bw, Nw);
+    N = normalize(mul(N, TBN));
     
     float3 k_a = MaterialAmbient.rgb;
     float3 k_d = MaterialDiffuse.rgb;
@@ -267,8 +288,8 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
 #if defined(LIGHTING_MODEL_GOURAUD)
     // VS에서 이미 재질 계수(k_a, k_d, k_s)가 모두 곱해짐
     float3 finalLighting = Input.Lit_Ambient + (Input.Lit_Diffuse * albedoTexture) + Input.Lit_Specular;
-    finalPixel.rgb = finalLighting + k_e;
-    finalPixel.a = 1.0f;
+    FinalPixel.rgb = finalLighting + k_e;
+    FinalPixel.a = 1.0f;
 #elif defined(LIGHTING_MODEL_LAMBERT)
     float3 N = normalize(Input.WorldNormal);
     float3 V = normalize(CameraPos - Input.WorldPosition);
@@ -339,7 +360,7 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     float3 finalLighting = ambientTerm + diffuseTerm + specularTerm + k_e;
     finalPixel = float4(finalLighting, 1.0f);
 #endif
-    output.Color = finalPixel;
-    output.UUID = 1;
+    output.Color = FinalPixel;
+    output.UUID = Input.UUID;
     return output;
 }

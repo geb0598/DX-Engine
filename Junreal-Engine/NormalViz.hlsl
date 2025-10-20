@@ -42,6 +42,13 @@ struct PS_INPUT
     float3 worldNormal  : TEXCOORD1;
     float2 texCoord     : TEXCOORD2;
     float4 tangent      : TANGENT;
+    uint   uuid         : UUID;
+};
+
+struct PS_OUT
+{
+    float4 Color : SV_Target0;
+    uint UUID : SV_Target1;
 };
 
 PS_INPUT mainVS(VS_INPUT input)
@@ -61,6 +68,7 @@ PS_INPUT mainVS(VS_INPUT input)
 
     float4x4 MVP = mul(mul(WorldMatrix, ViewMatrix), ProjectionMatrix);
     o.position = mul(float4(input.position, 1.0f), MVP);
+    o.uuid = UUID;
     return o;
 }
 
@@ -80,7 +88,7 @@ float3 ComputeTBNNormal(float3 Nw, float4 tangent, float2 uv)
     return normalize(mul(nTS, TBN));
 }
 
-float4 mainPS(PS_INPUT input) : SV_Target0
+PS_OUT mainPS(PS_INPUT input)
 {
     float3 N = input.worldNormal;
     if (bUseTBN != 0)
@@ -89,6 +97,9 @@ float4 mainPS(PS_INPUT input) : SV_Target0
     }
 
     float3 rgb = NormalToColor(N);
-    return float4(rgb, 1.0f);
+    PS_OUT o;
+    o.Color = float4(rgb, 1.0f);
+    o.UUID = input.uuid;
+    return o;
 }
 
