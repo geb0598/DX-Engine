@@ -46,6 +46,7 @@ cbuffer PerObject : register(b0)
     row_major float4x4 World;
     row_major float4x4 View;
     row_major float4x4 Projection;
+    row_major float4x4 WorldInverseTranspose;
 };
 
 cbuffer Lighting : register(b1)
@@ -162,7 +163,7 @@ float3 TransformPosToWorld(float3 pos)
 }
 float3 TransformNormalToWorld(float3 n)
 {
-    float3 w = mul(float4(n, 0.0), World).xyz;
+    float3 w = mul(n, (float3x3)WorldInverseTranspose);
     return normalize(w);
 }
 struct VS_INPUT

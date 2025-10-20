@@ -344,6 +344,113 @@ void URenderer::DrawIndexedPrimitiveComponent(UBillboardComponent* Comp, D3D11_P
 	StatsCollector.IncrementDrawCalls();
 }
 
+void URenderer::DrawIndexedPrimitiveComponentWithLight(UStaticMesh* InMesh, D3D11_PRIMITIVE_TOPOLOGY InTopology, const TArray<FMaterialSlot>& InComponentMaterialSlots)
+{
+	URenderingStatsCollector& StatsCollector = URenderingStatsCollector::GetInstance();
+
+	// 디버그: StaticMesh 렌더링 통계
+
+	UINT stride = 0;
+	switch (InMesh->GetVertexType())
+	{
+	case EVertexLayoutType::PositionColor:
+		stride = sizeof(FVertexSimple);
+		break;
+	case EVertexLayoutType::PositionColorTexturNormal:
+		stride = sizeof(FVertexDynamic);
+		break;
+	case EVertexLayoutType::PositionBillBoard:
+		stride = sizeof(FBillboardVertexInfo_GPU);
+		break;
+	case EVertexLayoutType::PositionUV:
+		stride = sizeof(FVertexUV);
+	default:
+		// Handle unknown or unsupported vertex types
+		assert(false && "Unknown vertex type!");
+		return; // or log an error
+	}
+	UINT offset = 0;
+
+	ID3D11Buffer* VertexBuffer = InMesh->GetVertexBuffer();
+	ID3D11Buffer* IndexBuffer = InMesh->GetIndexBuffer();
+	uint32 VertexCount = InMesh->GetVertexCount();
+	uint32 IndexCount = InMesh->GetIndexCount();
+
+	RHIDevice->GetDeviceContext()->IASetVertexBuffers(
+		0, 1, &VertexBuffer, &stride, &offset
+	);
+
+	RHIDevice->GetDeviceContext()->IASetIndexBuffer(
+		IndexBuffer, DXGI_FORMAT_R32_UINT, 0
+	);
+
+	RHIDevice->GetDeviceContext()->IASetPrimitiveTopology(InTopology);
+	RHIDevice->PSSetDefaultSampler(0);
+
+	if (InMesh->HasMaterial())
+	{
+		const TArray<FGroupInfo>& MeshGroupInfos = InMesh->GetMeshGroupInfo();
+		const uint32 NumMeshGroupInfos = static_cast<uint32>(MeshGroupInfos.size());
+		for (uint32 i = 0; i < NumMeshGroupInfos; ++i)
+		{
+			const UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(InComponentMaterialSlots[i].MaterialName);
+			const FObjMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
+			bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());
+
+			// 재료 변경 추적
+			if (LastMaterial != Material)
+			{
+				StatsCollector.IncrementMaterialChanges();
+				LastMaterial = const_cast<UMaterial*>(Material);
+			}
+
+			FTextureData* TextureData = nullptr;
+			if (bHasTexture)
+			{
+				TextureData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.DiffuseTextureFileName);
+
+				// 텍스처 변경 추적 (임시로 FTextureData*를 UTexture*로 캠스트)
+				UTexture* CurrentTexture = reinterpret_cast<UTexture*>(TextureData);
+				if (LastTexture != CurrentTexture)
+				{
+					StatsCollector.IncrementTextureChanges();
+					LastTexture = CurrentTexture;
+				}
+
+				RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &(TextureData->TextureSRV));
+			}
+
+			//RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(MaterialInfo), true, bHasTexture)); // PSSet도 해줌
+
+			// UberShader가 사용할 PerMaterial 상수 버퍼(b2)의 내용을 채웁니다.
+			FPerMaterialBufferType PerMaterialData;
+			PerMaterialData.MaterialAmbient = FVector4(MaterialInfo.AmbientColor, 1.0f);
+			PerMaterialData.MaterialDiffuse = FVector4(MaterialInfo.DiffuseColor, 1.0f);
+			PerMaterialData.MaterialSpecular = FVector4(MaterialInfo.SpecularColor, 1.0f);
+			PerMaterialData.MaterialEmissive = FVector4(MaterialInfo.EmissiveColor, 1.0f);
+			PerMaterialData.SpecularShininess = MaterialInfo.SpecularExponent;
+			// GPU 전송
+			UpdateSetCBuffer(PerMaterialData);
+
+
+			// DrawCall 수실행 및 통계 추가
+			RHIDevice->GetDeviceContext()->DrawIndexed(MeshGroupInfos[i].IndexCount, MeshGroupInfos[i].StartIndex, 0);
+			StatsCollector.IncrementDrawCalls();
+		}
+	}
+	else
+	{
+		FObjMaterialInfo ObjMaterialInfo;
+		//RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(ObjMaterialInfo), false, false)); // PSSet도 해줌
+		//RHIDevice->GetDeviceContext()->DrawIndexed(IndexCount, 0, 0);
+
+		FPerMaterialBufferType DefaultMaterialData{};
+		UpdateSetCBuffer(DefaultMaterialData);
+		RHIDevice->GetDeviceContext()->DrawIndexed(IndexCount, 0, 0);
+		StatsCollector.IncrementDrawCalls();
+	}
+}
+
 void URenderer::SetViewModeType(EViewModeIndex ViewModeIndex)
 {
 	RHIDevice->RSSetState(ViewModeIndex);
@@ -591,7 +698,7 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
 	ViewFrustum.Update(ViewMatrix * ProjectionMatrix);
 
 	BeginLineBatch();
-	SetViewModeType(CurrentViewMode);
+	SetViewModeType(CurrentViewMode);  
 
 	RenderPrimitives(World, ViewMatrix, ProjectionMatrix, Viewport);
 
@@ -721,19 +828,21 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 	USelectionManager& SelectionManager = USelectionManager::GetInstance();
 	AActor* SelectedActor = SelectionManager.GetSelectedActor();
 
-	//UShader* ShaderToUse = UberShaders[CurrentViewMode];
-	//if (!ShaderToUse)
-	//{
-	//	ShaderToUse = UberShaders[EViewModeIndex::VMI_Unlit];
-	//	if (!ShaderToUse)
-	//	{
-	//		return;
-	//	}
-	//}
-
-	//PrepareShader(ShaderToUse);
-	//// Lighting 상수 버퍼(b1) 설정
-	//UpdateSetCBuffer(FLightingBufferType(LightingCBufferData));
+	UShader* ShaderToUse = UberShaders[CurrentViewMode];
+	/*if (!ShaderToUse)
+	{
+		ShaderToUse = UberShaders[EViewModeIndex::VMI_Unlit];
+		if (!ShaderToUse)
+		{
+			return;
+		}
+	}*/
+	if (ShaderToUse)
+	{
+		PrepareShader(ShaderToUse);
+	}
+	// Lighting 상수 버퍼(b1) 설정
+	UpdateSetCBuffer(FLightingBufferType(LightingCBufferData));
 
 	for (UPrimitiveComponent* PrimitiveComponent : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
 	{
@@ -746,7 +855,7 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 		{
 			AddLines(PrimitiveComponent->GetBoundingBoxLines(), PrimitiveComponent->GetBoundingBoxColor());
 		}
-		if (PrimitiveComponent->GetOwner() == SelectedActor)
+		/*if (PrimitiveComponent->GetOwner() == SelectedActor)
 		{
 			bIsSelected = true;
 		}
@@ -767,9 +876,9 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 			else {
 				UpdateSetCBuffer(HighLightBufferType(bIsSelected, rgb, 0, 0, 0, 0));
 			}
-		}
+		}*/
 
-		PrimitiveComponent->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
+		PrimitiveComponent->RenderWithLight(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
 	}
 }
 
@@ -851,16 +960,11 @@ void URenderer::InitializeUberShaders()
 	FString GouraudCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_GOURAUD=1";
 	UberShaders.Add(EViewModeIndex::VMI_Lit_Gouraud, ResourceManager.Load<UShader>(GouraudCommand));
 
-	// TODO: 일단 Gouraud만 테스트하고, 추후에 나머지 추가 예정
-	/*FString LambertCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_LAMBERT=1";
+	FString LambertCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_LAMBERT=1";
 	UberShaders.Add(EViewModeIndex::VMI_Lit_Lambert, ResourceManager.Load<UShader>(LambertCommand));
 	
 	FString PhongCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_PHONG=1";
 	UberShaders.Add(EViewModeIndex::VMI_Lit_Phong, ResourceManager.Load<UShader>(PhongCommand));
-	
-	FString UnlitCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_UNLIT=1";
-	UberShaders.Add(EViewModeIndex::VMI_Unlit, ResourceManager.Load<UShader>(UnlitCommand));*/
-
 }
 
 void URenderer::UpdateLightingBuffer(UWorld* InWorld, ACameraActor* InCameraActor)

@@ -27,7 +27,7 @@ protected:
 
 public:
     void Render(URenderer* Renderer, const FMatrix& View, const FMatrix& Proj, const EEngineShowFlags ShowFlags) override;
-
+    void RenderWithLight(URenderer* Renderer, const FMatrix& View, const FMatrix& Proj, const EEngineShowFlags ShowFlags) override;
     void SetStaticMesh(const FString& PathFileName);
     UStaticMesh* GetStaticMesh() const { return StaticMesh; }
 

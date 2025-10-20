@@ -276,6 +276,7 @@ struct alignas(16) FPerObjectBufferType
     FMatrix World;
     FMatrix View;
     FMatrix Projection;
+    FMatrix WorldInverseTranspose;
 };
 struct alignas(16) FLightingBufferType
 {

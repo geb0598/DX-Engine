@@ -63,6 +63,43 @@ void UStaticMeshComponent::Render(URenderer* Renderer, const FMatrix& ViewMatrix
     }
 }
 
+void UStaticMeshComponent::RenderWithLight(URenderer* Renderer, const FMatrix& View, const FMatrix& Proj, const EEngineShowFlags ShowFlags)
+{
+    if (HasShowFlag(ShowFlags, EEngineShowFlags::SF_StaticMeshes) == false)
+    {
+        return;
+    }
+
+    if (StaticMesh)
+    {
+        // 해당 컴포넌트의 오너가 기즈모 액터인 경우 
+        if (Cast<AGizmoActor>(this->GetOwner()))
+        {
+            Renderer->OMSetDepthStencilState(EComparisonFunc::Always);
+        }
+        else
+        {
+            // 해당 컴포넌트의 오너가 기즈모 액터가 아닌 경우
+            Renderer->OMSetDepthStencilState(EComparisonFunc::LessEqual);
+        }
+
+        Renderer->RSSetNoCullState();
+
+        // PerObject Cbuffer(b0) 채우기
+        FPerObjectBufferType PerObjectData;
+        PerObjectData.World = GetWorldMatrix();
+        PerObjectData.View = View;
+        PerObjectData.Projection = Proj;
+        // normal 월드 변환을 위함
+        PerObjectData.WorldInverseTranspose = GetWorldMatrix().Inverse().Transpose();
+        
+        // b0에 업데이트
+        Renderer->UpdateSetCBuffer(PerObjectData);
+
+        Renderer->DrawIndexedPrimitiveComponentWithLight(GetStaticMesh(), D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, MaterailSlots);
+    }
+}
+
 void UStaticMeshComponent::SetStaticMesh(const FString& PathFileName)
 {
 	StaticMesh = FObjManager::LoadObjStaticMesh(PathFileName);

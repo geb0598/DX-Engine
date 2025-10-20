@@ -62,7 +62,7 @@ public:
     void DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITIVE_TOPOLOGY InTopology, const TArray<FMaterialSlot>& InComponentMaterialSlots);
     void DrawIndexedPrimitiveComponent(UTextRenderComponent* Comp, D3D11_PRIMITIVE_TOPOLOGY InTopology);
     void DrawIndexedPrimitiveComponent(UBillboardComponent* Comp, D3D11_PRIMITIVE_TOPOLOGY InTopology);
-
+    void DrawIndexedPrimitiveComponentWithLight(UStaticMesh* InMesh, D3D11_PRIMITIVE_TOPOLOGY InTopology, const TArray<FMaterialSlot>& InComponentMaterialSlots);
     // View Mode Setting
     void SetViewModeType(EViewModeIndex ViewModeIndex);
     void SetViewModeIndex(EViewModeIndex InViewModeIndex) { CurrentViewMode = InViewModeIndex; }
