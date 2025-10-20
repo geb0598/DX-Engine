@@ -838,7 +838,7 @@ void UTargetActorTransformWidget::RenderStaticMeshComponentDetails(UStaticMeshCo
 			}
 
 			// 현재 SMC의 MaterialSlots 정보를 UI에 반영
-			const TArray<FMaterialSlot>& MaterialSlots = InComponent->GetMaterailSlots();
+			const TArray<FMaterialSlot>& MaterialSlots = InComponent->GetMaterialSlots();
 			for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
 			{
 				for (uint32 MaterialIndex = 0; MaterialIndex < MaterialNames.size(); ++MaterialIndex)

@@ -105,7 +105,8 @@ void URenderer::RSSetNoCullState()
 
 void URenderer::RSSetDefaultState()
 {
-    RHIDevice->RSSetDefaultState();
+    // Use no-cull to visualize normals on geometry with inconsistent winding
+    RHIDevice->RSSetNoCullState();
 }
 
 void URenderer::RenderFrame(UWorld* World)
@@ -177,6 +178,7 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
             const UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(InComponentMaterialSlots[i].MaterialName);
             const FObjMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
             bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());
+            bool bHasNormalMap = !(MaterialInfo.NormalTextureName == FName::None());
             
             // 재료 변경 추적
             if (LastMaterial != Material)
@@ -186,6 +188,8 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
             }
             
             FTextureData* TextureData = nullptr;
+            FTextureData* NormalMapData = nullptr;
+
             if (bHasTexture)
             {
                 TextureData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.DiffuseTextureFileName);
@@ -200,8 +204,21 @@ void URenderer::DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITI
                 
                 RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &(TextureData->TextureSRV));
             }
-            
-            RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(MaterialInfo), true, bHasTexture)); // PSSet도 해줌
+            if (bHasNormalMap)
+            {
+                NormalMapData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.NormalTextureName);
+                // 텍스처 변경 추적 (임시로 FTextureData*를 UTexture*로 캠스트)
+                UTexture* CurrentTexture = reinterpret_cast<UTexture*>(NormalMapData);
+                if (LastTexture != CurrentTexture)
+                {
+                    StatsCollector.IncrementTextureChanges();
+                    LastTexture = CurrentTexture;
+                }
+
+                RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &(NormalMapData->TextureSRV));
+            }
+
+            RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(MaterialInfo), true, bHasTexture, bHasNormalMap)); // PSSet도 해줌
             
             // DrawCall 수실행 및 통계 추가
             RHIDevice->GetDeviceContext()->DrawIndexed(MeshGroupInfos[i].IndexCount, MeshGroupInfos[i].StartIndex, 0);
@@ -511,6 +528,11 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         RenderBasePass(World, Camera, Viewport);  // calls RenderScene, which executes the depth-only pass 
                                                   // (RenderSceneDepthPass) according to the current view mode
         RenderSceneDepthVisualizePass(Camera);    // Depth → Grayscale visualize
+        break;
+    }
+    case EViewModeIndex::VMI_WorldNormal:
+    {
+        RenderWorldNormalPass(World, Camera, Viewport);
         break;
     }
     default:
@@ -997,6 +1019,101 @@ void URenderer::RenderSceneDepthVisualizePass(ACameraActor* Camera)
     ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
     RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
     RHIDevice->OmSetDepthStencilState(EComparisonFunc::LessEqual);
+}
+
+void URenderer::RenderWorldNormalPass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
+{
+    if (!World || !Camera || !Viewport) return;
+
+    // 1) 뷰/프로젝션 셋업
+    float aspect = (Viewport->GetSizeY() == 0)
+        ? 1.0f
+        : float(Viewport->GetSizeX()) / float(Viewport->GetSizeY());
+    const FMatrix View = Camera->GetViewMatrix();
+    const FMatrix Proj = Camera->GetProjectionMatrix(aspect, Viewport);
+    UpdateSetCBuffer(ViewProjBufferType(View, Proj, Camera->GetActorLocation()));
+
+    // 2) 렌더 타깃 상태: 프레임 RTV + DSV (깊이 테스트 유지)
+    RHIDevice->OMSetRenderTargets(ERenderTargetType::None);
+    RHIDevice->PSSetRenderTargetSRV(ERenderTargetType::None);
+    RHIDevice->OMSetRenderTargets(ERenderTargetType::Frame); // 이미 BeginFrame에서 Frame|ID 묶었으면 필요시 다시 Frame만
+    OMSetBlendState(false);
+    OMSetDepthStencilState(EComparisonFunc::LessEqual); // 깊이 테스트 O, 쓰기 On 권장
+    RHIDevice->RSSetDefaultState();
+    RHIDevice->IASetPrimitiveTopology();
+    RHIDevice->PSSetDefaultSampler(0);
+
+    // 3) NormalViz 전용 셰이더 바인딩
+    UShader* NormalViz = UResourceManager::GetInstance().Load<UShader>("NormalViz.hlsl");
+    PrepareShader(NormalViz); // VS/PS/IL 세팅
+
+    // 4) 씬 프리미티브 전부 교체 렌더
+    for (UPrimitiveComponent* Prim : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
+    {
+        if (!Prim || !Prim->IsActive()) continue;
+
+        {
+            FMatrix WorldMatrix = Prim->GetWorldMatrix();
+            FMatrix NormalMatrix = WorldMatrix.Inverse().Transpose();
+            ModelBufferType ModelBuf;
+            ModelBuf.Model = WorldMatrix;
+            ModelBuf.NormalMatrix = NormalMatrix;
+            UpdateSetCBuffer(ModelBuf);
+        }
+
+        if (UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(Prim))
+        {
+            UStaticMesh* Mesh = MeshComp->GetStaticMesh();
+            if (!Mesh) continue;
+
+            UINT stride = 0;
+            switch (Mesh->GetVertexType())
+            {
+            case EVertexLayoutType::PositionColor:               stride = sizeof(FVertexSimple);  break;
+            case EVertexLayoutType::PositionColorTexturNormal:   stride = sizeof(FVertexDynamic); break;
+            case EVertexLayoutType::PositionBillBoard:           stride = sizeof(FBillboardVertexInfo_GPU); break;
+            case EVertexLayoutType::PositionUV:                  stride = sizeof(FVertexUV);      break;
+            default: continue;
+            }
+
+            ID3D11Buffer* VB = Mesh->GetVertexBuffer();
+            ID3D11Buffer* IB = Mesh->GetIndexBuffer();
+            UINT offset = 0;
+
+            RHIDevice->GetDeviceContext()->IASetVertexBuffers(0, 1, &VB, &stride, &offset);
+            RHIDevice->GetDeviceContext()->IASetIndexBuffer(IB, DXGI_FORMAT_R32_UINT, 0);
+
+            bool bHasNormalMap = false;
+            if (Mesh->HasMaterial())
+            {
+                const TArray<FMaterialSlot>& Slots = MeshComp->GetMaterialSlots();
+                if (!Slots.empty())
+                {
+                    const UMaterial* M = UResourceManager::GetInstance().Get<UMaterial>(Slots[0].MaterialName);
+                    if (M)
+                    {
+                        const FObjMaterialInfo& Info = M->GetMaterialInfo();
+                        bHasNormalMap = !(Info.NormalTextureName == FName::None());
+                        if (bHasNormalMap)
+                        {
+                            FTextureData* NormalTD = UResourceManager::GetInstance().CreateOrGetTextureData(Info.NormalTextureName);
+                            ID3D11ShaderResourceView* srv = NormalTD ? NormalTD->TextureSRV : nullptr;
+                            RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &srv); // t0
+                        }
+                    }
+                }
+            }
+
+            FNormalVizCB cb{ (uint32)(bHasNormalMap ? 1 : 0) };
+            UpdateSetCBuffer(cb);
+
+            RHIDevice->GetDeviceContext()->DrawIndexed(Mesh->GetIndexCount(), 0, 0);
+            URenderingStatsCollector::GetInstance().IncrementDrawCalls();
+
+            ID3D11ShaderResourceView* nullSRV[1] = { nullptr };
+            RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, nullSRV);
+        }
+    }
 }
 
 void URenderer::InitializeLineBatch()

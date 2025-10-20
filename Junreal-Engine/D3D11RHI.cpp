@@ -153,13 +153,15 @@ void D3D11RHI::CreateDepthStencilState()
 void D3D11RHI::CreateSamplerState()
 {
     D3D11_SAMPLER_DESC SampleDesc = {};
-    SampleDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    SampleDesc.Filter = D3D11_FILTER_ANISOTROPIC;
     SampleDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
     SampleDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
     SampleDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
     SampleDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
     SampleDesc.MinLOD = 0;
     SampleDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    SampleDesc.MaxAnisotropy = 16;
+
 
 	HRESULT HR = Device->CreateSamplerState(&SampleDesc, &DefaultSamplerState);
 }
@@ -528,17 +530,19 @@ void D3D11RHI::CreateRasterizerState()
     if (DefaultRasterizerState)
         return;
 
-    D3D11_RASTERIZER_DESC deafultrasterizerdesc = {};
-    deafultrasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
-    deafultrasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
-    deafultrasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
+    D3D11_RASTERIZER_DESC defaultrasterizerdesc = {};
+    defaultrasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
+    defaultrasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
+    defaultrasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
+    //defaultrasterizerdesc.FrontCounterClockwise = TRUE;
 
-    Device->CreateRasterizerState(&deafultrasterizerdesc, &DefaultRasterizerState);
+    Device->CreateRasterizerState(&defaultrasterizerdesc, &DefaultRasterizerState);
 
     D3D11_RASTERIZER_DESC wireframerasterizerdesc = {};
     wireframerasterizerdesc.FillMode = D3D11_FILL_WIREFRAME; // 채우기 모드
     wireframerasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
     wireframerasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
+    //wireframerasterizerdesc.FrontCounterClockwise = TRUE;
 
     Device->CreateRasterizerState(&wireframerasterizerdesc, &WireFrameRasterizerState);
 
@@ -546,6 +550,7 @@ void D3D11RHI::CreateRasterizerState()
     frontcullrasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
     frontcullrasterizerdesc.CullMode = D3D11_CULL_FRONT; // 프론트 페이스 컬링
     frontcullrasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
+    //frontcullrasterizerdesc.FrontCounterClockwise = TRUE;
 
     Device->CreateRasterizerState(&frontcullrasterizerdesc, &FrontCullRasterizerState);
 
@@ -553,6 +558,7 @@ void D3D11RHI::CreateRasterizerState()
     nocullrasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
     nocullrasterizerdesc.CullMode = D3D11_CULL_NONE; // 컬링 없음
     nocullrasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
+    //nocullrasterizerdesc.FrontCounterClockwise = TRUE;
 
     Device->CreateRasterizerState(&nocullrasterizerdesc, &NoCullRasterizerState);
 
@@ -564,6 +570,7 @@ void D3D11RHI::CreateRasterizerState()
     decalrasterizerdesc.DepthBias = -100; // z-fighting 방지용 bias
     decalrasterizerdesc.DepthBiasClamp = 0.0f;
     decalrasterizerdesc.SlopeScaledDepthBias = -1.0f;
+    //decalrasterizerdesc.FrontCounterClockwise = TRUE;
 
     Device->CreateRasterizerState(&decalrasterizerdesc, &DecalRasterizerState);
 }

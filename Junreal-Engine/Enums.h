@@ -21,7 +21,8 @@ struct FObjMaterialInfo
     FVector SpecularColor = FVector::One(); // Ks
     FVector EmissiveColor = FVector::One(); // Ke
 
-    FName DiffuseTextureFileName;
+    FName DiffuseTextureFileName = FName::None();
+    FName NormalTextureName = FName::None();
     FString AmbientTextureFileName;
     FString SpecularTextureFileName;
     FString EmissiveTextureFileName;
@@ -52,6 +53,7 @@ struct FObjMaterialInfo
             Serialization::WriteString(Ar, Info.EmissiveTextureFileName);
             Serialization::WriteString(Ar, Info.TransparencyTextureFileName);
             Serialization::WriteString(Ar, Info.SpecularExponentTextureFileName);
+            Serialization::WriteString(Ar, Info.NormalTextureName.ToString());
         }
         else if (Ar.IsLoading())
         {
@@ -63,6 +65,9 @@ struct FObjMaterialInfo
             Serialization::ReadString(Ar, Info.EmissiveTextureFileName);
             Serialization::ReadString(Ar, Info.TransparencyTextureFileName);
             Serialization::ReadString(Ar, Info.SpecularExponentTextureFileName);
+            FString NormalMapFileString;
+            Serialization::ReadString(Ar, NormalMapFileString);
+            Info.NormalTextureName = FName(NormalMapFileString);
         }
 
         Ar << Info.TransmissionFilter;
@@ -124,6 +129,7 @@ struct FNormalVertex
     FVector normal;
     FVector4 color;
     FVector2D tex;
+    FVector4 tangent;
 
     friend FArchive& operator<<(FArchive& Ar, FNormalVertex& Vtx)
     {
@@ -289,6 +295,7 @@ enum class EViewModeIndex : uint32
     VMI_Unlit,
     VMI_Wireframe,
     VMI_SceneDepth,
+    VMI_WorldNormal,
 
     End,
 };
