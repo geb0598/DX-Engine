@@ -195,22 +195,6 @@ struct PS_OUTPUT
 };
 VS_OUTPUT Uber_VS(VS_INPUT Input)
 {
-//    VS_OUTPUT output = (VS_OUTPUT) 0;
-    
-//    float4 worldPos = mul(float4(Input.Position, 1.0f), World);
-//    output.Position = mul(worldPos, View);
-//    output.Position = mul(output.Position, Projection);
-//    output.UV = Input.UV;
-    
-//#if (VIEW_MODE == LIGHTING_MODEL_GOURAUD)
-//    float3 worldNormal = normalize(mul(Input.normal, (float3x3)World);
-//    float3 totalLight;
-//    totalLight += Directional.Color.rgb * saturate(dot(worldNormal, -normalize(Directional.Direction)));
-    
-//#elif (VIEW_MODE == LIGHTING_MODEL_LAMBERT) || (VIEW_MODE == LIGHTING_MODEL_PHONG)
-//    output.WorldPosition = worldPos.xyz;
-//    output.WorldNormal = normalize(mul(Input.Normal, (float3x3)World));
-//#endif
     VS_OUTPUT output = (VS_OUTPUT) 0;
     float3 worldPos = TransformPosToWorld(Input.Position);
     float3 worldN = TransformNormalToWorld(Input.Normal);
@@ -237,6 +221,20 @@ VS_OUTPUT Uber_VS(VS_INPUT Input)
     CalculateDirectionalLight(Directional, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
     diffuseRaw += diffuseTemp;
     specularRaw += specularTemp;
+    [unroll]
+    for (int i = 0; i < NUM_POINT_LIGHT; ++i)
+    {
+        CalculatePointLight(PointLights[i], worldPos, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
+        diffuseRaw += diffuseTemp;
+        specularRaw += specularTemp;
+    }
+    [unroll]
+    for (int j= 0; j < NUM_SPOT_LIGHT; ++j)
+    {
+        CalculateSpotLight(SpotLights[j], worldPos, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
+        diffuseRaw += diffuseTemp;
+        specularRaw += specularTemp;
+    }
     
     // material 계수들은 한번에 곱하기 (k_a, k_d, k_s)
     float3 ambientTerm = ambientRaw * MaterialAmbient.rgb;
@@ -255,7 +253,7 @@ SamplerState Sampler : register(s0);
 PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
 {
     PS_OUTPUT output;
-    float4 finalPixel = float4(0.0f, 0.0f, 0.0f, 1.0f);
+    float4 finalPixel = float4(1.0f, 1.0f, 1.0f, 1.0f);
     float3 albedoTexture = TextureColor.Sample(Sampler, Input.UV).rgb;
     
     float3 k_a = MaterialAmbient.rgb;
@@ -269,6 +267,75 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     float3 finalLighting = Input.Lit_Ambient + (Input.Lit_Diffuse * albedoTexture) + Input.Lit_Specular;
     finalPixel.rgb = finalLighting + k_e;
     finalPixel.a = 1.0f;
+#elif defined(LIGHTING_MODEL_LAMBERT)
+    float3 N = normalize(Input.WorldNormal);
+    float3 V = normalize(CameraPos - Input.WorldPosition);
+    
+    float3 ambientRaw = CalculateAmbientLight(Ambient);
+    float3 diffuseRaw = float3(0.0f, 0.0f, 0.0f);
+    
+    float3 diffuseTemp, specularTemp;
+    
+    // Directional
+    CalculateDirectionalLight(Directional, N, V, shininess, diffuseTemp, specularTemp);
+    diffuseRaw += diffuseTemp;
+    
+    // Point
+    [unroll]
+    for (int i = 0; i < NUM_POINT_LIGHT; ++i)
+    {
+        CalculatePointLight(PointLights[i], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
+        diffuseRaw += diffuseTemp;
+    }
+    // Spot
+    [unroll]
+    for (int j = 0; j < NUM_SPOT_LIGHT; ++j)
+    {
+        CalculateSpotLight(SpotLights[j], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
+        diffuseRaw += diffuseTemp;
+    }
+    float3 ambientTerm = ambientRaw * k_a;
+    float3 diffuseTerm = diffuseRaw * k_d * albedoTexture;
+    
+    float3 finalLighting = ambientTerm + diffuseTerm + k_e;
+    finalPixel = float4(finalLighting, 1.0f);
+#elif defined(LIGHTING_MODEL_PHONG)
+    float3 N = normalize(Input.WorldNormal);
+    float3 V = normalize(CameraPos - Input.WorldPosition);
+    
+    float3 ambientRaw = CalculateAmbientLight(Ambient);
+    float3 diffuseRaw = float3(0.0f, 0.0f, 0.0f);
+    float3 specularRaw = float3(0.0f, 0.0f, 0.0f);
+    
+    float3 diffuseTemp, specularTemp;
+    
+    // Directional
+    CalculateDirectionalLight(Directional, N, V, shininess, diffuseTemp, specularTemp);
+    diffuseRaw += diffuseTemp;
+    specularRaw += specularTemp;
+    
+    // Point
+    [unroll]
+    for (int i = 0; i < NUM_POINT_LIGHT; ++i)
+    {
+        CalculatePointLight(PointLights[i], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
+        diffuseRaw += diffuseTemp;
+        specularRaw += specularTemp;
+    }
+    // Spot
+    [unroll]
+    for (int j = 0; j < NUM_SPOT_LIGHT; ++j)
+    {
+        CalculateSpotLight(SpotLights[j], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
+        diffuseRaw += diffuseTemp;
+        specularRaw += specularTemp;
+    }
+    float3 ambientTerm = ambientRaw * k_a;
+    float3 diffuseTerm = diffuseRaw * k_d * albedoTexture;
+    float3 specularTerm = specularRaw * k_s;
+    
+    float3 finalLighting = ambientTerm + diffuseTerm + specularTerm + k_e;
+    finalPixel = float4(finalLighting, 1.0f);
 #endif
     output.Color = finalPixel;
     output.UUID = 1;
