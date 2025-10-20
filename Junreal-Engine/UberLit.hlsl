@@ -48,6 +48,8 @@ cbuffer PerObject : register(b0)
     row_major float4x4 View;
     row_major float4x4 Projection;
     row_major float4x4 WorldInverseTranspose;
+    uint UUID;
+    float3 Pad0;
 };
 
 cbuffer Lighting : register(b10)
@@ -57,7 +59,7 @@ cbuffer Lighting : register(b10)
     FPointLightInfo PointLights[NUM_POINT_LIGHT];
     FSpotLightInfo SpotLights[NUM_SPOT_LIGHT];
     float3 CameraPos; // world space camera position
-    float Pad0;
+    float Pad1;
 };
 cbuffer PerMaterial : register(b11)
 {
@@ -67,7 +69,7 @@ cbuffer PerMaterial : register(b11)
     float4 MaterialEmissive; // emissive Color
    
     float SpecularShininess; // alpha
-    float3 Pad1;
+    float3 Pad2;
 };
 float3 CalculateAmbientLight(FAmbientLightInfo info)
 {
@@ -183,6 +185,7 @@ struct VS_OUTPUT
     float3 WorldPosition : TEXCOORD0;
     float3 WorldNormal : TEXCOORD1;
     float2 UV : TEXCOORD2;
+    uint UUID : UUID;
     
 #if defined(LIGHTING_MODEL_GOURAUD)
     float3 Lit_Ambient : COLOR0; // already multiplied by k_a in VS for Gouraud
@@ -247,6 +250,7 @@ VS_OUTPUT Uber_VS(VS_INPUT Input)
     output.Lit_Diffuse = diffuseTerm;
     output.Lit_Specular = specularTerm;
 #endif
+    output.UUID = UUID;
     return output;
 }
 Texture2D TextureColor : register(t0);
@@ -340,6 +344,6 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     finalPixel = float4(finalLighting, 1.0f);
 #endif
     output.Color = finalPixel;
-    output.UUID = 1;
+    output.UUID = Input.UUID;
     return output;
 }

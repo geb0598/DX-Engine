@@ -829,14 +829,6 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 	AActor* SelectedActor = SelectionManager.GetSelectedActor();
 
 	UShader* ShaderToUse = UberShaders[CurrentViewMode];
-	/*if (!ShaderToUse)
-	{
-		ShaderToUse = UberShaders[EViewModeIndex::VMI_Unlit];
-		if (!ShaderToUse)
-		{
-			return;
-		}
-	}*/
 	if (ShaderToUse)
 	{
 		PrepareShader(ShaderToUse);
@@ -847,8 +839,6 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 	for (UPrimitiveComponent* PrimitiveComponent : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
 	{
 		FVector rgb(1.0f, 1.0f, 1.0f);
-
-
 
 		bool bIsSelected = false;
 		if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BoundingBoxes))

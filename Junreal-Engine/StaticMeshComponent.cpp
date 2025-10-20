@@ -90,6 +90,7 @@ void UStaticMeshComponent::RenderWithLight(URenderer* Renderer, const FMatrix& V
         PerObjectData.World = GetWorldMatrix();
         PerObjectData.View = View;
         PerObjectData.Projection = Proj;
+        PerObjectData.UUID = this->InternalIndex;
         // normal 월드 변환을 위함
         PerObjectData.WorldInverseTranspose = GetWorldMatrix().Inverse().Transpose();
         

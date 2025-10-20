@@ -277,6 +277,8 @@ struct alignas(16) FPerObjectBufferType
     FMatrix View;
     FMatrix Projection;
     FMatrix WorldInverseTranspose;
+    uint32 UUID;
+    FVector Pad0;
 };
 struct alignas(16) FLightingBufferType
 {
@@ -285,7 +287,7 @@ struct alignas(16) FLightingBufferType
     FPointLightInfo        PointLights[4];
     FSpotLightInfo         SpotLights[4];
     FVector CameraPos;
-    float Pad0;
+    float Pad1;
 };
 struct alignas(16) FPerMaterialBufferType
 {
@@ -294,6 +296,6 @@ struct alignas(16) FPerMaterialBufferType
     FVector4 MaterialSpecular; // k_s (specular, rgb)
     FVector4 MaterialEmissive; // emissive Color
     float SpecularShininess; // alpha
-    FVector Pad1;
+    FVector Pad2;
 };
 
