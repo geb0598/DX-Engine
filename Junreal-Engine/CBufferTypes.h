@@ -230,6 +230,16 @@ struct FGammaBufferType
 };
 //---//
 
+/** @note This buffer is not integrated with cbuffer system, because it is solely used for compute shader. */
+struct FSliceInfoBufferType
+{
+    float SliceSize;
+    float NearClip;
+    float FarClip;
+    float Padding;
+};
+
+
 
 
 

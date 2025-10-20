@@ -2,6 +2,8 @@
 #include "UI/StatsOverlayD2D.h"
 #include "D3D11RHI.h"
 
+#include "TileLightManager.h"
+
 void D3D11RHI::Initialize(HWND hWindow)
 {
     // 이곳에서 Device, DeviceContext, viewport, swapchain를 초기화한다
@@ -754,6 +756,13 @@ void D3D11RHI::ResizeSwapChain(UINT width, UINT height)
     CreateIdBuffer();
     // 뷰포트도 갱신
     SetViewport(width, height);
+
+    // --- Resize FTileLightManager ---
+    FTileLightManager& TileLightManager = FTileLightManager::GetInstance();
+    if (TileLightManager.IsInitialized())
+    {
+        TileLightManager.OnResize(width, height);
+    }
 }
 
 void D3D11RHI::PSSetDefaultSampler(UINT StartSlot)

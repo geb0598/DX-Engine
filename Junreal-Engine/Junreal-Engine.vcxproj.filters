@@ -493,6 +493,9 @@
     <ClCompile Include="Component\LightComponent.cpp" />
     <ClCompile Include="Component\LocalLightComponent.cpp" />
     <ClCompile Include="Component\PointLightComponent.cpp" />
+    <ClCompile Include="LightCullingDebugShader.hlsl" />
+    <ClCompile Include="LightCullingShader.hlsl" />
+    <ClCompile Include="TileLightManager.cpp" />
   </ItemGroup>
   <!-- ==================== 헤더 파일 (.h) ==================== -->
   <ItemGroup>
@@ -904,6 +907,7 @@
     <ClInclude Include="Component\LightComponent.h" />
     <ClInclude Include="Component\LocalLightComponent.h" />
     <ClInclude Include="Component\PointLightComponent.h" />
+    <ClInclude Include="TileLightManager.h" />
   </ItemGroup>
   <!-- ==================== 셰이더 파일 (.hlsl) ==================== -->
   <ItemGroup>

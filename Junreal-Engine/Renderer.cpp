@@ -23,10 +23,13 @@
 #include "FXAAComponent.h"
 #include "CameraComponent.h"
 #include "Resource/DebugDrawManager.h"
+#include "TileLightManager.h"
 
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
     InitializeLineBatch();
+
+    FTileLightManager::GetInstance().Initialize(this);
 }
 
 URenderer::~URenderer()
@@ -503,6 +506,15 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
         RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
         RenderFogPass(World,Camera,Viewport);
         RenderFXAAPaxx(World, Camera, Viewport);
+            
+        // --- Temporary Debug Info Print ---
+        GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::None);
+            
+        TArray<UPointLightComponent> PointLights;
+        FTileLightManager::GetInstance().CullPointLights(PointLights, Camera->GetCameraComponent(), Viewport);
+        FTileLightManager::GetInstance().RenderPointLightHeatmap();
+        // ---
+            
         RenderEditorPass(World, Camera, Viewport);
         break;
     }
