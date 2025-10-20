@@ -35,7 +35,7 @@ void UStaticMeshComponent::Render(URenderer* Renderer, const FMatrix& ViewMatrix
             Renderer->OMSetDepthStencilState(EComparisonFunc::LessEqual);
         }
 
-        Renderer->RSSetNoCullState();
+        //Renderer->RSSetNoCullState();
 
         // Normal transformation을 위한 inverse transpose matrix 계산
         FMatrix WorldMatrix = GetWorldMatrix();
@@ -50,16 +50,7 @@ void UStaticMeshComponent::Render(URenderer* Renderer, const FMatrix& ViewMatrix
       
         //
         Renderer->PrepareShader(GetMaterial()->GetShader());
-
-        //// PerObject 상수 버퍼(b0) 채우기
-        //FPerObjectBufferType PerObjectData;
-        //PerObjectData.World = GetWorldMatrix();
-        //PerObjectData.View = ViewMatrix;
-        //PerObjectData.Projection = ProjectionMatrix;
-
-        //Renderer->UpdateSetCBuffer(PerObjectData);
-
-        Renderer->DrawIndexedPrimitiveComponent(GetStaticMesh(), D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, MaterailSlots);
+        Renderer->DrawIndexedPrimitiveComponent(GetStaticMesh(), D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, MaterialSlots);
     }
 }
 
@@ -106,17 +97,17 @@ void UStaticMeshComponent::SetStaticMesh(const FString& PathFileName)
 	StaticMesh = FObjManager::LoadObjStaticMesh(PathFileName);
     
     const TArray<FGroupInfo>& GroupInfos = StaticMesh->GetMeshGroupInfo();
-    if (MaterailSlots.size() < GroupInfos.size())
+    if (MaterialSlots.size() < GroupInfos.size())
     {
-        MaterailSlots.resize(GroupInfos.size());
+        MaterialSlots.resize(GroupInfos.size());
     }
 
     // MaterailSlots.size()가 GroupInfos.size() 보다 클 수 있기 때문에, GroupInfos.size()로 설정
     for (int i = 0; i < GroupInfos.size(); ++i) 
     {
-        if (MaterailSlots[i].bChangedByUser == false)
+        if (MaterialSlots[i].bChangedByUser == false)
         {
-            MaterailSlots[i].MaterialName = GroupInfos[i].InitialMaterialName;
+            MaterialSlots[i].MaterialName = GroupInfos[i].InitialMaterialName;
         }
     }
 }
@@ -188,19 +179,19 @@ void UStaticMeshComponent::Serialize(bool bIsLoading, FComponentData& InOut)
 
 void UStaticMeshComponent::SetMaterialByUser(const uint32 InMaterialSlotIndex, const FString& InMaterialName)
 {
-    assert((0 <= InMaterialSlotIndex && InMaterialSlotIndex < MaterailSlots.size()) && "out of range InMaterialSlotIndex");
+    assert((0 <= InMaterialSlotIndex && InMaterialSlotIndex < MaterialSlots.size()) && "out of range InMaterialSlotIndex");
 
-    if (0 <= InMaterialSlotIndex && InMaterialSlotIndex < MaterailSlots.size())
+    if (0 <= InMaterialSlotIndex && InMaterialSlotIndex < MaterialSlots.size())
     {
-        MaterailSlots[InMaterialSlotIndex].MaterialName = InMaterialName;
-        MaterailSlots[InMaterialSlotIndex].bChangedByUser = true;
+        MaterialSlots[InMaterialSlotIndex].MaterialName = InMaterialName;
+        MaterialSlots[InMaterialSlotIndex].bChangedByUser = true;
     }
     else
     {
         UE_LOG("out of range InMaterialSlotIndex: %d", InMaterialSlotIndex);
     }
 
-    assert(MaterailSlots[InMaterialSlotIndex].bChangedByUser == true);
+    assert(MaterialSlots[InMaterialSlotIndex].bChangedByUser == true);
 }
 const FAABB UStaticMeshComponent::GetWorldAABB() const
 {
@@ -238,7 +229,7 @@ UObject* UStaticMeshComponent::Duplicate()
     // StaticMeshComponent 전용 속성 복사
     DuplicatedComponent->Material = this->Material;
     DuplicatedComponent->StaticMesh = this->StaticMesh;
-    DuplicatedComponent->MaterailSlots = this->MaterailSlots;
+    DuplicatedComponent->MaterialSlots = this->MaterialSlots;
 
     DuplicatedComponent->DuplicateSubObjects();
     return DuplicatedComponent;

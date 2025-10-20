@@ -2,6 +2,7 @@
 #include "UEContainer.h"
 #include "Vector.h"
 #include "Enums.h"
+#include <regex>
 
 // Raw Data
 struct FObjInfo
@@ -51,7 +52,7 @@ public:
         uint32 MeshTriangles = 0; // 현재까지 파싱된 Triangle 개수
 
         size_t pos = InFileName.find_last_of("/\\");
-        std::string objDir = (pos == std::string::npos) ? "" : InFileName.substr(0, pos + 1);
+        std::string ObjDir = (pos == std::string::npos) ? "" : InFileName.substr(0, pos + 1);
 
         std::ifstream FileIn(InFileName.c_str());
 
@@ -64,20 +65,20 @@ public:
         // obj 파싱 시작
         OutObjInfo->ObjFileName = FString(InFileName.begin(), InFileName.end()); // 아스키 코드라고 가정
 
-        FString line;
-        while (std::getline(FileIn, line))
+        FString Line;
+        while (std::getline(FileIn, Line))
         {
-            if (line.empty()) continue;
+            if (Line.empty()) continue;
 
-            line.erase(0, line.find_first_not_of(" \t\n\r"));
+            Line.erase(0, Line.find_first_not_of(" \t\n\r"));
 
             // 주석(#) 처리
-            if (line[0] == '#')   // wide literal
+            if (Line[0] == '#')   // wide literal
                 continue;
 
-            if (line.rfind("v ", 0) == 0) // 정점 좌표 (v x y z)
+            if (Line.rfind("v ", 0) == 0) // 정점 좌표 (v x y z)
             {
-                std::stringstream wss(line.substr(2));
+                std::stringstream wss(Line.substr(2));
                 float vx, vy, vz;
                 wss >> vx >> vy >> vz;
 
@@ -89,9 +90,9 @@ public:
                 else
                     OutObjInfo->Positions.push_back(FVector(vx, vy, vz));
             }
-            else if (line.rfind("vt ", 0) == 0) // 텍스처 좌표 (vt u v)
+            else if (Line.rfind("vt ", 0) == 0) // 텍스처 좌표 (vt u v)
             {
-                std::stringstream wss(line.substr(3));
+                std::stringstream wss(Line.substr(3));
                 float u, v;
                 wss >> u >> v;
 
@@ -102,27 +103,29 @@ public:
 
                 bHasTexcoord = true;
             }
-            else if (line.rfind("vn ", 0) == 0) // 법선 (vn x y z)
+            else if (Line.rfind("vn ", 0) == 0) // 법선 (vn x y z)
             {
-                std::stringstream wss(line.substr(3));
+                std::stringstream wss(Line.substr(3));
                 float nx, ny, nz;
                 wss >> nx >> ny >> nz;
 
                 if (bIsRHCoordSys)
                     OutObjInfo->Normals.push_back(FVector(nz, -ny, nx));
+                    //OutObjInfo->Normals.push_back(FVector(nx, -ny, nz));
                 else
-                    OutObjInfo->Normals.push_back(FVector(nz, ny, nx));
+                    //OutObjInfo->Normals.push_back(FVector(nz, ny, nx));
+                    OutObjInfo->Normals.push_back(FVector(nx, ny, nz));
 
                 bHasNormal = true;
             }
-            else if (line.rfind("g ", 0) == 0) // 그룹 (g groupName)
+            else if (Line.rfind("g ", 0) == 0) // 그룹 (g groupName)
             {
                 /*GroupIndexStartArray.push_back(VIndex);
                 subsetCount++;*/
             }
-            else if (line.rfind("f ", 0) == 0) // 면 (f v1/vt1/vn1 v2/vt2/vn2 ...)
+            else if (Line.rfind("f ", 0) == 0) // 면 (f v1/vt1/vn1 v2/vt2/vn2 ...)
             {
-                Face = line.substr(2); // ex: "3/2/2 3/3/2 3/4/2 "
+                Face = Line.substr(2); // ex: "3/2/2 3/3/2 3/4/2 "
 
                 if (Face.length() <= 0)
                 {
@@ -170,13 +173,13 @@ public:
                     ++MeshTriangles;
                 }
             }
-            else if (line.rfind("mtllib ", 0) == 0)
+            else if (Line.rfind("mtllib ", 0) == 0)
             {
-                MtlFileName = objDir + line.substr(7);
+                MtlFileName = ObjDir + Line.substr(7);
             }
-            else if (line.rfind("usemtl ", 0) == 0)
+            else if (Line.rfind("usemtl ", 0) == 0)
             {
-                MaterialNameTemp = line.substr(7);
+                MaterialNameTemp = Line.substr(7);
                 OutObjInfo->MaterialNames.push_back(MaterialNameTemp);
 
                 // material 하나 당 group 하나라고 가정. 현재 단계에서는 usemtl로 group을 분리하는 게 편함.
@@ -185,7 +188,7 @@ public:
             }
             else
             {
-                UE_LOG("While parsing the filename %s, the following unknown symbol was encountered: \'%s\'", InFileName.c_str(), line.c_str());
+                UE_LOG("While parsing the filename %s, the following unknown symbol was encountered: \'%s\'", InFileName.c_str(), Line.c_str());
             }
         }
 
@@ -239,178 +242,216 @@ public:
         /*OutMaterialInfos->resize(OutObjInfo->MaterialNames.size());*/
         uint32 MatCount = static_cast<uint32>(OutMaterialInfos.size());
         //FString line;
-        while (std::getline(FileIn, line))
+        while (std::getline(FileIn, Line))
         {
-            if (line.empty()) continue;
+            if (Line.empty()) continue;
 
-            line.erase(0, line.find_first_not_of(" \t\n\r"));
+            Line.erase(0, Line.find_first_not_of(" \t\n\r"));
             // 주석(#) 처리
-            if (line[0] == '#')   // wide literal
+            if (Line[0] == '#')   // wide literal
                 continue;
 
-            if (line.rfind("Kd ", 0) == 0)
+            if (Line.rfind("Kd ", 0) == 0)
             {
-                std::stringstream wss(line.substr(3));
+                std::stringstream wss(Line.substr(3));
                 float vx, vy, vz;
                 wss >> vx >> vy >> vz;
 
                 OutMaterialInfos[MatCount - 1].DiffuseColor = FVector(vx, vy, vz);
             }
-            else if (line.rfind("Ka ", 0) == 0)
+            else if (Line.rfind("Ka ", 0) == 0)
             {
-                std::stringstream wss(line.substr(3));
+                std::stringstream wss(Line.substr(3));
                 float vx, vy, vz;
                 wss >> vx >> vy >> vz;
 
                 OutMaterialInfos[MatCount - 1].AmbientColor = FVector(vx, vy, vz);
             }
-            else if (line.rfind("Ke ", 0) == 0)
+            else if (Line.rfind("Ke ", 0) == 0)
             {
-                std::stringstream wss(line.substr(3));
+                std::stringstream wss(Line.substr(3));
                 float vx, vy, vz;
                 wss >> vx >> vy >> vz;
 
                 OutMaterialInfos[MatCount - 1].EmissiveColor = FVector(vx, vy, vz);
             }
-            else if (line.rfind("Ks ", 0) == 0)
+            else if (Line.rfind("Ks ", 0) == 0)
             {
-                std::stringstream wss(line.substr(3));
+                std::stringstream wss(Line.substr(3));
                 float vx, vy, vz;
                 wss >> vx >> vy >> vz;
 
                 OutMaterialInfos[MatCount - 1].SpecularColor = FVector(vx, vy, vz);
             }
-            else if (line.rfind("Tf ", 0) == 0)
+            else if (Line.rfind("Tf ", 0) == 0)
             {
-                std::stringstream wss(line.substr(3));
+                std::stringstream wss(Line.substr(3));
                 float vx, vy, vz;
                 wss >> vx >> vy >> vz;
 
                 OutMaterialInfos[MatCount - 1].TransmissionFilter = FVector(vx, vy, vz);
             }
-            else if (line.rfind("Tr ", 0) == 0)
+            else if (Line.rfind("Tr ", 0) == 0)
             {
-                std::stringstream wss(line.substr(3));
+                std::stringstream wss(Line.substr(3));
                 float value;
                 wss >> value;
 
                 OutMaterialInfos[MatCount - 1].Transparency = value;
             }
-            else if (line.rfind("d ", 0) == 0)
+            else if (Line.rfind("d ", 0) == 0)
             {
-                std::stringstream wss(line.substr(3));
+                std::stringstream wss(Line.substr(3));
                 float value;
                 wss >> value;
 
                 OutMaterialInfos[MatCount - 1].Transparency = 1.0f - value;
             }
-            else if (line.rfind("Ni ", 0) == 0)
+            else if (Line.rfind("Ni ", 0) == 0)
             {
-                std::stringstream wss(line.substr(3));
+                std::stringstream wss(Line.substr(3));
                 float value;
                 wss >> value;
 
                 OutMaterialInfos[MatCount - 1].OpticalDensity = value;
             }
-            else if (line.rfind("Ns ", 0) == 0)
+            else if (Line.rfind("Ns ", 0) == 0)
             {
-                std::stringstream wss(line.substr(3));
+                std::stringstream wss(Line.substr(3));
                 float value;
                 wss >> value;
 
                 OutMaterialInfos[MatCount - 1].SpecularExponent = value;
             }
-            else if (line.rfind("illum ", 0) == 0)
+            else if (Line.rfind("illum ", 0) == 0)
             {
-                std::stringstream wss(line.substr(6));
+                std::stringstream wss(Line.substr(6));
                 float value;
                 wss >> value;
 
                 OutMaterialInfos[MatCount - 1].IlluminationModel = static_cast<int32>(value);
             }
-            else if (line.rfind("map_Kd ", 0) == 0)
+            else if (Line.rfind("map_Kd ", 0) == 0)
             {
                 FString TextureFileName;
-                if (line.substr(7).rfind(objDir) != 0)
+                if (Line.substr(7).rfind(ObjDir) != 0)
                 {
-                    TextureFileName = objDir + line.substr(7);
+                    TextureFileName = ObjDir + Line.substr(7);
                 }
                 else
                 {
-                    TextureFileName = line.substr(7);
+                    TextureFileName = Line.substr(7);
                 }
                 std::replace(TextureFileName.begin(), TextureFileName.end(), '\\', '/');
                 OutMaterialInfos[MatCount - 1].DiffuseTextureFileName = FName(TextureFileName);
             }
-            else if (line.rfind("map_d ", 0) == 0)
+            else if (Line.rfind("map_d ", 0) == 0)
             {
                 FString TextureFileName;
-                if (line.substr(7).rfind(objDir) != 0)
+                if (Line.substr(7).rfind(ObjDir) != 0)
                 {
-                    TextureFileName = objDir + line.substr(7);
+                    TextureFileName = ObjDir + Line.substr(7);
                 }
                 else
                 {
-                    TextureFileName = line.substr(7);
+                    TextureFileName = Line.substr(7);
                 }
                 OutMaterialInfos[MatCount - 1].TransparencyTextureFileName = TextureFileName;
             }
-            else if (line.rfind("map_Ka ", 0) == 0)
+            else if (Line.rfind("map_Ka ", 0) == 0)
             {
                 FString TextureFileName;
-                if (line.substr(7).rfind(objDir) != 0)
+                if (Line.substr(7).rfind(ObjDir) != 0)
                 {
-                    TextureFileName = objDir + line.substr(7);
+                    TextureFileName = ObjDir + Line.substr(7);
                 }
                 else
                 {
-                    TextureFileName = line.substr(7);
+                    TextureFileName = Line.substr(7);
                 }
                 OutMaterialInfos[MatCount - 1].AmbientTextureFileName = TextureFileName;
             }
-            else if (line.rfind("map_Ks ", 0) == 0)
+            else if (Line.rfind("map_Ks ", 0) == 0)
             {
                 FString TextureFileName;
-                if (line.substr(7).rfind(objDir) != 0)
+                if (Line.substr(7).rfind(ObjDir) != 0)
                 {
-                    TextureFileName = objDir + line.substr(7);
+                    TextureFileName = ObjDir + Line.substr(7);
                 }
                 else
                 {
-                    TextureFileName = line.substr(7);
+                    TextureFileName = Line.substr(7);
                 }
                 OutMaterialInfos[MatCount - 1].SpecularTextureFileName = TextureFileName;
             }
-            else if (line.rfind("map_Ns ", 0) == 0)
+            else if (Line.rfind("map_Ns ", 0) == 0)
             {
                 FString TextureFileName;
-                if (line.substr(7).rfind(objDir) != 0)
+                if (Line.substr(7).rfind(ObjDir) != 0)
                 {
-                    TextureFileName = objDir + line.substr(7);
+                    TextureFileName = ObjDir + Line.substr(7);
                 }
                 else
                 {
-                    TextureFileName = line.substr(7);
+                    TextureFileName = Line.substr(7);
                 }
                 OutMaterialInfos[MatCount - 1].SpecularExponentTextureFileName = TextureFileName;
             }
-            else if (line.rfind("map_Ke ", 0) == 0)
+            else if (Line.rfind("map_Ke ", 0) == 0)
             {
                 FString TextureFileName;
-                if (line.substr(7).rfind(objDir) != 0)
+                if (Line.substr(7).rfind(ObjDir) != 0)
                 {
-                    TextureFileName = objDir + line.substr(7);
+                    TextureFileName = ObjDir + Line.substr(7);
                 }
                 else
                 {
-                    TextureFileName = line.substr(7);
+                    TextureFileName = Line.substr(7);
                 }
                 OutMaterialInfos[MatCount - 1].EmissiveTextureFileName = TextureFileName;
             }
-            else if (line.rfind("newmtl ", 0) == 0)
+            else if (Line.rfind("map_Bump ", 0) == 0)
+            {
+                //FString TextureFileName;
+                //if (line.substr(7).rfind(objDir) != 0)
+                //{
+                //    TextureFileName = objDir + line.substr(7);
+                //}
+                //else
+                //{
+                //    TextureFileName = line.substr(7);
+                //}
+                //std::replace(TextureFileName.begin(), TextureFileName.end(), '\\', '/');
+                //OutMaterialInfos[MatCount - 1].NormalTextureName = TextureFileName;
+
+                FString Rest = Line.substr(9);
+
+                std::regex Re(R"rgx("([^"]+\.png)"|([^\s"]+\.png))rgx", std::regex::icase);
+                std::sregex_iterator it(Rest.begin(), Rest.end(), Re), End;
+
+                if (it != End)
+                {
+                    // 마지막 매치를 채택
+                    std::smatch M = *it; ++it;
+                    for (; it != End; ++it) M = *it;
+
+                    FString TextureFileName = M[1].matched ? M[1].str() : M[2].str();
+
+                    // 경로 정규화 및 상대경로면 objDir 접두
+                    if (TextureFileName.rfind(ObjDir, 0) != 0)
+                    {
+                        TextureFileName = ObjDir + TextureFileName;
+                    }
+
+                    std::replace(TextureFileName.begin(), TextureFileName.end(), '\\', '/');
+
+                    OutMaterialInfos[MatCount - 1].NormalTextureName = FName(TextureFileName);
+                }
+            }
+            else if (Line.rfind("newmtl ", 0) == 0)
             {
                 FObjMaterialInfo TempMatInfo;
-                TempMatInfo.MaterialName = line.substr(7);
+                TempMatInfo.MaterialName = Line.substr(7);
 
                 OutMaterialInfos.push_back(TempMatInfo);
                 ++MatCount;
@@ -553,6 +594,72 @@ public:
             // 일단 여기까지 하고, 나중에, imgui에서 material slot의 matName을 바꾸면, dirty flag true로 바꾸는 로직도 설정하기.->완료.
             //OutStaticMesh->GroupInfos[i].MaterialInfo = InMaterialInfos[InObjInfo.GroupMaterialArray[i]];
             OutStaticMesh->GroupInfos[i].InitialMaterialName = InMaterialInfos[InObjInfo.GroupMaterialArray[i]].MaterialName;
+        }
+
+        const size_t vertexCount = OutStaticMesh->Vertices.size();
+        std::vector<FVector> AccumT(vertexCount, FVector(0, 0, 0));
+        std::vector<FVector> AccumB(vertexCount, FVector(0, 0, 0));
+
+        for (size_t i = 0; i < OutStaticMesh->Indices.size(); i += 3)
+        {
+            uint32 I0 = OutStaticMesh->Indices[i + 0];
+            uint32 I1 = OutStaticMesh->Indices[i + 1];
+            uint32 I2 = OutStaticMesh->Indices[i + 2];
+
+            const auto& V0 = OutStaticMesh->Vertices[I0];
+            const auto& V1 = OutStaticMesh->Vertices[I1];
+            const auto& V2 = OutStaticMesh->Vertices[I2];
+
+            const FVector  P0 = V0.pos, P1 = V1.pos, P2 = V2.pos;
+            const FVector2D UV0 = V0.tex, UV1 = V1.tex, UV2 = V2.tex;
+
+            FVector E1 = P1 - P0;
+            FVector E2 = P2 - P0;
+            FVector2D D1 = UV1 - UV0;
+            FVector2D D2 = UV2 - UV0;
+
+            float Det = D1.X * D2.Y - D1.Y * D2.X;
+            if (abs(Det) < 1e-20f) {
+                // UV 퇴화: N과 직교하는 임의 T/B 생성(fallback)
+                FVector N = (V0.normal + V1.normal + V2.normal).GetSafeNormal();
+                FVector A = (abs(N.Z) < 0.999f) ? FVector(0, 0, 1) : FVector(0, 1, 0);
+                FVector T = (FVector::Cross(A, N)).GetSafeNormal();
+                FVector B = FVector::Cross(N, T);
+                AccumT[I0] += T; AccumT[I1] += T; AccumT[I2] += T;
+                AccumB[I0] += B; AccumB[I1] += B; AccumB[I2] += B;
+                continue;
+            }
+
+            float R = 1.0f / Det;
+            FVector Tface = (E1 * D2.Y - E2 * D1.Y) * R; // U 축
+            FVector Bface = (E2 * D1.X - E1 * D2.X) * R; // V 축
+
+            // 면적 가중치(권장): |cross(e1,e2)| 반
+            float W = FVector::Cross(E1, E2).Size();
+            Tface *= W; Bface *= W;
+
+            AccumT[I0] += Tface; AccumT[I1] += Tface; AccumT[I2] += Tface;
+            AccumB[I0] += Bface; AccumB[I1] += Bface; AccumB[I2] += Bface;
+        }
+
+        for (size_t v = 0; v < vertexCount; ++v)
+        {
+            FVector N = OutStaticMesh->Vertices[v].normal.GetSafeNormal();
+            FVector T = AccumT[v];
+
+            T = (T - N * FVector::Dot(N, T)).GetSafeNormal();
+            if (!(T.Size() < 1e-5))
+            {
+                FVector BSum = AccumB[v];
+                float H = (FVector::Dot(FVector::Cross(N, T), BSum) < 0.0f) ? -1.0f : +1.0f;
+                OutStaticMesh->Vertices[v].tangent = FVector4(T.X, T.Y, T.Z, H);
+            }
+            else
+            {
+                FVector A = (abs(N.Z) < 0.999f) ? FVector(0, 0, 1) : FVector(0, 1, 0);
+                FVector Tf = FVector::Cross(A, N).GetSafeNormal();
+                OutStaticMesh->Vertices[v].tangent = FVector4(Tf.X, Tf.Y, Tf.Z, -1.0f);
+            }
         }
     }
 

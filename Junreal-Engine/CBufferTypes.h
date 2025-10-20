@@ -55,6 +55,7 @@ MACRO(FGammaBufferType)                  \
 MACRO(FPerObjectBufferType) \
 MACRO(FLightingBufferType) \
 MACRO(FPerMaterialBufferType) \
+MACRO(FNormalVizCB)      \
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
 CBUFFER_INFO(ViewProjBufferType, 1, true, true)
@@ -73,6 +74,7 @@ CBUFFER_INFO(FPointLightBufferType, 9, false, true)
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
+CBUFFER_INFO(FNormalVizCB, 10, true, true)
 
 CBUFFER_INFO(FPerObjectBufferType, 0, true, false)
 CBUFFER_INFO(FLightingBufferType, 10, true, true)
@@ -128,7 +130,8 @@ struct FPixelConstBufferType
     FMaterialInPs Material;
     uint32 bHasMaterial; // 4 bytes (HLSL bool is 4 bytes)
     uint32 bHasTexture;  // 4 bytes (HLSL bool is 4 bytes)
-    float pad[2];        // 8 bytes padding for 16-byte alignment
+    uint32 bHasNormal;   // 4 bytes (HLSL bool is 4 bytes)
+    float pad;           // 4 bytes padding for 16-byte alignment
 };
 
 //VS,PS : b2
@@ -238,6 +241,11 @@ struct FGammaBufferType
 };
 //---//
 
+struct FNormalVizCB
+{ 
+    uint32 bUseTBN;
+    uint32 _pad[3];
+};
 
 struct alignas(16) FAmbientLightInfo
 {

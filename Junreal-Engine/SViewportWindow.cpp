@@ -221,14 +221,15 @@ void SViewportWindow::RenderToolbar()
 
 		if (ImGui::Button("Reset")) { /* TODO: 카메라 Reset */ }
 
-		const char* viewModes[] = { "Lit_Gouraud", "Lit_Lambert", "Lit_Phong", "Unlit", "Wireframe", "SceneDepth"};
+		const char* viewModes[] = { "Lit_Gouraud", "Lit_Lambert", "Lit_Phong", "Unlit", "Wireframe", "SceneDepth", "WorldNormal"};
 		EViewModeIndex viewModeEnums[] = {
 			 EViewModeIndex::VMI_Lit_Gouraud,
 			 EViewModeIndex::VMI_Lit_Lambert,
 			 EViewModeIndex::VMI_Lit_Phong,
 			 EViewModeIndex::VMI_Unlit,
 			 EViewModeIndex::VMI_Wireframe,
-			 EViewModeIndex::VMI_SceneDepth
+			 EViewModeIndex::VMI_SceneDepth,
+			 EViewModeIndex::VMI_WorldNormal,
 		};
 		int currentModeIndex = 0;
 		EViewModeIndex currentEnum = ViewportClient->GetViewModeIndex();
@@ -260,6 +261,7 @@ void SViewportWindow::RenderToolbar()
 			case 3: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Unlit); break;
 			case 4: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_Wireframe); break;
 			case 5: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_SceneDepth); break;
+			case 6: ViewportClient->SetViewModeIndex(EViewModeIndex::VMI_WorldNormal); break;
 			}
 		}
 
