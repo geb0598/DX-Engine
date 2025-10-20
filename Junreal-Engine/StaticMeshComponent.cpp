@@ -59,7 +59,7 @@ void UStaticMeshComponent::Render(URenderer* Renderer, const FMatrix& ViewMatrix
 
         //Renderer->UpdateSetCBuffer(PerObjectData);
 
-        Renderer->DrawIndexedPrimitiveComponent(GetStaticMesh(), D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, MaterailSlots);
+        Renderer->DrawIndexedPrimitiveComponent(GetStaticMesh(), D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, MaterialSlots);
     }
 }
 
@@ -96,7 +96,7 @@ void UStaticMeshComponent::RenderWithLight(URenderer* Renderer, const FMatrix& V
         // b0에 업데이트
         Renderer->UpdateSetCBuffer(PerObjectData);
 
-        Renderer->DrawIndexedPrimitiveComponentWithLight(GetStaticMesh(), D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, MaterailSlots);
+        Renderer->DrawIndexedPrimitiveComponentWithLight(GetStaticMesh(), D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST, MaterialSlots);
     }
 }
 

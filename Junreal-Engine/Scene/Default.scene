@@ -1,71 +1,15 @@
 {
   "Version" : 2,
-  "NextUUID" : 681,
+  "NextUUID" : 653,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-3.578887, 17.328211, -13.651914],
+    "Location" : [-0.801376, -0.295569, 0.471811],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, -28.900007, -84.600136]
+    "Rotation" : [0.000000, 29.000004, 20.500002]
   },
   "Actors" : [
-    {
-      "UUID" : 660,
-      "Type" : "AActor",
-      "Name" : "Actor_0",
-      "RootComponentUUID" : 661
-    },
-    {
-      "UUID" : 663,
-      "Type" : "AStaticMeshActor",
-      "Name" : "rock-sl-2_0",
-      "RootComponentUUID" : 664
-    }
   ],
   "Components" : [
-    {
-      "UUID" : 661,
-      "OwnerActorUUID" : 660,
-      "ParentComponentUUID" : 0,
-      "Type" : "USceneComponent",
-      "RelativeLocation" : [0.000000, 13.405802, -11.739663],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
-    {
-      "UUID" : 662,
-      "OwnerActorUUID" : 660,
-      "ParentComponentUUID" : 661,
-      "Type" : "UBillboardComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/EmptyActor.dds"
-    },
-    {
-      "UUID" : 667,
-      "OwnerActorUUID" : 660,
-      "ParentComponentUUID" : 661,
-      "Type" : "UFireBallComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "FireBallData" : {
-        "Intensity" : 5.000000,
-        "Radius" : 15.000000,
-        "RadiusFallOff" : 2.650000,
-        "Color" : [1.000000, 1.000000, 1.000000, 1.000000]
-      }
-    },
-    {
-      "UUID" : 664,
-      "OwnerActorUUID" : 663,
-      "ParentComponentUUID" : 0,
-      "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "StaticMesh" : "Data/Rock/rock-sl-2.obj"
-    }
   ]
 }

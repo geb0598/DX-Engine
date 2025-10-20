@@ -647,6 +647,11 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 		RenderSceneDepthVisualizePass(Camera);    // Depth → Grayscale visualize
 		break;
 	}
+	case EViewModeIndex::VMI_WorldNormal:
+	{
+		RenderWorldNormalPass(World, Camera, Viewport);
+		break;
+	}
 	default:
 		break;
 	}

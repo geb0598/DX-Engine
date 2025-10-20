@@ -51,7 +51,6 @@ MACRO(FHeightFogBufferType)                  \
 MACRO(FPointLightBufferType)                  \
 MACRO(CameraInfoBufferType)                  \
 MACRO(FXAABufferType)                  \
-MACRO(FGammaBufferType)  \
 MACRO(FNormalVizCB)      \
 MACRO(FGammaBufferType)                  \
 MACRO(FPerObjectBufferType) \
