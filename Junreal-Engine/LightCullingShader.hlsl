@@ -3,15 +3,15 @@
 #define TILE_HEIGHT 32
 #define NUM_SLICES  32
 
-// struct FPointLightInfo
-// {
-//     float4 Color; // light color
-//     float3 Position; // world space position
-//     float intensity;
-//     float AttenuationRadius;
-//     float LightFalloffExponent; // exponent
-//     float2 Pad0; 
-// };
+struct FPointLightInfo
+{
+    float4 Color; // light color
+    float3 Position; // world space position
+    float intensity;
+    float AttenuationRadius;
+    float LightFalloffExponent; // exponent
+    float2 Pad0; 
+};
 
 cbuffer CameraInfoBuffer : register(b0)
 {
@@ -34,7 +34,7 @@ cbuffer ViewportBuffer : register(b1)
 
 Texture2D<float> DepthTexture : register(t0);
 
-// RWStructuredBuffer<uint> PointLightMask : register(u0);
+RWStructuredBuffer<uint> PointLightMask : register(u0);
 
 /** @todo Change slot to 1 */
 RWTexture2D<float4> HeatmapTexture : register(u0);
@@ -74,16 +74,16 @@ void mainCS(uint3 GroupID : SV_GroupID, uint3 ThreadID : SV_GroupThreadID, uint3
     }
     GroupMemoryBarrierWithGroupSync();
 
-    uint NumBits = countbits(TileDepthMask);
-
-    float NormalizedNumBits = NumBits / (float)NUM_SLICES;
-    NormalizedNumBits = saturate(NormalizedNumBits * 10.0f);
-
-    float4 HeatmapColor = lerp(float4(0.0f, 0.0f, 1.0f, 1.0f), float4(1.0f, 0.0f, 0.0f, 1.0f), NormalizedNumBits);
+    // --- Depth Clustering Test ---
+    float R = pow((TileDepthMask & 0xF) / 255.0f, 1.0f / 2.2f);
+    float G = pow(((TileDepthMask >> 4) & 0xF) / 255.0f, 1.0f / 2.2f);
+    float B = pow(((TileDepthMask >> 8) & 0xF) / 255.0f, 1.0f / 2.2f);
+    float4 HeatmapColor = float4(R, G, B, 1.0f);
 
     if (PixelCoord.x >= ViewportRect.x && PixelCoord.x < ViewportRect.x + ViewportRect.z &&
         PixelCoord.y >= ViewportRect.y && PixelCoord.y < ViewportRect.y + ViewportRect.w)
     {
         HeatmapTexture[PixelCoord] = HeatmapColor;
     }
+    // ---
 }
