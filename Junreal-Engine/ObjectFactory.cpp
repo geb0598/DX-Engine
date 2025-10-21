@@ -47,6 +47,14 @@ namespace ObjectFactory
         return NewObject(Class);
     }
 
+    bool IsValidUObject(UObject* Obj)
+    {
+        if (!Obj) return false;
+        uint32 idx = Obj->InternalIndex;
+        if (idx == UINT32_MAX) return false;
+        return (idx < static_cast<uint32>(GUObjectArray.Num()) && GUObjectArray[idx] == Obj);
+    }
+
     UObject* ConstructObject(UClass* Class)
     {
         auto& reg = GetRegistry();

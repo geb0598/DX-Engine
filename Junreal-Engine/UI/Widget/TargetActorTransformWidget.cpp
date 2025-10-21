@@ -7,6 +7,7 @@
 #include "Vector.h"
 #include "GizmoActor.h"
 #include "SelectionManager.h"
+#include "ObjectFactory.h" // IsValidUObject
 #include <string>
 
 #include "DecalComponent.h"
@@ -483,19 +484,24 @@ void UTargetActorTransformWidget::RenderWidget()
 		}
 		ImGui::Separator();
 
-		// +-+-+ Actor Components (Ownedlist) +-+-+
-		for (UActorComponent* Comp : SelectedActor->GetComponents())
-		{
-			if (Comp && !Comp->IsA(USceneComponent::StaticClass()))
-			{
-				const bool bIsSelected = (SelectedComponent == Comp);
+            // +-+-+ Actor Components (Ownedlist) +-+-+
+            // Take a snapshot to avoid iterator invalidation if components are deleted during iteration
+            TArray<UActorComponent*> OwnedSnapshot = SelectedActor->GetComponents().Array();
+            for (UActorComponent* Comp : OwnedSnapshot)
+            {
+                // Guard against use-after-free in case deletion occurred between snapshot and use
+                if (!IsValidUObject(Comp))
+                    continue;
+                if (Comp && !Comp->IsA(USceneComponent::StaticClass()))
+                {
+                    const bool bIsSelected = (SelectedComponent == Comp);
 
-				if (ImGui::Selectable(Comp->GetName().c_str(), bIsSelected))
-				{
-					SelectionManager->SelectComponent(Comp);
-				}
-			}
-		}
+                    if (ImGui::Selectable(Comp->GetName().c_str(), bIsSelected))
+                    {
+                        SelectionManager->SelectComponent(Comp);
+                    }
+                }
+            }
 
 		// 4. 들여쓰기를 해제합니다.
 		ImGui::Unindent();

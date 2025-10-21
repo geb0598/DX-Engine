@@ -2,6 +2,7 @@
 #include "Component/LightComponentBase.h"
 #include "BillboardComponent.h"
 #include "ObjectFactory.h"
+#include "Actor.h"
 
 ULightComponentBase::ULightComponentBase()
 	: Intensity(1.0f), LightColor({220, 220, 220, 255}), bVisible(true)
@@ -11,10 +12,19 @@ ULightComponentBase::ULightComponentBase()
 
 ULightComponentBase::~ULightComponentBase()
 {
-	if (IconBillboardComponent)
-	{
-        GetOwner()->DeleteComponent(IconBillboardComponent);
-	}       
+    // Be conservative: avoid re-entrant container mutations during owner/component destruction
+    if (IconBillboardComponent)
+    {
+        if (AActor* Owner = GetOwner())
+        {
+            const TSet<UActorComponent*>& Comps = Owner->GetComponents();
+            if (Comps.Contains(IconBillboardComponent))
+            {
+                Owner->DeleteComponent(IconBillboardComponent);
+            }
+        }
+        IconBillboardComponent = nullptr;
+    }
 }
 
 void ULightComponentBase::SetIconBillboardComponent(UBillboardComponent* InIcon)

@@ -29,6 +29,7 @@ namespace ObjectFactory
     UObject* NewObject(UClass* Class);
     UObject* NewObject(UObject* Outer, UClass* Class);
     UObject* NewObject(const FString& ClassName);
+    bool IsValidUObject(UObject* Obj);    
 
     // 3) 템플릿 버전 (타입 안전)
     template<class T>
@@ -49,6 +50,7 @@ namespace ObjectFactory
     // Null 슬롯 압축하여 배열 크기 축소
     void CompactNullSlots();
 }
+
 
 // ── 등록 매크로 ─────────────────────────────────────────────
 #define IMPLEMENT_CLASS(ThisClass)                                            \
