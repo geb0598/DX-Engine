@@ -2,6 +2,13 @@
 #include "PointLightComponent.h"
 #include "Resource/DebugDrawManager.h"
 
+#include "BillboardComponent.h"
+
+#include "pch.h"
+#include "PointLightComponent.h"
+#include "Resource/DebugDrawManager.h"
+#include "BillboardComponent.h"
+
 UPointLightComponent::UPointLightComponent()
 	: AttenuationRadius(15.0f), LightFalloffExponent(1.0f)
 {

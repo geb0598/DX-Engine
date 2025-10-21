@@ -391,6 +391,37 @@ void UTargetActorTransformWidget::RenderWidget()
 				{
 					USceneComponent* ParentComponent = Cast<USceneComponent>(SelectedComponent);
 					USceneComponent* NewSceneComponent = SelectedActor->CreateAndAttachComponent(ParentComponent, Item.second);
+
+                    // --- Start: Billboard Icon Creation Logic ---
+                    if (ULightComponentBase* NewLightComp = Cast<ULightComponentBase>(NewSceneComponent))
+                    {
+                        UBillboardComponent* IconBillboard = Cast<UBillboardComponent>(
+                            SelectedActor->CreateAndAttachComponent(NewLightComp, UBillboardComponent::StaticClass())
+                        );
+
+                        if (IconBillboard)
+                        {
+                            IconBillboard->SetBillboardSize(32.f);
+                            //IconBillboard->SetHiddenInGame(true);
+                            IconBillboard->SetTintColor(NewLightComp->GetLightColor());
+
+                            // Set a specific icon based on the light type
+                            if (NewLightComp->IsA<UDirectionalLightComponent>())
+                            {
+                                IconBillboard->SetTexture("Editor/Icon/PointLight_64x.dds");
+                            }
+                            else if (NewLightComp->IsA<USpotLightComponent>())
+                            {
+                                IconBillboard->SetTexture("Editor/Icon/SpotLight_64x.dds");
+                            }
+                            else // UPointLightComponent or other base types
+                            {
+                                IconBillboard->SetTexture("Editor/Icon/PointLight_64x.dds");
+                            }
+                        }
+                    }
+                    // --- End: Billboard Icon Creation Logic ---
+
 					SelectedComponent = NewSceneComponent;
 					ImGui::CloseCurrentPopup();
 				}

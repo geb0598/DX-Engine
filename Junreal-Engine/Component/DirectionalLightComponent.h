@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "Component/LightComponentBase.h"
-
+#include "BillboardComponent.h"
 class UDirectionalLightComponent : public ULightComponentBase
 {
 public:
@@ -16,4 +16,6 @@ public:
 protected:
 	void DuplicateSubObjects() override;
 	void CopyCommonProperties(UObject* InTarget) override;
+private:
+	UBillboardComponent* IconBillboardComponent;
 };

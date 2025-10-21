@@ -1,6 +1,6 @@
 ﻿#pragma once
 #include "MeshComponent.h"
-
+#include "Component/LightComponentBase.h"
 class UBillboardComponent : public UMeshComponent
 {
 public:
@@ -21,6 +21,9 @@ public:
     // Texture settings
     void SetTexture(const FString& TexturePath);
     const FString& GetTexturePath() const { return TexturePath; }
+
+    // Color settings
+    void SetTintColor(const FColor& InColor);
     
     // UV coordinate settings
     void SetUVCoords(float U, float V, float UL, float VL);
@@ -47,6 +50,7 @@ private:
     void CreateBillboardVertices();
 
 private:
+    FColor TintColor = { 255, 255, 255, 255 };
     // [PIE] 주소 복사
     UTextQuad* BillboardQuad = nullptr;
     

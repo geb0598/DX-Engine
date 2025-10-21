@@ -2,6 +2,8 @@
 #include "Component/SpotLightComponent.h"
 #include "Resource/DebugDrawManager.h"
 
+#include "BillboardComponent.h"
+
 USpotLightComponent::USpotLightComponent()
 	: InnerConeAngle(10.0f), OuterConeAngle(20.0f)
 {

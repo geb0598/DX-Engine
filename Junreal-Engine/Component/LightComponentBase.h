@@ -24,7 +24,7 @@ public:
 	const bool GetVisible() const;
 
 	void SetIntensity(float InIntensity);
-	void SetLightColor(const FColor& InLightColor);
+	virtual void SetLightColor(const FColor& InLightColor);
 	void SetVisible(bool bInVisible);
 
 	UObject* Duplicate() override;

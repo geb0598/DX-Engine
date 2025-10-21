@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "Component/LightComponentBase.h"
 
+class UBillboardComponent;
+
 class UPointLightComponent : public ULightComponentBase
 {
 public:
@@ -22,6 +24,8 @@ public:
 protected:
 	void DuplicateSubObjects() override;
 	void CopyCommonProperties(UObject* InTarget) override;
+
+	UBillboardComponent* IconBillboardComponent = nullptr;
 
 private:
 	float AttenuationRadius;

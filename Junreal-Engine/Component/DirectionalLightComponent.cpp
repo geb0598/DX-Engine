@@ -2,6 +2,8 @@
 #include "Component/DirectionalLightComponent.h"
 #include "Resource/DebugDrawManager.h"
 
+#include "BillboardComponent.h"
+
 UDirectionalLightComponent::UDirectionalLightComponent()
 {
 	SetTickEnabled(true);

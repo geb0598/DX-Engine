@@ -59,7 +59,7 @@ MACRO(FNormalVizCB)      \
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
 CBUFFER_INFO(ViewProjBufferType, 1, true, true)
-CBUFFER_INFO(BillboardBufferType, 2, true, false)
+CBUFFER_INFO(BillboardBufferType, 2, true, true)
 CBUFFER_INFO(FViewProjectionInverse, 3, false, true)
 CBUFFER_INFO(FPixelConstBufferType, 4, false, true)
 CBUFFER_INFO(HighLightBufferType, 2, true, true)
@@ -113,8 +113,7 @@ struct BillboardBufferType
     FVector pos;
     float padding;
     FMatrix InverseViewMat;
-    /*FVector cameraRight;
-    FVector cameraUp;*/
+    FVector4 TintColor;
 };
 
 //PS : b3
