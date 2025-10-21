@@ -13,6 +13,7 @@ void D3D11RHI::Initialize(HWND hWindow)
 	CreateDepthStencilState();
 	CreateSamplerState();
     CreateIdBuffer();
+    CreateLightBuffers();
 
     CreateScreenTexture(&TemporalBuffer);
     CreateRTV(TemporalBuffer, &TemporalRTV);
@@ -39,6 +40,7 @@ void D3D11RHI::Release()
     }
 
     ReleaseSamplerState();
+    ReleaseLightBuffers();
 
     // 상수버퍼
     CBUFFER_TYPE_LIST(RELEASE_CBUFFER)
@@ -187,6 +189,69 @@ void D3D11RHI::CreateIdBuffer()
     TextureDesc.BindFlags = 0;
     CreateTexture2D(TextureDesc, &IdStagingBuffer);
 }
+
+void D3D11RHI::CreateLightBuffers()
+{
+    // Point Light용 Structured Buffer 생성
+    D3D11_BUFFER_DESC PointLightBufferDesc = {};
+    PointLightBufferDesc.ByteWidth = sizeof(FPointLightInfo) * MAX_POINT_LIGHTS;
+    PointLightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    PointLightBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    PointLightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    PointLightBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    PointLightBufferDesc.StructureByteStride = sizeof(FPointLightInfo);
+
+    HRESULT hr = Device->CreateBuffer(&PointLightBufferDesc, nullptr, &PointLightBuffer);
+    if (FAILED(hr))
+    {
+        UE_LOG("D3D11RHI::CreateLightBuffers - PointLightBuffer 생성 실패");
+        return;
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
+    SrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    SrvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    SrvDesc.Buffer.FirstElement = 0;
+    SrvDesc.Buffer.NumElements = MAX_POINT_LIGHTS;
+
+    hr = Device->CreateShaderResourceView(PointLightBuffer, &SrvDesc, &PointLightSRV);
+    if (FAILED(hr))
+    {
+        UE_LOG("D3D11RHI::CreateLightBuffers - PointLightSRV 생성 실패");
+        return;
+    }
+
+    // Spot Light용 Structured Buffer도 위와 동일하게 생성
+    D3D11_BUFFER_DESC SpotLightBufferDesc = {};
+    SpotLightBufferDesc.ByteWidth = sizeof(FSpotLightInfo) * MAX_SPOT_LIGHTS;
+    SpotLightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    SpotLightBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    SpotLightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    SpotLightBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    SpotLightBufferDesc.StructureByteStride = sizeof(FSpotLightInfo);
+
+    hr = Device->CreateBuffer(&SpotLightBufferDesc, nullptr, &SpotLightBuffer);
+    if (FAILED(hr))
+    {
+        UE_LOG("D3D11RHI::CreateLightBuffers - SpotLightBuffer 생성 실패");
+        return;
+    }
+
+    SrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    SrvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    SrvDesc.Buffer.FirstElement = 0;
+    SrvDesc.Buffer.NumElements = MAX_SPOT_LIGHTS;
+
+    hr = Device->CreateShaderResourceView(SpotLightBuffer, &SrvDesc, &SpotLightSRV);
+    if (FAILED(hr))
+    {
+        UE_LOG("D3D11RHI::CreateLightBuffers - SpotLightSRV 생성 실패");
+        return;
+    }
+    
+}
+
+
 
 HRESULT D3D11RHI::CreateIndexBuffer(ID3D11Device* device, const FMeshData* meshData, ID3D11Buffer** outBuffer)
 {
@@ -657,6 +722,30 @@ void D3D11RHI::ReleaseDepthStencilView(ID3D11DepthStencilView** DSV, ID3D11Shade
     }
 }
 
+void D3D11RHI::ReleaseLightBuffers()
+{
+    if (PointLightSRV)
+    {
+        PointLightSRV->Release();
+        PointLightSRV = nullptr;
+    }
+    if (PointLightBuffer)
+    {
+        PointLightBuffer->Release();
+        PointLightBuffer = nullptr;
+    }
+    if (SpotLightSRV)
+    {
+        SpotLightSRV->Release();
+        SpotLightSRV = nullptr;
+    }
+    if (SpotLightBuffer)
+    {
+        SpotLightBuffer->Release();
+        SpotLightBuffer = nullptr;
+    }
+}
+
 void D3D11RHI::ReleaseDeviceAndSwapChain()
 {
     if (SwapChain)
@@ -761,6 +850,32 @@ void D3D11RHI::ResizeSwapChain(UINT width, UINT height)
     CreateIdBuffer();
     // 뷰포트도 갱신
     SetViewport(width, height);
+}
+
+void D3D11RHI::UpdateAndBindLightBuffers(const TArray<FPointLightInfo>& InPointLights, const TArray<FSpotLightInfo>& InSpotLights)
+{
+    if (PointLightBuffer && !InPointLights.empty())
+    {
+        D3D11_MAPPED_SUBRESOURCE MappedResource;
+        if (SUCCEEDED(DeviceContext->Map(PointLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
+        {
+            memcpy(MappedResource.pData, InPointLights.data(), sizeof(FPointLightInfo) * InPointLights.size());
+            DeviceContext->Unmap(PointLightBuffer, 0);
+        }
+    }
+    if (SpotLightBuffer && !InSpotLights.empty())
+    {
+        D3D11_MAPPED_SUBRESOURCE MappedResource;
+        if (SUCCEEDED(DeviceContext->Map(SpotLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
+        {
+            memcpy(MappedResource.pData, InSpotLights.data(), sizeof(FSpotLightInfo) * InSpotLights.size());
+            DeviceContext->Unmap(SpotLightBuffer, 0);
+        }
+    }
+    DeviceContext->VSSetShaderResources(2, 1, &PointLightSRV);
+    DeviceContext->VSSetShaderResources(3, 1, &SpotLightSRV);
+    DeviceContext->PSSetShaderResources(2, 1, &PointLightSRV);
+    DeviceContext->PSSetShaderResources(3, 1, &SpotLightSRV);
 }
 
 void D3D11RHI::PSSetDefaultSampler(UINT StartSlot)

@@ -1,15 +1,21 @@
 ﻿#pragma once
-#include "Component/LocalLightComponent.h"
-class UPointLightComponent : public ULocalLightComponent
+#include "Component/LightComponentBase.h"
+
+class UPointLightComponent : public ULightComponentBase
 {
 public:
-	DECLARE_CLASS(UPointLightComponent, ULocalLightComponent)
+	DECLARE_CLASS(UPointLightComponent, ULightComponentBase)
+
 	UPointLightComponent();
 	~UPointLightComponent();
 
-	const float GetLightFalloffExponent() const;
+	const float GetAttenuationRadius() const;
+	void SetAttenuationRadius(float InRadius);
 
+	const float GetLightFalloffExponent() const;
 	void SetLightFalloffExponent(float InLightFalloffExponent);
+
+	void TickComponent(float DeltaTime) override;
 
 	UObject* Duplicate() override;
 
@@ -18,5 +24,6 @@ protected:
 	void CopyCommonProperties(UObject* InTarget) override;
 
 private:
+	float AttenuationRadius;
 	float LightFalloffExponent;
 };

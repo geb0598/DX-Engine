@@ -56,6 +56,7 @@ MACRO(FGammaBufferType)                  \
 MACRO(FPerObjectBufferType) \
 MACRO(FLightingBufferType) \
 MACRO(FPerMaterialBufferType) \
+MACRO(FNormalVizCB)      \
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
 CBUFFER_INFO(ViewProjBufferType, 1, true, true)
@@ -183,7 +184,8 @@ struct FPointLightData
     float FallOff;       // 감쇠 정도
     FVector Padding;    // 16바이트 정렬 맞추기용
 };
-#define MAX_POINT_LIGHTS 100
+#define MAX_POINT_LIGHTS 1024
+#define MAX_SPOT_LIGHTS 1024
 // 전체 버퍼 (cbuffer b9 대응)
 struct FPointLightBufferType
 {
@@ -286,16 +288,19 @@ struct alignas(16) FPerObjectBufferType
     FMatrix Projection;
     FMatrix WorldInverseTranspose;
     uint32 UUID = 0;
-    FVector _Pad_UUID;
+    FVector Pad_UUID;
+
 };
 struct alignas(16) FLightingBufferType
 {
     FAmbientLightInfo      Ambient;
     FDirectionalLightInfo  Directional;
-    FPointLightInfo        PointLights[4];
-    FSpotLightInfo         SpotLights[4];
+    //FPointLightInfo        PointLights[4];
+    //FSpotLightInfo         SpotLights[4];
     FVector CameraPos;
-    float Pad0;
+    uint32 NumPointLights;
+    uint32 NumSpotLights;
+    FVector Pad1;
 };
 struct alignas(16) FPerMaterialBufferType
 {
@@ -304,6 +309,6 @@ struct alignas(16) FPerMaterialBufferType
     FVector4 MaterialSpecular; // k_s (specular, rgb)
     FVector4 MaterialEmissive; // emissive Color
     float SpecularShininess; // alpha
-    FVector Pad1;
+    FVector Pad2;
 };
 

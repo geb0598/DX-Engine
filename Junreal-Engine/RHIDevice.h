@@ -100,5 +100,7 @@ public:
     virtual void OmSetDepthStencilState(EComparisonFunc Func) = 0;
     virtual void Present() = 0;
     virtual void PSSetDefaultSampler(UINT StartSlot) = 0;
+    
+    virtual void UpdateAndBindLightBuffers(const TArray<FPointLightInfo>& InPointLights, const TArray<FSpotLightInfo>& InSpotLights) = 0;
 };
 

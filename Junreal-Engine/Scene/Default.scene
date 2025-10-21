@@ -1,65 +1,71 @@
 {
   "Version" : 2,
-  "NextUUID" : 672,
+  "NextUUID" : 681,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-4.680110, -13.901047, 6.635501],
+    "Location" : [-3.578887, 17.328211, -13.651914],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 41.599945, 63.299900]
+    "Rotation" : [0.000000, -28.900007, -84.600136]
   },
   "Actors" : [
     {
-      "UUID" : 653,
-      "Type" : "AStaticMeshActor",
-      "Name" : "rock-sl-2_0",
-      "RootComponentUUID" : 654
-    },
-    {
-      "UUID" : 655,
+      "UUID" : 660,
       "Type" : "AActor",
       "Name" : "Actor_0",
-      "RootComponentUUID" : 656
+      "RootComponentUUID" : 661
+    },
+    {
+      "UUID" : 663,
+      "Type" : "AStaticMeshActor",
+      "Name" : "rock-sl-2_0",
+      "RootComponentUUID" : 664
     }
   ],
   "Components" : [
     {
-      "UUID" : 654,
-      "OwnerActorUUID" : 653,
+      "UUID" : 661,
+      "OwnerActorUUID" : 660,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [0.000000, 13.405802, -11.739663],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 662,
+      "OwnerActorUUID" : 660,
+      "ParentComponentUUID" : 661,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
+    },
+    {
+      "UUID" : 667,
+      "OwnerActorUUID" : 660,
+      "ParentComponentUUID" : 661,
+      "Type" : "UFireBallComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "FireBallData" : {
+        "Intensity" : 5.000000,
+        "Radius" : 15.000000,
+        "RadiusFallOff" : 2.650000,
+        "Color" : [1.000000, 1.000000, 1.000000, 1.000000]
+      }
+    },
+    {
+      "UUID" : 664,
+      "OwnerActorUUID" : 663,
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "StaticMesh" : "Data/Rock/rock-sl-2.obj"
-    },
-    {
-      "UUID" : 661,
-      "OwnerActorUUID" : 655,
-      "ParentComponentUUID" : 656,
-      "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
-    {
-      "UUID" : 656,
-      "OwnerActorUUID" : 655,
-      "ParentComponentUUID" : 0,
-      "Type" : "USceneComponent",
-      "RelativeLocation" : [0.000000, -10.240729, 3.071758],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
-    {
-      "UUID" : 657,
-      "OwnerActorUUID" : 655,
-      "ParentComponentUUID" : 656,
-      "Type" : "UBillboardComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/EmptyActor.dds"
     }
   ]
 }
