@@ -51,6 +51,7 @@ MACRO(FHeightFogBufferType)                  \
 MACRO(FPointLightBufferType)                  \
 MACRO(CameraInfoBufferType)                  \
 MACRO(FXAABufferType)                  \
+MACRO(FNormalVizCB)      \
 MACRO(FGammaBufferType)                  \
 MACRO(FPerObjectBufferType) \
 MACRO(FLightingBufferType) \
@@ -286,8 +287,9 @@ struct alignas(16) FPerObjectBufferType
     FMatrix View;
     FMatrix Projection;
     FMatrix WorldInverseTranspose;
-    uint32 UUID;
-    FVector Pad0;
+    uint32 UUID = 0;
+    FVector Pad_UUID;
+
 };
 struct alignas(16) FLightingBufferType
 {
