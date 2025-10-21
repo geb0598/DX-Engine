@@ -559,20 +559,9 @@ void URenderer::RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, c
 
 void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
-	// 뷰포트의 실제 크기로 aspect ratio 계산
-	float ViewportAspectRatio = static_cast<float>(Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
-	if (Viewport->GetSizeY() == 0)
-	{
-		ViewportAspectRatio = 1.0f;
-	}
-
-	FMatrix ViewMatrix = Camera->GetViewMatrix();
-	FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
-
-
 	// 씬의 액터들을 렌더링
 	// General Rendering (color + depth)
-	RenderActorsInViewport(World, ViewMatrix, ProjectionMatrix, Viewport);
+	RenderActorsInViewport(World, Camera, Viewport);
 }
 
 //void URenderer::RenderPointLightShadowPass(UWorld* World)
@@ -637,17 +626,9 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 	{
 		//RenderFireBallPass(World);
 		RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
+		FTileLightManager::GetInstance().RenderPointLightHeatmap();
 		RenderFogPass(World, Camera, Viewport);
 		RenderFXAAPaxx(World, Camera, Viewport);
-
-        // --- Temporary Debug Info Print ---
-        GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::None);
-            
-        TArray<UPointLightComponent> PointLights;
-        FTileLightManager::GetInstance().CullPointLights(PointLights, Camera->GetCameraComponent(), Viewport);
-        FTileLightManager::GetInstance().RenderPointLightHeatmap();
-        // ---
-
 		RenderEditorPass(World, Camera, Viewport);
 		break;
 	}
@@ -700,7 +681,7 @@ void URenderer::RenderEditorPass(UWorld* World, ACameraActor* Camera, FViewport*
 		}
 	}
 }
-void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport)
+void URenderer::RenderActorsInViewport(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
 	if (!World || !Viewport)
 	{
@@ -710,6 +691,16 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
 	{
 		return;
 	}
+	
+	// 뷰포트의 실제 크기로 aspect ratio 계산
+	float ViewportAspectRatio = static_cast<float>(Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
+	if (Viewport->GetSizeY() == 0)
+	{
+		ViewportAspectRatio = 1.0f;
+	}
+
+	FMatrix ViewMatrix = Camera->GetViewMatrix();
+	FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
 
 	FFrustum ViewFrustum;
 	ViewFrustum.Update(ViewMatrix * ProjectionMatrix);
@@ -718,6 +709,12 @@ void URenderer::RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix,
 	SetViewModeType(CurrentViewMode);  
 
 	RenderPrimitives(World, ViewMatrix, ProjectionMatrix, Viewport);
+	
+	// --- Temporary Light Cull Test ---
+	GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::None);
+	FTileLightManager::GetInstance().CullPointLights(Camera->GetCameraComponent(), Viewport, LightingCBufferData);
+	GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID);
+	// ---
 
 	OMSetBlendState(false);
 	RenderEngineActors(World->GetEngineActors(), ViewMatrix, ProjectionMatrix, Viewport);

@@ -107,7 +107,7 @@ private:
 
     void RenderEditorPass(UWorld* World, ACameraActor* Camera, FViewport* Viewport);
 
-    void RenderActorsInViewport(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport);
+    void RenderActorsInViewport(UWorld* World, ACameraActor* Camera, FViewport* Viewport);
     void RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport);
     void RenderDecals(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport);
     void RenderEngineActors(const TArray<AActor*>& EngineActors, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport);

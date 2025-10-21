@@ -35,22 +35,24 @@ void FTileLightManager::OnResize(uint32 InWidth, uint32 InHeight)
     CreateHeatmapTexture();
 }
 
-void FTileLightManager::CullPointLights(const TArray<UPointLightComponent>& InPointLightComponents, UCameraComponent* InCameraComponent, FViewport* InViewport)
+void FTileLightManager::CullPointLights(UCameraComponent* InCameraComponent, FViewport* InViewport, FLightingBufferType& LightingBuffer)
 {
     assert(Renderer && "Initialization not done: Renderer is null");
 
     ID3D11DeviceContext* DeviceContext = Renderer->GetRHIDevice()->GetDeviceContext();
 
-    // --- Update Constant Buffers --- 
-    UpdateConstantBuffer(InCameraComponent);
+    // --- Update Constant Buffers ---
+    UpdateConstantBuffer();
+    UpdateConstantBuffer(InCameraComponent, InViewport->GetSizeX() / static_cast<float>(InViewport->GetSizeY()));
     UpdateConstantBuffer(InViewport);
+    UpdateConstantBuffer(LightingBuffer);
 
     // --- Set Compute Shader ---
     DeviceContext->CSSetShader(ComputeShader.Get(), nullptr, 0);
 
     // --- Set Constant Buffers ---
-    ID3D11Buffer* ConstantBuffers[] = { CameraInfoConstantBuffer.Get(), ViewportConstantBuffer.Get() };
-    DeviceContext->CSSetConstantBuffers(0, 2, ConstantBuffers);
+    ID3D11Buffer* ConstantBuffers[] = { CameraInfoConstantBuffer.Get(), ViewportConstantBuffer.Get(), TileConstantBuffer.Get(), LightingConstantBuffer.Get() };
+    DeviceContext->CSSetConstantBuffers(0, 4, ConstantBuffers);
 
     // --- Set Shader Resource Views ---
     ID3D11ShaderResourceView* ShaderResourceViews[] = { static_cast<D3D11RHI*>(Renderer->GetRHIDevice())->GetDepthSRV() };
@@ -61,13 +63,13 @@ void FTileLightManager::CullPointLights(const TArray<UPointLightComponent>& InPo
     DeviceContext->CSSetUnorderedAccessViews(2, 1, UnorderedAccessViews, nullptr);
 
     // --- Dispatch ---
-    uint32 DispatchWidth = (InViewport->GetSizeX() + TILE_WIDTH - 1) / TILE_WIDTH;
-    uint32 DispatchHeight = (InViewport->GetSizeY() + TILE_HEIGHT - 1) / TILE_HEIGHT;
+    uint32 DispatchWidth = (Width + TILE_WIDTH - 1) / TILE_WIDTH;
+    uint32 DispatchHeight = (Height + TILE_HEIGHT - 1) / TILE_HEIGHT;
     DeviceContext->Dispatch(DispatchWidth, DispatchHeight, 1);
 
     // --- Unbind Resources ---
-    ID3D11Buffer* NullConstantBuffers[] = { nullptr, nullptr };
-    DeviceContext->CSSetConstantBuffers(0, 2, NullConstantBuffers);
+    ID3D11Buffer* NullConstantBuffers[] = { nullptr, nullptr, nullptr, nullptr };
+    DeviceContext->CSSetConstantBuffers(0, 4, NullConstantBuffers);
 
     ID3D11ShaderResourceView* NullShaderResourceViews[] = { nullptr };
     DeviceContext->CSSetShaderResources(0, 1, NullShaderResourceViews);
@@ -313,6 +315,34 @@ void FTileLightManager::CreateConstantBuffer()
         hResult = Device->CreateBuffer(&BufferDesc, nullptr, ViewportConstantBuffer.ReleaseAndGetAddressOf());
         assert(SUCCEEDED(hResult) && "Failed to create viewport constant buffer");
     }
+    
+    // --- Create TileConstantBuffer ---
+    {
+        D3D11_BUFFER_DESC BufferDesc    = {};
+        BufferDesc.Usage                = D3D11_USAGE_DYNAMIC;
+        BufferDesc.ByteWidth            = sizeof(FTileBufferType);
+        BufferDesc.BindFlags            = D3D11_BIND_CONSTANT_BUFFER;
+        BufferDesc.CPUAccessFlags       = D3D11_CPU_ACCESS_WRITE;
+        BufferDesc.MiscFlags            = 0;
+        BufferDesc.StructureByteStride  = 0;
+
+        hResult = Device->CreateBuffer(&BufferDesc, nullptr, TileConstantBuffer.ReleaseAndGetAddressOf());
+        assert(SUCCEEDED(hResult) && "Failed to create tile constant buffer");
+    }
+    
+    // --- Create LightingConstantBuffer ---
+    {
+        D3D11_BUFFER_DESC BufferDesc    = {};
+        BufferDesc.Usage                = D3D11_USAGE_DYNAMIC;
+        BufferDesc.ByteWidth            = sizeof(FLightingBufferType);
+        BufferDesc.BindFlags            = D3D11_BIND_CONSTANT_BUFFER;
+        BufferDesc.CPUAccessFlags       = D3D11_CPU_ACCESS_WRITE;
+        BufferDesc.MiscFlags            = 0;
+        BufferDesc.StructureByteStride  = 0;
+
+        hResult = Device->CreateBuffer(&BufferDesc, nullptr, LightingConstantBuffer.ReleaseAndGetAddressOf());
+        assert(SUCCEEDED(hResult) && "Failed to create tile constant buffer");
+    }
 
     // --- Create SliceConstantBuffer ---
     {
@@ -329,7 +359,21 @@ void FTileLightManager::CreateConstantBuffer()
     }
 }
 
-void FTileLightManager::UpdateConstantBuffer(UCameraComponent* InCameraComponent)
+void FTileLightManager::UpdateConstantBuffer()
+{
+    assert(Renderer && "Initialization not done: Renderer is null");
+
+    ID3D11DeviceContext* DeviceContext = Renderer->GetRHIDevice()->GetDeviceContext();
+
+    D3D11_MAPPED_SUBRESOURCE MappedResource;
+    DeviceContext->Map(TileConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
+    FTileBufferType* Tile = static_cast<FTileBufferType*>(MappedResource.pData);
+    Tile->NumGroupsX = (Width + TILE_WIDTH - 1) / TILE_WIDTH;
+    Tile->NumGroupsY = (Height + TILE_HEIGHT - 1) / TILE_HEIGHT;
+    DeviceContext->Unmap(TileConstantBuffer.Get(), 0);
+}
+
+void FTileLightManager::UpdateConstantBuffer(UCameraComponent* InCameraComponent, float InAspectRatio)
 {
     assert(Renderer && "Initialization not done: Renderer is null");
 
@@ -339,9 +383,9 @@ void FTileLightManager::UpdateConstantBuffer(UCameraComponent* InCameraComponent
     DeviceContext->Map(CameraInfoConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
     FCameraBufferType* CameraInfo = static_cast<FCameraBufferType*>(MappedResource.pData);
     CameraInfo->ViewMatrix = InCameraComponent->GetViewMatrix();
-    CameraInfo->ProjectionMatrix = InCameraComponent->GetProjectionMatrix();
+    CameraInfo->ProjectionMatrix = InCameraComponent->GetProjectionMatrix(InAspectRatio);
     CameraInfo->InverseViewMatrix = InCameraComponent->GetViewMatrix().Inverse();
-    CameraInfo->InverseProjectionMatrix = InCameraComponent->GetProjectionMatrix().Inverse();
+    CameraInfo->InverseProjectionMatrix = InCameraComponent->GetProjectionMatrix(InAspectRatio).Inverse();
     CameraInfo->NearClip = InCameraComponent->GetNearClip();
     CameraInfo->FarClip = InCameraComponent->GetFarClip();
     DeviceContext->Unmap(CameraInfoConstantBuffer.Get(), 0);
@@ -362,4 +406,16 @@ void FTileLightManager::UpdateConstantBuffer(FViewport* InViewport)
         static_cast<float>(InViewport->GetSizeX()),
         static_cast<float>(InViewport->GetSizeY()));
     DeviceContext->Unmap(ViewportConstantBuffer.Get(), 0);
+}
+
+void FTileLightManager::UpdateConstantBuffer(FLightingBufferType& LightingBuffer)
+{
+    assert(Renderer && "Initialization not done: Renderer is null");
+
+    ID3D11DeviceContext* DeviceContext = Renderer->GetRHIDevice()->GetDeviceContext();
+
+    D3D11_MAPPED_SUBRESOURCE MappedResource;
+    DeviceContext->Map(LightingConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
+    memcpy(MappedResource.pData, &LightingBuffer, sizeof(LightingBuffer)); 
+    DeviceContext->Unmap(LightingConstantBuffer.Get(), 0);
 }

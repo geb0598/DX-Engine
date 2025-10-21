@@ -41,9 +41,9 @@ public:
         Tile-based 2.5D Light Culling
      -----------------------------------------------------------------------------*/
 
-    void CullPointLights(const TArray<UPointLightComponent>& InPointLightComponents, UCameraComponent* InCameraComponent, FViewport* InViewport);
+    void CullPointLights(UCameraComponent* InCameraComponent, FViewport* InViewport, FLightingBufferType& LightingBuffer);
 
-    void CullSpotLights(const TArray<USpotLightComponent>& InSpotLightComponents, UCameraComponent* InCameraComponent, FViewport* Viewport) {}
+    void CullSpotLights(UCameraComponent* InCameraComponent, FViewport* Viewport) {}
     
     /*-----------------------------------------------------------------------------
         Getters / Setters
@@ -107,11 +107,16 @@ private:
 
     void CreateConstantBuffer();
 
-    void UpdateConstantBuffer(UCameraComponent* InCameraComponent);
+    /** @note Update tile information */
+    void UpdateConstantBuffer();
+
+    void UpdateConstantBuffer(UCameraComponent* InCameraComponent, float InAspectRatio);
 
     void UpdateConstantBuffer(FViewport* InViewport);
     
     void UpdateConstantBuffer(UPointLightComponent* PointLightComponent) {}
+
+    void UpdateConstantBuffer(FLightingBufferType& LightingBuffer);
     
     void CreateHeatmapTexture();
     
@@ -150,6 +155,8 @@ private:
 
     Microsoft::WRL::ComPtr<ID3D11Buffer> CameraInfoConstantBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer> ViewportConstantBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> TileConstantBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> LightingConstantBuffer;
     Microsoft::WRL::ComPtr<ID3D11Buffer> SliceConstantBuffer;
     
     /*-----------------------------------------------------------------------------

@@ -10,14 +10,28 @@
     Structs
  -----------------------------------------------------------------------------*/
 
+struct FAmbientLightInfo
+{
+    float4 Color; // light color
+    float Intensity; 
+    float3 Pad0;
+};
+
+struct FDirectionalLightInfo
+{
+    float4 Color; // light color
+    float3 Direction;  // world space direction
+    float Intensity; 
+};
+
 struct FPointLightInfo
 {
-    float3 Color;               // light color
+    float4 Color;               // light color
     float3 Position;            // world space position
     float intensity;
     float AttenuationRadius;
     float LightFalloffExponent; // exponent
-    float1 Pad; 
+    float2 Pad; 
 };
 
 struct FSphere
@@ -43,7 +57,7 @@ struct FFrustum
     Constant Buffers
  -----------------------------------------------------------------------------*/
 
-cbuffer CameraBuffer : register(b0)
+cbuffer Camera : register(b0)
 {
     row_major float4x4 ViewMatrix;
     row_major float4x4 ProjectionMatrix;
@@ -54,16 +68,25 @@ cbuffer CameraBuffer : register(b0)
     float2 _Pad_0;
 }
 
-cbuffer ViewportBuffer : register(b1)
+cbuffer Viewport : register(b1)
 {
     float4 ViewportRect; // x=StartX, y=StartY, z=Width, w=Height
 }
 
-cbuffer LightBuffer : register(b2)
+cbuffer Tile : register(b2)
 {
+    uint NumGroupsX;
+    uint NumGroupsY;
+}
+
+cbuffer Lighting : register(b3)
+{
+    FAmbientLightInfo Ambient;
+    FDirectionalLightInfo Directional;
+    float3 CameraPos; // world space camera position
     uint NumPointLights;
-    
     uint NumSpotLights;
+    float3 Pad1;
 }
 
 // cbuffer SliceBuffer : register(b3)
@@ -79,9 +102,9 @@ cbuffer LightBuffer : register(b2)
 
 Texture2D<float> DepthTexture : register(t0);
 
-StructuredBuffer<FPointLightInfo> PointLights : register(t1);
+StructuredBuffer<FPointLightInfo> PointLights : register(t2);
 
-// StructuredBuffer<FSpotLightInfo> SpotLights : register(t2);
+// StructuredBuffer<FSpotLightInfo> SpotLights : register(t3);
 
 RWStructuredBuffer<uint> PointLightMask : register(u0);
 
@@ -107,10 +130,13 @@ FPlane CreatePlane(float3 Point0, float3 Point1, float3 Point2)
     return Plane;
 }
 
-FFrustum CreateViewFrustum(float2 TileMin, float2 TileMax, float Width, float Height)
+FFrustum CreateViewFrustum(float2 TileMin, float2 TileMax, float4 ViewportRect)
 {
-    float2 NDCMin = (TileMin / float2(Width, Height)) * 2.0f - 1.0f;
-    float2 NDCMax = (TileMax / float2(Width, Height)) * 2.0f - 1.0f;
+    float2 ViewportMin = TileMin - ViewportRect.xy;
+    float2 ViewportMax = TileMax - ViewportRect.xy;
+    
+    float2 NDCMin = (ViewportMin / ViewportRect.zw) * 2.0f - 1.0f;
+    float2 NDCMax = (ViewportMax / ViewportRect.zw) * 2.0f - 1.0f;
     
     NDCMin.y = -NDCMin.y;
     NDCMax.y = -NDCMax.y;
@@ -168,7 +194,7 @@ void CullPointLight(uint Index, uint FlatTileIndex, FSphere Sphere, FFrustum Fru
 
     uint BucketIndex = Index / BUCKET_SIZE;
     uint BitIndex = Index % BUCKET_SIZE;
-    InterlockedOr(PointLightMask[BUCKET_SIZE * FlatTileIndex + BucketIndex], 1u << BitIndex);
+    InterlockedOr(PointLightMask[FlatTileIndex * BUCKET_SIZE + BucketIndex], 1u << BitIndex);
     InterlockedAdd(VisibleLightCount, 1u);
 }
 
@@ -191,7 +217,7 @@ void VisualizeLightCount(uint InVisibleLightCount, uint2 InPixelCoord, RWTexture
 {
     // --- Light Count Heatmap Visualization ---
     
-    const float MAX_LIGHTS_FOR_HEATMAP = 64.0f;
+    const float MAX_LIGHTS_FOR_HEATMAP = 5.0f;
 
     float HeatIntensity = saturate((float)InVisibleLightCount / MAX_LIGHTS_FOR_HEATMAP);
 
@@ -252,30 +278,28 @@ void mainCS(uint3 GroupID : SV_GroupID, uint3 ThreadID : SV_GroupThreadID, uint3
     }
     GroupMemoryBarrierWithGroupSync();
 
-    // if (ThreadID.x == 0 && ThreadID.y == 0)
-    // {
-    //     uint FlatTileIndex = TILE_WIDTH * GroupID.x + GroupID.y;
-    //     float2 TileMin = GroupID.xy * float2(TILE_WIDTH, TILE_HEIGHT);
-    //     float2 TileMax = TileMin + float2(TILE_WIDTH, TILE_HEIGHT);
-    //
-    //     float Width;
-    //     float Height;
-    //     DepthTexture.GetDimensions(Width, Height);
-    //
-    //     FFrustum Frustum = CreateViewFrustum(TileMin, TileMax, Width, Height);
-    //     for (uint i = 0; i < NumPointLights; ++i)
-    //     {
-    //         FSphere Sphere;
-    //         Sphere.Position = mul(float4(PointLights[i].Position, 1.0f), ViewMatrix);
-    //         Sphere.Radius = PointLights[i].AttenuationRadius;
-    //
-    //         CullPointLight(i, FlatTileIndex, Sphere, Frustum);
-    //     }
-    // }
+    if (ThreadID.x == 0 && ThreadID.y == 0)
+    {
+        uint FlatTileIndex = GroupID.x + GroupID.y * NumGroupsX;
+        float2 TileMin = GroupID.xy * float2(TILE_WIDTH, TILE_HEIGHT);
+        float2 TileMax = TileMin + float2(TILE_WIDTH, TILE_HEIGHT);
+    
+        FFrustum Frustum = CreateViewFrustum(TileMin, TileMax, ViewportRect);
+        for (uint i = 0; i < NumPointLights; ++i)
+        {
+            FSphere Sphere;
+            Sphere.Position = mul(float4(PointLights[i].Position, 1.0f), ViewMatrix);
+            Sphere.Radius = PointLights[i].AttenuationRadius;
+    
+            CullPointLight(i, FlatTileIndex, Sphere, Frustum);
+        }
+    }
     
     // --- Depth Clustering Test ---
-    VisualizeDepthSlices(TileDepthMask, PixelCoord, HeatmapTexture);
+    // VisualizeDepthSlices(TileDepthMask, PixelCoord, HeatmapTexture);
+
+    GroupMemoryBarrierWithGroupSync();
     
     // --- Light Count Heatmap Visualization ---
-    // VisualizeLightCount(VisibleLightCount, PixelCoord, HeatmapTexture);
+    VisualizeLightCount(VisibleLightCount, PixelCoord, HeatmapTexture);
 }
