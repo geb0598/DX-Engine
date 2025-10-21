@@ -56,7 +56,6 @@ MACRO(FGammaBufferType)                  \
 MACRO(FPerObjectBufferType) \
 MACRO(FLightingBufferType) \
 MACRO(FPerMaterialBufferType) \
-MACRO(FNormalVizCB)      \
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
 CBUFFER_INFO(ViewProjBufferType, 1, true, true)
