@@ -1,6 +1,8 @@
 ﻿#include "pch.h"
 #include "SelectionManager.h"
 #include "Actor.h"
+#include "BillboardComponent.h"
+#include "Component/LightComponentBase.h"
 
 USelectionManager& USelectionManager::GetInstance()
 {
@@ -44,6 +46,17 @@ void USelectionManager::SelectComponent(UActorComponent* Component)
     if (!Component)
     {
         return;
+    }
+    
+    if (UBillboardComponent* Billboard = Cast<UBillboardComponent>(Component))
+    {
+        if (USceneComponent* Parent = Billboard->GetAttachParent())
+        {
+            if (ULightComponentBase* LightComp = Cast<ULightComponentBase>(Parent))
+            {
+                Component = LightComp;
+            }
+        }
     }
     AActor* SelectedActor = Component->GetOwner();
     //이미 컴포넌트의 오너 엑터가 피킹되어 있는 상황, Editable한 어느 컴포넌트든 선택 가능

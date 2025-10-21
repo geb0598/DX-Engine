@@ -416,12 +416,16 @@ void UTargetActorTransformWidget::RenderWidget()
                             // Set a specific icon based on the light type
                             if (NewLightComp->IsA<UDirectionalLightComponent>())
                             {
-                                IconBillboard->SetTexture("Editor/Icon/PointLight_64x.dds");
+                                IconBillboard->SetTexture("Editor/Icon/DirectionalLight_64x.dds");
                             }
                             else if (NewLightComp->IsA<USpotLightComponent>())
                             {
                                 IconBillboard->SetTexture("Editor/Icon/SpotLight_64x.dds");
                             }
+							else if (NewLightComp->IsA<UPointLightComponent>())
+							{
+								IconBillboard->SetTexture("Editor/Icon/PointLight_64x.dds");
+							}
                             else // UPointLightComponent or other base types
                             {
                                 IconBillboard->SetTexture("Editor/Icon/PointLight_64x.dds");

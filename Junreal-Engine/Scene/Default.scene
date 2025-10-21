@@ -1,71 +1,28 @@
 {
   "Version" : 2,
-  "NextUUID" : 700,
+  "NextUUID" : 721,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-3.715423, 18.099857, -14.446732],
+    "Location" : [-3.735014, 19.141138, -8.603899],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, -28.900007, -79.200134]
+    "Rotation" : [0.000000, 6.500000, -49.800110]
   },
   "Actors" : [
-    {
-      "UUID" : 660,
-      "Type" : "AActor",
-      "Name" : "Actor_0",
-      "RootComponentUUID" : 661
-    },
     {
       "UUID" : 663,
       "Type" : "AStaticMeshActor",
       "Name" : "rock-sl-2_0",
       "RootComponentUUID" : 664
+    },
+    {
+      "UUID" : 708,
+      "Type" : "AActor",
+      "Name" : "Actor_0",
+      "RootComponentUUID" : 709
     }
   ],
   "Components" : [
-    {
-      "UUID" : 661,
-      "OwnerActorUUID" : 660,
-      "ParentComponentUUID" : 0,
-      "Type" : "USceneComponent",
-      "RelativeLocation" : [0.000000, 13.405802, -11.739663],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
-    {
-      "UUID" : 662,
-      "OwnerActorUUID" : 660,
-      "ParentComponentUUID" : 661,
-      "Type" : "UBillboardComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/EmptyActor.dds"
-    },
-    {
-      "UUID" : 667,
-      "OwnerActorUUID" : 660,
-      "ParentComponentUUID" : 661,
-      "Type" : "UFireBallComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "FireBallData" : {
-        "Intensity" : 5.000000,
-        "Radius" : 15.000000,
-        "RadiusFallOff" : 2.650000,
-        "Color" : [1.000000, 1.000000, 1.000000, 1.000000]
-      }
-    },
-    {
-      "UUID" : 691,
-      "OwnerActorUUID" : 660,
-      "ParentComponentUUID" : 662,
-      "Type" : "UPointLightComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
     {
       "UUID" : 664,
       "OwnerActorUUID" : 663,
@@ -75,6 +32,101 @@
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "StaticMesh" : "Data/Rock/rock-sl-2.obj"
+    },
+    {
+      "UUID" : 709,
+      "OwnerActorUUID" : 708,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [0.000000, 16.207466, -10.138337],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 710,
+      "OwnerActorUUID" : 708,
+      "ParentComponentUUID" : 709,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
+    },
+    {
+      "UUID" : 718,
+      "OwnerActorUUID" : 708,
+      "ParentComponentUUID" : 709,
+      "Type" : "USpotLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 1.103726],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 717,
+      "OwnerActorUUID" : 708,
+      "ParentComponentUUID" : 716,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 1.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 711,
+      "OwnerActorUUID" : 708,
+      "ParentComponentUUID" : 709,
+      "Type" : "UAmbientLightComponent",
+      "RelativeLocation" : [-2.501202, 0.000000, 0.758450],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 715,
+      "OwnerActorUUID" : 708,
+      "ParentComponentUUID" : 714,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 1.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 712,
+      "OwnerActorUUID" : 708,
+      "ParentComponentUUID" : 711,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 1.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 714,
+      "OwnerActorUUID" : 708,
+      "ParentComponentUUID" : 709,
+      "Type" : "UDirectionalLightComponent",
+      "RelativeLocation" : [0.000000, 3.155897, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 716,
+      "OwnerActorUUID" : 708,
+      "ParentComponentUUID" : 709,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, -1.978063],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 719,
+      "OwnerActorUUID" : 708,
+      "ParentComponentUUID" : 718,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 1.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/SpotLight_64x.dds"
     }
   ]
 }

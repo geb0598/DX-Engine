@@ -7,7 +7,7 @@
 
 UBillboardComponent::UBillboardComponent()
 {
-    SetRelativeLocation({ 0, 0, 1 });
+    SetRelativeLocation({ 0, 0, 0 });
 
     auto& ResourceManager = UResourceManager::GetInstance();
 
