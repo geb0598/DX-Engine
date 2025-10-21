@@ -63,6 +63,10 @@ public:
     void SetLocalLocationAndRotation(const FVector& L, const FQuat& R);
 
     FMatrix GetWorldMatrix() const; // ToMatrixWithScale
+    /**
+    * @brief 컴포넌트의 월드 공간 기준 Forward 벡터(+X)를 반환합니다.
+    */
+    FVector GetForwardVector() const;
 
     // ──────────────────────────────
     // Attach/Detach

@@ -15,6 +15,7 @@ void D3D11RHI::Initialize(HWND hWindow)
 	CreateDepthStencilState();
 	CreateSamplerState();
     CreateIdBuffer();
+    CreateLightBuffers();
 
     CreateScreenTexture(&TemporalBuffer);
     CreateRTV(TemporalBuffer, &TemporalRTV);
@@ -41,6 +42,7 @@ void D3D11RHI::Release()
     }
 
     ReleaseSamplerState();
+    ReleaseLightBuffers();
 
     // 상수버퍼
     CBUFFER_TYPE_LIST(RELEASE_CBUFFER)
@@ -155,13 +157,15 @@ void D3D11RHI::CreateDepthStencilState()
 void D3D11RHI::CreateSamplerState()
 {
     D3D11_SAMPLER_DESC SampleDesc = {};
-    SampleDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    SampleDesc.Filter = D3D11_FILTER_ANISOTROPIC;
     SampleDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
     SampleDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
     SampleDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
     SampleDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
     SampleDesc.MinLOD = 0;
     SampleDesc.MaxLOD = D3D11_FLOAT32_MAX;
+    SampleDesc.MaxAnisotropy = 16;
+
 
 	HRESULT HR = Device->CreateSamplerState(&SampleDesc, &DefaultSamplerState);
 }
@@ -187,6 +191,69 @@ void D3D11RHI::CreateIdBuffer()
     TextureDesc.BindFlags = 0;
     CreateTexture2D(TextureDesc, &IdStagingBuffer);
 }
+
+void D3D11RHI::CreateLightBuffers()
+{
+    // Point Light용 Structured Buffer 생성
+    D3D11_BUFFER_DESC PointLightBufferDesc = {};
+    PointLightBufferDesc.ByteWidth = sizeof(FPointLightInfo) * MAX_POINT_LIGHTS;
+    PointLightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    PointLightBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    PointLightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    PointLightBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    PointLightBufferDesc.StructureByteStride = sizeof(FPointLightInfo);
+
+    HRESULT hr = Device->CreateBuffer(&PointLightBufferDesc, nullptr, &PointLightBuffer);
+    if (FAILED(hr))
+    {
+        UE_LOG("D3D11RHI::CreateLightBuffers - PointLightBuffer 생성 실패");
+        return;
+    }
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC SrvDesc = {};
+    SrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    SrvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    SrvDesc.Buffer.FirstElement = 0;
+    SrvDesc.Buffer.NumElements = MAX_POINT_LIGHTS;
+
+    hr = Device->CreateShaderResourceView(PointLightBuffer, &SrvDesc, &PointLightSRV);
+    if (FAILED(hr))
+    {
+        UE_LOG("D3D11RHI::CreateLightBuffers - PointLightSRV 생성 실패");
+        return;
+    }
+
+    // Spot Light용 Structured Buffer도 위와 동일하게 생성
+    D3D11_BUFFER_DESC SpotLightBufferDesc = {};
+    SpotLightBufferDesc.ByteWidth = sizeof(FSpotLightInfo) * MAX_SPOT_LIGHTS;
+    SpotLightBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+    SpotLightBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    SpotLightBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    SpotLightBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    SpotLightBufferDesc.StructureByteStride = sizeof(FSpotLightInfo);
+
+    hr = Device->CreateBuffer(&SpotLightBufferDesc, nullptr, &SpotLightBuffer);
+    if (FAILED(hr))
+    {
+        UE_LOG("D3D11RHI::CreateLightBuffers - SpotLightBuffer 생성 실패");
+        return;
+    }
+
+    SrvDesc.Format = DXGI_FORMAT_UNKNOWN;
+    SrvDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+    SrvDesc.Buffer.FirstElement = 0;
+    SrvDesc.Buffer.NumElements = MAX_SPOT_LIGHTS;
+
+    hr = Device->CreateShaderResourceView(SpotLightBuffer, &SrvDesc, &SpotLightSRV);
+    if (FAILED(hr))
+    {
+        UE_LOG("D3D11RHI::CreateLightBuffers - SpotLightSRV 생성 실패");
+        return;
+    }
+    
+}
+
+
 
 HRESULT D3D11RHI::CreateIndexBuffer(ID3D11Device* device, const FMeshData* meshData, ID3D11Buffer** outBuffer)
 {
@@ -530,17 +597,19 @@ void D3D11RHI::CreateRasterizerState()
     if (DefaultRasterizerState)
         return;
 
-    D3D11_RASTERIZER_DESC deafultrasterizerdesc = {};
-    deafultrasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
-    deafultrasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
-    deafultrasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
+    D3D11_RASTERIZER_DESC defaultrasterizerdesc = {};
+    defaultrasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
+    defaultrasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
+    defaultrasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
+    //defaultrasterizerdesc.FrontCounterClockwise = TRUE;
 
-    Device->CreateRasterizerState(&deafultrasterizerdesc, &DefaultRasterizerState);
+    Device->CreateRasterizerState(&defaultrasterizerdesc, &DefaultRasterizerState);
 
     D3D11_RASTERIZER_DESC wireframerasterizerdesc = {};
     wireframerasterizerdesc.FillMode = D3D11_FILL_WIREFRAME; // 채우기 모드
     wireframerasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
     wireframerasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
+    //wireframerasterizerdesc.FrontCounterClockwise = TRUE;
 
     Device->CreateRasterizerState(&wireframerasterizerdesc, &WireFrameRasterizerState);
 
@@ -548,6 +617,7 @@ void D3D11RHI::CreateRasterizerState()
     frontcullrasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
     frontcullrasterizerdesc.CullMode = D3D11_CULL_FRONT; // 프론트 페이스 컬링
     frontcullrasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
+    //frontcullrasterizerdesc.FrontCounterClockwise = TRUE;
 
     Device->CreateRasterizerState(&frontcullrasterizerdesc, &FrontCullRasterizerState);
 
@@ -555,6 +625,7 @@ void D3D11RHI::CreateRasterizerState()
     nocullrasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
     nocullrasterizerdesc.CullMode = D3D11_CULL_NONE; // 컬링 없음
     nocullrasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
+    //nocullrasterizerdesc.FrontCounterClockwise = TRUE;
 
     Device->CreateRasterizerState(&nocullrasterizerdesc, &NoCullRasterizerState);
 
@@ -566,6 +637,7 @@ void D3D11RHI::CreateRasterizerState()
     decalrasterizerdesc.DepthBias = -100; // z-fighting 방지용 bias
     decalrasterizerdesc.DepthBiasClamp = 0.0f;
     decalrasterizerdesc.SlopeScaledDepthBias = -1.0f;
+    //decalrasterizerdesc.FrontCounterClockwise = TRUE;
 
     Device->CreateRasterizerState(&decalrasterizerdesc, &DecalRasterizerState);
 }
@@ -649,6 +721,30 @@ void D3D11RHI::ReleaseDepthStencilView(ID3D11DepthStencilView** DSV, ID3D11Shade
     {
         (*DSV)->Release();
         (*DSV) = nullptr;
+    }
+}
+
+void D3D11RHI::ReleaseLightBuffers()
+{
+    if (PointLightSRV)
+    {
+        PointLightSRV->Release();
+        PointLightSRV = nullptr;
+    }
+    if (PointLightBuffer)
+    {
+        PointLightBuffer->Release();
+        PointLightBuffer = nullptr;
+    }
+    if (SpotLightSRV)
+    {
+        SpotLightSRV->Release();
+        SpotLightSRV = nullptr;
+    }
+    if (SpotLightBuffer)
+    {
+        SpotLightBuffer->Release();
+        SpotLightBuffer = nullptr;
     }
 }
 
@@ -763,6 +859,32 @@ void D3D11RHI::ResizeSwapChain(UINT width, UINT height)
     {
         TileLightManager.OnResize(width, height);
     }
+}
+
+void D3D11RHI::UpdateAndBindLightBuffers(const TArray<FPointLightInfo>& InPointLights, const TArray<FSpotLightInfo>& InSpotLights)
+{
+    if (PointLightBuffer && !InPointLights.empty())
+    {
+        D3D11_MAPPED_SUBRESOURCE MappedResource;
+        if (SUCCEEDED(DeviceContext->Map(PointLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
+        {
+            memcpy(MappedResource.pData, InPointLights.data(), sizeof(FPointLightInfo) * InPointLights.size());
+            DeviceContext->Unmap(PointLightBuffer, 0);
+        }
+    }
+    if (SpotLightBuffer && !InSpotLights.empty())
+    {
+        D3D11_MAPPED_SUBRESOURCE MappedResource;
+        if (SUCCEEDED(DeviceContext->Map(SpotLightBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource)))
+        {
+            memcpy(MappedResource.pData, InSpotLights.data(), sizeof(FSpotLightInfo) * InSpotLights.size());
+            DeviceContext->Unmap(SpotLightBuffer, 0);
+        }
+    }
+    DeviceContext->VSSetShaderResources(2, 1, &PointLightSRV);
+    DeviceContext->VSSetShaderResources(3, 1, &SpotLightSRV);
+    DeviceContext->PSSetShaderResources(2, 1, &PointLightSRV);
+    DeviceContext->PSSetShaderResources(3, 1, &SpotLightSRV);
 }
 
 void D3D11RHI::PSSetDefaultSampler(UINT StartSlot)

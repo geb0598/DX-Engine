@@ -28,6 +28,8 @@ cbuffer HighLightBuffer : register(b2)
 Texture2D g_DiffuseTexColor : register(t0);
 SamplerState g_Sample : register(s0);
 
+Texture2D g_NormalMapTex : register(t1);
+
 struct FMaterial
 {
     float3 DiffuseColor; // Kd
@@ -155,6 +157,7 @@ struct VS_INPUT
     float3 normal : NORMAL0;
     float4 color : COLOR;
     float2 texCoord : TEXCOORD0;
+    float4 tangent : TANGENT;
 };
 
 struct PS_INPUT
@@ -164,6 +167,7 @@ struct PS_INPUT
     float3 worldNormal : TEXCOORD1;
     float4 color : COLOR;
     float2 texCoord : TEXCOORD2;
+    float4 tangent : TANGENT;
     uint UUID : UUID;
 };
 
@@ -229,7 +233,14 @@ PS_INPUT mainVS(VS_INPUT input)
 
     o.color = c;
     o.texCoord = input.texCoord;
+    
+    float3x3 World3x3 = (float3x3) WorldMatrix;
+    
+    float3 tWS = normalize(mul(input.tangent.xyz, (float3x3) NormalMatrix));
+    o.tangent = float4(tWS, input.tangent.w);
+
     o.UUID = UUID;
+    
     return o;
 }
 
@@ -261,7 +272,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
             float2 center = float2(0.5, 0.5);
             float2 toCenter = uv - center;
             float dist = length(toCenter);
-
+            
         // 다중 sine 기반 노이즈 왜곡
             float wave1 = sin(time + dist * 25.0) * 0.02;
             float wave2 = sin(time * 1.7 + (uv.x + uv.y) * 40.0) * 0.015;
@@ -286,7 +297,22 @@ PS_OUTPUT mainPS(PS_INPUT input)
     }
 
     // 조명 계산 (shininess는 Material.SpecularExponent를 쓰는 게 일반적)
-    float3 N = normalize(input.worldNormal);
+    //float3 N = normalize(input.worldNormal);
+    float2 uv = input.texCoord + UVScrollSpeed * UVScrollTime;
+    float3 N = g_NormalMapTex.Sample(g_Sample, uv).xyz;
+    
+    N = 2.0f * N - 1.0f;
+    N = normalize(N);
+    
+    float3 Nw = normalize(input.worldNormal);
+    float3 Tw = normalize(input.tangent.xyz);
+    float h = input.tangent.w; // handedness (+1/-1)
+    float3 Bw = normalize(cross(Nw, Tw) * h);
+    
+    float3x3 TBN = float3x3(Tw, Bw, Nw);
+    N = normalize(mul(N, TBN));
+
+    
     float shininess = (HasMaterial ? Material.SpecularExponent : 32.0); // 기본값 32
     LightAccum la = ComputePointLights_LambertPhong(input.worldPosition, N, shininess);
     float3 light = ComputePointLights(input.worldPosition);

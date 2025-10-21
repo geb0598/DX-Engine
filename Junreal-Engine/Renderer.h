@@ -62,7 +62,7 @@ public:
     void DrawIndexedPrimitiveComponent(UStaticMesh* InMesh, D3D11_PRIMITIVE_TOPOLOGY InTopology, const TArray<FMaterialSlot>& InComponentMaterialSlots);
     void DrawIndexedPrimitiveComponent(UTextRenderComponent* Comp, D3D11_PRIMITIVE_TOPOLOGY InTopology);
     void DrawIndexedPrimitiveComponent(UBillboardComponent* Comp, D3D11_PRIMITIVE_TOPOLOGY InTopology);
-
+    void DrawIndexedPrimitiveComponentWithLight(UStaticMesh* InMesh, D3D11_PRIMITIVE_TOPOLOGY InTopology, const TArray<FMaterialSlot>& InComponentMaterialSlots);
     // View Mode Setting
     void SetViewModeType(EViewModeIndex ViewModeIndex);
     void SetViewModeIndex(EViewModeIndex InViewModeIndex) { CurrentViewMode = InViewModeIndex; }
@@ -101,7 +101,7 @@ private:
     void RenderFireBallPass(UWorld* World);     // 포스트: FireBall 조명/가산
     void RenderOverlayPass(UWorld* World);      // 라인/텍스트/UI/디버그
     void RenderSceneDepthVisualizePass(ACameraActor* Camera);       // 포스트: SceneDepth 뷰 모드 (뎁스 버퍼 시각화)
-
+    void RenderWorldNormalPass(UWorld* World, ACameraActor* Camera, FViewport* Viewport);
 
     // 2) 씬 렌더링 헬퍼 메소드들
 
@@ -112,6 +112,14 @@ private:
     void RenderDecals(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport);
     void RenderEngineActors(const TArray<AActor*>& EngineActors, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix, FViewport* Viewport);
 
+    // Uber Shader 컴파일 및 TMap 저장
+    void InitializeUberShaders();
+    /**
+     * @brief 씬의 모든 활성 광원 정보를 수집하여 FLightingBufferType를 채웁니다.
+     * 이 함수는 매 프레임 렌더링 시작 전에 호출됩니다.
+     * @param InWorld 현재 렌더링할 월드
+    */
+    void UpdateLightingBuffer(UWorld* InWorld, ACameraActor* InCameraActor);
     //// 2) 풀스크린 쿼드
     //void CreateFullScreenQuad();
     //void DestroyFullScreenQuad();
@@ -148,6 +156,9 @@ private:
     UShader* DepthOnlyShader = nullptr;
     UShader* SceneDepthVisualizeShader = nullptr;
 
+    // 뷰모드와 컴파일된 셰이더 저장
+    TMap<EViewModeIndex, UShader*> UberShaders;
+    FLightingBufferType LightingCBufferData;
     /**
      * @brief 불필요한 API 호출을 막기 위해 마지막으로 바인딩된 상태를 캐싱합니다.
      */

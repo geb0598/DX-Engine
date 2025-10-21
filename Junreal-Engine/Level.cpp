@@ -6,6 +6,10 @@
 #include "BillboardComponent.h"
 #include "FireballComponent.h"
 #include "FXAAComponent.h"
+#include "Component/AmbientLightComponent.h"
+#include "Component/DirectionalLightComponent.h"
+#include "Component/PointLightComponent.h"
+#include "Component/SpotLightComponent.h"
 
 ULevel::ULevel()
 {
@@ -46,6 +50,11 @@ void ULevel::CollectComponentsToRender()
 	FogComponentList.clear();
 	FireBallComponentList.clear();
 	FXAAComponentList.clear();
+	PointLightComponentList.clear();
+	SpotLightComponentList.clear();
+
+	AmbientLightComponent = nullptr;
+	DirectionalLightComponent = nullptr;
 
 	for (AActor* Actor : Actors)
 	{
@@ -78,6 +87,22 @@ void ULevel::CollectComponentsToRender()
 			else if (UFireBallComponent* FireBallComponent = Cast<UFireBallComponent>(ActorComponent))
 			{
 				FireBallComponentList.Add(FireBallComponent);
+			}
+			else if (UAmbientLightComponent* InAmbientLightComponent = Cast<UAmbientLightComponent>(ActorComponent))
+			{
+				AmbientLightComponent = InAmbientLightComponent;
+			}
+			else if (UDirectionalLightComponent* InDirectionalLightComponent = Cast<UDirectionalLightComponent>(ActorComponent))
+			{
+				DirectionalLightComponent = InDirectionalLightComponent;
+			}
+			else if (UPointLightComponent* PointLightComponent = Cast<UPointLightComponent>(ActorComponent))
+			{
+				PointLightComponentList.Add(PointLightComponent);
+			}
+			else if (USpotLightComponent* SpotLightComponent = Cast<USpotLightComponent>(ActorComponent))
+			{
+				SpotLightComponentList.Add(SpotLightComponent);
 			}
 			else if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(ActorComponent))
 			{
@@ -131,4 +156,24 @@ template<>
 TArray<UFireBallComponent*>& ULevel::GetComponentList<UFireBallComponent>()
 {
 	return FireBallComponentList;
+}
+template<>
+TArray<UPointLightComponent*>& ULevel::GetComponentList<UPointLightComponent>()
+{
+	return PointLightComponentList;
+}
+template<>
+TArray<USpotLightComponent*>& ULevel::GetComponentList<USpotLightComponent>()
+{
+	return SpotLightComponentList;
+}
+template<>
+UAmbientLightComponent* ULevel::GetComponent<UAmbientLightComponent>()
+{
+	return AmbientLightComponent;
+}
+template<>
+UDirectionalLightComponent* ULevel::GetComponent<UDirectionalLightComponent>()
+{
+	return DirectionalLightComponent;
 }

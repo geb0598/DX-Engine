@@ -52,6 +52,10 @@ MACRO(FPointLightBufferType)                  \
 MACRO(CameraInfoBufferType)                  \
 MACRO(FXAABufferType)                  \
 MACRO(FGammaBufferType)                  \
+MACRO(FPerObjectBufferType) \
+MACRO(FLightingBufferType) \
+MACRO(FPerMaterialBufferType) \
+MACRO(FNormalVizCB)      \
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
 CBUFFER_INFO(ViewProjBufferType, 1, true, true)
@@ -70,6 +74,11 @@ CBUFFER_INFO(FPointLightBufferType, 9, false, true)
 CBUFFER_INFO(CameraInfoBufferType, 0, false, true)
 CBUFFER_INFO(FXAABufferType, 0, false, true)
 CBUFFER_INFO(FGammaBufferType, 0, false, true)
+CBUFFER_INFO(FNormalVizCB, 10, true, true)
+
+CBUFFER_INFO(FPerObjectBufferType, 0, true, false)
+CBUFFER_INFO(FLightingBufferType, 10, true, true)
+CBUFFER_INFO(FPerMaterialBufferType, 11, true, true)
 
 
 //Create 
@@ -121,7 +130,8 @@ struct FPixelConstBufferType
     FMaterialInPs Material;
     uint32 bHasMaterial; // 4 bytes (HLSL bool is 4 bytes)
     uint32 bHasTexture;  // 4 bytes (HLSL bool is 4 bytes)
-    float pad[2];        // 8 bytes padding for 16-byte alignment
+    uint32 bHasNormal;   // 4 bytes (HLSL bool is 4 bytes)
+    float pad;           // 4 bytes padding for 16-byte alignment
 };
 
 //VS,PS : b2
@@ -173,7 +183,8 @@ struct FPointLightData
     float FallOff;       // 감쇠 정도
     FVector Padding;    // 16바이트 정렬 맞추기용
 };
-#define MAX_POINT_LIGHTS 100
+#define MAX_POINT_LIGHTS 1024
+#define MAX_SPOT_LIGHTS 1024
 // 전체 버퍼 (cbuffer b9 대응)
 struct FPointLightBufferType
 {
@@ -251,8 +262,72 @@ struct FSliceInfoBufferType
     float Padding;
 };
 
+struct FNormalVizCB
+{ 
+    uint32 bUseTBN;
+    uint32 _pad[3];
+};
 
-
-
-
+struct alignas(16) FAmbientLightInfo
+{
+    FVector4 Color; // light color
+    float Intensity;
+    FVector Pad0;
+};
+struct alignas(16) FDirectionalLightInfo
+{
+    FVector4 Color;
+    FVector Direction;
+    float Intensity;
+};
+struct alignas(16) FPointLightInfo
+{
+    FVector4 Color;
+    FVector Position;
+    float Intensity;
+    float AttenuationRadius;
+    float LightFalloffExponent;
+    FVector2D Pad0;
+};
+struct alignas(16) FSpotLightInfo
+{
+    FVector4 Color;
+    FVector  Position;
+    float    Intensity;
+    FVector  Direction;
+    float    AttenuationRadius;
+    float    InnerConeAngle;
+    float    OuterConeAngle;
+    float    LightFalloffExponent;
+    float    Pad0;
+};
+struct alignas(16) FPerObjectBufferType
+{
+    FMatrix World;
+    FMatrix View;
+    FMatrix Projection;
+    FMatrix WorldInverseTranspose;
+    uint32 UUID;
+    FVector Pad0;
+};
+struct alignas(16) FLightingBufferType
+{
+    FAmbientLightInfo      Ambient;
+    FDirectionalLightInfo  Directional;
+    //FPointLightInfo        PointLights[4];
+    //FSpotLightInfo         SpotLights[4];
+    FVector CameraPos;
+    uint32 NumPointLights;
+    uint32 NumSpotLights;
+    FVector Pad1;
+};
+struct alignas(16) FPerMaterialBufferType
+{
+    FVector4 MaterialAmbient; // k_a (rgb)
+    FVector4 MaterialDiffuse; // k_d (albedo, rgb)
+    FVector4 MaterialSpecular; // k_s (specular, rgb)
+    FVector4 MaterialEmissive; // emissive Color
+    float SpecularShininess; // alpha
+    FVector Pad2;
+};
 
