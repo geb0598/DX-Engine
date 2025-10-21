@@ -51,11 +51,11 @@ MACRO(FHeightFogBufferType)                  \
 MACRO(FPointLightBufferType)                  \
 MACRO(CameraInfoBufferType)                  \
 MACRO(FXAABufferType)                  \
+MACRO(FNormalVizCB)      \
 MACRO(FGammaBufferType)                  \
 MACRO(FPerObjectBufferType) \
 MACRO(FLightingBufferType) \
 MACRO(FPerMaterialBufferType) \
-MACRO(FNormalVizCB)      \
 
 CBUFFER_INFO(ModelBufferType, 0, true, false)
 CBUFFER_INFO(ViewProjBufferType, 1, true, true)
@@ -315,8 +315,9 @@ struct alignas(16) FPerObjectBufferType
     FMatrix View;
     FMatrix Projection;
     FMatrix WorldInverseTranspose;
-    uint32 UUID;
-    FVector Pad0;
+    uint32 UUID = 0;
+    FVector Pad_UUID;
+
 };
 struct alignas(16) FLightingBufferType
 {
@@ -336,6 +337,7 @@ struct alignas(16) FPerMaterialBufferType
     FVector4 MaterialSpecular; // k_s (specular, rgb)
     FVector4 MaterialEmissive; // emissive Color
     float SpecularShininess; // alpha
+    uint32 HasNormalMap = 0;
     FVector Pad2;
 };
 

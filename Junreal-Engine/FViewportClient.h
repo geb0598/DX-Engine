@@ -59,8 +59,10 @@ public:
     // 뷰포트별 카메라 설정
     void SetupCameraMode();
     void SetViewModeIndex(EViewModeIndex InViewModeIndex) { ViewModeIndex = InViewModeIndex; }
+    void SetNormalMapOption(bool InNormalMapOption) { bNormalMapOption = InNormalMapOption; }
 
     EViewModeIndex GetViewModeIndex() { return ViewModeIndex;}
+    bool GetNormalMapOption() { return bNormalMapOption; }
 
 
 protected:
@@ -81,6 +83,7 @@ protected:
     float OrthographicZoom = 30.0f;
     //뷰모드
     EViewModeIndex ViewModeIndex = EViewModeIndex::VMI_Unlit;
+    bool bNormalMapOption = true;
 
     //원근 투영
     bool PerspectiveCameraInput = false;

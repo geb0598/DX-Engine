@@ -50,6 +50,15 @@ void UStaticMeshComponent::Render(URenderer* Renderer, const FMatrix& ViewMatrix
       
         //
         Renderer->PrepareShader(GetMaterial()->GetShader());
+
+        //// PerObject 상수 버퍼(b0) 채우기
+        //FPerObjectBufferType PerObjectData;
+        //PerObjectData.World = GetWorldMatrix();
+        //PerObjectData.View = ViewMatrix;
+        //PerObjectData.Projection = ProjectionMatrix;
+
+        //Renderer->UpdateSetCBuffer(PerObjectData);
+
         Renderer->DrawIndexedPrimitiveComponent(GetStaticMesh(), D3D10_PRIMITIVE_TOPOLOGY_TRIANGLELIST, MaterialSlots);
     }
 }
@@ -74,7 +83,7 @@ void UStaticMeshComponent::RenderWithLight(URenderer* Renderer, const FMatrix& V
             Renderer->OMSetDepthStencilState(EComparisonFunc::LessEqual);
         }
 
-        Renderer->RSSetNoCullState();
+        //Renderer->RSSetNoCullState();
 
         // PerObject Cbuffer(b0) 채우기
         FPerObjectBufferType PerObjectData;
@@ -84,7 +93,8 @@ void UStaticMeshComponent::RenderWithLight(URenderer* Renderer, const FMatrix& V
         PerObjectData.UUID = this->InternalIndex;
         // normal 월드 변환을 위함
         PerObjectData.WorldInverseTranspose = GetWorldMatrix().Inverse().Transpose();
-        
+        PerObjectData.UUID = this->InternalIndex;
+
         // b0에 업데이트
         Renderer->UpdateSetCBuffer(PerObjectData);
 

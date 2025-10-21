@@ -299,6 +299,8 @@ enum class EViewModeIndex : uint32
     VMI_Wireframe,
     VMI_SceneDepth,
     VMI_WorldNormal,
+    VMI_Lit_Lambert_No_Normal_Map,
+    VMI_Lit_Phong_No_Normal_Map,
 
     End,
 };

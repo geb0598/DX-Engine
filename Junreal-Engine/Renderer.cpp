@@ -399,6 +399,7 @@ void URenderer::DrawIndexedPrimitiveComponentWithLight(UStaticMesh* InMesh, D3D1
 			const UMaterial* const Material = UResourceManager::GetInstance().Get<UMaterial>(InComponentMaterialSlots[i].MaterialName);
 			const FObjMaterialInfo& MaterialInfo = Material->GetMaterialInfo();
 			bool bHasTexture = !(MaterialInfo.DiffuseTextureFileName == FName::None());
+			bool bHasNormalMap = !(MaterialInfo.NormalTextureName == FName::None());
 
 			// 재료 변경 추적
 			if (LastMaterial != Material)
@@ -423,6 +424,23 @@ void URenderer::DrawIndexedPrimitiveComponentWithLight(UStaticMesh* InMesh, D3D1
 				RHIDevice->GetDeviceContext()->PSSetShaderResources(0, 1, &(TextureData->TextureSRV));
 			}
 
+			FTextureData* NormalMapData = nullptr;
+			if (bHasNormalMap)
+			{
+				NormalMapData = UResourceManager::GetInstance().CreateOrGetTextureData(MaterialInfo.NormalTextureName);
+				// 텍스처 변경 추적 (임시로 FTextureData*를 UTexture*로 캠스트)
+				UTexture* CurrentTexture = reinterpret_cast<UTexture*>(NormalMapData);
+				if (LastTexture != CurrentTexture)
+				{
+					StatsCollector.IncrementTextureChanges();
+					LastTexture = CurrentTexture;
+				}
+
+				RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &(NormalMapData->TextureSRV));
+			}
+
+			//RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(MaterialInfo), true, bHasTexture, bHasNormalMap));
+
 			//RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(MaterialInfo), true, bHasTexture)); // PSSet도 해줌
 
 			// UberShader가 사용할 PerMaterial 상수 버퍼(b2)의 내용을 채웁니다.
@@ -432,8 +450,9 @@ void URenderer::DrawIndexedPrimitiveComponentWithLight(UStaticMesh* InMesh, D3D1
 			PerMaterialData.MaterialSpecular = FVector4(MaterialInfo.SpecularColor, 1.0f);
 			PerMaterialData.MaterialEmissive = FVector4(MaterialInfo.EmissiveColor, 1.0f);
 			PerMaterialData.SpecularShininess = MaterialInfo.SpecularExponent;
+			PerMaterialData.HasNormalMap = bHasNormalMap ? 1 : 0;
 			// GPU 전송
-			UpdateSetCBuffer(PerMaterialData);
+			RHIDevice->UpdateSetCBuffer(PerMaterialData);
 
 
 			// DrawCall 수실행 및 통계 추가
@@ -448,7 +467,7 @@ void URenderer::DrawIndexedPrimitiveComponentWithLight(UStaticMesh* InMesh, D3D1
 		//RHIDevice->GetDeviceContext()->DrawIndexed(IndexCount, 0, 0);
 
 		FPerMaterialBufferType DefaultMaterialData{};
-		UpdateSetCBuffer(DefaultMaterialData);
+		RHIDevice->UpdateSetCBuffer(DefaultMaterialData);
 		RHIDevice->GetDeviceContext()->DrawIndexed(IndexCount, 0, 0);
 		StatsCollector.IncrementDrawCalls();
 	}
@@ -634,16 +653,18 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 	}
 	case EViewModeIndex::VMI_SceneDepth:
 	{
-		RenderBasePass(World, Camera, Viewport);  // calls RenderScene, which executes the depth-only pass 
-		// (RenderSceneDepthPass) according to the current view mode
-		RenderSceneDepthVisualizePass(Camera);    // Depth → Grayscale visualize
+		RenderBasePass(World, Camera, Viewport);
+		RenderSceneDepthVisualizePass(Camera);
+		RenderEditorPass(World, Camera, Viewport);
 		break;
 	}
-	case EViewModeIndex::VMI_WorldNormal:
-	{
-		RenderWorldNormalPass(World, Camera, Viewport);
-		break;
-	}
+    case EViewModeIndex::VMI_WorldNormal:
+    {
+        RenderBasePass(World, Camera, Viewport);
+        RenderWorldNormalPass(World, Camera, Viewport);
+        RenderEditorPass(World, Camera, Viewport);
+        break;
+    }
 	default:
 		break;
 	}
@@ -664,11 +685,21 @@ void URenderer::RenderEditorPass(UWorld* World, ACameraActor* Camera, FViewport*
 	FMatrix ViewMatrix = Camera->GetViewMatrix();
 	FMatrix ProjectionMatrix = Camera->GetProjectionMatrix(ViewportAspectRatio, Viewport);
 
-	if (!World->IsPIEWorld())
-	{
-		RHIDevice->OMSetRenderTargets(ERenderTargetType::None);
-		RHIDevice->PSSetRenderTargetSRV(ERenderTargetType::None);
-		RHIDevice->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID | ERenderTargetType::NoDepth);
+    if (!World->IsPIEWorld())
+    {
+        RHIDevice->OMSetRenderTargets(ERenderTargetType::None);
+        RHIDevice->PSSetRenderTargetSRV(ERenderTargetType::None);
+        RHIDevice->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID | ERenderTargetType::NoDepth);
+        {
+            D3D11_VIEWPORT vp{};
+            vp.TopLeftX = static_cast<FLOAT>(Viewport->GetStartX());
+            vp.TopLeftY = static_cast<FLOAT>(Viewport->GetStartY());
+            vp.Width    = static_cast<FLOAT>(Viewport->GetSizeX());
+            vp.Height   = static_cast<FLOAT>(Viewport->GetSizeY());
+            vp.MinDepth = 0.0f;
+            vp.MaxDepth = 1.0f;
+            RHIDevice->GetDeviceContext()->RSSetViewports(1, &vp);
+        }
 		for (auto& Billboard : World->GetLevel()->GetComponentList<UBillboardComponent>())
 		{
 			Billboard->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
@@ -842,11 +873,41 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 	USelectionManager& SelectionManager = USelectionManager::GetInstance();
 	AActor* SelectedActor = SelectionManager.GetSelectedActor();
 
-	UShader* ShaderToUse = UberShaders[CurrentViewMode];
+	EViewModeIndex UberShaderIndex;
+
+	if (CurrentViewMode == EViewModeIndex::VMI_Lit_Gouraud)
+	{
+		UberShaderIndex = EViewModeIndex::VMI_Lit_Gouraud; // Gouraud
+	}
+	else if (CurrentViewMode == EViewModeIndex::VMI_Lit_Lambert)
+	{
+		if (Viewport->GetViewportClient()->GetNormalMapOption())
+		{
+			UberShaderIndex = EViewModeIndex::VMI_Lit_Lambert;
+		}
+		else
+		{
+			UberShaderIndex = EViewModeIndex::VMI_Lit_Lambert_No_Normal_Map;
+		}
+	}
+	else if (CurrentViewMode == EViewModeIndex::VMI_Lit_Phong)
+	{
+		if (Viewport->GetViewportClient()->GetNormalMapOption())
+		{
+			UberShaderIndex = EViewModeIndex::VMI_Lit_Phong;
+		}
+		else
+		{
+			UberShaderIndex = EViewModeIndex::VMI_Lit_Phong_No_Normal_Map;
+		}
+	}
+
+	UShader* ShaderToUse = UberShaders[UberShaderIndex];
 	if (ShaderToUse)
 	{
 		PrepareShader(ShaderToUse);
 	}
+    
 	// Lighting 상수 버퍼(b1) 설정
 	UpdateSetCBuffer(FLightingBufferType(LightingCBufferData));
 
@@ -882,7 +943,7 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 			}
 		}
 
-		if (CurrentViewMode == EViewModeIndex::VMI_Unlit)
+		if (CurrentViewMode == EViewModeIndex::VMI_Unlit || CurrentViewMode == EViewModeIndex::VMI_Wireframe || CurrentViewMode == EViewModeIndex::VMI_SceneDepth || CurrentViewMode == EViewModeIndex::VMI_WorldNormal)
 		{
 			PrimitiveComponent->Render(this, ViewMatrix, ProjectionMatrix, Viewport->GetShowFlags());
 		}
@@ -971,11 +1032,17 @@ void URenderer::InitializeUberShaders()
 	FString GouraudCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_GOURAUD=1";
 	UberShaders.Add(EViewModeIndex::VMI_Lit_Gouraud, ResourceManager.Load<UShader>(GouraudCommand));
 
-	FString LambertCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_LAMBERT=1";
-	UberShaders.Add(EViewModeIndex::VMI_Lit_Lambert, ResourceManager.Load<UShader>(LambertCommand));
+	FString LambertCommandWithNormalMap = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_LAMBERT=1 -D HAS_NORMAL_MAP";
+	UberShaders.Add(EViewModeIndex::VMI_Lit_Lambert, ResourceManager.Load<UShader>(LambertCommandWithNormalMap));
 	
+	FString PhongCommandWithNormalMap = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_PHONG=1 -D HAS_NORMAL_MAP";
+	UberShaders.Add(EViewModeIndex::VMI_Lit_Phong, ResourceManager.Load<UShader>(PhongCommandWithNormalMap));
+
+	FString LambertCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_LAMBERT=1";
+	UberShaders.Add(EViewModeIndex::VMI_Lit_Lambert_No_Normal_Map, ResourceManager.Load<UShader>(LambertCommand));
+
 	FString PhongCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_PHONG=1";
-	UberShaders.Add(EViewModeIndex::VMI_Lit_Phong, ResourceManager.Load<UShader>(PhongCommand));
+	UberShaders.Add(EViewModeIndex::VMI_Lit_Phong_No_Normal_Map, ResourceManager.Load<UShader>(PhongCommand));
 }
 
 void URenderer::UpdateLightingBuffer(UWorld* InWorld, ACameraActor* InCameraActor)
@@ -1261,7 +1328,7 @@ void URenderer::RenderWorldNormalPass(UWorld* World, ACameraActor* Camera, FView
     // 2) 렌더 타깃 상태: 프레임 RTV + DSV (깊이 테스트 유지)
     RHIDevice->OMSetRenderTargets(ERenderTargetType::None);
     RHIDevice->PSSetRenderTargetSRV(ERenderTargetType::None);
-    RHIDevice->OMSetRenderTargets(ERenderTargetType::Frame); // 이미 BeginFrame에서 Frame|ID 묶었으면 필요시 다시 Frame만
+    RHIDevice->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID);
     OMSetBlendState(false);
     OMSetDepthStencilState(EComparisonFunc::LessEqual); // 깊이 테스트 O, 쓰기 On 권장
     RHIDevice->RSSetDefaultState();
@@ -1282,6 +1349,7 @@ void URenderer::RenderWorldNormalPass(UWorld* World, ACameraActor* Camera, FView
             FMatrix NormalMatrix = WorldMatrix.Inverse().Transpose();
             ModelBufferType ModelBuf;
             ModelBuf.Model = WorldMatrix;
+            ModelBuf.UUID = Prim->InternalIndex;
             ModelBuf.NormalMatrix = NormalMatrix;
             UpdateSetCBuffer(ModelBuf);
         }
