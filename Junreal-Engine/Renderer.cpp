@@ -525,6 +525,7 @@ void URenderer::RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, c
 	// +-+ Set Render State +-+
 	RHIDevice->OMSetDepthOnlyTarget();     // DSV binding
 	RHIDevice->OMSetBlendState(false);     // color write mask = 0
+	RHIDevice->OmSetDepthStencilState(EComparisonFunc::LessEqual);
 	RHIDevice->RSSetDefaultState();        // solid fill, back-face culling
 	RHIDevice->IASetPrimitiveTopology();
 
@@ -559,6 +560,24 @@ void URenderer::RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, c
 					ID3D11Buffer* IndexBuffer = Mesh->GetIndexBuffer();
 
 					UINT Stride = sizeof(FVertexDynamic);
+					switch (Mesh->GetVertexType())
+					{
+					case EVertexLayoutType::PositionColor:
+						Stride = sizeof(FVertexSimple);
+						break;
+					case EVertexLayoutType::PositionColorTexturNormal:
+						Stride = sizeof(FVertexDynamic);
+						break;
+					case EVertexLayoutType::PositionBillBoard:
+						Stride = sizeof(FBillboardVertexInfo_GPU);
+						break;
+					case EVertexLayoutType::PositionUV:
+						Stride = sizeof(FVertexUV);
+					default:
+						// Handle unknown or unsupported vertex types
+						assert(false && "Unknown vertex type!");
+						return; // or log an error
+					}
 					UINT Offset = 0;
 					RHIDevice->GetDeviceContext()->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
 					RHIDevice->GetDeviceContext()->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
@@ -644,6 +663,16 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 	case EViewModeIndex::VMI_Wireframe:
 	{
 		//RenderFireBallPass(World);
+			
+		// --- Temporary Light Cull Test ---
+		RenderSceneDepthPass(World, ViewMatrix, ProjectionMatrix);
+			
+		GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::None);
+		FTileLightManager::GetInstance().CullPointLights(Camera->GetCameraComponent(), Viewport, LightingCBufferData);
+		GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID);
+			
+		RHIDevice->ClearDepthBuffer(1.0f, 0); // Clear back buffer due to Z-fighting. Find other solution in later.
+		// ---
 		RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
 		FTileLightManager::GetInstance().RenderPointLightHeatmap();
 		RenderFogPass(World, Camera, Viewport);
@@ -739,13 +768,13 @@ void URenderer::RenderActorsInViewport(UWorld* World, ACameraActor* Camera, FVie
 	BeginLineBatch();
 	SetViewModeType(CurrentViewMode);  
 
+	// --- Depth Prepass already drawed its depth ---
+	// GetRHIDevice()->OmSetDepthStencilState(EComparisonFunc::EqualReadOnly);
+	
 	RenderPrimitives(World, ViewMatrix, ProjectionMatrix, Viewport);
 	
-	// --- Temporary Light Cull Test ---
-	GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::None);
-	FTileLightManager::GetInstance().CullPointLights(Camera->GetCameraComponent(), Viewport, LightingCBufferData);
-	GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID);
-	// ---
+	// --- Restore Depth Stencil State ---
+	// GetRHIDevice()->OmSetDepthStencilState(EComparisonFunc::LessEqual);
 
 	OMSetBlendState(false);
 	RenderEngineActors(World->GetEngineActors(), ViewMatrix, ProjectionMatrix, Viewport);
@@ -1161,6 +1190,7 @@ void URenderer::RenderPostProcessing(UShader* Shader)
 	RHIDevice->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::NoDepth);
 	// RHIDevice->GetDeviceContext()->DrawIndexed(StaticMesh->GetIndexCount(), 0, 0);
 	RHIDevice->GetDeviceContext()->Draw(6, 0);
+	RHIDevice->PSSetRenderTargetSRV(ERenderTargetType::None);
 
 }
 

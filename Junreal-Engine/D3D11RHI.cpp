@@ -55,6 +55,7 @@ void D3D11RHI::Release()
     if (DepthStencilStateAlwaysNoWrite) { DepthStencilStateAlwaysNoWrite->Release(); DepthStencilStateAlwaysNoWrite = nullptr; }
     if (DepthStencilStateDisable) { DepthStencilStateDisable->Release(); DepthStencilStateDisable = nullptr; }
     if (DepthStencilStateGreaterEqualWrite) { DepthStencilStateGreaterEqualWrite->Release(); DepthStencilStateGreaterEqualWrite = nullptr; }
+    if (DepthStencilStateEqualReadOnly) { DepthStencilStateEqualReadOnly->Release(); DepthStencilStateEqualReadOnly = nullptr; }
 
     if (DefaultRasterizerState) { DefaultRasterizerState->Release();   DefaultRasterizerState = nullptr; }
     if (WireFrameRasterizerState) { WireFrameRasterizerState->Release();   WireFrameRasterizerState = nullptr; }
@@ -152,6 +153,11 @@ void D3D11RHI::CreateDepthStencilState()
     desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
     Device->CreateDepthStencilState(&desc, &DepthStencilStateGreaterEqualWrite);
+
+    desc.DepthEnable = TRUE;
+    desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    desc.DepthFunc = D3D11_COMPARISON_EQUAL;
+    Device->CreateDepthStencilState(&desc, &DepthStencilStateEqualReadOnly);
 }
 
 void D3D11RHI::CreateSamplerState()
@@ -788,6 +794,10 @@ void D3D11RHI::OmSetDepthStencilState(EComparisonFunc Func)
         break;
     case EComparisonFunc::Disable:
         DeviceContext->OMSetDepthStencilState(DepthStencilStateDisable, 0);
+        break;
+    case EComparisonFunc::EqualReadOnly:
+        DeviceContext->OMSetDepthStencilState(DepthStencilStateEqualReadOnly, 0);
+        break;
     }
 }
 

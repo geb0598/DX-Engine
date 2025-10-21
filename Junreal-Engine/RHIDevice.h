@@ -21,6 +21,7 @@ enum class EComparisonFunc
       // 필요시 추가
     Disable,
     LessEqualReadOnly,
+    EqualReadOnly
 };
 
 enum class ERenderTargetType

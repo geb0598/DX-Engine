@@ -2,31 +2,31 @@
 
 cbuffer ModelBuffer : register(b0)
 {
-    matrix World;
+    row_major matrix World;
 };
 
 cbuffer ViewProjBuffer : register(b1)
 {
-    matrix View;
-    matrix Projection;
+    row_major matrix View;
+    row_major matrix Projection;
 };
 
 struct VS_INPUT
 {
-    float3 position : POSITION;
+    float3 Position : POSITION;
 };
 
 struct VS_OUTPUT
 {
-    float4 position : SV_Position;
+    float4 Position : SV_Position;
 };
     
-VS_OUTPUT mainVS(VS_INPUT input)
+VS_OUTPUT mainVS(VS_INPUT Input)
 {
-    VS_OUTPUT output;
-    output.position = mul(float4(input.position, 1.0f), World);
-    output.position = mul(mul(output.position, View), Projection);
-    return output;
+    VS_OUTPUT Output;
+    Output.Position = mul(float4(Input.Position, 1.0f), World);
+    Output.Position = mul(mul(Output.Position, View), Projection);
+    return Output;
 }
 
 void PS()

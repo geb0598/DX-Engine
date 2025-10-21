@@ -15,11 +15,16 @@ class USpotLightComponent;
  -----------------------------------------------------------------------------*/
 
 /**
- * Singleton class to support 2.5D Tilemap light culling
- * It manages lifecycle of resources related with light culling by itself.
- * It is too redundant to expand RHIDevice related classes for resources that wouldn't be recycled.
- * Also, existing rendering resource related classes wouldn't satisfy requirements of this class.
- * So, it solely keeps its resources until they are shared by other parts of this project or rendering resource management satisfies its requirements.
+ * @class FTileLightManager
+ * @brief Singleton class that manages 2.5D tile-based light culling.
+ *
+ * This class handles GPU resources and logic required for tile-based light culling 
+ * in a 2.5D rendering pipeline. It maintains its own lifecycle for culling-related 
+ * resources and provides interfaces to initialize, resize, and perform light culling 
+ * operations. The manager supports point and spot light culling and provides 
+ * debugging/visualization features for light distribution.
+ *
+ * @note This class should be initialized via Initialize() before use.
  */
 class FTileLightManager
 {
@@ -59,9 +64,6 @@ public:
 public:
     void RenderPointLightHeatmap();
 
-    /** @note currently it sets viewport and restore it to make it compatible with texture size of heatmap.
-     *  @todo Revise it to make it consistent with postprocess logic.
-     */
     void RenderSpotLightHeatmap() {}
 
     uint32 GetCulledPointLightsCount() const { return 0; }
@@ -87,7 +89,7 @@ private:
     
     static constexpr uint32 MAX_NUM_LIGHT_PER_TILE = 1024;
 
-    static constexpr uint32 NUM_LIGHT_PER_BUCKET = MAX_NUM_LIGHT_PER_TILE / BUCKET_SIZE;
+    static constexpr uint32 NUM_LIGHT_BUCKET_PER_TILE = MAX_NUM_LIGHT_PER_TILE / BUCKET_SIZE;
 
     /*-----------------------------------------------------------------------------
         GPU Resources

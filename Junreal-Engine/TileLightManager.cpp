@@ -16,8 +16,6 @@ void FTileLightManager::Initialize(URenderer* InRenderer)
 
     CreateShader("LightCullingShader.hlsl", "mainCS");
 
-    CreateBuffer();
-
     DXGI_SWAP_CHAIN_DESC SwapChainDesc = {};
     Renderer->GetRHIDevice()->GetSwapChain()->GetDesc(&SwapChainDesc);
 
@@ -32,6 +30,8 @@ void FTileLightManager::OnResize(uint32 InWidth, uint32 InHeight)
     
     Height = InHeight;
 
+    CreateBuffer();
+    
     CreateHeatmapTexture();
 }
 
@@ -59,8 +59,8 @@ void FTileLightManager::CullPointLights(UCameraComponent* InCameraComponent, FVi
     DeviceContext->CSSetShaderResources(0, 1, ShaderResourceViews);
 
     // --- Set Unordered Access Views ---
-    ID3D11UnorderedAccessView* UnorderedAccessViews[] = { HeatmapTextureUAV.Get() };
-    DeviceContext->CSSetUnorderedAccessViews(2, 1, UnorderedAccessViews, nullptr);
+    ID3D11UnorderedAccessView* UnorderedAccessViews[] = { PointLightMaskBufferUAV.Get(), nullptr, HeatmapTextureUAV.Get() };
+    DeviceContext->CSSetUnorderedAccessViews(0, 3, UnorderedAccessViews, nullptr);
 
     // --- Dispatch ---
     uint32 DispatchWidth = (Width + TILE_WIDTH - 1) / TILE_WIDTH;
@@ -74,32 +74,16 @@ void FTileLightManager::CullPointLights(UCameraComponent* InCameraComponent, FVi
     ID3D11ShaderResourceView* NullShaderResourceViews[] = { nullptr };
     DeviceContext->CSSetShaderResources(0, 1, NullShaderResourceViews);
 
-    ID3D11UnorderedAccessView* NullUnorderedAccessViews[] = { nullptr };
-    DeviceContext->CSSetUnorderedAccessViews(2, 1, NullUnorderedAccessViews, nullptr);
+    ID3D11UnorderedAccessView* NullUnorderedAccessViews[] = { nullptr, nullptr, nullptr };
+    DeviceContext->CSSetUnorderedAccessViews(0, 3, NullUnorderedAccessViews, nullptr);
 }
 
 void FTileLightManager::RenderPointLightHeatmap()
 {
     assert(Renderer && "Initialization not done: Renderer is null");
-    
+
     ID3D11DeviceContext* DeviceContext = Renderer->GetRHIDevice()->GetDeviceContext();
 
-    // --- Save original viewport ---
-    
-    // D3D11_VIEWPORT OriginalViewport;
-    // UINT NumViewports = 1;
-    // DeviceContext->RSGetViewports(&NumViewports, &OriginalViewport);
-
-    // --- Set fullscreen viewport from the heatmap texture dimensions ---
-    
-    // D3D11_TEXTURE2D_DESC HeatmapDesc;
-    // HeatmapTexture->GetDesc(&HeatmapDesc);
-    // D3D11_VIEWPORT FullscreenViewport = { 0 };
-    // FullscreenViewport.Width = static_cast<float>(HeatmapDesc.Width);
-    // FullscreenViewport.Height = static_cast<float>(HeatmapDesc.Height);
-    // FullscreenViewport.MaxDepth = 1.0f;
-    // DeviceContext->RSSetViewports(1, &FullscreenViewport);
-    
     ID3D11ShaderResourceView* ShaderResourceViews[] = { HeatmapTextureSRV.Get() };
     DeviceContext->PSSetShaderResources(2, 1, ShaderResourceViews);
     
@@ -107,10 +91,6 @@ void FTileLightManager::RenderPointLightHeatmap()
 
     ID3D11ShaderResourceView* NullShaderResourceViews[] = { nullptr };
     DeviceContext->PSSetShaderResources(2, 1, NullShaderResourceViews);
-
-    // --- Restore original viewport ---
-    
-    // DeviceContext->RSSetViewports(1, &OriginalViewport);
 }
 
 void FTileLightManager::CreateShader(const FString& InFilePath, const FString& InEntryPoint)
@@ -192,44 +172,47 @@ void FTileLightManager::CreatePointLightBuffer()
 
 void FTileLightManager::CreatePointLightMaskBuffer()
 {
-    // assert(Renderer && "Initialization not done: Renderer is null");
-    //
-    // ID3D11Device* Device = Renderer->GetRHIDevice()->GetDevice();
-    //
-    // // --- Create PointLightMaskBuffer ---
-    //
-    // D3D11_BUFFER_DESC BufferDesc    = {};
-    // BufferDesc.Usage                = D3D11_USAGE_DEFAULT;
-    // BufferDesc.ByteWidth            = sizeof(uint32) * NUM_LIGHT_BUCKET_PER_TILE * TILE_WIDTH * TILE_HEIGHT * NUM_SLICES;
-    // BufferDesc.BindFlags            = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
-    // BufferDesc.CPUAccessFlags       = 0;
-    // BufferDesc.MiscFlags            = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-    // BufferDesc.StructureByteStride  = sizeof(uint32);
-    //
-    // HRESULT hResult = Device->CreateBuffer(&BufferDesc, nullptr, &PointLightMaskBuffer);
-    // assert(SUCCEEDED(hResult) && "Failed to create point light mask buffer");
-    //
-    // // --- Create Unordererd Access View for PointLightMaskBuffer ---
-    //
-    // D3D11_UNORDERED_ACCESS_VIEW_DESC UAVDesc    = {};
-    // UAVDesc.Format                              = DXGI_FORMAT_UNKNOWN;
-    // UAVDesc.ViewDimension                       = D3D11_UAV_DIMENSION_BUFFER;
-    // UAVDesc.Buffer.FirstElement                 = 0;
-    // UAVDesc.Buffer.NumElements                  = NUM_LIGHT_BUCKET_PER_TILE * TILE_WIDTH * TILE_HEIGHT * NUM_SLICES;
-    //
-    // hResult = Device->CreateUnorderedAccessView(PointLightMaskBuffer.Get(), &UAVDesc, &PointLightMaskBufferUAV);
-    // assert(SUCCEEDED(hResult) && "Failed to create point light mask buffer UAV");
-    //
-    // // --- Create Shader Resource View for PointLightBufferMask ---
-    //
-    // D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-    // SRVDesc.Format                          = DXGI_FORMAT_UNKNOWN;
-    // SRVDesc.ViewDimension                   = D3D11_SRV_DIMENSION_BUFFER;
-    // SRVDesc.Buffer.FirstElement             = 0;
-    // SRVDesc.Buffer.NumElements              = NUM_LIGHT_BUCKET_PER_TILE * TILE_WIDTH * TILE_HEIGHT * NUM_SLICES;
-    //
-    // hResult = Device->CreateShaderResourceView(PointLightMaskBuffer.Get(), &SRVDesc, &PointLightMaskBufferSRV);
-    // assert(SUCCEEDED(hResult) && "Failed to create point light mask buffer SRV");
+    assert(Renderer && "Initialization not done: Renderer is null");
+    
+    ID3D11Device* Device = Renderer->GetRHIDevice()->GetDevice();
+
+    uint32 NumGroupsX = (Width + TILE_WIDTH - 1) / TILE_WIDTH;
+    uint32 NumGroupsY = (Height + TILE_HEIGHT - 1) / TILE_HEIGHT;
+    
+    // --- Create PointLightMaskBuffer ---
+    
+    D3D11_BUFFER_DESC BufferDesc    = {};
+    BufferDesc.Usage                = D3D11_USAGE_DEFAULT;
+    BufferDesc.ByteWidth            = sizeof(uint32) * NUM_LIGHT_BUCKET_PER_TILE * NumGroupsX * NumGroupsY;
+    BufferDesc.BindFlags            = D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
+    BufferDesc.CPUAccessFlags       = 0;
+    BufferDesc.MiscFlags            = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+    BufferDesc.StructureByteStride  = sizeof(uint32);
+    
+    HRESULT hResult = Device->CreateBuffer(&BufferDesc, nullptr, &PointLightMaskBuffer);
+    assert(SUCCEEDED(hResult) && "Failed to create point light mask buffer");
+    
+    // --- Create Unordererd Access View for PointLightMaskBuffer ---
+    
+    D3D11_UNORDERED_ACCESS_VIEW_DESC UAVDesc    = {};
+    UAVDesc.Format                              = DXGI_FORMAT_UNKNOWN;
+    UAVDesc.ViewDimension                       = D3D11_UAV_DIMENSION_BUFFER;
+    UAVDesc.Buffer.FirstElement                 = 0;
+    UAVDesc.Buffer.NumElements                  = NUM_LIGHT_BUCKET_PER_TILE * NumGroupsX * NumGroupsY;
+    
+    hResult = Device->CreateUnorderedAccessView(PointLightMaskBuffer.Get(), &UAVDesc, &PointLightMaskBufferUAV);
+    assert(SUCCEEDED(hResult) && "Failed to create point light mask buffer UAV");
+    
+    // --- Create Shader Resource View for PointLightBufferMask ---
+    
+    D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+    SRVDesc.Format                          = DXGI_FORMAT_UNKNOWN;
+    SRVDesc.ViewDimension                   = D3D11_SRV_DIMENSION_BUFFER;
+    SRVDesc.Buffer.FirstElement             = 0;
+    SRVDesc.Buffer.NumElements              = NUM_LIGHT_BUCKET_PER_TILE * NumGroupsX * NumGroupsY;
+    
+    hResult = Device->CreateShaderResourceView(PointLightMaskBuffer.Get(), &SRVDesc, &PointLightMaskBufferSRV);
+    assert(SUCCEEDED(hResult) && "Failed to create point light mask buffer SRV");
 }
 
 void FTileLightManager::CreateHeatmapTexture()

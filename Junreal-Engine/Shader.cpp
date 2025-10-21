@@ -94,6 +94,8 @@ void UShader::Load(const FString& InCommandString, ID3D11Device* InDevice)
 
         hResult = InDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &VertexShader);
     }
+    
+    CreateInputLayout(InDevice, ShaderFilePath);
 
     if (!PSEntryPoint.empty())
     {
@@ -115,8 +117,6 @@ void UShader::Load(const FString& InCommandString, ID3D11Device* InDevice)
 
         hResult = InDevice->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &PixelShader);
     }
-    
-    CreateInputLayout(InDevice, ShaderFilePath);
 }
 
 void UShader::CreateInputLayout(ID3D11Device* Device, const FString& InShaderPath)
