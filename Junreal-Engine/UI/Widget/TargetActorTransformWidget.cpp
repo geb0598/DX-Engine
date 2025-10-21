@@ -319,6 +319,7 @@ void UTargetActorTransformWidget::RenderWidget()
 				else
 				{
 					USceneComponent* ParentComponent = SceneCompToDelete->GetAttachParent();
+
 					USelectionManager::GetInstance().ClearSelection();
 
 					if (SelectedActor->DeleteComponent(SceneCompToDelete))
@@ -326,11 +327,13 @@ void UTargetActorTransformWidget::RenderWidget()
 						if (ParentComponent)
 						{
 							USelectionManager::GetInstance().SelectComponent(ParentComponent);
+
 							SelectedComponent = ParentComponent;
 						}
 						else
 						{
 							// 컴포넌트 삭제 시 상위 컴포넌트로 선택되도록 설정
+
 							SelectedComponent = SelectedActor->GetRootComponent();
 						}
 					}
@@ -339,13 +342,15 @@ void UTargetActorTransformWidget::RenderWidget()
 			else	// For non-SceneComponents
 			{
 				USelectionManager::GetInstance().ClearSelection();
-				
+
 				if (SelectedActor->DeleteComponent(SelectedComponent))
 				{
 					USceneComponent* Root = SelectedActor->GetRootComponent();
+
 					if (Root)
-					{
+					{						
 						USelectionManager::GetInstance().SelectComponent(Root);
+
 						SelectedComponent = Root;
 					}
 					else
@@ -401,7 +406,7 @@ void UTargetActorTransformWidget::RenderWidget()
 
                         if (IconBillboard)
                         {
-                            IconBillboard->SetBillboardSize(32.f);
+                            IconBillboard->SetBillboardSize(1.f);
                             //IconBillboard->SetHiddenInGame(true);
                             IconBillboard->SetTintColor(NewLightComp->GetLightColor());
 
