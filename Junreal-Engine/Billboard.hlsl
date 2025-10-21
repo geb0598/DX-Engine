@@ -16,6 +16,7 @@ cbuffer BillboardBuffer : register(b2)
     float3 textWorldPos;
     float padding;
     row_major matrix viewInverse;
+    float4 TintColor;
 }
 
 // C++의 BillboardCharInfo와 레이아웃이 동일해야 하는 입력 구조체
@@ -74,7 +75,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     clip(color.a - 0.5f); // alpha - 0.5f < 0 이면 해당픽셀 렌더링 중단
 
-    Result.Color = color;
+    Result.Color = color * TintColor;
     Result.UUID = input.UUID;
     return Result;
-}
+}  

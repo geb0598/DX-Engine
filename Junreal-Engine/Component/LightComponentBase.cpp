@@ -1,15 +1,29 @@
 ﻿#include "pch.h"
 #include "Component/LightComponentBase.h"
+#include "BillboardComponent.h"
+#include "ObjectFactory.h"
 
 ULightComponentBase::ULightComponentBase()
-	: Intensity(1.0f), LightColor(220, 220, 220, 255), bVisible(true)
+	: Intensity(1.0f), LightColor({220, 220, 220, 255}), bVisible(true)
 {
 
 }
 
 ULightComponentBase::~ULightComponentBase()
 {
+	if (IconBillboardComponent)
+	{
+        GetOwner()->DeleteComponent(IconBillboardComponent);
+	}       
+}
 
+void ULightComponentBase::SetIconBillboardComponent(UBillboardComponent* InIcon)
+{
+    IconBillboardComponent = InIcon;
+    if (IconBillboardComponent)
+    {
+        IconBillboardComponent->SetEditable(false);
+    }
 }
 
 const float ULightComponentBase::GetIntensity() const
@@ -35,6 +49,11 @@ void ULightComponentBase::SetIntensity(float InIntensity)
 void ULightComponentBase::SetLightColor(const FColor& InLightColor)
 {
 	LightColor = InLightColor;
+    if (IconBillboardComponent)
+    {
+        // if billboard component exists, set sprite color
+        IconBillboardComponent->SetTintColor(InLightColor);
+    }
 }
 
 void ULightComponentBase::SetVisible(bool bInVisible)

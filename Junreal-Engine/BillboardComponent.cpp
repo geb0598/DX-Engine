@@ -37,6 +37,11 @@ void UBillboardComponent::SetTexture(const FString& InTexturePath)
     TexturePath = InTexturePath;
 }
 
+void UBillboardComponent::SetTintColor(const FColor& InColor)
+{
+    TintColor = InColor;
+}
+
 void UBillboardComponent::SetUVCoords(float U, float V, float UL, float VL)
 {
     UCoord = U;
@@ -55,6 +60,7 @@ UObject* UBillboardComponent::Duplicate()
 		DuplicatedComponent->TexturePath = TexturePath;
         DuplicatedComponent->SetEditable(this->bEdiableWhenInherited);
         DuplicatedComponent->SetBillboardSize(this->BillboardSize);
+        DuplicatedComponent->SetTintColor(TintColor);
         DuplicatedComponent->DuplicateSubObjects();
         
     }
@@ -155,8 +161,14 @@ void UBillboardComponent::Render(URenderer* Renderer, const FMatrix& View, const
     // 상수 버퍼 업데이트
     ////UUID만 필요하지만 기존 버퍼와 함수 재사용하기 위해서 모델버퍼 받아옴
     Renderer->UpdateSetCBuffer(ModelBufferType(FMatrix(), this->InternalIndex));
-    //Renderer->UpdateSetCBuffer(ViewProjBufferType( FMatrix(), FMatrix()));
-    Renderer->UpdateSetCBuffer(BillboardBufferType(BillboardPos,0, View.InverseAffine()));
+
+    FVector4 NormalizedColor(TintColor.R / 255.f, TintColor.G / 255.f, TintColor.B / 255.f, TintColor.A / 255.f);
+    BillboardBufferType BillboardCB;
+    BillboardCB.pos = BillboardPos;
+    BillboardCB.padding = 0;
+    BillboardCB.InverseViewMat = View.InverseAffine();
+    BillboardCB.TintColor = NormalizedColor; // 빌보드 스프라이트의 컬러를 넘겨줌
+    Renderer->UpdateSetCBuffer(BillboardCB);
 
     Renderer->OMSetDepthStencilState(EComparisonFunc::Disable);
     

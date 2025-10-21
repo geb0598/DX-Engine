@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "Component/LightComponentBase.h"
 
+class UBillboardComponent;
+
 class UPointLightComponent : public ULightComponentBase
 {
 public:
