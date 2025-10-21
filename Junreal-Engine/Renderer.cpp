@@ -437,7 +437,7 @@ void URenderer::DrawIndexedPrimitiveComponentWithLight(UStaticMesh* InMesh, D3D1
 				RHIDevice->GetDeviceContext()->PSSetShaderResources(1, 1, &(NormalMapData->TextureSRV));
 			}
 
-			RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(MaterialInfo), true, bHasTexture, bHasNormalMap));
+			//RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(MaterialInfo), true, bHasTexture, bHasNormalMap));
 
 			//RHIDevice->UpdateSetCBuffer(FPixelConstBufferType(FMaterialInPs(MaterialInfo), true, bHasTexture)); // PSSet도 해줌
 
@@ -448,6 +448,7 @@ void URenderer::DrawIndexedPrimitiveComponentWithLight(UStaticMesh* InMesh, D3D1
 			PerMaterialData.MaterialSpecular = FVector4(MaterialInfo.SpecularColor, 1.0f);
 			PerMaterialData.MaterialEmissive = FVector4(MaterialInfo.EmissiveColor, 1.0f);
 			PerMaterialData.SpecularShininess = MaterialInfo.SpecularExponent;
+			PerMaterialData.HasNormalMap = bHasNormalMap ? 1 : 0;
 			// GPU 전송
 			RHIDevice->UpdateSetCBuffer(PerMaterialData);
 
@@ -864,7 +865,36 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 	USelectionManager& SelectionManager = USelectionManager::GetInstance();
 	AActor* SelectedActor = SelectionManager.GetSelectedActor();
 
-	UShader* ShaderToUse = UberShaders[CurrentViewMode];
+	EViewModeIndex UberShaderIndex;
+
+	if (CurrentViewMode == EViewModeIndex::VMI_Lit_Gouraud)
+	{
+		UberShaderIndex = EViewModeIndex::VMI_Lit_Gouraud; // Gouraud
+	}
+	else if (CurrentViewMode == EViewModeIndex::VMI_Lit_Lambert)
+	{
+		if (Viewport->GetViewportClient()->GetNormalMapOption())
+		{
+			UberShaderIndex = EViewModeIndex::VMI_Lit_Lambert;
+		}
+		else
+		{
+			UberShaderIndex = EViewModeIndex::VMI_Lit_Lambert_No_Normal_Map;
+		}
+	}
+	else if (CurrentViewMode == EViewModeIndex::VMI_Lit_Phong)
+	{
+		if (Viewport->GetViewportClient()->GetNormalMapOption())
+		{
+			UberShaderIndex = EViewModeIndex::VMI_Lit_Phong;
+		}
+		else
+		{
+			UberShaderIndex = EViewModeIndex::VMI_Lit_Phong_No_Normal_Map;
+		}
+	}
+
+	UShader* ShaderToUse = UberShaders[UberShaderIndex];
 	if (ShaderToUse)
 	{
 		PrepareShader(ShaderToUse);
@@ -994,11 +1024,17 @@ void URenderer::InitializeUberShaders()
 	FString GouraudCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_GOURAUD=1";
 	UberShaders.Add(EViewModeIndex::VMI_Lit_Gouraud, ResourceManager.Load<UShader>(GouraudCommand));
 
-	FString LambertCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_LAMBERT=1";
-	UberShaders.Add(EViewModeIndex::VMI_Lit_Lambert, ResourceManager.Load<UShader>(LambertCommand));
+	FString LambertCommandWithNormalMap = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_LAMBERT=1 -D HAS_NORMAL_MAP";
+	UberShaders.Add(EViewModeIndex::VMI_Lit_Lambert, ResourceManager.Load<UShader>(LambertCommandWithNormalMap));
 	
+	FString PhongCommandWithNormalMap = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_PHONG=1 -D HAS_NORMAL_MAP";
+	UberShaders.Add(EViewModeIndex::VMI_Lit_Phong, ResourceManager.Load<UShader>(PhongCommandWithNormalMap));
+
+	FString LambertCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_LAMBERT=1";
+	UberShaders.Add(EViewModeIndex::VMI_Lit_Lambert_No_Normal_Map, ResourceManager.Load<UShader>(LambertCommand));
+
 	FString PhongCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_PHONG=1";
-	UberShaders.Add(EViewModeIndex::VMI_Lit_Phong, ResourceManager.Load<UShader>(PhongCommand));
+	UberShaders.Add(EViewModeIndex::VMI_Lit_Phong_No_Normal_Map, ResourceManager.Load<UShader>(PhongCommand));
 }
 
 void URenderer::UpdateLightingBuffer(UWorld* InWorld, ACameraActor* InCameraActor)

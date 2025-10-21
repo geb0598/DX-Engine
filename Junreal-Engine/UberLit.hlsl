@@ -1,5 +1,4 @@
 #define EPSILON 1e-6
-#define HAS_NORMAL_MAP 1
 
 struct FAmbientLightInfo
 {
@@ -69,7 +68,8 @@ cbuffer PerMaterial : register(b11)
     float4 MaterialEmissive; // emissive Color
    
     float SpecularShininess; // alpha
-    float3 Pad2;
+    uint HasNormalMap;
+    float2 Pad2;
 };
 float3 CalculateAmbientLight(FAmbientLightInfo info)
 {
@@ -265,28 +265,41 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     float4 FinalPixel = float4(1.0f, 1.0f, 1.0f, 1.0f);
     float3 albedoTexture = TextureColor.Sample(Sampler, Input.UV).rgb;
     
-    
-    //float3 N = Input.WorldNormal;
-    // TBN과 NormalMap으로부터 월드 노말 구하기
+    float3 N = 0.0f;
     float2 UV = Input.UV;
-    float3 N = NormalMapTex.Sample(Sampler, UV).xyz;
     
-    N = 2.0f * N - 1.0f;
-    N = normalize(N);
+#if defined(HAS_NORMAL_MAP)
+    // TBN과 NormalMap으로부터 월드 노말 구하기
+    if (HasNormalMap == 1)
+    {
+        N = NormalMapTex.Sample(Sampler, UV).xyz;
     
-    float3 Nw = normalize(Input.WorldNormal);
-    float3 Tw = normalize(Input.Tangent.xyz);
-    float h = Input.Tangent.w; // handedness (+1/-1)
-    float3 Bw = normalize(cross(Nw, Tw) * h);
+        N = 2.0f * N - 1.0f;
+        N = normalize(N);
+        
+        float3 Nw = normalize(Input.WorldNormal);
+        float3 Tw = normalize(Input.Tangent.xyz);
+        float h = Input.Tangent.w; // handedness (+1/-1)
+        float3 Bw = normalize(cross(Nw, Tw) * h);
     
-    float3x3 TBN = float3x3(Tw, Bw, Nw);
-    N = normalize(mul(N, TBN));
+        float3x3 TBN = float3x3(Tw, Bw, Nw);
+        N = normalize(mul(N, TBN));
+    }
+    else
+    {
+        N = Input.WorldNormal;
+    }
     
-    float3 k_a = MaterialAmbient.rgb;
-    float3 k_d = MaterialDiffuse.rgb;
-    float3 k_s = MaterialSpecular.rgb;
-    float3 k_e = MaterialEmissive.rgb;
-    float shininess = SpecularShininess;
+#else
+    N = Input.WorldNormal;
+    
+#endif
+    
+        float3 k_a = MaterialAmbient.rgb;
+        float3 k_d = MaterialDiffuse.rgb;
+        float3 k_s = MaterialSpecular.rgb;
+        float3 k_e = MaterialEmissive.rgb;
+        float shininess = SpecularShininess;
     
 #if defined(LIGHTING_MODEL_GOURAUD)
     // VS에서 이미 재질 계수(k_a, k_d, k_s)가 모두 곱해짐
@@ -357,7 +370,7 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     float3 finalLighting = ambientTerm + diffuseTerm + specularTerm + k_e;
     FinalPixel = float4(finalLighting, 1.0f);
 #endif
-    output.Color = FinalPixel;
-    output.UUID = Input.UUID;
-    return output;
-}
+        output.Color = FinalPixel;
+        output.UUID = Input.UUID;
+        return output;
+    }

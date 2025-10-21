@@ -241,6 +241,8 @@ void SViewportWindow::RenderToolbar()
 				break;
 			}
 		}
+
+	
 		//int currentViewMode = static_cast<int>(ViewportClient-> GetViewModeIndex())-1; // 0=Lit, 1=Unlit, 2=Wireframe -1이유 1부터 시작이여서 
 
 		ImGui::SameLine();
@@ -370,7 +372,12 @@ void SViewportWindow::RenderToolbar()
 				ImGui::PopStyleColor(3);
 			}
 		}
-
+		ImGui::SameLine();
+		bool bUseNormalMap = ViewportClient->GetNormalMapOption();
+		if (ImGui::Checkbox("Use Normal Map", &bUseNormalMap))
+		{
+			ViewportClient->SetNormalMapOption(bUseNormalMap);
+		}
 		// 🔘 여기 '한 번 클릭' 버튼 추가
 		const float btnW = 60.0f;
 		const ImVec2 btnSize(btnW, 0.0f);

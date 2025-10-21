@@ -308,6 +308,7 @@ struct alignas(16) FPerMaterialBufferType
     FVector4 MaterialSpecular; // k_s (specular, rgb)
     FVector4 MaterialEmissive; // emissive Color
     float SpecularShininess; // alpha
+    uint32 HasNormalMap = 0;
     FVector Pad2;
 };
 
