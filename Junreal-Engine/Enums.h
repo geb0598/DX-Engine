@@ -35,6 +35,10 @@ struct FObjMaterialInfo
     float Transparency = -1.f; // Tr Or d
     float SpecularExponent = -1.f; // Ns
 
+    // Optional bump strength parsed from map_Bump -bm <value>
+    // Defaults to 1.0 when unspecified.
+    float BumpMultiplier = 1.0f;
+
     FString MaterialName;
 
     friend FArchive& operator<<(FArchive& Ar, FObjMaterialInfo& Info)
@@ -74,6 +78,7 @@ struct FObjMaterialInfo
         Ar << Info.OpticalDensity;
         Ar << Info.Transparency;
         Ar << Info.SpecularExponent;
+        Ar << Info.BumpMultiplier;
 
         if (Ar.IsSaving())
             Serialization::WriteString(Ar, Info.MaterialName);

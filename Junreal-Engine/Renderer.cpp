@@ -449,6 +449,7 @@ void URenderer::DrawIndexedPrimitiveComponentWithLight(UStaticMesh* InMesh, D3D1
 			PerMaterialData.MaterialEmissive = FVector4(MaterialInfo.EmissiveColor, 1.0f);
 			PerMaterialData.SpecularShininess = MaterialInfo.SpecularExponent;
 			PerMaterialData.HasNormalMap = bHasNormalMap ? 1 : 0;
+			PerMaterialData.BumpValue = MaterialInfo.BumpMultiplier;
 			// GPU 전송
 			RHIDevice->UpdateSetCBuffer(PerMaterialData);
 

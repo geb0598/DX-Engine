@@ -69,7 +69,8 @@ cbuffer PerMaterial : register(b11)
    
     float SpecularShininess; // alpha
     uint HasNormalMap;
-    float2 Pad2;
+    float BumpValue;
+    float Pad2;
 };
 float3 CalculateAmbientLight(FAmbientLightInfo info)
 {
@@ -273,8 +274,18 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     if (HasNormalMap == 1)
     {
         N = NormalMapTex.Sample(Sampler, UV).xyz;
-    
         N = 2.0f * N - 1.0f;
+    
+        float SaturatedBumpValue = saturate(BumpValue);
+        
+        N.xy *= SaturatedBumpValue;
+    
+        //float NewX = BumpValue * N.x;
+        //float NewY = BumpValue * N.y;
+        //float SignZ = sign(N.z);
+        //float NewZ = SignZ * sqrt(max(0.0f, 1 - NewX * NewX + NewY * New Y));        
+    
+        //float3 TempNormal = float3(NewX, NewY, NewZ);
         N = normalize(N);
         
         float3 Nw = normalize(Input.WorldNormal);
