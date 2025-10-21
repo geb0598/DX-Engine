@@ -426,7 +426,31 @@ public:
 
                 FString Rest = Line.substr(9);
 
-                std::regex Re(R"rgx("([^"]+\.png)"|([^\s"]+\.png))rgx", std::regex::icase);
+                // 1) Try to parse optional "-bm <value>" bump multiplier
+                //    Spec: map_Bump -bm <multiplier> <texturePath>
+                {
+                    std::istringstream iss(Rest);
+                    FString tok;
+                    float bump = OutMaterialInfos.empty() ? 1.0f : OutMaterialInfos[MatCount - 1].BumpMultiplier;
+                    while (iss >> tok)
+                    {
+                        if (tok == "-bm")
+                        {
+                            float v = 1.0f;
+                            if (iss >> v)
+                            {
+                                bump = v;
+                            }
+                        }
+                    }
+                    if (MatCount > 0)
+                    {
+                        OutMaterialInfos[MatCount - 1].BumpMultiplier = bump;
+                    }
+                }
+
+                // 2) Extract texture path (support common image extensions; keep png fallback)
+                std::regex Re(R"rgx("([^"]+\.(png|jpg|jpeg|tga|bmp|dds))"|([^\s"]+\.(png|jpg|jpeg|tga|bmp|dds)))rgx", std::regex::icase);
                 std::sregex_iterator it(Rest.begin(), Rest.end(), Re), End;
 
                 if (it != End)
@@ -435,7 +459,7 @@ public:
                     std::smatch M = *it; ++it;
                     for (; it != End; ++it) M = *it;
 
-                    FString TextureFileName = M[1].matched ? M[1].str() : M[2].str();
+                    FString TextureFileName = M[1].matched ? M[1].str() : M[3].str();
 
                     // 경로 정규화 및 상대경로면 objDir 접두
                     if (TextureFileName.rfind(ObjDir, 0) != 0)

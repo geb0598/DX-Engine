@@ -940,10 +940,32 @@ void UTargetActorTransformWidget::RenderStaticMeshComponentDetails(UStaticMeshCo
 			for (uint64 MaterialSlotIndex = 0; MaterialSlotIndex < MeshGroupCount; ++MaterialSlotIndex)
 			{
 				ImGui::PushID(static_cast<int>(MaterialSlotIndex));
-				if (ImGui::Combo("Material", &SelectedMaterialIdxAt[MaterialSlotIndex], MaterialNamesCharP.data(), static_cast<int>(MaterialNamesCharP.size())))
-				{
-					InComponent->SetMaterialByUser(static_cast<uint32>(MaterialSlotIndex), MaterialNames[SelectedMaterialIdxAt[MaterialSlotIndex]]);
-				}
+            if (ImGui::Combo("Material", &SelectedMaterialIdxAt[MaterialSlotIndex], MaterialNamesCharP.data(), static_cast<int>(MaterialNamesCharP.size())))
+            {
+                InComponent->SetMaterialByUser(static_cast<uint32>(MaterialSlotIndex), MaterialNames[SelectedMaterialIdxAt[MaterialSlotIndex]]);
+            }
+
+            // BumpMultiplier control for current material slot
+            {
+                const FString& CurrentMatName = MaterialSlots[MaterialSlotIndex].MaterialName;
+                if (!CurrentMatName.empty())
+                {
+                    if (UMaterial* Mat = UResourceManager::GetInstance().Get<UMaterial>(CurrentMatName))
+                    {
+                        // Copy, edit via ImGui, then write back to material
+                        FObjMaterialInfo MatInfo = Mat->GetMaterialInfo();
+                        float Bump = MatInfo.BumpMultiplier;
+
+                        // Unique label per slot to avoid ID collisions
+                        std::string Label = std::string("Bump##") + std::to_string(MaterialSlotIndex);
+                        if (ImGui::SliderFloat(Label.c_str(), &Bump, 0.0f, 1.0f, "%.2f"))
+                        {
+                            MatInfo.BumpMultiplier = Bump;
+                            Mat->SetMaterialInfo(MatInfo);
+                        }
+                    }
+                }
+            }
 				ImGui::PopID();
 			}
 		}
