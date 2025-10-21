@@ -185,9 +185,34 @@ bool IsSphereInsideFrustum(FSphere Sphere, FFrustum Frustum)
     return true;
 }
 
-void CullPointLight(uint Index, uint FlatTileIndex, FSphere Sphere, FFrustum Frustum)
+uint SphereToDepthMask(FSphere SphereVS)
 {
-    if (!IsSphereInsideFrustum(Sphere, Frustum))
+    float SphereMinDepth = SphereVS.Position.z - SphereVS.Radius;
+    float SphereMaxDepth = SphereVS.Position.z + SphereVS.Radius;
+    float NormalizedSphereMinDepth = saturate((SphereMinDepth - NearClip) / (FarClip - NearClip));
+    float NormalizedSphereMaxDepth = saturate((SphereMaxDepth - NearClip) / (FarClip - NearClip));
+    float MinSliceIndex = (uint)(floor(NormalizedSphereMinDepth * NUM_SLICES));
+    MinSliceIndex = clamp(MinSliceIndex, 0, NUM_SLICES - 1);
+    float MaxSliceIndex = (uint)(ceil(NormalizedSphereMaxDepth * NUM_SLICES));
+    MaxSliceIndex = clamp(MaxSliceIndex, 0, NUM_SLICES - 1);
+    
+    uint DepthMask = 0u;
+    for (int i = MinSliceIndex; i <= MaxSliceIndex; ++i)
+    {
+        DepthMask |= (1u << i);
+    }
+
+    return DepthMask;
+}
+
+void CullPointLight(uint Index, uint FlatTileIndex, FSphere SphereVS, FFrustum Frustum)
+{
+    if (!IsSphereInsideFrustum(SphereVS, Frustum))
+    {
+        return; 
+    }
+
+    if (!(TileDepthMask & SphereToDepthMask(SphereVS)))
     {
         return; 
     }
@@ -215,28 +240,48 @@ void VisualizeDepthSlices(uint InTileDepthMask, uint2 InPixelCoord, RWTexture2D<
 
 void VisualizeLightCount(uint InVisibleLightCount, uint2 InPixelCoord, RWTexture2D<float4> OutHeatmapTexture)
 {
-    // --- Light Count Heatmap Visualization ---
+    if (InPixelCoord.x < ViewportRect.x || InPixelCoord.x >= ViewportRect.x + ViewportRect.z ||
+        InPixelCoord.y < ViewportRect.y || InPixelCoord.y >= ViewportRect.y + ViewportRect.w)
+    {
+        return;
+    }
     
-    const float MAX_LIGHTS_FOR_HEATMAP = 5.0f;
-
-    float HeatIntensity = saturate((float)InVisibleLightCount / MAX_LIGHTS_FOR_HEATMAP);
-
     float4 HeatmapColor;
 
-    if (HeatIntensity < 0.5f)
+    if (InVisibleLightCount == 0)
     {
-        HeatmapColor = lerp(float4(0.0f, 0.0f, 1.0f, 1.0f), float4(0.0f, 1.0f, 0.0f, 1.0f), HeatIntensity * 2.0f);
+        HeatmapColor = float4(0.0f, 0.0f, 0.0f, 0.0f);
     }
     else
     {
-        HeatmapColor = lerp(float4(0.0f, 1.0f, 0.0f, 1.0f), float4(1.0f, 0.0f, 0.0f, 1.0f), (HeatIntensity - 0.5f) * 2.0f);
+        const float MAX_LIGHTS_FOR_HEATMAP = 10.0f;
+        float HeatIntensity = saturate((float)InVisibleLightCount / MAX_LIGHTS_FOR_HEATMAP);
+
+        const float4 ColdColor = float4(0.0f, 0.0f, 1.0f, 1.0f); // Blue
+        const float4 CoolColor = float4(0.0f, 1.0f, 1.0f, 1.0f); // Cyan
+        const float4 MidColor  = float4(0.0f, 1.0f, 0.0f, 1.0f); // Green
+        const float4 WarmColor = float4(1.0f, 1.0f, 0.0f, 1.0f); // Yellow
+        const float4 HotColor  = float4(1.0f, 0.0f, 0.0f, 1.0f); // Red
+        
+        if (HeatIntensity < 0.25f)
+        {
+            HeatmapColor = lerp(ColdColor, CoolColor, HeatIntensity * 4.0f);
+        }
+        else if (HeatIntensity < 0.5f)
+        {
+            HeatmapColor = lerp(CoolColor, MidColor, (HeatIntensity - 0.25f) * 4.0f);
+        }
+        else if (HeatIntensity < 0.75f)
+        {
+            HeatmapColor = lerp(MidColor, WarmColor, (HeatIntensity - 0.5f) * 4.0f);
+        }
+        else
+        {
+            HeatmapColor = lerp(WarmColor, HotColor, (HeatIntensity - 0.75f) * 4.0f);
+        }
     }
 
-    if (InPixelCoord.x >= ViewportRect.x && InPixelCoord.x < ViewportRect.x + ViewportRect.z &&
-        InPixelCoord.y >= ViewportRect.y && InPixelCoord.y < ViewportRect.y + ViewportRect.w)
-    {
-        OutHeatmapTexture[InPixelCoord] = HeatmapColor;
-    }
+    OutHeatmapTexture[InPixelCoord] = HeatmapColor;
 }
 
 /*-----------------------------------------------------------------------------
