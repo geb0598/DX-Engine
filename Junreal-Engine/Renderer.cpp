@@ -885,8 +885,6 @@ void URenderer::RenderPrimitives(UWorld* World, const FMatrix& ViewMatrix, const
 	{
 		FVector rgb(1.0f, 1.0f, 1.0f);
 
-
-
 		bool bIsSelected = false;
 		if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_BoundingBoxes))
 		{

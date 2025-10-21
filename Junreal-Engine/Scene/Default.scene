@@ -1,31 +1,65 @@
 {
   "Version" : 2,
-  "NextUUID" : 662,
+  "NextUUID" : 672,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [-3.836805, -2.914694, 4.214212],
+    "Location" : [-4.680110, -13.901047, 6.635501],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 10.899994, 38.899994]
+    "Rotation" : [0.000000, 41.599945, 63.299900]
   },
   "Actors" : [
     {
-      "UUID" : 654,
+      "UUID" : 653,
       "Type" : "AStaticMeshActor",
       "Name" : "rock-sl-2_0",
-      "RootComponentUUID" : 655
+      "RootComponentUUID" : 654
+    },
+    {
+      "UUID" : 655,
+      "Type" : "AActor",
+      "Name" : "Actor_0",
+      "RootComponentUUID" : 656
     }
   ],
   "Components" : [
     {
-      "UUID" : 655,
-      "OwnerActorUUID" : 654,
+      "UUID" : 654,
+      "OwnerActorUUID" : 653,
       "ParentComponentUUID" : 0,
       "Type" : "UStaticMeshComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 3.550138],
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, 0.000000, 0.000000],
-      "RelativeScale" : [0.380000, 0.380000, 0.380000],
-      "StaticMesh" : "Data/ship/ship.obj"
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Rock/rock-sl-2.obj"
+    },
+    {
+      "UUID" : 661,
+      "OwnerActorUUID" : 655,
+      "ParentComponentUUID" : 656,
+      "Type" : "UPointLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 656,
+      "OwnerActorUUID" : 655,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [0.000000, -10.240729, 3.071758],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 657,
+      "OwnerActorUUID" : 655,
+      "ParentComponentUUID" : 656,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
     }
   ]
 }

@@ -1,10 +1,8 @@
 #define NUM_POINT_LIGHT 4
 #define NUM_SPOT_LIGHT 4
-#define LIGHTING_MODEL_GOURAUD 1
-#define LIGHTING_MODEL_LAMBERT 1
-#define LIGHTING_MODEL_PHONG 1
 #define EPSILON 1e-6
 //#define HAS_NORMAL_MAP 1
+
 struct FAmbientLightInfo
 {
     float4 Color; // light color
@@ -49,7 +47,7 @@ cbuffer PerObject : register(b0)
     row_major float4x4 Projection;
     row_major float4x4 WorldInverseTranspose;
     uint UUID;
-    float3 _pad_uuid;
+    float3 Pad_uuid;
 };
 
 cbuffer Lighting : register(b10)
@@ -264,6 +262,8 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     float4 FinalPixel = float4(1.0f, 1.0f, 1.0f, 1.0f);
     float3 albedoTexture = TextureColor.Sample(Sampler, Input.UV).rgb;
     
+    
+    //float3 N = Input.WorldNormal;
     // TBN과 NormalMap으로부터 월드 노말 구하기
     float2 UV = Input.UV;
     float3 N = NormalMapTex.Sample(Sampler, UV).xyz;
@@ -291,7 +291,6 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     FinalPixel.rgb = finalLighting + k_e;
     FinalPixel.a = 1.0f;
 #elif defined(LIGHTING_MODEL_LAMBERT)
-    float3 N = normalize(Input.WorldNormal);
     float3 V = normalize(CameraPos - Input.WorldPosition);
     
     float3 ambientRaw = CalculateAmbientLight(Ambient);
@@ -321,9 +320,8 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     float3 diffuseTerm = diffuseRaw * k_d * albedoTexture;
     
     float3 finalLighting = ambientTerm + diffuseTerm + k_e;
-    finalPixel = float4(finalLighting, 1.0f);
+    FinalPixel = float4(finalLighting, 1.0f);
 #elif defined(LIGHTING_MODEL_PHONG)
-    float3 N = normalize(Input.WorldNormal);
     float3 V = normalize(CameraPos - Input.WorldPosition);
     
     float3 ambientRaw = CalculateAmbientLight(Ambient);
@@ -358,7 +356,7 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     float3 specularTerm = specularRaw * k_s;
     
     float3 finalLighting = ambientTerm + diffuseTerm + specularTerm + k_e;
-    finalPixel = float4(finalLighting, 1.0f);
+    FinalPixel = float4(finalLighting, 1.0f);
 #endif
     output.Color = FinalPixel;
     output.UUID = Input.UUID;
