@@ -290,7 +290,7 @@ void FTileLightManager::CreateConstantBuffer()
     {
         D3D11_BUFFER_DESC BufferDesc    = {};
         BufferDesc.Usage                = D3D11_USAGE_DYNAMIC;
-        BufferDesc.ByteWidth            = sizeof(CameraInfoBufferType);
+        BufferDesc.ByteWidth            = sizeof(FCameraBufferType);
         BufferDesc.BindFlags            = D3D11_BIND_CONSTANT_BUFFER;
         BufferDesc.CPUAccessFlags       = D3D11_CPU_ACCESS_WRITE;
         BufferDesc.MiscFlags            = 0;
@@ -337,7 +337,11 @@ void FTileLightManager::UpdateConstantBuffer(UCameraComponent* InCameraComponent
 
     D3D11_MAPPED_SUBRESOURCE MappedResource;
     DeviceContext->Map(CameraInfoConstantBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedResource);
-    CameraInfoBufferType* CameraInfo = static_cast<CameraInfoBufferType*>(MappedResource.pData);
+    FCameraBufferType* CameraInfo = static_cast<FCameraBufferType*>(MappedResource.pData);
+    CameraInfo->ViewMatrix = InCameraComponent->GetViewMatrix();
+    CameraInfo->ProjectionMatrix = InCameraComponent->GetProjectionMatrix();
+    CameraInfo->InverseViewMatrix = InCameraComponent->GetViewMatrix().Inverse();
+    CameraInfo->InverseProjectionMatrix = InCameraComponent->GetProjectionMatrix().Inverse();
     CameraInfo->NearClip = InCameraComponent->GetNearClip();
     CameraInfo->FarClip = InCameraComponent->GetFarClip();
     DeviceContext->Unmap(CameraInfoConstantBuffer.Get(), 0);
