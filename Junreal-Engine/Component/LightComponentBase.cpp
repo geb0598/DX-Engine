@@ -1,8 +1,9 @@
 ﻿#include "pch.h"
 #include "Component/LightComponentBase.h"
+#include "BillboardComponent.h"
 
 ULightComponentBase::ULightComponentBase()
-	: Intensity(1.0f), LightColor(220, 220, 220, 255), bVisible(true)
+	: Intensity(1.0f), LightColor({220, 220, 220, 255}), bVisible(true)
 {
 
 }
@@ -10,6 +11,11 @@ ULightComponentBase::ULightComponentBase()
 ULightComponentBase::~ULightComponentBase()
 {
 
+}
+
+void ULightComponentBase::SetIconBillboardComponent(UBillboardComponent* InIcon)
+{
+    IconBillboardComponent = InIcon;
 }
 
 const float ULightComponentBase::GetIntensity() const
@@ -35,6 +41,11 @@ void ULightComponentBase::SetIntensity(float InIntensity)
 void ULightComponentBase::SetLightColor(const FColor& InLightColor)
 {
 	LightColor = InLightColor;
+    if (IconBillboardComponent)
+    {
+        // if billboard component exists, set sprite color
+        IconBillboardComponent->SetTintColor(InLightColor);
+    }
 }
 
 void ULightComponentBase::SetVisible(bool bInVisible)

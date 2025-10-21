@@ -13,6 +13,7 @@ UDirectionalLightComponent::~UDirectionalLightComponent()
 {
 }
 
+
 void UDirectionalLightComponent::TickComponent(float DeltaTime)
 {
 	Super_t::TickComponent(DeltaTime);

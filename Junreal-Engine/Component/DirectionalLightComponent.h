@@ -17,5 +17,4 @@ protected:
 	void DuplicateSubObjects() override;
 	void CopyCommonProperties(UObject* InTarget) override;
 private:
-	UBillboardComponent* IconBillboardComponent;
 };

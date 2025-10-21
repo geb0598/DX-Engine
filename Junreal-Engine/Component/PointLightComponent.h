@@ -25,8 +25,6 @@ protected:
 	void DuplicateSubObjects() override;
 	void CopyCommonProperties(UObject* InTarget) override;
 
-	UBillboardComponent* IconBillboardComponent = nullptr;
-
 private:
 	float AttenuationRadius;
 	float LightFalloffExponent;

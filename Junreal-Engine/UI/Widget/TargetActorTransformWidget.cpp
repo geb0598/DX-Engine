@@ -405,6 +405,9 @@ void UTargetActorTransformWidget::RenderWidget()
                             //IconBillboard->SetHiddenInGame(true);
                             IconBillboard->SetTintColor(NewLightComp->GetLightColor());
 
+                            // Explicitly link the icon to the light component
+                            NewLightComp->SetIconBillboardComponent(IconBillboard);
+
                             // Set a specific icon based on the light type
                             if (NewLightComp->IsA<UDirectionalLightComponent>())
                             {
