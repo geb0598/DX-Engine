@@ -221,7 +221,7 @@ void SViewportWindow::RenderToolbar()
 
 		if (ImGui::Button("Reset")) { /* TODO: 카메라 Reset */ }
 
-		const char* viewModes[] = { "Lit_Gouraud", "Lit_Lambert", "Lit_Phong", "Unlit", "Wireframe", "SceneDepth", "WorldNormal"};
+		const char* viewModes[] = { "Lit_Gouraud", "Lit_Lambert", "Lit_Phong", "Unlit", "Wireframe", "SceneDepth", "World Normal"};
 		EViewModeIndex viewModeEnums[] = {
 			 EViewModeIndex::VMI_Lit_Gouraud,
 			 EViewModeIndex::VMI_Lit_Lambert,
@@ -229,7 +229,7 @@ void SViewportWindow::RenderToolbar()
 			 EViewModeIndex::VMI_Unlit,
 			 EViewModeIndex::VMI_Wireframe,
 			 EViewModeIndex::VMI_SceneDepth,
-			 EViewModeIndex::VMI_WorldNormal,
+			 EViewModeIndex::VMI_WorldNormal
 		};
 		int currentModeIndex = 0;
 		EViewModeIndex currentEnum = ViewportClient->GetViewModeIndex();
@@ -241,6 +241,8 @@ void SViewportWindow::RenderToolbar()
 				break;
 			}
 		}
+
+	
 		//int currentViewMode = static_cast<int>(ViewportClient-> GetViewModeIndex())-1; // 0=Lit, 1=Unlit, 2=Wireframe -1이유 1부터 시작이여서 
 
 		ImGui::SameLine();
@@ -370,7 +372,12 @@ void SViewportWindow::RenderToolbar()
 				ImGui::PopStyleColor(3);
 			}
 		}
-
+		ImGui::SameLine();
+		bool bUseNormalMap = ViewportClient->GetNormalMapOption();
+		if (ImGui::Checkbox("Use Normal Map", &bUseNormalMap))
+		{
+			ViewportClient->SetNormalMapOption(bUseNormalMap);
+		}
 		// 🔘 여기 '한 번 클릭' 버튼 추가
 		const float btnW = 60.0f;
 		const ImVec2 btnSize(btnW, 0.0f);
