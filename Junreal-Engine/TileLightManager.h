@@ -46,10 +46,8 @@ public:
         Tile-based 2.5D Light Culling
      -----------------------------------------------------------------------------*/
 
-    void CullPointLights(UCameraComponent* InCameraComponent, FViewport* InViewport, FLightingBufferType& LightingBuffer);
+    void CullLights(UCameraComponent* InCameraComponent, FViewport* InViewport, FLightingBufferType& LightingBuffer);
 
-    void CullSpotLights(UCameraComponent* InCameraComponent, FViewport* Viewport) {}
-    
     /*-----------------------------------------------------------------------------
         Getters / Setters
      -----------------------------------------------------------------------------*/
@@ -109,7 +107,7 @@ private:
     
     void CreateSpotLightBuffer() {}
 
-    void CreateSpotLightMaskBuffer() {}
+    void CreateSpotLightMaskBuffer();
 
     void CreateConstantBuffer();
 

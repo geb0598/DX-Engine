@@ -34,6 +34,19 @@ struct FPointLightInfo
     float2 Pad; 
 };
 
+struct FSpotLightInfo
+{
+    float4 Color; // light color
+    float3 Position; // world space position
+    float Intensity;
+    float3 Direction; // world space direction
+    float AttenuationRadius;
+    float InnerConeAngle; // cos
+    float OuterConeAngle; // cos
+    float LightFalloffExponent; // exponent
+    float Pad0;
+};
+
 struct FSphere
 {
     float3 Position;
@@ -51,6 +64,13 @@ struct FPlane
 struct FFrustum
 {
     FPlane Planes[6];
+};
+
+struct FCone
+{
+    // 0 -> Position of Apex
+    // 1-4 -> Vertex Positions of Bounding Square of a Circle
+    float3 Positions[5];
 };
 
 /*-----------------------------------------------------------------------------
@@ -104,11 +124,11 @@ Texture2D<float> DepthTexture : register(t0);
 
 StructuredBuffer<FPointLightInfo> PointLights : register(t2);
 
-// StructuredBuffer<FSpotLightInfo> SpotLights : register(t3);
+StructuredBuffer<FSpotLightInfo> SpotLights : register(t3);
 
 RWStructuredBuffer<uint> PointLightMask : register(u0);
 
-// RWStructuredBuffer<uint> SpotLightMask : register(u1);
+RWStructuredBuffer<uint> SpotLightMask : register(u1);
 
 RWTexture2D<float4> HeatmapTexture : register(u2);
 
@@ -220,6 +240,109 @@ void CullPointLight(uint Index, uint FlatTileIndex, FSphere SphereVS, FFrustum F
     uint BucketIndex = Index / BUCKET_SIZE;
     uint BitIndex = Index % BUCKET_SIZE;
     InterlockedOr(PointLightMask[FlatTileIndex * BUCKET_SIZE + BucketIndex], 1u << BitIndex);
+    InterlockedAdd(VisibleLightCount, 1u);
+}
+
+FCone CreateCone(float3 ApexPosition, float3 AxisDirection, float Height, float CosAngle)
+{
+    FCone Cone;
+    Cone.Positions[0] = ApexPosition;
+
+    AxisDirection = normalize(AxisDirection);
+    float3 BaseCenterPosition = ApexPosition + AxisDirection * Height;
+
+    float BaseRadius = Height * tan(acos(CosAngle));
+
+    float3 BasisRerenceUp;
+    if (abs(dot(AxisDirection, float3(0.0f, 0.0f, 1.0f))) > 0.999f)
+    {
+        BasisRerenceUp = float3(1.0f, 0.0f, 0.0f);
+    }
+    else
+    {
+        BasisRerenceUp = float3(0.0f, 1.0f, 0.0f);
+    }
+
+    float3 BasePlaneRight = normalize(cross(AxisDirection, BasisRerenceUp));
+    float3 BasePlaneForward = normalize(cross(BasePlaneRight, AxisDirection));
+
+    Cone.Positions[1] = BaseCenterPosition + BasePlaneForward * BaseRadius;
+    Cone.Positions[2] = BaseCenterPosition - BasePlaneRight * BaseRadius;
+    Cone.Positions[3] = BaseCenterPosition + BasePlaneForward * BaseRadius;
+    Cone.Positions[4] = BaseCenterPosition - BasePlaneForward * BaseRadius;
+
+    return Cone;
+}
+
+bool IsConeInsidePlane(FCone Cone, FPlane Plane)
+{
+    for (int i = 0; i < 5; ++i)
+    {
+        float SignedDistance = dot(Cone.Positions[i], normalize(Plane.Normal)) - Plane.Distance;
+        if (SignedDistance <= 0.0f)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool IsConeInsideFrustum(FCone Cone, FFrustum Frustum)
+{
+    for (int i = 0; i < 6; ++i)
+    {
+        if (!IsConeInsidePlane(Cone, Frustum.Planes[i]))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+uint ConeToDepthMask(FCone ConeVS)
+{
+    float MinDepth = ConeVS.Positions[0].z; 
+    float MaxDepth = ConeVS.Positions[0].z;
+
+    for (int i = 1; i < 5; ++i)
+    {
+        MinDepth = min(MinDepth, ConeVS.Positions[i].z);
+        MaxDepth = max(MaxDepth, ConeVS.Positions[i].z);
+    }
+
+    float NormalizedMinDepth = saturate((MinDepth - NearClip) / (FarClip - NearClip));
+    float NormalizedMaxDepth = saturate((MaxDepth - NearClip) / (FarClip - NearClip));
+
+    uint MinSliceIndex = (uint)(floor(NormalizedMinDepth * NUM_SLICES));
+    MinSliceIndex = clamp(MinSliceIndex, 0, NUM_SLICES - 1);
+    
+    uint MaxSliceIndex = (uint)(ceil(NormalizedMaxDepth * NUM_SLICES));
+    MaxSliceIndex = clamp(MaxSliceIndex, 0, NUM_SLICES - 1);
+    
+    uint DepthMask = 0u;
+    for (uint i = MinSliceIndex; i <= MaxSliceIndex; ++i)
+    {
+        DepthMask |= (1u << i);
+    }
+
+    return DepthMask;
+}
+
+void CullSpotLight(uint Index, uint FlatTileIndex, FCone ConeVS, FFrustum Frustum)
+{
+    if (!IsConeInsideFrustum(ConeVS, Frustum))
+    {
+        return;
+    }
+
+    if (!(TileDepthMask & ConeToDepthMask(ConeVS)))
+    {
+        return;
+    }
+
+    uint BucketIndex = Index / BUCKET_SIZE;
+    uint BitIndex = Index % BUCKET_SIZE;
+    InterlockedOr(SpotLightMask[FlatTileIndex * BUCKET_SIZE + BucketIndex], 1u << BitIndex);
     InterlockedAdd(VisibleLightCount, 1u);
 }
 
@@ -338,8 +461,18 @@ void mainCS(uint3 GroupID : SV_GroupID, uint3 ThreadID : SV_GroupThreadID, uint3
     
             CullPointLight(i, FlatTileIndex, Sphere, Frustum);
         }
+
+        for (uint i = 0; i < NumSpotLights; ++i)
+        {
+            FCone Cone = CreateCone(SpotLights[i].Position, SpotLights[i].Direction, SpotLights[i].AttenuationRadius, SpotLights[i].OuterConeAngle);
+            for (int i = 0; i < 5; ++i)
+            {
+                Cone.Positions[i] = mul(Cone.Positions[i], ViewMatrix);
+            }
+            CullSpotLight(i, FlatTileIndex, Cone, Frustum);
+        }
     }
-    
+
     // --- Depth Clustering Test ---
     // VisualizeDepthSlices(TileDepthMask, PixelCoord, HeatmapTexture);
 

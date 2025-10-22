@@ -669,7 +669,7 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 		RenderSceneDepthPass(World, ViewMatrix, ProjectionMatrix);
 			
 		GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::None);
-		FTileLightManager::GetInstance().CullPointLights(Camera->GetCameraComponent(), Viewport, LightingCBufferData);
+		FTileLightManager::GetInstance().CullLights(Camera->GetCameraComponent(), Viewport, LightingCBufferData);
 		ID3D11Buffer* ConstantBuffers[] = {
 			FTileLightManager::GetInstance().GetViewportConstantBuffer(),
 			FTileLightManager::GetInstance().GetTileConstantBuffer()
@@ -1305,8 +1305,6 @@ void URenderer::RenderFireBallPass(UWorld* World)
 			}
 		}
 	}*/
-
-
 }
 
 void URenderer::RenderOverlayPass(UWorld* World)
