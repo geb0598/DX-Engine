@@ -1072,23 +1072,41 @@ void URenderer::RenderEngineActors(const TArray<AActor*>& EngineActors, const FM
 	}
 }
 
+void URenderer::ReloadUberShader(EViewModeIndex ViewModeIndex)
+{
+	auto IterShader = UberShaders.find(ViewModeIndex);
+	if (IterShader != UberShaders.end())
+	{
+		auto IterPath = UberShaderPaths.find(ViewModeIndex);
+		if (IterPath != UberShaderPaths.end())
+		{
+			UberShaders[ViewModeIndex] = UResourceManager::GetInstance().Load<UShader>(IterPath->second);
+		}
+	}
+}
+
 void URenderer::InitializeUberShaders()
 {
 	UResourceManager& ResourceManager = UResourceManager::GetInstance();
 
 	FString GouraudCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_GOURAUD=1";
+	UberShaderPaths.Add(EViewModeIndex::VMI_Lit_Gouraud, GouraudCommand);
 	UberShaders.Add(EViewModeIndex::VMI_Lit_Gouraud, ResourceManager.Load<UShader>(GouraudCommand));
 
 	FString LambertCommandWithNormalMap = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_LAMBERT=1 -D HAS_NORMAL_MAP";
+	UberShaderPaths.Add(EViewModeIndex::VMI_Lit_Lambert, LambertCommandWithNormalMap);
 	UberShaders.Add(EViewModeIndex::VMI_Lit_Lambert, ResourceManager.Load<UShader>(LambertCommandWithNormalMap));
 	
 	FString PhongCommandWithNormalMap = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_PHONG=1 -D HAS_NORMAL_MAP";
+	UberShaderPaths.Add(EViewModeIndex::VMI_Lit_Phong, PhongCommandWithNormalMap);
 	UberShaders.Add(EViewModeIndex::VMI_Lit_Phong, ResourceManager.Load<UShader>(PhongCommandWithNormalMap));
 
 	FString LambertCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_LAMBERT=1";
+	UberShaderPaths.Add(EViewModeIndex::VMI_Lit_Lambert_No_Normal_Map, LambertCommand);
 	UberShaders.Add(EViewModeIndex::VMI_Lit_Lambert_No_Normal_Map, ResourceManager.Load<UShader>(LambertCommand));
 
 	FString PhongCommand = "UberLit.hlsl -VS Uber_VS -PS Uber_PS -D LIGHTING_MODEL_PHONG=1";
+	UberShaderPaths.Add(EViewModeIndex::VMI_Lit_Phong, PhongCommand);
 	UberShaders.Add(EViewModeIndex::VMI_Lit_Phong_No_Normal_Map, ResourceManager.Load<UShader>(PhongCommand));
 }
 

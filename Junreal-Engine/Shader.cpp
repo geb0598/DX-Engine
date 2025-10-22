@@ -67,56 +67,73 @@ void UShader::Load(const FString& InCommandString, ID3D11Device* InDevice)
 
     std::wstring wFilePath(ShaderFilePath.begin(), ShaderFilePath.end());
 
-    std::wstring WFilePath;
-    WFilePath = std::wstring(InCommandString.begin(), InCommandString.end());
-
     HRESULT hResult;
     UINT Flag = 0;
     ID3DBlob* ErrorBlob = nullptr;
+
 #ifdef _DEBUG
     Flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
+    
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> TempVertexShader;
+    Microsoft::WRL::ComPtr<ID3DBlob> TempVertexShaderBlob;
     if (!VSEntryPoint.empty())
     {
         hResult = D3DCompileFromFile(wFilePath.c_str(), Macros.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
-            VSEntryPoint.c_str(), "vs_5_0", Flag, 0, &VSBlob, &ErrorBlob);
+            VSEntryPoint.c_str(), "vs_5_0", Flag, 0, TempVertexShaderBlob.ReleaseAndGetAddressOf(), &ErrorBlob);
 
         if (FAILED(hResult))
         {
             if (ErrorBlob)
             {
-                char* msg = (char*)ErrorBlob->GetBufferPointer();
-                UE_LOG("Shader '%s' (VS) compile error: %s", ShaderFilePath.c_str(), msg);
+                char* Message = (char*)ErrorBlob->GetBufferPointer();
+                UE_LOG("Shader '%s' (VS) compile error: %s", ShaderFilePath.c_str(), Message);
                 ErrorBlob->Release();
             }
             return;
         }
 
-        hResult = InDevice->CreateVertexShader(VSBlob->GetBufferPointer(), VSBlob->GetBufferSize(), nullptr, &VertexShader);
+        hResult = InDevice->CreateVertexShader(TempVertexShaderBlob->GetBufferPointer(), TempVertexShaderBlob->GetBufferSize(), nullptr, TempVertexShader.ReleaseAndGetAddressOf());
     }
     
-    CreateInputLayout(InDevice, ShaderFilePath);
-
+    Microsoft::WRL::ComPtr<ID3D11PixelShader> TempPixelShader;
+    Microsoft::WRL::ComPtr<ID3DBlob> TempPixelShaderBlob;
     if (!PSEntryPoint.empty())
     {
         if (ErrorBlob) { ErrorBlob->Release(); ErrorBlob = nullptr; }
 
         hResult = D3DCompileFromFile(wFilePath.c_str(), Macros.data(), D3D_COMPILE_STANDARD_FILE_INCLUDE,
-            PSEntryPoint.c_str(), "ps_5_0", Flag, 0, &PSBlob, &ErrorBlob);
+            PSEntryPoint.c_str(), "ps_5_0", Flag, 0, TempPixelShaderBlob.ReleaseAndGetAddressOf(), &ErrorBlob);
         
         if (FAILED(hResult))
         {
             if (ErrorBlob)
             {
-                char* msg = (char*)ErrorBlob->GetBufferPointer();
-                UE_LOG("Shader '%s' (PS) compile error: %s", ShaderFilePath.c_str(), msg);
+                char* Message = (char*)ErrorBlob->GetBufferPointer();
+                UE_LOG("Shader '%s' (PS) compile error: %s", ShaderFilePath.c_str(), Message);
                 ErrorBlob->Release();
             }
             return;
         }
 
-        hResult = InDevice->CreatePixelShader(PSBlob->GetBufferPointer(), PSBlob->GetBufferSize(), nullptr, &PixelShader);
+        hResult = InDevice->CreatePixelShader(TempPixelShaderBlob->GetBufferPointer(), TempPixelShaderBlob->GetBufferSize(), nullptr, TempPixelShader.ReleaseAndGetAddressOf());
     }
+
+    if (ErrorBlob) { ErrorBlob->Release(); ErrorBlob = nullptr; }
+    if (VertexShader) { VertexShader->Release(); VertexShader = nullptr; }
+    if (VSBlob) { VSBlob->Release(); VSBlob = nullptr; }
+    if (PixelShader) { PixelShader->Release(); PixelShader = nullptr; }
+    if (PSBlob) { PSBlob->Release(); PSBlob = nullptr; }
+
+    VertexShader = TempVertexShader.Detach();
+    VSBlob = TempVertexShaderBlob.Detach();
+    PixelShader = TempPixelShader.Detach();
+    PSBlob = TempPixelShaderBlob.Detach();
+    if (VSBlob)
+    {
+        CreateInputLayout(InDevice, ShaderFilePath);
+    }
+    LastModificationTime = std::filesystem::last_write_time(ShaderFilePath);
 }
 
 void UShader::CreateInputLayout(ID3D11Device* Device, const FString& InShaderPath)
@@ -128,6 +145,8 @@ void UShader::CreateInputLayout(ID3D11Device* Device, const FString& InShaderPat
     }
     const D3D11_INPUT_ELEMENT_DESC* layout = descArray.data();
     uint32 layoutCount = static_cast<uint32>(descArray.size());
+
+    if (InputLayout) { InputLayout->Release(); InputLayout = nullptr; }
 
     HRESULT hr = Device->CreateInputLayout(
         layout,

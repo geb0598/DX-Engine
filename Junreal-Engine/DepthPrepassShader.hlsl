@@ -29,7 +29,7 @@ VS_OUTPUT mainVS(VS_INPUT Input)
     return Output;
 }
 
-void PS()
+void mainPS()
 {
     // nothing-to-do.
 }

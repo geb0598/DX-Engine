@@ -267,6 +267,18 @@ void SViewportWindow::RenderToolbar()
 			}
 		}
 
+		ImGui::SameLine();
+		if (ImGui::Button("Reload"))
+		{
+			auto Renderer =	GEngine->GetWorld()->GetRenderer();
+			switch (currentModeIndex)
+			{
+			case 0: Renderer->ReloadUberShader(EViewModeIndex::VMI_Lit_Gouraud); break;
+			case 1: Renderer->ReloadUberShader(EViewModeIndex::VMI_Lit_Lambert); break;
+			case 2: Renderer->ReloadUberShader(EViewModeIndex::VMI_Lit_Phong); break;
+			}
+		}
+
 		// ShowFlags 콤보박스
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(70.0f);
