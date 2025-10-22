@@ -12,7 +12,6 @@ ULightComponentBase::ULightComponentBase()
 
 ULightComponentBase::~ULightComponentBase()
 {
-        {
     IconBillboardComponent = nullptr;
 }
 
