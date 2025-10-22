@@ -670,8 +670,8 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 		GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::None);
 		FTileLightManager::GetInstance().CullPointLights(Camera->GetCameraComponent(), Viewport, LightingCBufferData);
 		ID3D11Buffer* ConstantBuffers[] = {
-			FTileLightManager::GetInstance().GetTileConstantBuffer(),
-			FTileLightManager::GetInstance().GetViewportConstantBuffer()
+			FTileLightManager::GetInstance().GetViewportConstantBuffer(),
+			FTileLightManager::GetInstance().GetTileConstantBuffer()
 		};
 		GetRHIDevice()->GetDeviceContext()->PSSetConstantBuffers(12, 2, ConstantBuffers);
 		ID3D11ShaderResourceView* PointLightMaskSRV[] = { FTileLightManager::GetInstance().GetPointLightMaskBufferSRV() };

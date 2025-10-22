@@ -78,21 +78,23 @@ cbuffer Viewport : register(b12)
     float4 ViewportRect; // x=StartX, y=StartY, z=Width, w=Height
 };
 
-/** @todo Shoudl pass additional information such as BUCKET_SIZE. For now, just use hard-coded value for convenience. */
+/** @todo Should pass additional information such as BUCKET_SIZE. For now, just use hard-coded value for convenience. */
 cbuffer Tile : register(b13)
 {
     uint NumGroupsX;
     uint NumGroupsY;
 }
 
-int CalculateBucketIndex(float ScreenX, float ScreenY)
+int CalculateFlatTileIndex(float ScreenX, float ScreenY)
 {
-    uint BUCKET_SIZE = 32;
-    
-    ScreenX += ViewportRect.x;
-    ScreenY += ViewportRect.y;
+    uint TILE_WIDTH = 32;
+    uint TILE_HEIGHT = 32;
 
-    uint FlatTileIndex = ScreenX / BUCKET_SIZE +  ScreenY / BUCKET_SIZE * NumGroupsX;
+    uint TileX = ScreenX / TILE_WIDTH;
+    uint TileY = ScreenY / TILE_HEIGHT;
+    
+    uint FlatTileIndex = TileX + TileY * NumGroupsX;
+    
     return FlatTileIndex;
 }
 
@@ -100,9 +102,11 @@ bool IsPointLightCulled(uint Index, float ScreenX, float ScreenY)
 {
     uint BUCKET_SIZE = 32;
     
-    uint BucketIndex = CalculateBucketIndex(ScreenX, ScreenY);
+    uint FlatTileIndex = CalculateFlatTileIndex(ScreenX, ScreenY);
+    uint BucketIndex = Index / BUCKET_SIZE;
+    uint BitIndex = Index % BUCKET_SIZE;
 
-    return PointLightMask[BucketIndex * BUCKET_SIZE + Index / BUCKET_SIZE] & (1u << (Index % BUCKET_SIZE));
+    return !(PointLightMask[FlatTileIndex * BUCKET_SIZE + BucketIndex] & (1u << BitIndex));
 }
 
 float3 CalculateAmbientLight(FAmbientLightInfo info)
