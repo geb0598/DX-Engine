@@ -2,6 +2,8 @@
 #include "UI/StatsOverlayD2D.h"
 #include "D3D11RHI.h"
 
+#include "TileLightManager.h"
+
 void D3D11RHI::Initialize(HWND hWindow)
 {
     // 이곳에서 Device, DeviceContext, viewport, swapchain를 초기화한다
@@ -53,6 +55,7 @@ void D3D11RHI::Release()
     if (DepthStencilStateAlwaysNoWrite) { DepthStencilStateAlwaysNoWrite->Release(); DepthStencilStateAlwaysNoWrite = nullptr; }
     if (DepthStencilStateDisable) { DepthStencilStateDisable->Release(); DepthStencilStateDisable = nullptr; }
     if (DepthStencilStateGreaterEqualWrite) { DepthStencilStateGreaterEqualWrite->Release(); DepthStencilStateGreaterEqualWrite = nullptr; }
+    if (DepthStencilStateEqualReadOnly) { DepthStencilStateEqualReadOnly->Release(); DepthStencilStateEqualReadOnly = nullptr; }
 
     if (DefaultRasterizerState) { DefaultRasterizerState->Release();   DefaultRasterizerState = nullptr; }
     if (WireFrameRasterizerState) { WireFrameRasterizerState->Release();   WireFrameRasterizerState = nullptr; }
@@ -150,6 +153,11 @@ void D3D11RHI::CreateDepthStencilState()
     desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
     desc.DepthFunc = D3D11_COMPARISON_GREATER_EQUAL;
     Device->CreateDepthStencilState(&desc, &DepthStencilStateGreaterEqualWrite);
+
+    desc.DepthEnable = TRUE;
+    desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
+    desc.DepthFunc = D3D11_COMPARISON_EQUAL;
+    Device->CreateDepthStencilState(&desc, &DepthStencilStateEqualReadOnly);
 }
 
 void D3D11RHI::CreateSamplerState()
@@ -786,6 +794,10 @@ void D3D11RHI::OmSetDepthStencilState(EComparisonFunc Func)
         break;
     case EComparisonFunc::Disable:
         DeviceContext->OMSetDepthStencilState(DepthStencilStateDisable, 0);
+        break;
+    case EComparisonFunc::EqualReadOnly:
+        DeviceContext->OMSetDepthStencilState(DepthStencilStateEqualReadOnly, 0);
+        break;
     }
 }
 
@@ -850,6 +862,13 @@ void D3D11RHI::ResizeSwapChain(UINT width, UINT height)
     CreateIdBuffer();
     // 뷰포트도 갱신
     SetViewport(width, height);
+
+    // --- Resize FTileLightManager ---
+    FTileLightManager& TileLightManager = FTileLightManager::GetInstance();
+    if (TileLightManager.IsInitialized())
+    {
+        TileLightManager.OnResize(width, height);
+    }
 }
 
 void D3D11RHI::UpdateAndBindLightBuffers(const TArray<FPointLightInfo>& InPointLights, const TArray<FSpotLightInfo>& InSpotLights)
@@ -876,6 +895,8 @@ void D3D11RHI::UpdateAndBindLightBuffers(const TArray<FPointLightInfo>& InPointL
     DeviceContext->VSSetShaderResources(3, 1, &SpotLightSRV);
     DeviceContext->PSSetShaderResources(2, 1, &PointLightSRV);
     DeviceContext->PSSetShaderResources(3, 1, &SpotLightSRV);
+    DeviceContext->CSSetShaderResources(2, 1, &PointLightSRV);
+    // DeviceContext->PSSetShaderResources(3, 1, &SpotLightSRV);
 }
 
 void D3D11RHI::PSSetDefaultSampler(UINT StartSlot)

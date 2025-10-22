@@ -59,6 +59,7 @@ cbuffer Lighting : register(b10)
 
 StructuredBuffer<FPointLightInfo> PointLights : register(t2);
 StructuredBuffer<FSpotLightInfo> SpotLights : register(t3);
+StructuredBuffer<uint> PointLightMask : register(t4);
 
 cbuffer PerMaterial : register(b11)
 {
@@ -72,6 +73,43 @@ cbuffer PerMaterial : register(b11)
     float BumpValue;
     float Pad2;
 };
+
+cbuffer Viewport : register(b12)
+{
+    float4 ViewportRect; // x=StartX, y=StartY, z=Width, w=Height
+};
+
+/** @todo Should pass additional information such as BUCKET_SIZE. For now, just use hard-coded value for convenience. */
+cbuffer Tile : register(b13)
+{
+    uint NumGroupsX;
+    uint NumGroupsY;
+}
+
+int CalculateFlatTileIndex(float ScreenX, float ScreenY)
+{
+    uint TILE_WIDTH = 32;
+    uint TILE_HEIGHT = 32;
+
+    uint TileX = ScreenX / TILE_WIDTH;
+    uint TileY = ScreenY / TILE_HEIGHT;
+    
+    uint FlatTileIndex = TileX + TileY * NumGroupsX;
+    
+    return FlatTileIndex;
+}
+
+bool IsPointLightCulled(uint Index, float ScreenX, float ScreenY)
+{
+    uint BUCKET_SIZE = 32;
+    
+    uint FlatTileIndex = CalculateFlatTileIndex(ScreenX, ScreenY);
+    uint BucketIndex = Index / BUCKET_SIZE;
+    uint BitIndex = Index % BUCKET_SIZE;
+
+    return !(PointLightMask[FlatTileIndex * BUCKET_SIZE + BucketIndex] & (1u << BitIndex));
+}
+
 float3 CalculateAmbientLight(FAmbientLightInfo info)
 {
     // ambient 계수는 밖에서 곱
@@ -228,7 +266,7 @@ VS_OUTPUT Uber_VS(VS_INPUT Input)
     CalculateDirectionalLight(Directional, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
     diffuseRaw += diffuseTemp;
     specularRaw += specularTemp;
-    
+
     for (uint i = 0; i < NumPointLights; ++i)
     {
         CalculatePointLight(PointLights[i], worldPos, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
@@ -236,7 +274,7 @@ VS_OUTPUT Uber_VS(VS_INPUT Input)
         specularRaw += specularTemp;
     }
     
-    for (uint j= 0; j < NumSpotLights; ++j)
+    for (uint j = 0; j < NumSpotLights; ++j)
     {
         CalculateSpotLight(SpotLights[j], worldPos, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;
@@ -332,6 +370,10 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     // Point
     for (uint i = 0; i < NumPointLights; ++i)
     {
+        if (IsPointLightCulled(i, Input.Position.x, Input.Position.y))
+        {
+            continue;
+        }
         CalculatePointLight(PointLights[i], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;
     }
@@ -363,6 +405,10 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     // Point
     for (uint i = 0; i < NumPointLights; ++i)
     {
+        if (IsPointLightCulled(i, Input.Position.x, Input.Position.y))
+        {
+            continue;
+        }
         CalculatePointLight(PointLights[i], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;
         specularRaw += specularTemp;

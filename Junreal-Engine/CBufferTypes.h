@@ -240,6 +240,35 @@ struct FGammaBufferType
 };
 //---//
 
+/** @note This buffer is not integrated with cbuffer system, because it is solely used for compute shader. */
+struct FCameraBufferType
+{
+    FMatrix ViewMatrix;
+    FMatrix ProjectionMatrix;
+    FMatrix InverseViewMatrix;
+    FMatrix InverseProjectionMatrix;
+    float NearClip;
+    float FarClip;
+    float Padding[2];
+};
+
+/** @note This buffer is not integrated with cbuffer system, because it is solely used for compute shader. */
+struct FTileBufferType
+{
+    uint32 NumGroupsX; 
+    uint32 NumGroupsY;
+    float Padding[2];
+};
+
+/** @note This buffer is not integrated with cbuffer system, because it is solely used for compute shader. */
+struct FSliceInfoBufferType
+{
+    float SliceSize;
+    float NearClip;
+    float FarClip;
+    float Padding;
+};
+
 struct FNormalVizCB
 { 
     uint32 bUseTBN;
