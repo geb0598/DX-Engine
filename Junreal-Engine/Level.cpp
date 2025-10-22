@@ -96,13 +96,13 @@ void ULevel::CollectComponentsToRender()
 			{
 				DirectionalLightComponent = InDirectionalLightComponent;
 			}
-			else if (UPointLightComponent* PointLightComponent = Cast<UPointLightComponent>(ActorComponent))
-			{
-				PointLightComponentList.Add(PointLightComponent);
-			}
 			else if (USpotLightComponent* SpotLightComponent = Cast<USpotLightComponent>(ActorComponent))
 			{
 				SpotLightComponentList.Add(SpotLightComponent);
+			}
+			else if (UPointLightComponent* PointLightComponent = Cast<UPointLightComponent>(ActorComponent))
+			{
+				PointLightComponentList.Add(PointLightComponent);
 			}
 			else if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(ActorComponent))
 			{
