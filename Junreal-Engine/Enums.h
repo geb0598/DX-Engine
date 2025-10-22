@@ -362,8 +362,10 @@ enum class EEngineShowFlags : uint64
     // Heatmap
     SF_Heatmap = 1ull << 9,
 
+    SF_DebugLine = 1ull << 10,
+
     // Default enabled flags
-    SF_DefaultEnabled = SF_Primitives | SF_StaticMeshes | SF_Grid | SF_Decals | SF_BVH | SF_BoundingBoxes,
+    SF_DefaultEnabled = SF_Primitives | SF_StaticMeshes | SF_Grid | SF_Decals | SF_BVH | SF_BoundingBoxes | SF_DebugLine,
     
     // All flags (for initialization/reset)
     SF_All = 0xFFFFFFFFFFFFFFFFull

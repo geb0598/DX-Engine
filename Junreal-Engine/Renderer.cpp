@@ -669,14 +669,14 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 		RenderSceneDepthPass(World, ViewMatrix, ProjectionMatrix);
 			
 		GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::None);
-		FTileLightManager::GetInstance().CullPointLights(Camera->GetCameraComponent(), Viewport, LightingCBufferData);
+		FTileLightManager::GetInstance().CullLights(Camera->GetCameraComponent(), Viewport, LightingCBufferData);
 		ID3D11Buffer* ConstantBuffers[] = {
 			FTileLightManager::GetInstance().GetViewportConstantBuffer(),
 			FTileLightManager::GetInstance().GetTileConstantBuffer()
 		};
 		GetRHIDevice()->GetDeviceContext()->PSSetConstantBuffers(12, 2, ConstantBuffers);
-		ID3D11ShaderResourceView* PointLightMaskSRV[] = { FTileLightManager::GetInstance().GetPointLightMaskBufferSRV() };
-		GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 1, PointLightMaskSRV);
+		ID3D11ShaderResourceView* PointLightMaskSRV[] = { FTileLightManager::GetInstance().GetPointLightMaskBufferSRV(), FTileLightManager::GetInstance().GetSpotLightMaskBufferSRV()  };
+		GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 2, PointLightMaskSRV);
 
 		GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID);
 			
@@ -685,8 +685,8 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 		RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
 
 		// ---
-		ID3D11ShaderResourceView* NullShaderResourceView[] = { nullptr };
-		GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 1, NullShaderResourceView);
+		ID3D11ShaderResourceView* NullShaderResourceView[] = { nullptr, nullptr };
+		GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 2, NullShaderResourceView);
 		// ---
 
 		if (HasShowFlag(Viewport->GetShowFlags(), EEngineShowFlags::SF_Heatmap))
@@ -802,9 +802,12 @@ void URenderer::RenderActorsInViewport(UWorld* World, ACameraActor* Camera, FVie
 	// 이번 프레임에 수집된 디버그용 라인들을 라인 배치에 추가 (해당 줄 시작전에 FDebugDrawManager의 Add함수를 이용해서 이용해서 라인들을 수집해야 함)
 	FDebugDrawManager& DebugDrawer = FDebugDrawManager::GetInstance();
 	const TArray<FDebugLine>& DebugLines = DebugDrawer.GetLines();
-	for (const FDebugLine& Line : DebugLines)
+	if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_DebugLine))
 	{
-		AddLine(Line.Start, Line.End, Line.Color);
+		for (const FDebugLine& Line : DebugLines)
+		{
+			AddLine(Line.Start, Line.End, Line.Color);
+		}
 	}
 	DebugDrawer.ClearLines();
 
@@ -1305,8 +1308,6 @@ void URenderer::RenderFireBallPass(UWorld* World)
 			}
 		}
 	}*/
-
-
 }
 
 void URenderer::RenderOverlayPass(UWorld* World)

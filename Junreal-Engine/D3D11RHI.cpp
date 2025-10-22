@@ -896,6 +896,7 @@ void D3D11RHI::UpdateAndBindLightBuffers(const TArray<FPointLightInfo>& InPointL
     DeviceContext->PSSetShaderResources(2, 1, &PointLightSRV);
     DeviceContext->PSSetShaderResources(3, 1, &SpotLightSRV);
     DeviceContext->CSSetShaderResources(2, 1, &PointLightSRV);
+    DeviceContext->CSSetShaderResources(3, 1, &SpotLightSRV);
     // DeviceContext->PSSetShaderResources(3, 1, &SpotLightSRV);
 }
 
