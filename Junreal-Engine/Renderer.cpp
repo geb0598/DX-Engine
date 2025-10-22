@@ -802,9 +802,12 @@ void URenderer::RenderActorsInViewport(UWorld* World, ACameraActor* Camera, FVie
 	// 이번 프레임에 수집된 디버그용 라인들을 라인 배치에 추가 (해당 줄 시작전에 FDebugDrawManager의 Add함수를 이용해서 이용해서 라인들을 수집해야 함)
 	FDebugDrawManager& DebugDrawer = FDebugDrawManager::GetInstance();
 	const TArray<FDebugLine>& DebugLines = DebugDrawer.GetLines();
-	for (const FDebugLine& Line : DebugLines)
+	if (Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_DebugLine))
 	{
-		AddLine(Line.Start, Line.End, Line.Color);
+		for (const FDebugLine& Line : DebugLines)
+		{
+			AddLine(Line.Start, Line.End, Line.Color);
+		}
 	}
 	DebugDrawer.ClearLines();
 
