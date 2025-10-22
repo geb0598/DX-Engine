@@ -337,6 +337,11 @@ void SViewportWindow::RenderToolbar()
 			{
 				Viewport->ToggleShowFlag(EEngineShowFlags::SF_Heatmap);	
 			}
+			bool bDebugLineEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_DebugLine);
+			if (ImGui::Checkbox("DebugLine", &bDebugLineEnabled))
+			{
+				Viewport->ToggleShowFlag(EEngineShowFlags::SF_DebugLine);
+			}
 			//// Wireframe
 			//bool bWireframeEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_Wireframe);
 			//if (ImGui::Checkbox("Wireframe", &bWireframeEnabled))
