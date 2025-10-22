@@ -607,7 +607,7 @@ void D3D11RHI::CreateRasterizerState()
     defaultrasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
     defaultrasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
     defaultrasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
-    defaultrasterizerdesc.FrontCounterClockwise = TRUE;
+    //defaultrasterizerdesc.FrontCounterClockwise = TRUE;
 
     Device->CreateRasterizerState(&defaultrasterizerdesc, &DefaultRasterizerState);
 
@@ -615,7 +615,7 @@ void D3D11RHI::CreateRasterizerState()
     wireframerasterizerdesc.FillMode = D3D11_FILL_WIREFRAME; // 채우기 모드
     wireframerasterizerdesc.CullMode = D3D11_CULL_BACK; // 백 페이스 컬링
     wireframerasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
-    wireframerasterizerdesc.FrontCounterClockwise = TRUE;
+    //wireframerasterizerdesc.FrontCounterClockwise = TRUE;
 
     Device->CreateRasterizerState(&wireframerasterizerdesc, &WireFrameRasterizerState);
 
@@ -631,7 +631,7 @@ void D3D11RHI::CreateRasterizerState()
     nocullrasterizerdesc.FillMode = D3D11_FILL_SOLID; // 채우기 모드
     nocullrasterizerdesc.CullMode = D3D11_CULL_NONE; // 컬링 없음
     nocullrasterizerdesc.DepthClipEnable = TRUE; // 근/원거리 평면 클리핑
-    nocullrasterizerdesc.FrontCounterClockwise = TRUE;
+    //nocullrasterizerdesc.FrontCounterClockwise = TRUE;
 
     Device->CreateRasterizerState(&nocullrasterizerdesc, &NoCullRasterizerState);
 

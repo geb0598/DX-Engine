@@ -329,6 +329,7 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
         float SaturatedBumpValue = saturate(BumpValue);
         
         N.xy *= SaturatedBumpValue;
+        N.y *= -1.0f;
     
         //float NewX = BumpValue * N.x;
         //float NewY = BumpValue * N.y;
