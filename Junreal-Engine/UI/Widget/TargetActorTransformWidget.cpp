@@ -1412,6 +1412,11 @@ void UTargetActorTransformWidget::RenderAmbientLightComponentDetails(UAmbientLig
 			LightColor.A // 기존 알파값 유지
 		));
 	}
+	bool bVisible = InComponent->GetVisible();
+	if (ImGui::Checkbox("Visible", &bVisible))
+	{
+		InComponent->SetVisible(bVisible);
+	}
 }
 
 void UTargetActorTransformWidget::RenderDirectionalLightComponentDetails(UDirectionalLightComponent* InComponent)
@@ -1438,7 +1443,11 @@ void UTargetActorTransformWidget::RenderDirectionalLightComponentDetails(UDirect
 			LightColor.A
 		));
 	}
-
+	bool bVisible = InComponent->GetVisible();
+	if (ImGui::Checkbox("Visible", &bVisible))
+	{
+		InComponent->SetVisible(bVisible);
+	}
 	ImGui::TextDisabled("(Direction is controlled by the component's Rotation)");
 }
 
@@ -1477,6 +1486,11 @@ void UTargetActorTransformWidget::RenderPointLightComponentDetails(UPointLightCo
 	if (ImGui::DragFloat("Falloff Exponent", &LightFalloffExponent, 0.1f, 0.1f, 16.0f))
 	{
 		InComponent->SetLightFalloffExponent(LightFalloffExponent);
+	}
+	bool bVisible = InComponent->GetVisible();
+	if (ImGui::Checkbox("Visible", &bVisible))
+	{
+		InComponent->SetVisible(bVisible);
 	}
 }
 
@@ -1539,5 +1553,11 @@ void UTargetActorTransformWidget::RenderSpotLightComponentDetails(USpotLightComp
 		InComponent->SetOuterConeAngle(OuterConeAngle);
 	}
 
+	bool bVisible = InComponent->GetVisible();
+	if (ImGui::Checkbox("Visible", &bVisible))
+	{
+		InComponent->SetVisible(bVisible);
+	}
+	
 	ImGui::TextDisabled("(Direction is controlled by the component's Rotation)");
 }
