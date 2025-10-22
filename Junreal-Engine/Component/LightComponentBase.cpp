@@ -12,19 +12,8 @@ ULightComponentBase::ULightComponentBase()
 
 ULightComponentBase::~ULightComponentBase()
 {
-    // Be conservative: avoid re-entrant container mutations during owner/component destruction
-    if (IconBillboardComponent)
-    {
-        if (AActor* Owner = GetOwner())
         {
-            const TSet<UActorComponent*>& Comps = Owner->GetComponents();
-            if (Comps.Contains(IconBillboardComponent))
-            {
-                Owner->DeleteComponent(IconBillboardComponent);
-            }
-        }
-        IconBillboardComponent = nullptr;
-    }
+    IconBillboardComponent = nullptr;
 }
 
 void ULightComponentBase::SetIconBillboardComponent(UBillboardComponent* InIcon)
