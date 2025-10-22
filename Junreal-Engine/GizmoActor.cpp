@@ -736,3 +736,4 @@ void AGizmoActor::OnDrag(USceneComponent* SelectedComponent, uint32 GizmoAxis, f
 {
     OnDrag(SelectedComponent, GizmoAxis, MouseDeltaX, MouseDeltaY, Camera, nullptr);
 }
+
