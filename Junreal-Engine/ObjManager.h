@@ -84,8 +84,8 @@ public:
 
                 if (bIsRHCoordSys)
                 {
-                    //OutObjInfo->Positions.push_back(FVector(vx, -vy, vz));
-                    OutObjInfo->Positions.push_back(FVector(vz, -vy, vx));
+                    OutObjInfo->Positions.push_back(FVector(vx, -vy, vz));
+                    //OutObjInfo->Positions.push_back(FVector(vz, -vy, vx));
                 }
                 else
                     OutObjInfo->Positions.push_back(FVector(vx, vy, vz));
@@ -110,8 +110,8 @@ public:
                 wss >> nx >> ny >> nz;
 
                 if (bIsRHCoordSys)
-                    OutObjInfo->Normals.push_back(FVector(nz, -ny, nx));
-                    //OutObjInfo->Normals.push_back(FVector(nx, -ny, nz));
+                    //OutObjInfo->Normals.push_back(FVector(nz, -ny, nx));
+                    OutObjInfo->Normals.push_back(FVector(nx, -ny, nz));
                 else
                     //OutObjInfo->Normals.push_back(FVector(nz, ny, nx));
                     OutObjInfo->Normals.push_back(FVector(nx, ny, nz));

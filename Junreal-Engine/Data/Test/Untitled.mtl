@@ -1,0 +1,45 @@
+# Blender 4.5.3 LTS MTL File: 'None'
+# www.blender.org
+
+newmtl SlumDecal
+Ns 159.999985
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.500000
+d 1.000000
+illum 3
+map_Kd SlumDecal_baseColor.png
+
+newmtl SlumGenerator
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd SlumGenerator_baseColor.png
+map_Bump -bm 1.000000 SlumGenerator_normal.png
+
+newmtl SlumHousing1
+Ns 250.0000001
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd SlumHousing1_baseColor.png
+map_Bump -bm 1.000000 SlumHousing1_normal.png
+
+newmtl SlumSetdressing1
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd SlumSetdressing1_baseColor.png
+map_Bump -bm 1.000000 SlumSetdressing1_normal.png

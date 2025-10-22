@@ -1,26 +1,69 @@
 {
   "Version" : 2,
-  "NextUUID" : 945,
+  "NextUUID" : 801,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [4000.000000],
-    "Location" : [0.501772, 9.901163, 5.486597],
+    "Location" : [-7.266102, 4.130879, 2.271455],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 25.800035, -87.999916]
+    "Rotation" : [0.000000, 3.699979, -37.800034]
   },
   "Actors" : [
     {
-      "UUID" : 850,
+      "UUID" : 678,
+      "Type" : "AActor",
+      "Name" : "Untitled_2",
+      "RootComponentUUID" : 679
+    },
+    {
+      "UUID" : 694,
       "Type" : "AActor",
       "Name" : "Actor_0",
-      "RootComponentUUID" : 851
+      "RootComponentUUID" : 695
+    },
+    {
+      "UUID" : 697,
+      "Type" : "AActor",
+      "Name" : "Actor_1",
+      "RootComponentUUID" : 698
+    },
+    {
+      "UUID" : 700,
+      "Type" : "AActor",
+      "Name" : "Actor_2",
+      "RootComponentUUID" : 701
+    },
+    {
+      "UUID" : 703,
+      "Type" : "AActor",
+      "Name" : "Actor_3",
+      "RootComponentUUID" : 704
     }
   ],
   "Components" : [
     {
-      "UUID" : 860,
-      "OwnerActorUUID" : 850,
-      "ParentComponentUUID" : 851,
+      "UUID" : 679,
+      "OwnerActorUUID" : 678,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -90.000023, -0.286576],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Test/Untitled.obj"
+    },
+    {
+      "UUID" : 695,
+      "OwnerActorUUID" : 694,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [-5.526952, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 696,
+      "OwnerActorUUID" : 694,
+      "ParentComponentUUID" : 695,
       "Type" : "UBillboardComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, -0.000000, 0.000000],
@@ -28,31 +71,80 @@
       "TexturePath" : "Editor/Icon/EmptyActor.dds"
     },
     {
-      "UUID" : 856,
-      "OwnerActorUUID" : 850,
-      "ParentComponentUUID" : 851,
-      "Type" : "USpotLightComponent",
-      "RelativeLocation" : [0.000000, 0.000000, -4.705906],
-      "RelativeRotation" : [54.269459, 3.331694, 120.023582],
+      "UUID" : 706,
+      "OwnerActorUUID" : 694,
+      "ParentComponentUUID" : 695,
+      "Type" : "UAmbientLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "LightData" : {
-        "Intensity" : 5.000000,
+        "Intensity" : 0.020000,
         "Visible" : true,
-        "Color" : [0, 245, 255, 255]
-      },
-      "PointLightData" : {
-        "AttenuationRadius" : 10.000000,
-        "LightFalloffExponent" : 0.500000
-      },
-      "SpotLightData" : {
-        "InnerConeAngle" : 40.599998,
-        "OuterConeAngle" : 40.599998
+        "Color" : [220, 220, 220, 255]
       }
     },
     {
-      "UUID" : 853,
-      "OwnerActorUUID" : 850,
-      "ParentComponentUUID" : 852,
+      "UUID" : 707,
+      "OwnerActorUUID" : 694,
+      "ParentComponentUUID" : 706,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+    },
+    {
+      "UUID" : 698,
+      "OwnerActorUUID" : 697,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [-5.413045, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 699,
+      "OwnerActorUUID" : 697,
+      "ParentComponentUUID" : 698,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
+    },
+    {
+      "UUID" : 772,
+      "OwnerActorUUID" : 697,
+      "ParentComponentUUID" : 0,
+      "Type" : "URotationMovementComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [0.000000, 0.000000, 0.000000],
+      "RotationMovementData" : {
+        "RotationRate" : [0.000000, 80.000000, 0.000000],
+        "PivotTranslation" : [0.000000, 0.000000, 0.000000],
+        "bRotationInLocalSpace" : true
+      }
+    },
+    {
+      "UUID" : 708,
+      "OwnerActorUUID" : 697,
+      "ParentComponentUUID" : 698,
+      "Type" : "UDirectionalLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "LightData" : {
+        "Intensity" : 1.000000,
+        "Visible" : true,
+        "Color" : [220, 220, 220, 255]
+      }
+    },
+    {
+      "UUID" : 709,
+      "OwnerActorUUID" : 697,
+      "ParentComponentUUID" : 708,
       "Type" : "UBillboardComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, -0.000000, 0.000000],
@@ -60,60 +152,46 @@
       "TexturePath" : "Editor/Icon/DirectionalLight_64x.dds"
     },
     {
-      "UUID" : 858,
-      "OwnerActorUUID" : 850,
-      "ParentComponentUUID" : 851,
-      "Type" : "UAmbientLightComponent",
-      "RelativeLocation" : [-6.011301, 0.026037, -0.026066],
+      "UUID" : 701,
+      "OwnerActorUUID" : 700,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [-3.275025, 0.000000, 2.659183],
       "RelativeRotation" : [0.000000, -0.000000, 0.000000],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "LightData" : {
-        "Intensity" : 1.000000,
-        "Visible" : true,
-        "Color" : [174, 57, 57, 255]
-      }
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
     },
     {
-      "UUID" : 859,
-      "OwnerActorUUID" : 850,
-      "ParentComponentUUID" : 858,
+      "UUID" : 702,
+      "OwnerActorUUID" : 700,
+      "ParentComponentUUID" : 701,
       "Type" : "UBillboardComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, -0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "TexturePath" : "Editor/Icon/PointLight_64x.dds"
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
     },
     {
-      "UUID" : 854,
-      "OwnerActorUUID" : 850,
-      "ParentComponentUUID" : 851,
+      "UUID" : 711,
+      "OwnerActorUUID" : 700,
+      "ParentComponentUUID" : 701,
       "Type" : "UPointLightComponent",
-      "RelativeLocation" : [8.059465, 0.000000, 0.000000],
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, -0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "LightData" : {
-        "Intensity" : 2.150000,
+        "Intensity" : 1.000000,
         "Visible" : true,
         "Color" : [220, 220, 220, 255]
       },
       "PointLightData" : {
-        "AttenuationRadius" : 199.000000,
-        "LightFalloffExponent" : 12.900000
+        "AttenuationRadius" : 15.000000,
+        "LightFalloffExponent" : 1.000000
       }
     },
     {
-      "UUID" : 851,
-      "OwnerActorUUID" : 850,
-      "ParentComponentUUID" : 0,
-      "Type" : "USceneComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
-      "RelativeRotation" : [0.000000, -0.000000, 86.802849],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000]
-    },
-    {
-      "UUID" : 855,
-      "OwnerActorUUID" : 850,
-      "ParentComponentUUID" : 854,
+      "UUID" : 712,
+      "OwnerActorUUID" : 700,
+      "ParentComponentUUID" : 711,
       "Type" : "UBillboardComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, -0.000000, 0.000000],
@@ -121,28 +199,69 @@
       "TexturePath" : "Editor/Icon/PointLight_64x.dds"
     },
     {
-      "UUID" : 852,
-      "OwnerActorUUID" : 850,
-      "ParentComponentUUID" : 851,
-      "Type" : "UDirectionalLightComponent",
-      "RelativeLocation" : [0.000000, 0.000000, 4.174203],
-      "RelativeRotation" : [0.000000, -0.000000, 176.653168],
-      "RelativeScale" : [1.000000, 1.000000, 1.000000],
-      "LightData" : {
-        "Intensity" : 1.000000,
-        "Visible" : true,
-        "Color" : [220, 220, 220, 255]
-      }
+      "UUID" : 704,
+      "OwnerActorUUID" : 703,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [-3.379887, 0.000000, 10.106704],
+      "RelativeRotation" : [0.000000, 73.625076, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
     },
     {
-      "UUID" : 857,
-      "OwnerActorUUID" : 850,
-      "ParentComponentUUID" : 856,
+      "UUID" : 714,
+      "OwnerActorUUID" : 703,
+      "ParentComponentUUID" : 713,
       "Type" : "UBillboardComponent",
       "RelativeLocation" : [0.000000, 0.000000, 0.000000],
       "RelativeRotation" : [0.000000, -0.000000, 0.000000],
       "RelativeScale" : [1.000000, 1.000000, 1.000000],
       "TexturePath" : "Editor/Icon/SpotLight_64x.dds"
+    },
+    {
+      "UUID" : 713,
+      "OwnerActorUUID" : 703,
+      "ParentComponentUUID" : 704,
+      "Type" : "USpotLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "LightData" : {
+        "Intensity" : 3.030000,
+        "Visible" : true,
+        "Color" : [220, 220, 220, 255]
+      },
+      "PointLightData" : {
+        "AttenuationRadius" : 20.000000,
+        "LightFalloffExponent" : 1.000000
+      },
+      "SpotLightData" : {
+        "InnerConeAngle" : 8.900000,
+        "OuterConeAngle" : 16.200001
+      }
+    },
+    {
+      "UUID" : 705,
+      "OwnerActorUUID" : 703,
+      "ParentComponentUUID" : 704,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
+    },
+    {
+      "UUID" : 745,
+      "OwnerActorUUID" : 703,
+      "ParentComponentUUID" : 0,
+      "Type" : "URotationMovementComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [0.000000, 0.000000, 0.000000],
+      "RotationMovementData" : {
+        "RotationRate" : [0.000000, 80.000000, 0.000000],
+        "PivotTranslation" : [0.000000, 0.000000, 0.000000],
+        "bRotationInLocalSpace" : true
+      }
     }
   ]
 }
