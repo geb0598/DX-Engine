@@ -87,6 +87,8 @@ public:
     
     void RenderPostProcessing(UShader* Shader);
 
+    void ReloadUberShader(EViewModeIndex ViewModeIndex);
+    
     //목요일 새벽5시 어쩔수가없다.
     float Gamma = 1.0f;
 
@@ -157,6 +159,7 @@ private:
     UShader* SceneDepthVisualizeShader = nullptr;
 
     // 뷰모드와 컴파일된 셰이더 저장
+    TMap<EViewModeIndex, FString> UberShaderPaths;
     TMap<EViewModeIndex, UShader*> UberShaders;
     FLightingBufferType LightingCBufferData;
     /**

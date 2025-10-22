@@ -1,4 +1,7 @@
 ﻿#pragma once
+
+#include <filesystem>
+
 #include "ObjectFactory.h"
 #include "Object.h"
 #include "Shader.h"
@@ -137,6 +140,34 @@ inline T* UResourceManager::Load(const FString& InFilePath)//있으면 긁어오
         Resource->Load(InFilePath, Device);
         Resource->SetFilePath(InFilePath);
         Resources[typeIndex][InFilePath] = Resource;
+        return Resource;
+    }
+}
+
+template<>
+inline UShader* UResourceManager::Load(const FString& InCommandString)
+{
+    uint8 TypeIndex = static_cast<uint8>(ResourceType::Shader);
+    auto Iter = Resources[TypeIndex].find(InCommandString);
+    if (Iter != Resources[TypeIndex].end())
+    {
+        auto Shader = static_cast<UShader*>(Iter->second);
+        std::istringstream Tokenizer(InCommandString);
+        FString ShaderPath;
+        Tokenizer >> ShaderPath;
+        if (Shader->GetLastModificationTime() < std::filesystem::last_write_time(ShaderPath))
+        {
+            UE_LOG("쉐이더를 다시 로드했습니다: %s", ShaderPath.c_str());
+            Shader->Load(InCommandString, Device);
+        }
+        return Shader;
+    }
+    else
+    {
+        auto Resource = NewObject<UShader>();
+        Resource->Load(InCommandString, Device);
+        Resource->SetFilePath(InCommandString);
+        Resources[TypeIndex][InCommandString] = Resource;
         return Resource;
     }
 }
