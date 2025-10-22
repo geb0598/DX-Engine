@@ -265,8 +265,15 @@ VS_OUTPUT Uber_VS(VS_INPUT Input)
     CalculateDirectionalLight(Directional, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
     diffuseRaw += diffuseTemp;
     specularRaw += specularTemp;
+
+    for (uint i = 0; i < NumPointLights; ++i)
+    {
+        CalculatePointLight(PointLights[i], worldPos, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
+        diffuseRaw += diffuseTemp;
+        specularRaw += specularTemp;
+    }
     
-    for (uint j= 0; j < NumSpotLights; ++j)
+    for (uint j = 0; j < NumSpotLights; ++j)
     {
         CalculateSpotLight(SpotLights[j], worldPos, worldN, V, SpecularShininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;
