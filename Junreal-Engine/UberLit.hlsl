@@ -60,6 +60,7 @@ cbuffer Lighting : register(b10)
 StructuredBuffer<FPointLightInfo> PointLights : register(t2);
 StructuredBuffer<FSpotLightInfo> SpotLights : register(t3);
 StructuredBuffer<uint> PointLightMask : register(t4);
+StructuredBuffer<uint> SpotLightMask : register(t5);
 
 cbuffer PerMaterial : register(b11)
 {
@@ -108,6 +109,17 @@ bool IsPointLightCulled(uint Index, float ScreenX, float ScreenY)
     uint BitIndex = Index % BUCKET_SIZE;
 
     return !(PointLightMask[FlatTileIndex * BUCKET_SIZE + BucketIndex] & (1u << BitIndex));
+}
+
+bool IsSpotLightCulled(uint Index, float ScreenX, float ScreenY)
+{
+    uint BUCKET_SIZE = 32;
+    
+    uint FlatTileIndex = CalculateFlatTileIndex(ScreenX, ScreenY);
+    uint BucketIndex = Index / BUCKET_SIZE;
+    uint BitIndex = Index % BUCKET_SIZE;
+
+    return !(SpotLightMask[FlatTileIndex * BUCKET_SIZE + BucketIndex] & (1u << BitIndex));
 }
 
 float3 CalculateAmbientLight(FAmbientLightInfo info)
@@ -380,6 +392,10 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     // Spot
     for (uint j = 0; j < NumSpotLights; ++j)
     {
+        if (IsSpotLightCulled(j, Input.Position.x, Input.Position.y))
+        {
+            continue;
+        }
         CalculateSpotLight(SpotLights[j], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;
     }
@@ -416,6 +432,10 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     // Spot
     for (uint j = 0; j < NumSpotLights; ++j)
     {
+        if (IsSpotLightCulled(j, Input.Position.x, Input.Position.y))
+        {
+            continue;
+        }
         CalculateSpotLight(SpotLights[j], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
         diffuseRaw += diffuseTemp;
         specularRaw += specularTemp;

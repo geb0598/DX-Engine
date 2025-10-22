@@ -328,14 +328,14 @@ uint ConeToDepthMask(FCone ConeVS)
     return DepthMask;
 }
 
-void CullSpotLight(uint Index, uint FlatTileIndex, FCone ConeVS, FFrustum Frustum)
+void CullSpotLight(uint Index, uint FlatTileIndex, FSphere Sphere, FFrustum Frustum)
 {
-    if (!IsConeInsideFrustum(ConeVS, Frustum))
+    if (!IsSphereInsideFrustum(Sphere, Frustum))
     {
         return;
     }
 
-    if (!(TileDepthMask & ConeToDepthMask(ConeVS)))
+    if (!(TileDepthMask & SphereToDepthMask(Sphere)))
     {
         return;
     }
@@ -464,12 +464,10 @@ void mainCS(uint3 GroupID : SV_GroupID, uint3 ThreadID : SV_GroupThreadID, uint3
 
         for (uint i = 0; i < NumSpotLights; ++i)
         {
-            FCone Cone = CreateCone(SpotLights[i].Position, SpotLights[i].Direction, SpotLights[i].AttenuationRadius, SpotLights[i].OuterConeAngle);
-            for (int i = 0; i < 5; ++i)
-            {
-                Cone.Positions[i] = mul(Cone.Positions[i], ViewMatrix);
-            }
-            CullSpotLight(i, FlatTileIndex, Cone, Frustum);
+            FSphere Sphere;
+            Sphere.Position = mul(float4(SpotLights[i].Position, 1.0f), ViewMatrix);
+            Sphere.Radius = SpotLights[i].AttenuationRadius;
+            CullSpotLight(i, FlatTileIndex, Sphere, Frustum);
         }
     }
 

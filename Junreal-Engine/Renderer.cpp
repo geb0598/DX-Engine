@@ -675,8 +675,8 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 			FTileLightManager::GetInstance().GetTileConstantBuffer()
 		};
 		GetRHIDevice()->GetDeviceContext()->PSSetConstantBuffers(12, 2, ConstantBuffers);
-		ID3D11ShaderResourceView* PointLightMaskSRV[] = { FTileLightManager::GetInstance().GetPointLightMaskBufferSRV() };
-		GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 1, PointLightMaskSRV);
+		ID3D11ShaderResourceView* PointLightMaskSRV[] = { FTileLightManager::GetInstance().GetPointLightMaskBufferSRV(), FTileLightManager::GetInstance().GetSpotLightMaskBufferSRV()  };
+		GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 2, PointLightMaskSRV);
 
 		GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID);
 			
@@ -685,8 +685,8 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 		RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
 
 		// ---
-		ID3D11ShaderResourceView* NullShaderResourceView[] = { nullptr };
-		GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 1, NullShaderResourceView);
+		ID3D11ShaderResourceView* NullShaderResourceView[] = { nullptr, nullptr };
+		GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 2, NullShaderResourceView);
 		// ---
 
 		if (HasShowFlag(Viewport->GetShowFlags(), EEngineShowFlags::SF_Heatmap))
