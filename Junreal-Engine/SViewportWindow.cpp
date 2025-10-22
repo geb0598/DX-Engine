@@ -319,6 +319,12 @@ void SViewportWindow::RenderToolbar()
 			{
 				Viewport->ToggleShowFlag(EEngineShowFlags::SF_BVH);
 			}
+
+			bool bHeatmapEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_Heatmap);
+			if (ImGui::Checkbox("Heatmap", &bHeatmapEnabled))
+			{
+				Viewport->ToggleShowFlag(EEngineShowFlags::SF_Heatmap);	
+			}
 			//// Wireframe
 			//bool bWireframeEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_Wireframe);
 			//if (ImGui::Checkbox("Wireframe", &bWireframeEnabled))

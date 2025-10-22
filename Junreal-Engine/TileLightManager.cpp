@@ -46,6 +46,10 @@ void FTileLightManager::CullPointLights(UCameraComponent* InCameraComponent, FVi
     UpdateConstantBuffer(InCameraComponent, InViewport->GetSizeX() / static_cast<float>(InViewport->GetSizeY()));
     UpdateConstantBuffer(InViewport);
     UpdateConstantBuffer(LightingBuffer);
+    
+    // --- Clear the UAV before use ---
+    const UINT ClearValues[4] = { 0, 0, 0, 0 };
+    DeviceContext->ClearUnorderedAccessViewUint(PointLightMaskBufferUAV.Get(), ClearValues);
 
     // --- Set Compute Shader ---
     DeviceContext->CSSetShader(ComputeShader.Get(), nullptr, 0);

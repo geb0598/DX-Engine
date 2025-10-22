@@ -57,6 +57,10 @@ public:
     ID3D11ShaderResourceView* GetPointLightMaskBufferSRV() const { return PointLightMaskBufferSRV.Get(); }
 
     ID3D11ShaderResourceView* GetSpotLightMaskBufferSRV() const { return SpotLightMaskBufferSRV.Get(); }
+
+    ID3D11Buffer* GetViewportConstantBuffer() const { return ViewportConstantBuffer.Get(); }
+
+    ID3D11Buffer* GetTileConstantBuffer() const { return TileConstantBuffer.Get(); }
     
     /*-----------------------------------------------------------------------------
         Debug / Visualization Features

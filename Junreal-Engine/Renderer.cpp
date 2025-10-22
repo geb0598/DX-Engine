@@ -669,12 +669,29 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 			
 		GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::None);
 		FTileLightManager::GetInstance().CullPointLights(Camera->GetCameraComponent(), Viewport, LightingCBufferData);
+		ID3D11Buffer* ConstantBuffers[] = {
+			FTileLightManager::GetInstance().GetTileConstantBuffer(),
+			FTileLightManager::GetInstance().GetViewportConstantBuffer()
+		};
+		GetRHIDevice()->GetDeviceContext()->PSSetConstantBuffers(12, 2, ConstantBuffers);
+		ID3D11ShaderResourceView* PointLightMaskSRV[] = { FTileLightManager::GetInstance().GetPointLightMaskBufferSRV() };
+		GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 1, PointLightMaskSRV);
+
 		GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID);
 			
 		RHIDevice->ClearDepthBuffer(1.0f, 0); // Clear back buffer due to Z-fighting. Find other solution in later.
 		// ---
 		RenderBasePass(World, Camera, Viewport);  // Full color + depth pass (Opaque geometry - per viewport)
-		FTileLightManager::GetInstance().RenderPointLightHeatmap();
+
+		// ---
+		ID3D11ShaderResourceView* NullShaderResourceView[] = { nullptr };
+		GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 1, NullShaderResourceView);
+		// ---
+
+		if (HasShowFlag(Viewport->GetShowFlags(), EEngineShowFlags::SF_Heatmap))
+		{
+			FTileLightManager::GetInstance().RenderPointLightHeatmap();
+		}
 		RenderFogPass(World, Camera, Viewport);
 		RenderFXAAPaxx(World, Camera, Viewport);
 		RenderEditorPass(World, Camera, Viewport);
