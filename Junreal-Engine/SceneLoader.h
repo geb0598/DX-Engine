@@ -64,6 +64,34 @@ struct FRotationMovementProperty
     FVector PivotTranslation = FVector(0, 0, 0);
     bool bRotationInLocalSpace = false;
 };
+
+struct FLightProperty
+{
+    float Intensity = 1.0f;
+    // Store RGBA as bytes (0-255) to match FColor usage
+    uint8 R = 220;
+    uint8 G = 220;
+    uint8 B = 220;
+    uint8 A = 255;
+    bool bVisible = true;
+};
+
+struct FLocalLightProperty
+{
+    float AttenuationRadius = 10.0f;
+};
+
+struct FPointLightProperty
+{
+    float AttenuationRadius = 15.0f;
+    float LightFalloffExponent = 1.0f;
+};
+
+struct FSpotLightProperty
+{
+    float InnerConeAngle = 10.0f;
+    float OuterConeAngle = 20.0f;
+};
 struct FComponentData
 {
     uint32 UUID = 0;
@@ -81,6 +109,10 @@ struct FComponentData
     TArray<FString> Materials;  // StaticMeshComponent: Materials
     FString TexturePath;  // DecalComponent, BillboardComponent: Texture path
     FFireBallProperty FireBallProperty; // FireballComponent
+    FLightProperty LightProperty; // Light Components
+    FLocalLightProperty LocalLightProperty; // LocalLightComponent
+    FPointLightProperty PointLightProperty; // PointLightComponent / SpotLightComponent base
+    FSpotLightProperty SpotLightProperty;   // SpotLightComponent specific
     // 신규
     FProjectileMovementProperty ProjectileMovementProperty;
     FRotationMovementProperty RotationMovementProperty;

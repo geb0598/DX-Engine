@@ -351,6 +351,47 @@ void FSceneLoader::SaveV2(const FSceneData& SceneData, const FString& SceneName)
             oss << "      }";
         }
 
+        // Light components (Ambient/Directional/Point/Spot/Local)
+        if (Comp.Type.find("LightComponent") != std::string::npos)
+        {
+            oss << ",\n";
+            oss << "      \"LightData\" : {\n";
+            oss << "        \"Intensity\" : " << Comp.LightProperty.Intensity << ",\n";
+            oss << "        \"Visible\" : " << (Comp.LightProperty.bVisible ? "true" : "false") << ",\n";
+            oss << "        \"Color\" : [" << (int)Comp.LightProperty.R << ", " << (int)Comp.LightProperty.G << ", " << (int)Comp.LightProperty.B << ", " << (int)Comp.LightProperty.A << "]\n";
+            oss << "      }";
+
+            // Point (and Spot) common data
+            if (Comp.Type.find("PointLightComponent") != std::string::npos ||
+                Comp.Type.find("SpotLightComponent") != std::string::npos)
+            {
+                oss << ",\n";
+                oss << "      \"PointLightData\" : {\n";
+                oss << "        \"AttenuationRadius\" : " << Comp.PointLightProperty.AttenuationRadius << ",\n";
+                oss << "        \"LightFalloffExponent\" : " << Comp.PointLightProperty.LightFalloffExponent << "\n";
+                oss << "      }";
+            }
+
+            // Local light data
+            if (Comp.Type.find("LocalLightComponent") != std::string::npos)
+            {
+                oss << ",\n";
+                oss << "      \"LocalLightData\" : {\n";
+                oss << "        \"AttenuationRadius\" : " << Comp.LocalLightProperty.AttenuationRadius << "\n";
+                oss << "      }";
+            }
+
+            // Spot specifics
+            if (Comp.Type.find("SpotLightComponent") != std::string::npos)
+            {
+                oss << ",\n";
+                oss << "      \"SpotLightData\" : {\n";
+                oss << "        \"InnerConeAngle\" : " << Comp.SpotLightProperty.InnerConeAngle << ",\n";
+                oss << "        \"OuterConeAngle\" : " << Comp.SpotLightProperty.OuterConeAngle << "\n";
+                oss << "      }";
+            }
+        }
+
         oss << "\n";
         oss << "    }" << (i + 1 < SceneData.Components.size() ? "," : "") << "\n";
     }
@@ -568,6 +609,49 @@ FSceneData FSceneLoader::ParseV2(const JSON& Json)
                 }
                 if (RMJson.hasKey("bRotationInLocalSpace"))
                     Comp.RotationMovementProperty.bRotationInLocalSpace = RMJson.at("bRotationInLocalSpace").ToBool();
+            }
+
+            // Light components
+            if (Comp.Type.find("LightComponent") != std::string::npos)
+            {
+                if (CompJson.hasKey("LightData"))
+                {
+                    const JSON& LJson = CompJson.at("LightData");
+                    if (LJson.hasKey("Intensity"))
+                        Comp.LightProperty.Intensity = (float)LJson.at("Intensity").ToFloat();
+                    if (LJson.hasKey("Visible"))
+                        Comp.LightProperty.bVisible = LJson.at("Visible").ToBool();
+                    if (LJson.hasKey("Color"))
+                    {
+                        auto arr = LJson.at("Color");
+                        Comp.LightProperty.R = (uint8)arr[0].ToInt();
+                        Comp.LightProperty.G = (uint8)arr[1].ToInt();
+                        Comp.LightProperty.B = (uint8)arr[2].ToInt();
+                        Comp.LightProperty.A = (uint8)arr[3].ToInt();
+                    }
+                }
+                if (CompJson.hasKey("PointLightData"))
+                {
+                    const JSON& PLJson = CompJson.at("PointLightData");
+                    if (PLJson.hasKey("AttenuationRadius"))
+                        Comp.PointLightProperty.AttenuationRadius = (float)PLJson.at("AttenuationRadius").ToFloat();
+                    if (PLJson.hasKey("LightFalloffExponent"))
+                        Comp.PointLightProperty.LightFalloffExponent = (float)PLJson.at("LightFalloffExponent").ToFloat();
+                }
+                if (CompJson.hasKey("LocalLightData"))
+                {
+                    const JSON& LLJson = CompJson.at("LocalLightData");
+                    if (LLJson.hasKey("AttenuationRadius"))
+                        Comp.LocalLightProperty.AttenuationRadius = (float)LLJson.at("AttenuationRadius").ToFloat();
+                }
+                if (CompJson.hasKey("SpotLightData"))
+                {
+                    const JSON& SLJson = CompJson.at("SpotLightData");
+                    if (SLJson.hasKey("InnerConeAngle"))
+                        Comp.SpotLightProperty.InnerConeAngle = (float)SLJson.at("InnerConeAngle").ToFloat();
+                    if (SLJson.hasKey("OuterConeAngle"))
+                        Comp.SpotLightProperty.OuterConeAngle = (float)SLJson.at("OuterConeAngle").ToFloat();
+                }
             }
             Data.Components.push_back(Comp);
         }

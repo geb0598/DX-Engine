@@ -25,6 +25,13 @@
 #include "Component/SpotLightComponent.h"
 #include "ProjectileMovementComponent.h"
 #include "RotationMovementComponent.h"
+#include "Component/LightComponentBase.h"
+#include "Component/LocalLightComponent.h"
+#include "Component/PointLightComponent.h"
+#include "Component/SpotLightComponent.h"
+#include "BillboardComponent.h"
+#include "Component/LightComponentBase.h"
+#include "BillboardComponent.h"
 
 
 extern float CLIENTWIDTH;
@@ -785,8 +792,38 @@ void UWorld::SaveSceneV2(const FString& SceneName)
             {
                 // PrimitiveComponent가 아닌 경우 Transform만 저장
                 CompData.RelativeLocation = Comp->GetRelativeLocation();
-                CompData.RelativeRotation = Comp->GetRelativeRotation().ToEuler();
+                // Use consistent ZYX Euler convention for save
+                CompData.RelativeRotation = SceneRotUtil::EulerZYX_Deg_FromQuat(Comp->GetRelativeRotation());
                 CompData.RelativeScale = Comp->GetRelativeScale();
+            }
+
+            // Light components: persist light properties
+            if (ULightComponentBase* Light = Cast<ULightComponentBase>(Comp))
+            {
+                const FColor& C = Light->GetLightColor();
+                CompData.LightProperty.R = C.R;
+                CompData.LightProperty.G = C.G;
+                CompData.LightProperty.B = C.B;
+                CompData.LightProperty.A = C.A;
+                CompData.LightProperty.Intensity = Light->GetIntensity();
+                CompData.LightProperty.bVisible = Light->GetVisible();
+                // Point (and Spot)
+                if (UPointLightComponent* PLC = Cast<UPointLightComponent>(Comp))
+                {
+                    CompData.PointLightProperty.AttenuationRadius = PLC->GetAttenuationRadius();
+                    CompData.PointLightProperty.LightFalloffExponent = PLC->GetLightFalloffExponent();
+                }
+                // Local
+                if (ULocalLightComponent* LLC = Cast<ULocalLightComponent>(Comp))
+                {
+                    CompData.LocalLightProperty.AttenuationRadius = LLC->GetAttenuationRadius();
+                }
+                // Spot specifics
+                if (USpotLightComponent* SLC = Cast<USpotLightComponent>(Comp))
+                {
+                    CompData.SpotLightProperty.InnerConeAngle = SLC->GetInnerConeAngle();
+                    CompData.SpotLightProperty.OuterConeAngle = SLC->GetOuterConeAngle();
+                }
             }
 
             SceneData.Components.push_back(CompData);
@@ -971,11 +1008,26 @@ void UWorld::LoadSceneV2(const FString& SceneName)
             }
             // PrimitiveComponent가 아닌 경우 Transform만 로드
             Cast<USceneComponent>(TargetComp)->SetRelativeLocation(CompData.RelativeLocation);
-            Cast<USceneComponent>(TargetComp)->SetRelativeRotation(FQuat::MakeFromEuler(CompData.RelativeRotation));
+            // Use consistent ZYX Euler convention for load
+            Cast<USceneComponent>(TargetComp)->SetRelativeRotation(SceneRotUtil::QuatFromEulerZYX_Deg(CompData.RelativeRotation));
             Cast<USceneComponent>(TargetComp)->SetRelativeScale(CompData.RelativeScale);
         }
 
-        
+        // Apply per-light-type properties
+        if (UPointLightComponent* PLC = Cast<UPointLightComponent>(TargetComp))
+        {
+            PLC->SetAttenuationRadius(CompData.PointLightProperty.AttenuationRadius);
+            PLC->SetLightFalloffExponent(CompData.PointLightProperty.LightFalloffExponent);
+        }
+        if (ULocalLightComponent* LLC = Cast<ULocalLightComponent>(TargetComp))
+        {
+            LLC->SetAttenuationRadius(CompData.LocalLightProperty.AttenuationRadius);
+        }
+        if (USpotLightComponent* SLC = Cast<USpotLightComponent>(TargetComp))
+        {
+            SLC->SetInnerConeAngle(CompData.SpotLightProperty.InnerConeAngle);
+            SLC->SetOuterConeAngle(CompData.SpotLightProperty.OuterConeAngle);
+        }
 
         ComponentMap.Add(CompData.UUID, Cast<USceneComponent>(TargetComp));
     }
@@ -1016,6 +1068,42 @@ void UWorld::LoadSceneV2(const FString& SceneName)
 
         // 참고: OwnedComponents는 생성자(CreateDefaultSubobject) 또는
         // 새로 생성 시(Line 1154)에 이미 추가되므로 여기서는 추가하지 않음
+    }
+
+    for (const auto& Pair : ComponentMap)
+    {
+        USceneComponent* SceneComp = Pair.second;
+        if (ULightComponentBase* Light = Cast<ULightComponentBase>(SceneComp))
+        {
+            // Find saved data by UUID
+            const uint32 UUID = Pair.first;
+            const FComponentData* Found = nullptr;
+            for (const FComponentData& CD : SceneData.Components)
+            {
+                if (CD.UUID == UUID) { Found = &CD; break; }
+            }
+            if (Found)
+            {
+                // Apply persisted light properties
+                Light->SetIntensity(Found->LightProperty.Intensity);
+                FColor Recolor(Found->LightProperty.R, Found->LightProperty.G, Found->LightProperty.B, Found->LightProperty.A);
+                Light->SetLightColor(Recolor);
+                Light->SetVisible(Found->LightProperty.bVisible);
+            }
+
+            // Bind icon billboard pointer to the first billboard child, if any
+            const TArray<USceneComponent*>& Children = Light->GetAttachChildren();
+            for (USceneComponent* Child : Children)
+            {
+                if (UBillboardComponent* BB = Cast<UBillboardComponent>(Child))
+                {
+                    Light->SetIconBillboardComponent(BB);
+                    // Ensure billboard tint matches light color
+                    BB->SetTintColor(Light->GetLightColor());
+                    break;
+                }
+            }
+        }
     }
 
     // Actor를 Level에 추가
