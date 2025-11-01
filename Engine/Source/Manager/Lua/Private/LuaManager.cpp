@@ -10,7 +10,7 @@ ULuaManager::ULuaManager()
 
 ULuaManager::~ULuaManager()
 {
-    
+
 }
 
 void ULuaManager::Initialize()
@@ -47,7 +47,7 @@ void ULuaManager::BindTypesToLua()
         sol::meta_function::addition, sol::overload(
             [](const FVector& a, const FVector& b) { return a + b; }
         ),
-    
+
         sol::meta_function::subtraction, sol::overload(
             [](const FVector& a, const FVector& b) { return a - b; }
         ),
@@ -57,7 +57,7 @@ void ULuaManager::BindTypesToLua()
             [](const FVector& v, float s) { return v * s; },
             [](float s, const FVector& v) { return s * v; }
         ),
-    
+
         sol::meta_function::division, sol::overload(
             [](const FVector& a, const FVector& b) { return a / b; },
             [](const FVector& v, float s) { return v / s; }
@@ -67,7 +67,7 @@ void ULuaManager::BindTypesToLua()
         "Normalize", &FVector::Normalize,
         "Length", &FVector::Length
     );
-    
+
     // -- Actor -- //
     MasterLuaState.new_usertype<AActor>("AActor",
         "Name", sol::property(
@@ -80,11 +80,18 @@ void ULuaManager::BindTypesToLua()
         "Scale", sol::property(
             &AActor::GetActorScale3D,
             &AActor::SetActorScale3D
+        ),
+        "UUID", sol::property(
+            &AActor::GetUUID
         )
     );
-    
+
     // -- UScriptComponent -- //
-    MasterLuaState.new_usertype<UScriptComponent>("UScriptComponent");
+	MasterLuaState.new_usertype<UScriptComponent>("ScriptComponent",
+		"StartCoroutine", &UScriptComponent::StartCoroutine,
+		"StopCoroutine", &UScriptComponent::StopCoroutine,
+		"StopAllCoroutines", &UScriptComponent::StopAllCoroutines
+	);
 
     // -- Log -- //
     MasterLuaState.set_function("Log", [](sol::variadic_args Vars) {
@@ -150,6 +157,10 @@ void ULuaManager::LoadAllLuaScripts()
             {
                 LuaTemplatePath = FullPath;
             }
+            else if (FileName == "utility")
+            {
+            	MasterLuaState.script_file(FullPath);
+            }
         }
     }
 }
@@ -198,12 +209,12 @@ sol::environment ULuaManager::CreateLuaEnvironment(UScriptComponent* ScriptCompo
 
     LuaScriptCaches[LuaScriptName] = FLuaScriptInfo(DestPath, filesystem::last_write_time(DestPath));
     LuaScriptCaches[LuaScriptName].ScriptComponents.Add(ScriptComponent);
-    
+
     UE_LOG("[LuaManager] 새 Lua 스크립트 생성됨: %s", ScriptFileNameStr.c_str());
     sol::environment Env(MasterLuaState, sol::create, MasterLuaState.globals());
-    
-    MasterLuaState.script_file(DestPath.string(), Env); 
-    
+
+    MasterLuaState.script_file(DestPath.string(), Env);
+
     return Env;
 }
 
@@ -214,7 +225,7 @@ void ULuaManager::OpenScriptInEditor(const FName& LuaScriptName)
         UE_LOG("[LuaManager] 선택된 스크립트가 없습니다.");
         return;
     }
-    
+
     FLuaScriptInfo* Info = LuaScriptCaches.Find(LuaScriptName);
 
     if (Info == nullptr)
@@ -238,7 +249,7 @@ void ULuaManager::OpenScriptInEditor(const FName& LuaScriptName)
 void ULuaManager::UnregisterComponent(UScriptComponent* ScriptComponent, const FName& LuaScriptName)
 {
     if (LuaScriptName.IsNone()) return;
-    
+
     FLuaScriptInfo* Info = LuaScriptCaches.Find(LuaScriptName);
     if (Info)
     {
@@ -259,9 +270,9 @@ void ULuaManager::CheckForHotReload()
             if (!exists(Info.FullPath))
             {
                 DeletedScripts.Add(Info.FullPath);
-                
+
                 // TODO - ScriptComponent에게 바인딩 해제 알려주기
-                continue; 
+                continue;
             }
 
             auto CurrentModifiedTime = std::filesystem::last_write_time(Info.FullPath);
@@ -274,7 +285,7 @@ void ULuaManager::CheckForHotReload()
                 {
                     TWeakObjectPtr<UScriptComponent> WeakComp = Info.ScriptComponents[Idx];
 
-                    if (UScriptComponent* Comp = WeakComp.Get()) 
+                    if (UScriptComponent* Comp = WeakComp.Get())
                     {
                         // 새 환경 생성
                         sol::environment NewEnv(MasterLuaState, sol::create, MasterLuaState.globals());

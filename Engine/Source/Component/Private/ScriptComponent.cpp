@@ -35,6 +35,7 @@ void UScriptComponent::TickComponent(float DeltaTime)
     if (LuaEnv.valid())
     {
         LuaEnv["Tick"](DeltaTime);
+    	UpdateCoroutines(DeltaTime);
     }
 }
 
@@ -67,7 +68,7 @@ void UScriptComponent::CreateAndAssignScript(const FName& NewScriptName)
         return;
     }
     ClearScript();
-    
+
     LuaEnv = ULuaManager::GetInstance().CreateLuaEnvironment(this, NewScriptName);
     if (LuaEnv.valid())
     {
@@ -133,9 +134,10 @@ void UScriptComponent::HotReload(sol::environment NewEnv)
 void UScriptComponent::BeginLuaEnv()
 {
     LuaEnv["Owner"] = GetOwner();
-    LuaEnv["ThisScriptComponent"] = this;
-    LuaEnv["BeginPlay"]();
+    LuaEnv["Self"] = this;
     BindOwnerDelegates();
+
+    LuaEnv["BeginPlay"]();
 }
 
 UClass* UScriptComponent::GetSpecificWidgetClass() const
@@ -206,4 +208,108 @@ void UScriptComponent::UnbindOwnerDelegates()
     }
 
     BoundDelegates.Empty();
+}
+
+void UScriptComponent::StartCoroutine(const std::string& FuncName)
+{
+	sol::function CoroutineFunc = LuaEnv[FuncName];
+	if (!LuaEnv.valid() || !CoroutineFunc.valid())
+	{
+		UE_LOG_ERROR("[StartCoroutine] 유효하지 않은 Lua 함수");
+		return;
+	}
+
+	sol::state_view Lua(LuaEnv.lua_state());
+	sol::thread NewThread = sol::thread::create(Lua);
+	sol::coroutine Coro = sol::coroutine(NewThread.state(), CoroutineFunc);
+
+	FCoroutineHandle Handle;
+	Handle.Thread = NewThread;
+	Handle.Coroutine = Coro;
+	Handle.GCRef = sol::make_reference(Lua, NewThread);
+	Handle.FuncName = FString(FuncName);
+	Handle.bIsRunning = true;
+
+	ActiveCoroutines.Add(Handle);
+
+	UE_LOG("[StartCoroutine] 코루틴 %s 시작", FuncName.c_str());
+}
+
+void UScriptComponent::StopCoroutine(const std::string& FuncName)
+{
+	for (auto& Handle : ActiveCoroutines)
+	{
+		if (Handle.FuncName == FName(FuncName))
+		{
+			Handle.bIsRunning = false;
+			UE_LOG("[StopCoroutine] 코루틴 %s 중지", FuncName.c_str());
+			return;
+		}
+	}
+}
+
+void UScriptComponent::StopAllCoroutines()
+{
+	ActiveCoroutines.Empty();
+	UE_LOG("[StopAllCoroutines] 모든 코루틴 중지");
+}
+
+void UScriptComponent::UpdateCoroutines(float DeltaTime)
+{
+	TArray<int32> ToRemove;
+
+	for (int32 Idx = 0; Idx < ActiveCoroutines.Num(); ++Idx)
+	{
+		auto& ActiveCoroutine = ActiveCoroutines[Idx];
+
+		if (!ActiveCoroutine.bIsRunning)
+		{
+			ToRemove.Add(Idx);
+			continue;
+		}
+
+		if (ActiveCoroutine.Time > 0)
+		{
+			ActiveCoroutine.Time -= DeltaTime;
+			if (ActiveCoroutine.Time > 0)
+				continue;
+		}
+
+		auto& Co = ActiveCoroutine.Coroutine; // ✅ 복사 금지!
+		auto Result = Co();
+
+		if (!Result.valid())
+		{
+			sol::error Err = Result;
+			UE_LOG_ERROR("[Coroutine %s] 에러: %s", ActiveCoroutine.FuncName.ToString().c_str(), Err.what());
+			ActiveCoroutine.bIsRunning = false;
+			ToRemove.Add(Idx);
+			continue;
+		}
+
+		sol::call_status Status = Result.status();
+		if (Status == sol::call_status::ok)
+		{
+			UE_LOG("[Coroutine %s] 정상 종료", ActiveCoroutine.FuncName.ToString().c_str());
+			ActiveCoroutine.bIsRunning = false;
+			ToRemove.Add(Idx);
+		}
+		else if (Status == sol::call_status::yielded)
+		{
+			if (Result.return_count() >= 1)
+				ActiveCoroutine.Time = static_cast<float>(Result[0]);
+		}
+		else
+		{
+			UE_LOG_ERROR("[Coroutine %s] 비정상 상태 %d", ActiveCoroutine.FuncName.ToString().c_str(), (int32)Status);
+			ActiveCoroutine.bIsRunning = false;
+			ToRemove.Add(Idx);
+		}
+	}
+
+	// 역순으로 제거 (RemoveAtSwap로 해도 OK)
+	for (int32 i = ToRemove.Num() - 1; i >= 0; --i)
+	{
+		ActiveCoroutines.RemoveAtSwap(ToRemove[i]);
+	}
 }

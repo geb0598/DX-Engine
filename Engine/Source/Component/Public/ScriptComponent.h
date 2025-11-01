@@ -2,17 +2,28 @@
 #include "ActorComponent.h"
 #include <sol/sol.hpp>
 
+struct FCoroutineHandle
+{
+	sol::coroutine Coroutine;
+	sol::thread Thread;
+	sol::reference GCRef;
+
+	FName FuncName;
+	float Time = 0;
+	bool bIsRunning;
+};
+
 class UScriptComponent : public UActorComponent
 {
     DECLARE_CLASS(UScriptComponent, UActorComponent)
-    
+
 public:
     UScriptComponent();
-    
+
     void BeginPlay() override;
     void EndPlay() override;
     void TickComponent(float DeltaTime) override;
-    
+
 public:
     /**
      * @brief 캐시된 스크립트 찾아 로드하고 바인딩
@@ -24,12 +35,12 @@ public:
      */
     void CreateAndAssignScript(const FName& NewScriptName);
 
-    /** 
+    /**
      * @brief 현재 스크립트를 외부 편집기에서 오픈
      */
     void OpenCurrentScriptInEditor();
-    
-    /** 
+
+    /**
      * @brief 기존 스크립트 정리
      */
     void ClearScript();
@@ -68,7 +79,7 @@ public:
 
 private:
     void BeginLuaEnv();
-    
+
     FName ScriptName;
     sol::environment LuaEnv;
 
@@ -78,6 +89,17 @@ private:
 
     /** @brief (DelegateInfo, 바인딩ID) 쌍 저장 (해제용) */
     TArray<std::pair<FDelegateInfoBase*, uint32>> BoundDelegates;
+
+// Coroutine Section
+public:
+	void StartCoroutine(const std::string& FuncName);
+	void StopCoroutine(const std::string& FuncName);
+	void StopAllCoroutines();
+
+private:
+	void UpdateCoroutines(float DeltaTime);
+
+	TArray<FCoroutineHandle> ActiveCoroutines;
 
 public:
     UClass* GetSpecificWidgetClass() const override;
