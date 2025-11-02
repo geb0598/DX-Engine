@@ -50,11 +50,17 @@ AActor::~AActor()
 
 void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
-    Super::Serialize(bInIsLoading, InOutHandle); 
+    Super::Serialize(bInIsLoading, InOutHandle);
 
     // 불러오기 (Load)
     if (bInIsLoading)
     {
+    	// Name 로드 (NewObject가 자동으로 붙인 suffix를 덮어씀)
+    	FString NameString;
+    	if (FJsonSerializer::ReadString(InOutHandle, "Name", NameString))
+    	{
+    		SetName(NameString);
+    	}
     	// 컴포넌트 포인터와 JSON 데이터를 임시 저장할 구조체
         struct FSceneCompData
         {
@@ -160,17 +166,24 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 			FString bTickInEditorString;
 			FJsonSerializer::ReadString(InOutHandle, "bTickInEditor", bTickInEditorString, "false");
 			bTickInEditor = bTickInEditorString == "true" ? true : false;
+
+			FString bIsTemplateString;
+			FJsonSerializer::ReadString(InOutHandle, "bIsTemplate", bIsTemplateString, "false");
+			bIsTemplate = bIsTemplateString == "true" ? true : false;
         }
     }
     // 저장 (Save)
     else
     {
+    	InOutHandle["Name"] = GetName().ToString();
+
 		InOutHandle["Location"] = FJsonSerializer::VectorToJson(GetActorLocation());
         InOutHandle["Rotation"] = FJsonSerializer::VectorToJson(GetActorRotation().ToEuler());
         InOutHandle["Scale"] = FJsonSerializer::VectorToJson(GetActorScale3D());
 
 		InOutHandle["bCanEverTick"] = bCanEverTick ? "true" : "false";
 		InOutHandle["bTickInEditor"] = bTickInEditor ? "true" : "false";
+		InOutHandle["bIsTemplate"] = bIsTemplate ? "true" : "false";
 
         JSON ComponentsJson = json::Array(); 
 
@@ -396,6 +409,8 @@ UObject* AActor::Duplicate()
 {
 	AActor* Actor = Cast<AActor>(Super::Duplicate());
 	Actor->bCanEverTick = bCanEverTick;
+	Actor->bIsTemplate = bIsTemplate;
+	Actor->SetName(GetName());  // Name 복사
 	return Actor;
 }
 
@@ -466,6 +481,8 @@ UObject* AActor::DuplicateForEditor()
 {
 	AActor* Actor = Cast<AActor>(NewObject(GetClass()));
 	Actor->bCanEverTick = bCanEverTick;
+	Actor->bIsTemplate = bIsTemplate;
+	// Name은 복사하지 않음 - NewObject가 자동으로 suffix를 붙여 고유한 이름 생성
 	DuplicateSubObjectsForEditor(Actor);
 	return Actor;
 }
@@ -608,6 +625,71 @@ void AActor::GetOverlappingComponents(const AActor* OtherActor, TArray<UPrimitiv
 			{
 				OutComponents.Add(PrimComp);
 			}
+		}
+	}
+}
+
+AActor* AActor::DuplicateFromTemplate(ULevel* TargetLevel)
+{
+	// 일반 Duplicate 수행
+	AActor* NewActor = Cast<AActor>(Duplicate());
+
+	if (NewActor)
+	{
+		// 템플릿 플래그 해제
+		NewActor->SetIsTemplate(false);
+
+		// 위치를 (0, 0, 0)으로 초기화
+		NewActor->SetActorLocation(FVector(0, 0, 0));
+
+		// Level에 추가
+		ULevel* LevelToAddTo = TargetLevel ? TargetLevel : Cast<ULevel>(GetOuter());
+		if (LevelToAddTo)
+		{
+			// Outer 설정
+			NewActor->SetOuter(LevelToAddTo);
+
+			// Level의 Actor 리스트에 추가
+			LevelToAddTo->AddActorToLevel(NewActor);
+
+			// Deferred BeginPlay - 다음 Tick에서 호출 (속성 설정 후)
+			LevelToAddTo->AddPendingBeginPlayActor(NewActor);
+
+			// Level의 Component 시스템에 등록
+			LevelToAddTo->AddLevelComponent(NewActor);
+		}
+		else
+		{
+			UE_LOG_ERROR("AActor::DuplicateFromTemplate - Level을 찾을 수 없습니다. 인스턴스가 레벨에 추가되지 않았습니다.");
+		}
+	}
+
+	return NewActor;
+}
+
+void AActor::SetIsTemplate(bool bInIsTemplate)
+{
+	// 값이 변경되지 않으면 아무것도 하지 않음
+	if (bIsTemplate == bInIsTemplate)
+	{
+		return;
+	}
+
+	bool bWasTemplate = bIsTemplate;
+	bIsTemplate = bInIsTemplate;
+
+	// Level 캐시 업데이트
+	if (ULevel* Level = Cast<ULevel>(GetOuter()))
+	{
+		if (bIsTemplate)
+		{
+			// false -> true: 캐시에 추가
+			Level->RegisterTemplateActor(this);
+		}
+		else if (bWasTemplate)
+		{
+			// true -> false: 캐시에서 제거
+			Level->UnregisterTemplateActor(this);
 		}
 	}
 }

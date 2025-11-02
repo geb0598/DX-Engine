@@ -52,6 +52,15 @@ void UWorld::BeginPlay()
 		{
 			AuthorityGameMode = Cast<AGameMode>(SpawnActor(AGameMode::StaticClass()));
 		}
+
+		// PIE/Game 모드에서 템플릿 액터들을 멀리 이동
+		for (AActor* TemplateActor : Level->GetTemplateActors())
+		{
+			if (TemplateActor)
+			{
+				TemplateActor->SetActorLocation(FVector(99999.0f, 99999.0f, 99999.0f));
+			}
+		}
 	}
 
 	Level->Init();
@@ -79,6 +88,9 @@ void UWorld::Tick(float DeltaTimes)
 	{
 		return;
 	}
+
+	// Deferred BeginPlay 처리 (속성 설정 후 BeginPlay 호출)
+	Level->ProcessPendingBeginPlay();
 
 	// 스폰 / 삭제 처리
 	FlushPendingDestroy();
@@ -110,6 +122,12 @@ void UWorld::Tick(float DeltaTimes)
 		TArray<AActor*> ActorsToTick = Level->GetLevelActors();
 		for (AActor* Actor : ActorsToTick)
 		{
+			// PIE/Game 모드에서는 템플릿 액터 Tick 스킵
+			if (Actor->IsTemplate())
+			{
+				continue;
+			}
+
 			if(Actor->CanTick())
 			{
 				Actor->Tick(DeltaTimes);
@@ -359,4 +377,35 @@ void UWorld::CreateNewLevel(const FName& InLevelName)
 
 	// 새 레벨 생성 후 Octree 전체 구축
 	NewLevel->UpdateOctreeImmediate();
+}
+
+AActor* UWorld::FindTemplateActorByName(const std::string& InName)
+{
+	if (!Level)
+	{
+		UE_LOG_ERROR("World: Level이 없어 template actor를 검색할 수 없습니다.");
+		return nullptr;
+	}
+
+	return Level->FindTemplateActorByName(FName(InName));
+}
+
+TArray<AActor*> UWorld::FindTemplateActorsByClass(const std::string& ClassName)
+{
+	TArray<AActor*> EmptyResult;
+
+	if (!Level)
+	{
+		UE_LOG_ERROR("World: Level이 없어 template actor를 검색할 수 없습니다.");
+		return EmptyResult;
+	}
+
+	UClass* ActorClass = UClass::FindClass(FName(ClassName));
+	if (!ActorClass)
+	{
+		UE_LOG_ERROR("World: FindTemplateActorsByClass - Class not found: %s", ClassName.c_str());
+		return EmptyResult;
+	}
+
+	return Level->FindTemplateActorsByClass(ActorClass);
 }

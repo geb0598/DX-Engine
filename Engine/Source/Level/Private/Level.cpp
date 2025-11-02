@@ -92,13 +92,9 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 void ULevel::Init()
 {
-	for (AActor* Actor: LevelActors)
-	{
-		if (Actor)
-		{
-			Actor->BeginPlay();
-		}
-	}
+	// Deferred BeginPlay 시스템으로 인해 Pending Actor들이 있을 수 있음
+	// 즉시 BeginPlay를 처리 (Level 로드 시 등)
+	ProcessPendingBeginPlay();
 }
 
 AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, JSON* ActorJsonData)
@@ -120,8 +116,20 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, JSON* ActorJsonData)
 		{
 			NewActor->InitializeComponents();
 		}
-		NewActor->BeginPlay();
+
 		AddLevelComponent(NewActor);
+
+		// 템플릿 액터면 캐시에 추가
+		if (NewActor->IsTemplate())
+		{
+			RegisterTemplateActor(NewActor);
+		}
+		else
+		{
+			// 템플릿 액터가 아닌 경우만 Deferred BeginPlay 등록
+			AddPendingBeginPlayActor(NewActor);
+		}
+
 		return NewActor;
 	}
 
@@ -212,6 +220,32 @@ void ULevel::AddActorToLevel(AActor* InActor)
 	LevelActors.Add(InActor);
 }
 
+void ULevel::RegisterTemplateActor(AActor* InActor)
+{
+	if (!InActor)
+	{
+		return;
+	}
+
+	// 중복 등록 방지
+	if (TemplateActors.Contains(InActor))
+	{
+		return;
+	}
+
+	TemplateActors.Add(InActor);
+}
+
+void ULevel::UnregisterTemplateActor(AActor* InActor)
+{
+	if (!InActor)
+	{
+		return;
+	}
+
+	TemplateActors.Remove(InActor);
+}
+
 void ULevel::AddLevelComponent(AActor* Actor)
 {
 	if (!Actor)
@@ -264,6 +298,12 @@ bool ULevel::DestroyActor(AActor* InActor)
 		return false;
 	}
 
+	// 템플릿 액터면 캐시에서 제거
+	if (InActor->IsTemplate())
+	{
+		UnregisterTemplateActor(InActor);
+	}
+
 	// 컴포넌트들을 옥트리에서 제거
 	for (auto& Component : InActor->GetOwnedComponents())
 	{
@@ -314,6 +354,17 @@ void ULevel::DuplicateSubObjects(UObject* DuplicatedObject)
 		DuplicatedActor->SetOuter(DuplicatedLevel);  // Actor의 Outer를 Level로 설정
 		DuplicatedLevel->LevelActors.Add(DuplicatedActor);
 		DuplicatedLevel->AddLevelComponent(DuplicatedActor);
+
+		// Template actor 캐시 재구축 (PIE World에서도 template actor를 찾을 수 있도록)
+		if (DuplicatedActor->IsTemplate())
+		{
+			DuplicatedLevel->RegisterTemplateActor(DuplicatedActor);
+		}
+		else
+		{
+			// Template actor가 아닌 경우만 Deferred BeginPlay 등록 (PIE 진입 시)
+			DuplicatedLevel->AddPendingBeginPlayActor(DuplicatedActor);
+		}
 	}
 }
 
@@ -448,4 +499,71 @@ void ULevel::OnPrimitiveUnregistered(UPrimitiveComponent* InComponent)
 	}
 
 	DynamicPrimitiveMap.Remove(InComponent);
+}
+
+AActor* ULevel::FindTemplateActorByName(const FName& InName) const
+{
+	for (AActor* TemplateActor : TemplateActors)
+	{
+		if (TemplateActor && TemplateActor->GetName() == InName)
+		{
+			return TemplateActor;
+		}
+	}
+	return nullptr;
+}
+
+TArray<AActor*> ULevel::FindTemplateActorsByClass(UClass* InClass) const
+{
+	TArray<AActor*> Result;
+	if (!InClass)
+	{
+		return Result;
+	}
+
+	for (AActor* TemplateActor : TemplateActors)
+	{
+		if (TemplateActor && TemplateActor->GetClass() == InClass)
+		{
+			Result.Add(TemplateActor);
+		}
+	}
+	return Result;
+}
+
+void ULevel::AddPendingBeginPlayActor(AActor* InActor)
+{
+	if (!InActor)
+	{
+		return;
+	}
+
+	// TSet이 자동으로 중복을 방지함
+	PendingBeginPlayActors.Add(InActor);
+}
+
+void ULevel::ProcessPendingBeginPlay()
+{
+	if (PendingBeginPlayActors.IsEmpty())
+	{
+		return;
+	}
+
+	// BeginPlay를 호출할 Actor들을 배열로 복사 (BeginPlay 중 새로운 Actor가 추가될 수 있음)
+	TArray<AActor*> ActorsToBeginPlay;
+	ActorsToBeginPlay.Reserve(PendingBeginPlayActors.Num());
+	for (AActor* Actor : PendingBeginPlayActors)
+	{
+		ActorsToBeginPlay.Add(Actor);
+	}
+	PendingBeginPlayActors.Empty();
+
+	// 모든 Pending Actor들의 BeginPlay 호출
+	for (AActor* Actor : ActorsToBeginPlay)
+	{
+		if (Actor)
+		{
+			Actor->BeginPlay();
+		}
+	}
 }

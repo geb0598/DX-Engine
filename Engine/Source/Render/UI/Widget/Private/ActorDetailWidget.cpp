@@ -88,6 +88,16 @@ void UActorDetailWidget::RenderWidget()
 			SelectedActor->SetTickInEditor(bTickInEditor);
 		}
 
+		bool bIsTemplate = SelectedActor->IsTemplate();
+		if (ImGui::Checkbox("Is Template", &bIsTemplate))
+		{
+			SelectedActor->SetIsTemplate(bIsTemplate);
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Template actors are hidden in PIE/Game mode but visible in Editor.\nUseful for object pooling or spawning templates.");
+		}
+
 		ImGui::PopStyleColor(4);
 	}
 

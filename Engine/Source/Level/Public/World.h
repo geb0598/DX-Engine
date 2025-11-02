@@ -59,6 +59,10 @@ public:
 	AActor* SpawnActor(const std::string& ClassName); // Helper for Lua binding (string overload)
 	bool DestroyActor(AActor* InActor); // Level의 void MarkActorForDeletion(AActor * InActor) 기능을 DestroyActor가 가짐
 
+	// Template Actor 검색 (Lua binding용 wrapper)
+	AActor* FindTemplateActorByName(const std::string& InName);
+	TArray<AActor*> FindTemplateActorsByClass(const std::string& ClassName);
+
 	// TODO: World Scope Query Entrypoint
 	// Editor에서 쿼리 요청시 Level에 바로 요청하지 않고 World를 통해 요청하도록 변경
 

@@ -986,6 +986,11 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	if (!CurrentLevel) { return; }
 
 	const FCameraConstants& ViewProj = InViewport->GetViewportClient()->GetCamera()->GetFViewProjConstants();
+
+	// PIE/Game 모드 체크 (전체 렌더링 로직에서 사용)
+	EWorldType WorldType = WorldToRender->GetWorldType();
+	bool bIsPIEOrGame = (WorldType == EWorldType::PIE || WorldType == EWorldType::Game);
+
 	static bool bCullingEnabled = false; // 임시 토글(초기값: 컬링 비활성)
 	TArray<UPrimitiveComponent*> FinalVisiblePrims;
 	if (!bCullingEnabled)
@@ -995,20 +1000,44 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 		{
 			TArray<UPrimitiveComponent*> AllStatics;
 			StaticOctree->GetAllPrimitives(AllStatics);
+
 			for (UPrimitiveComponent* Primitive : AllStatics)
 			{
 				if (Primitive && Primitive->IsVisible())
 				{
+					// PIE/Game 모드에서 template actor의 primitive는 제외
+					if (bIsPIEOrGame)
+					{
+						if (AActor* Owner = Primitive->GetOwner())
+						{
+							if (Owner->IsTemplate())
+							{
+								continue;
+							}
+						}
+					}
 					FinalVisiblePrims.Add(Primitive);
 				}
 			}
 		}
 		// 2) 동적 프리미티브 전부 수집
 		TArray<UPrimitiveComponent*> DynamicPrimitives = WorldToRender->GetLevel()->GetDynamicPrimitives();
+
 		for (UPrimitiveComponent* Primitive : DynamicPrimitives)
 		{
 			if (Primitive && Primitive->IsVisible())
 			{
+				// PIE/Game 모드에서 template actor의 primitive는 제외
+				if (bIsPIEOrGame)
+				{
+					if (AActor* Owner = Primitive->GetOwner())
+					{
+						if (Owner->IsTemplate())
+						{
+							continue;
+						}
+					}
+				}
 				FinalVisiblePrims.Add(Primitive);
 			}
 		}
@@ -1070,10 +1099,22 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	
 	for (const auto& LightComponent : CurrentLevel->GetLightComponents())
 	{
+		// PIE/Game 모드에서 template actor의 light는 제외
+		if (bIsPIEOrGame)
+		{
+			if (AActor* Owner = LightComponent->GetOwner())
+			{
+				if (Owner->IsTemplate())
+				{
+					continue;
+				}
+			}
+		}
+
 		if (auto PointLightComponent = Cast<UPointLightComponent>(LightComponent))
 		{
 			auto SpotLightComponent = Cast<USpotLightComponent>(LightComponent);
-			
+
 			if (SpotLightComponent &&
 				SpotLightComponent->GetVisible() &&
 				SpotLightComponent->GetLightEnabled())
@@ -1110,6 +1151,12 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	// 2. Collect HeightFogComponents from all actors in the level
 	for (const auto& Actor : CurrentLevel->GetLevelActors())
 	{
+		// PIE/Game 모드에서 템플릿 액터 스킵
+		if (bIsPIEOrGame && Actor->IsTemplate())
+		{
+			continue;
+		}
+
 		for (const auto& Component : Actor->GetOwnedComponents())
 		{
 			if (auto Fog = Cast<UHeightFogComponent>(Component))

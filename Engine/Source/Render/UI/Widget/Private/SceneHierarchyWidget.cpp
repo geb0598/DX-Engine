@@ -90,19 +90,44 @@ void USceneHierarchyWidget::RenderWidget()
 		// IMGui Clipper를 사용하여 눈에 보이는 부분만 렌더하여 비용을 절약한다.
 		if (SearchFilter.empty())
 		{
-			// 검색어가 없으면 모든 Actor 표시
-			ImGuiListClipper clipper;
-			clipper.Begin(LevelActors.Num());
-			while (clipper.Step())
+			// 일반 액터와 템플릿 액터 분리
+			TArray<AActor*> NormalActors;
+			TArray<AActor*> TemplateActors;
+
+			for (AActor* Actor : LevelActors)
 			{
-				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
+				if (Actor)
 				{
-					if (LevelActors[i])
-						RenderActorInfo(LevelActors[i], i);
+					if (Actor->IsTemplate())
+					{
+						TemplateActors.Add(Actor);
+					}
+					else
+					{
+						NormalActors.Add(Actor);
+					}
 				}
 			}
-			clipper.End();
 
+			// 일반 액터 렌더링
+			for (int32 i = 0; i < NormalActors.Num(); i++)
+			{
+				RenderActorInfo(NormalActors[i], i);
+			}
+
+			// 템플릿 액터가 있으면 구분선 추가
+			if (!TemplateActors.IsEmpty())
+			{
+				ImGui::Separator();
+				ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.0f, 1.0f), "Template Actors");
+				ImGui::Separator();
+
+				// 템플릿 액터 렌더링
+				for (int32 i = 0; i < TemplateActors.Num(); i++)
+				{
+					RenderActorInfo(TemplateActors[i], NormalActors.Num() + i);
+				}
+			}
 		}
 		else
 		{

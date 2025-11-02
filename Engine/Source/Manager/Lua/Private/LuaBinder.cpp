@@ -14,7 +14,9 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
         ),
         "GetTimeSeconds", &UWorld::GetTimeSeconds,
         "DestroyActor", &UWorld::DestroyActor,
-        "GetGameMode", &UWorld::GetGameMode
+        "GetGameMode", &UWorld::GetGameMode,
+        "FindTemplateActorByName", &UWorld::FindTemplateActorByName,
+        "FindTemplateActorsByClass", &UWorld::FindTemplateActorsByClass
     );
 
     // --- GWorld 인스턴스 접근자 (전역 함수) ---
@@ -131,6 +133,17 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		),
 		"UUID", sol::property(
 			&AActor::GetUUID
+		),
+		"IsTemplate", sol::property(
+			&AActor::IsTemplate,
+			&AActor::SetIsTemplate
+		),
+		"Duplicate", &AActor::Duplicate,
+		"DuplicateFromTemplate", sol::overload(
+			// 파라미터 없음 - 템플릿의 Outer Level에 추가
+			[](AActor* Self) { return Self->DuplicateFromTemplate(); },
+			// Level 지정 - 지정된 Level에 추가
+			[](AActor* Self, ULevel* TargetLevel) { return Self->DuplicateFromTemplate(TargetLevel); }
 		)
 	);
 
