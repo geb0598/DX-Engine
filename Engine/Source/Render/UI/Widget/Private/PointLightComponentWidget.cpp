@@ -114,13 +114,13 @@ void UPointLightComponentWidget::RenderWidget()
 
     // Intensity
     float Intensity = PointLightComponent->GetIntensity();
-    if (ImGui::DragFloat("Intensity", &Intensity, 0.1f, 0.0f, 20.0f))
+    if (ImGui::DragFloat("Intensity", &Intensity, 1.0f, 0.0f, FLT_MAX))
     {
         PointLightComponent->SetIntensity(Intensity);
     }
     if (ImGui::IsItemHovered())
     {
-        ImGui::SetTooltip("포인트 라이트 밝기\n범위: 0.0(꺼짐) ~ 20.0(최대)");
+        ImGui::SetTooltip("포인트 라이트 밝기 (Candela/Lumen)\n범위: 0.0 ~ 무제한");
     }
 
     // Attenuation Radius

@@ -103,13 +103,13 @@ void UDirectionalLightComponentWidget::RenderWidget()
     }
 
     float Intensity = DirectionalLightComponent->GetIntensity();
-    if (ImGui::DragFloat("Intensity", &Intensity, 0.1f, 0.0f, 20.0f))
+    if (ImGui::DragFloat("Intensity", &Intensity, 100.0f, 0.0f, FLT_MAX))
     {
         DirectionalLightComponent->SetIntensity(Intensity);
     }
     if (ImGui::IsItemHovered())
     {
-        ImGui::SetTooltip("디렉셔널 라이트 밝기\n범위: 0.0(꺼짐) ~ 20.0(최대)");
+        ImGui::SetTooltip("디렉셔널 라이트 밝기 (Lux)\n범위: 0.0 ~ 무제한\n참고: 실외 태양광 약 100000 lux");
     }
 
     /*

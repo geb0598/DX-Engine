@@ -702,11 +702,18 @@ void UActorDetailWidget::RenderTransformEdit()
 	ImGui::SameLine();
 
 	// Reset button
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
 	if (ImGui::SmallButton(reinterpret_cast<const char*>(u8"↻##ResetPos")))
 	{
 		PosArray[0] = PosArray[1] = PosArray[2] = 0.0f;
 		PosChanged = true;
 	}
+
+	ImGui::PopStyleColor(3);
+
 	if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Reset to zero"); }
 
 	if (PosChanged)
@@ -857,13 +864,23 @@ void UActorDetailWidget::RenderTransformEdit()
 	bIsAnyItemActive |= ImGui::IsItemActive();
 	ImGui::SameLine();
 
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
 	// Reset button
 	if (ImGui::SmallButton(reinterpret_cast<const char*>(u8"↻##ResetRot")))
 	{
 		RotArray[0] = RotArray[1] = RotArray[2] = 0.0f;
 		RotChanged = true;
 	}
-	if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Reset to zero"); }
+
+	ImGui::PopStyleColor(3);
+
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Reset to zero");
+	}
 
 	// 값 변경 시 컴포넌트에 반영
 	if (RotChanged)
@@ -884,24 +901,67 @@ void UActorDetailWidget::RenderTransformEdit()
 	// 드래그 상태 업데이트
 	bIsDraggingRotation = bIsAnyItemActive;
 
-	// Scale (항상 Relative Scale 표시)
-	FVector ComponentScale = SceneComponent->GetRelativeScale3D();
+	// Scale
+	bool bIsAbsoluteScale = SceneComponent->IsUsingAbsoluteScale();
+	FVector ComponentScale = bShowWorldScale ? SceneComponent->GetWorldScale3D() : SceneComponent->GetRelativeScale3D();
 	bool bUniformScale = SceneComponent->IsUniformScale();
 	if (bUniformScale)
 	{
 		float UniformScale = ComponentScale.X;
 		bool ScaleChanged = false;
 
-		// Scale Label (드롭다운 메뉴, 선택지는 하나만)
-		ImGui::SetNextItemWidth(120.0f);
-		if (ImGui::BeginCombo("##ScaleMode", "Scale", ImGuiComboFlags_NoArrowButton))
+		// Scale Label (드롭다운 메뉴)
+		const char* ScaleLabel = bIsAbsoluteScale ? "Absolute Scale" : "Scale";
+		ImGui::SetNextItemWidth(88.0f);
+		if (ImGui::BeginCombo("##ScaleMode", ScaleLabel, ImGuiComboFlags_NoArrowButton))
 		{
-			ImGui::Selectable("Scale", true);
+			if (ImGui::Selectable("Absolute Scale", bIsAbsoluteScale))
+			{
+				if (!bIsAbsoluteScale)
+				{
+					FVector CurrentWorldScale = SceneComponent->GetWorldScale3D();
+					SceneComponent->SetAbsoluteScale(true);
+					SceneComponent->SetRelativeScale3D(CurrentWorldScale);
+				}
+				bShowWorldScale = true;
+			}
+			if (ImGui::Selectable("Scale", !bIsAbsoluteScale))
+			{
+				if (bIsAbsoluteScale)
+				{
+					FVector CurrentWorldScale = SceneComponent->GetWorldScale3D();
+					SceneComponent->SetAbsoluteScale(false);
+					SceneComponent->SetWorldScale3D(CurrentWorldScale);
+				}
+				bShowWorldScale = false;
+			}
 			ImGui::EndCombo();
 		}
-		if (ImGui::IsItemHovered())
+		ImGui::SameLine();
+
+		// Lock button (Uniform Scale toggle) - 이미지 렌더링
+		UTexture* CurrentLockIcon = bUniformScale ? LockIcon : UnlockIcon;
+		if (CurrentLockIcon)
 		{
-			ImGui::SetTooltip("Scale is always relative");
+			ID3D11ShaderResourceView* LockSRV = CurrentLockIcon->GetTextureSRV();
+			ImTextureID LockTexID = reinterpret_cast<ImTextureID>(LockSRV);
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
+			ImVec2 ButtonSize(16.0f, 16.0f);
+			if (ImGui::ImageButton("##LockScale", LockTexID, ButtonSize))
+			{
+				SceneComponent->SetUniformScale(!bUniformScale);
+			}
+
+			ImGui::PopStyleColor(3);
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip(bUniformScale ? "Locked: Uniform Scale" : "Unlocked: Non-uniform Scale");
+			}
 		}
 		ImGui::SameLine();
 
@@ -919,16 +979,31 @@ void UActorDetailWidget::RenderTransformEdit()
 		ImGui::SameLine();
 
 		// Reset button
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
 		if (ImGui::SmallButton(reinterpret_cast<const char*>(u8"↻##ResetScale")))
 		{
 			UniformScale = 1.0f;
 			ScaleChanged = true;
 		}
+
+		ImGui::PopStyleColor(3);
+
 		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Reset to 1.0"); }
 
 		if (ScaleChanged)
 		{
-			SceneComponent->SetRelativeScale3D({UniformScale, UniformScale, UniformScale});
+			FVector NewScale = {UniformScale, UniformScale, UniformScale};
+			if (bShowWorldScale)
+			{
+				SceneComponent->SetWorldScale3D(NewScale);
+			}
+			else
+			{
+				SceneComponent->SetRelativeScale3D(NewScale);
+			}
 		}
 	}
 	else
@@ -936,16 +1011,58 @@ void UActorDetailWidget::RenderTransformEdit()
 		float ScaleArray[3] = { ComponentScale.X, ComponentScale.Y, ComponentScale.Z };
 		bool ScaleChanged = false;
 
-		// Scale Label
-		ImGui::SetNextItemWidth(120.0f);
-		if (ImGui::BeginCombo("##ScaleMode", "Scale", ImGuiComboFlags_NoArrowButton))
+		// Scale Label (드롭다운 메뉴)
+		const char* ScaleLabel = bIsAbsoluteScale ? "Absolute Scale" : "Scale";
+		ImGui::SetNextItemWidth(88.0f);
+		if (ImGui::BeginCombo("##ScaleMode", ScaleLabel, ImGuiComboFlags_NoArrowButton))
 		{
-			ImGui::Selectable("Scale", true);
+			if (ImGui::Selectable("Absolute Scale", bIsAbsoluteScale))
+			{
+				if (!bIsAbsoluteScale)
+				{
+					FVector CurrentWorldScale = SceneComponent->GetWorldScale3D();
+					SceneComponent->SetAbsoluteScale(true);
+					SceneComponent->SetRelativeScale3D(CurrentWorldScale);
+				}
+				bShowWorldScale = true;
+			}
+			if (ImGui::Selectable("Scale", !bIsAbsoluteScale))
+			{
+				if (bIsAbsoluteScale)
+				{
+					FVector CurrentWorldScale = SceneComponent->GetWorldScale3D();
+					SceneComponent->SetAbsoluteScale(false);
+					SceneComponent->SetWorldScale3D(CurrentWorldScale);
+				}
+				bShowWorldScale = false;
+			}
 			ImGui::EndCombo();
 		}
-		if (ImGui::IsItemHovered())
+		ImGui::SameLine();
+
+		// Lock button (Uniform Scale toggle) - 이미지 렌더링
+		UTexture* CurrentLockIcon = bUniformScale ? LockIcon : UnlockIcon;
+		if (CurrentLockIcon)
 		{
-			ImGui::SetTooltip("Scale is always relative");
+			ID3D11ShaderResourceView* LockSRV = CurrentLockIcon->GetTextureSRV();
+			ImTextureID LockTexID = reinterpret_cast<ImTextureID>(LockSRV);
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
+			ImVec2 ButtonSize(16.0f, 16.0f);
+			if (ImGui::ImageButton("##LockScaleNonUniform", LockTexID, ButtonSize))
+			{
+				SceneComponent->SetUniformScale(!bUniformScale);
+			}
+
+			ImGui::PopStyleColor(3);
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip(bUniformScale ? "Locked: Uniform Scale" : "Unlocked: Non-uniform Scale");
+			}
 		}
 		ImGui::SameLine();
 
@@ -974,34 +1091,35 @@ void UActorDetailWidget::RenderTransformEdit()
 		ImGui::SameLine();
 
 		// Reset button
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
 		if (ImGui::SmallButton(reinterpret_cast<const char*>(u8"↻##ResetScale")))
 		{
 			ScaleArray[0] = ScaleArray[1] = ScaleArray[2] = 1.0f;
 			ScaleChanged = true;
 		}
+
+		ImGui::PopStyleColor(3);
+
 		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Reset to 1.0"); }
 
 		if (ScaleChanged)
 		{
-			ComponentScale.X = ScaleArray[0];
-			ComponentScale.Y = ScaleArray[1];
-			ComponentScale.Z = ScaleArray[2];
-			SceneComponent->SetRelativeScale3D(ComponentScale);
+			FVector NewScale(ScaleArray[0], ScaleArray[1], ScaleArray[2]);
+			if (bShowWorldScale)
+			{
+				SceneComponent->SetWorldScale3D(NewScale);
+			}
+			else
+			{
+				SceneComponent->SetRelativeScale3D(NewScale);
+			}
 		}
 	}
 
 	ImGui::PopStyleColor(3);
-
-	// Uniform Scale 체크박스 색상 설정
-	ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-
-	ImGui::Checkbox("Uniform Scale", &bUniformScale);
-	SceneComponent->SetUniformScale(bUniformScale);
-
-	ImGui::PopStyleColor(4);
 
 	ImGui::PopID();
 }
@@ -1138,6 +1256,18 @@ void UActorDetailWidget::LoadActorIcons()
 		}
 	}
 	UE_LOG_SUCCESS("ActorDetailWidget: 아이콘 로드 완료 (%d/%d)", LoadedCount, (int32)IconFiles.Num());
+
+	// Lock/Unlock 아이콘 로드
+	LockIcon = AssetManager.LoadTexture((IconBasePath + "Lock.png").data());
+	UnlockIcon = AssetManager.LoadTexture((IconBasePath + "Unlock.png").data());
+	if (LockIcon && UnlockIcon)
+	{
+		UE_LOG("ActorDetailWidget: Lock/Unlock 아이콘 로드 성공");
+	}
+	else
+	{
+		UE_LOG_WARNING("ActorDetailWidget: Lock/Unlock 아이콘 로드 실패");
+	}
 }
 
 /**

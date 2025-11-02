@@ -35,6 +35,7 @@ private:
 	// Transform display mode (true: World/Absolute, false: Local/Relative)
 	bool bShowWorldLocation = false;
 	bool bShowWorldRotation = false;
+	bool bShowWorldScale = false;
 
 	// Helper functions
 	void RenderActorHeader(AActor* InSelectedActor);
@@ -63,6 +64,10 @@ private:
 	TMap<FString, UTexture*> IconTextureMap; // 클래스 이름 -> 아이콘 텍스처 매핑
 	void LoadActorIcons();
 	UTexture* GetIconForActor(AActor* InActor);
+
+	// Lock/Unlock 아이콘
+	UTexture* LockIcon = nullptr;
+	UTexture* UnlockIcon = nullptr;
 
 	// 액터/컴포넌트 삭제 시스템
 	void DeleteActorOrComponent(AActor* InActor);

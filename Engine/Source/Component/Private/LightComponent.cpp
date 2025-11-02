@@ -90,7 +90,7 @@ void ULightComponent::UpdateVisualizationIconTint()
     ClampedColor.Y = std::clamp(ClampedColor.Y, 0.0f, 1.0f);
     ClampedColor.Z = std::clamp(ClampedColor.Z, 0.0f, 1.0f);
 
-    float NormalizedIntensity = std::clamp(GetIntensity(), 0.0f, 20.0f) / 20.0f;
+    float NormalizedIntensity = std::min(GetIntensity() / 20.0f, 1.0f);
     FVector4 Tint(ClampedColor.X, ClampedColor.Y, ClampedColor.Z, 1.0f);
     VisualizationIcon->SetSpriteTint(Tint);
 }

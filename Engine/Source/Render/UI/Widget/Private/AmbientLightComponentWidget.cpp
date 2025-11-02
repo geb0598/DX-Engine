@@ -89,13 +89,13 @@ void UAmbientLightComponentWidget::RenderWidget()
 	}
 
 	float Intensity = AmbientLightComponent->GetIntensity();
-	if (ImGui::DragFloat("Intensity", &Intensity, 0.1f, 0.0f, 20.0f))
+	if (ImGui::DragFloat("Intensity", &Intensity, 0.1f, 0.0f, FLT_MAX))
 	{
 		AmbientLightComponent->SetIntensity(Intensity);
 	}
 	if (ImGui::IsItemHovered())
 	{
-		ImGui::SetTooltip("환경광 밝기\n범위: 0.0(꺼짐) ~ 20.0(최대)");
+		ImGui::SetTooltip("환경광 밝기\n범위: 0.0 ~ 무제한");
 	}
 	
 	ImGui::PopStyleColor(3);

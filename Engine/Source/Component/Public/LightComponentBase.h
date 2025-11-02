@@ -54,8 +54,8 @@ public:
 
     // virtual FSphere GetBoundingSphere() const;
     
-    /** @note Sets the light intensity and clamps it to the same range as Unreal Engine (0.0 - 20.0). */
-    virtual void SetIntensity(float InIntensity) { Intensity = std::clamp(InIntensity, 0.0f, 20.0f); }
+    /** @note Sets the light intensity (minimum 0.0, no maximum limit like Unreal Engine). */
+    virtual void SetIntensity(float InIntensity) { Intensity = std::max(InIntensity, 0.0f); }
 
     virtual void SetLightColor(FVector InLightColor) { LightColor = InLightColor; }
     
