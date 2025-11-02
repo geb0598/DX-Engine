@@ -46,7 +46,7 @@ void UActorDetailWidget::RenderWidget()
 	{
 		ImGui::TextUnformatted("No Object Selected");
 		ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "Detail 확인을 위해 Object를 선택해주세요");
-		SelectedComponent = nullptr; 
+		SelectedComponent = nullptr;
 		CachedSelectedActor = nullptr;
 		return;
 	}
@@ -60,14 +60,14 @@ void UActorDetailWidget::RenderWidget()
 
 	    // Actor 헤더 렌더링 (이름 + rename 기능)
 	    RenderActorHeader(SelectedActor);
-	
+
 	    ImGui::Separator();
-	
+
 	    // CollapsingHeader 검은색 스타일 적용
 	    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 	    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 	    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-	    
+
 	    if (ImGui::CollapsingHeader("Tick Settings"))
 	    {
 	        // 체크박스 검은색 스타일 적용
@@ -75,28 +75,28 @@ void UActorDetailWidget::RenderWidget()
 	        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 	        ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
 	        ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-	        
+
 	        bool bCanEverTick = SelectedActor->CanTick();
 	        if (ImGui::Checkbox("Enable Tick", &bCanEverTick))
 	        {
 	            SelectedActor->SetCanTick(bCanEverTick);
 	        }
-	
+
 	        bool bTickInEditor = SelectedActor->CanTickInEditor();
 	        if (ImGui::Checkbox("Tick in Editor", &bTickInEditor))
 	        {
 	            SelectedActor->SetTickInEditor(bTickInEditor);
 	        }
-	        
+
 	        ImGui::PopStyleColor(4);
 	    }
-	    
+
 	    ImGui::PopStyleColor(3);
 	ImGui::Separator();
 
 	// 컴포넌트 트리 렌더링
 	RenderComponents(SelectedActor);
-	
+
 	// 선택된 컴포넌트의 트랜스폼 정보 렌더링
 	RenderTransformEdit();
 
@@ -138,14 +138,14 @@ void UActorDetailWidget::RenderActorHeader(AActor* InSelectedActor)
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-		
+
 		ImGui::SetKeyboardFocusHere();
 		if (ImGui::InputText("##ActorRename", ActorNameBuffer, sizeof(ActorNameBuffer),
 		                     ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 		{
 			FinishRenamingActor(InSelectedActor);
 		}
-		
+
 		ImGui::PopStyleColor(3);
 
 		// ESC로 취소, InputManager보다 일단 내부 API로 입력 받는 것으로 처리
@@ -191,13 +191,13 @@ void UActorDetailWidget::RenderComponents(AActor* InSelectedActor)
 		ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No components");
 		return;
 	}
-	
+
 	if (InSelectedActor->GetRootComponent())
 	{
 		RenderSceneComponents(InSelectedActor->GetRootComponent());
 	}
 	ImGui::Separator();
-	
+
 	bool bHasActorComponents = false;
 	for (UActorComponent* Component : Components)
 	{
@@ -281,13 +281,13 @@ void UActorDetailWidget::RenderSceneComponents(USceneComponent* InSceneComponent
 				ImGui::EndDragDropTarget();		ImGui::TreePop();
 				return;
 			}
-			
+
 			if (DraggedComp->GetAttachParent() == InSceneComponent)
 			{
 				ImGui::EndDragDropTarget();		ImGui::TreePop();
 				return;
 			}
-			
+
 			// -----------------------------
 			// 자기 자신이나 자식에게 Drop 방지
 			// -----------------------------
@@ -398,7 +398,7 @@ void UActorDetailWidget::RenderActorComponent(UActorComponent* InActorComponent)
 		SelectedComponent = InActorComponent;
 		GEditor->GetEditorModule()->SelectComponent(SelectedComponent);
 	}
-    
+
 	if (bNodeOpen)
 	{
 		ImGui::TreePop();
@@ -418,12 +418,12 @@ void UActorDetailWidget::RenderAddComponentButton(AActor* InSelectedActor)
 		ImGui::OpenPopup("AddComponentPopup");
 	}
 
-    ImGui::SetNextWindowContentSize(ImVec2(200.0f, 0.0f)); 
+    ImGui::SetNextWindowContentSize(ImVec2(200.0f, 0.0f));
 	if (ImGui::BeginPopup("AddComponentPopup"))
 	{
 		ImGui::Text("Add Component");
 		ImGui::Separator();
-		
+
 		for (auto& Pair : ComponentClasses)
 		{
 			const char* CName = Pair.first.c_str();
@@ -470,7 +470,7 @@ void UActorDetailWidget::AddComponentByName(AActor* InSelectedActor, const FStri
 		return;
 	}
 
-	UActorComponent* NewComponent = InSelectedActor->AddComponent(ComponentClasses[InComponentName]); 
+	UActorComponent* NewComponent = InSelectedActor->AddComponent(ComponentClasses[InComponentName]);
 	if (!NewComponent)
 	{
 		UE_LOG_ERROR("ActorDetailWidget: 알 수 없는 컴포넌트 타입 '%s'을(를) 추가할 수 없습니다.", InComponentName.data());
@@ -560,7 +560,7 @@ void UActorDetailWidget::CancelRenamingActor()
 void UActorDetailWidget::RenderTransformEdit()
 {
 	if (!SelectedComponent) { return; }
-	
+
 	// --- Component General Properties ---
 	ImGui::Text("Component Properties");
 	ImGui::PushID(SelectedComponent);
@@ -570,7 +570,7 @@ void UActorDetailWidget::RenderTransformEdit()
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-	
+
 	// bCanEverTick 체크박스
 	bool bTickEnabled = SelectedComponent->CanEverTick();
 	if (ImGui::Checkbox("Enable Tick (bCanEverTick)", &bTickEnabled))
@@ -584,7 +584,7 @@ void UActorDetailWidget::RenderTransformEdit()
 	{
 		SelectedComponent->SetIsEditorOnly(bIsEditorOnly);
 	}
-	
+
 	ImGui::PopStyleColor(4);
 
 	ImGui::PopID();
@@ -609,49 +609,61 @@ void UActorDetailWidget::RenderTransformEdit()
 
 	// Location
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
-	static FVector cachedLocation = FVector::ZeroVector();
+	static FVector CachedLocation = FVector::ZeroVector();
 	static bool bIsDraggingLocation = false;
 	static USceneComponent* lastDraggedLocationComponent = nullptr;
-	static bool lastShowWorldLocation = false;
+	static bool LastShowWorldLocation = false;
 
 	// 컴포넌트 전환 또는 World/Local 모드 전환 시 캐싱
-	if (lastDraggedLocationComponent != SceneComponent || lastShowWorldLocation != bShowWorldLocation)
+	if (lastDraggedLocationComponent != SceneComponent || LastShowWorldLocation != bShowWorldLocation)
 	{
-		cachedLocation = bShowWorldLocation ? SceneComponent->GetWorldLocation() : SceneComponent->GetRelativeLocation();
+		CachedLocation = bShowWorldLocation ? SceneComponent->GetWorldLocation() : SceneComponent->GetRelativeLocation();
 		lastDraggedLocationComponent = SceneComponent;
-		lastShowWorldLocation = bShowWorldLocation;
+		LastShowWorldLocation = bShowWorldLocation;
 		bIsDraggingLocation = false;
 	}
 
 	// 드래그 중이 아닐 때만 동기화
 	if (!bIsDraggingLocation)
 	{
-		cachedLocation = bShowWorldLocation ? SceneComponent->GetWorldLocation() : SceneComponent->GetRelativeLocation();
+		CachedLocation = bShowWorldLocation ? SceneComponent->GetWorldLocation() : SceneComponent->GetRelativeLocation();
 	}
 
-	float PosArray[3] = { cachedLocation.X, cachedLocation.Y, cachedLocation.Z };
+	float PosArray[3] = { CachedLocation.X, CachedLocation.Y, CachedLocation.Z };
 	bool PosChanged = false;
 
 	// Location Label (드롭다운 메뉴)
-	const char* LocationLabel = bShowWorldLocation ? "Absolute Location" : "Location";
+	bool bIsAbsoluteLocation = SceneComponent->IsUsingAbsoluteLocation();
+	const char* LocationLabel = bIsAbsoluteLocation ? "Absolute Location" : "Location";
 	ImGui::SetNextItemWidth(120.0f); // 고정 너비로 테이블 정렬
 	if (ImGui::BeginCombo("##LocationMode", LocationLabel, ImGuiComboFlags_NoArrowButton))
 	{
-		bool bSelectWorld = bShowWorldLocation;
-		bool bSelectLocal = !bShowWorldLocation;
-
-		if (ImGui::Selectable("Absolute Location", bSelectWorld))
+		if (ImGui::Selectable("Absolute Location", bIsAbsoluteLocation))
 		{
+			if (!bIsAbsoluteLocation)
+			{
+				// 현재 월드 위치를 유지하면서 Absolute로 전환
+				FVector CurrentWorldLocation = SceneComponent->GetWorldLocation();
+				SceneComponent->SetAbsoluteLocation(true);
+				SceneComponent->SetRelativeLocation(CurrentWorldLocation);
+			}
 			bShowWorldLocation = true;
-			cachedLocation = SceneComponent->GetWorldLocation();
-			lastShowWorldLocation = bShowWorldLocation;
+			CachedLocation = SceneComponent->GetWorldLocation();
+			LastShowWorldLocation = bShowWorldLocation;
 			bIsDraggingLocation = false;
 		}
-		if (ImGui::Selectable("Location", bSelectLocal))
+		if (ImGui::Selectable("Location", !bIsAbsoluteLocation))
 		{
+			if (bIsAbsoluteLocation)
+			{
+				// 현재 월드 위치를 유지하면서 Relative로 전환
+				FVector CurrentWorldLocation = SceneComponent->GetWorldLocation();
+				SceneComponent->SetAbsoluteLocation(false);
+				SceneComponent->SetWorldLocation(CurrentWorldLocation);
+			}
 			bShowWorldLocation = false;
-			cachedLocation = SceneComponent->GetRelativeLocation();
-			lastShowWorldLocation = bShowWorldLocation;
+			CachedLocation = SceneComponent->GetRelativeLocation();
+			LastShowWorldLocation = bShowWorldLocation;
 			bIsDraggingLocation = false;
 		}
 		ImGui::EndCombo();
@@ -699,16 +711,16 @@ void UActorDetailWidget::RenderTransformEdit()
 
 	if (PosChanged)
 	{
-		cachedLocation.X = PosArray[0];
-		cachedLocation.Y = PosArray[1];
-		cachedLocation.Z = PosArray[2];
+		CachedLocation.X = PosArray[0];
+		CachedLocation.Y = PosArray[1];
+		CachedLocation.Z = PosArray[2];
 		if (bShowWorldLocation)
 		{
-			SceneComponent->SetWorldLocation(cachedLocation);
+			SceneComponent->SetWorldLocation(CachedLocation);
 		}
 		else
 		{
-			SceneComponent->SetRelativeLocation(cachedLocation);
+			SceneComponent->SetRelativeLocation(CachedLocation);
 		}
 	}
 
@@ -716,7 +728,7 @@ void UActorDetailWidget::RenderTransformEdit()
 	bIsDraggingLocation = bIsAnyLocationItemActive;
 
 	// Rotation (캐싱 방식으로 Quaternion과 Euler 변환 오차 방지)
-	static FVector cachedRotation = FVector::ZeroVector();
+	static FVector CachedRotation = FVector::ZeroVector();
 	static bool bIsDraggingRotation = false;
 	static USceneComponent* lastDraggedComponent = nullptr;
 	static bool lastShowWorldRotation = false;
@@ -730,11 +742,11 @@ void UActorDetailWidget::RenderTransformEdit()
 	{
 		if (bShowWorldRotation)
 		{
-			cachedRotation = SceneComponent->GetWorldRotationAsQuaternion().ToEuler();
+			CachedRotation = SceneComponent->GetWorldRotationAsQuaternion().ToEuler();
 		}
 		else
 		{
-			cachedRotation = SceneComponent->GetRelativeRotation().ToEuler();
+			CachedRotation = SceneComponent->GetRelativeRotation().ToEuler();
 		}
 		lastDraggedComponent = SceneComponent;
 		lastShowWorldRotation = bShowWorldRotation;
@@ -747,53 +759,65 @@ void UActorDetailWidget::RenderTransformEdit()
 		if (bShowWorldRotation)
 		{
 			FQuaternion WorldQuat = SceneComponent->GetWorldRotationAsQuaternion();
-			cachedRotation = WorldQuat.ToEuler();
+			CachedRotation = WorldQuat.ToEuler();
 		}
 		else
 		{
 			FQuaternion RelativeQuat = SceneComponent->GetRelativeRotation();
-			cachedRotation = RelativeQuat.ToEuler();
+			CachedRotation = RelativeQuat.ToEuler();
 		}
 	}
 
 	// 작은 값은 0으로 스냅 (부동소수점 오차 제거)
 	constexpr float ZeroSnapThreshold = 0.0001f;
-	if (std::abs(cachedRotation.X) < ZeroSnapThreshold)
+	if (std::abs(CachedRotation.X) < ZeroSnapThreshold)
 	{
-		cachedRotation.X = 0.0f;
+		CachedRotation.X = 0.0f;
 	}
-	if (std::abs(cachedRotation.Y) < ZeroSnapThreshold)
+	if (std::abs(CachedRotation.Y) < ZeroSnapThreshold)
 	{
-		cachedRotation.Y = 0.0f;
+		CachedRotation.Y = 0.0f;
 	}
-	if (std::abs(cachedRotation.Z) < ZeroSnapThreshold)
+	if (std::abs(CachedRotation.Z) < ZeroSnapThreshold)
 	{
-		cachedRotation.Z = 0.0f;
+		CachedRotation.Z = 0.0f;
 	}
 
-	float RotArray[3] = { cachedRotation.X, cachedRotation.Y, cachedRotation.Z };
+	float RotArray[3] = { CachedRotation.X, CachedRotation.Y, CachedRotation.Z };
 	bool RotChanged = false;
 
 	// Rotation Label (드롭다운 메뉴)
-	const char* RotationLabel = bShowWorldRotation ? "Absolute Rotation" : "Rotation";
+	bool bIsAbsoluteRotation = SceneComponent->IsUsingAbsoluteRotation();
+	const char* RotationLabel = bIsAbsoluteRotation ? "Absolute Rotation" : "Rotation";
 	ImGui::SetNextItemWidth(120.0f); // 고정 너비로 테이블 정렬
 	if (ImGui::BeginCombo("##RotationMode", RotationLabel, ImGuiComboFlags_NoArrowButton))
 	{
-		bool bSelectWorld = bShowWorldRotation;
-		bool bSelectLocal = !bShowWorldRotation;
-
-		if (ImGui::Selectable("Absolute Rotation", bSelectWorld))
+		if (ImGui::Selectable("Absolute Rotation", bIsAbsoluteRotation))
 		{
+			if (!bIsAbsoluteRotation)
+			{
+				// 현재 월드 회전을 유지하면서 Absolute로 전환
+				FQuaternion CurrentWorldRotation = SceneComponent->GetWorldRotationAsQuaternion();
+				SceneComponent->SetAbsoluteRotation(true);
+				SceneComponent->SetRelativeRotation(CurrentWorldRotation);
+			}
 			bShowWorldRotation = true;
-			cachedRotation = SceneComponent->GetWorldRotationAsQuaternion().ToEuler();
+			CachedRotation = SceneComponent->GetWorldRotationAsQuaternion().ToEuler();
 			lastShowWorldRotation = bShowWorldRotation;
 			lastDraggedComponent = SceneComponent;
 			bIsDraggingRotation = false;
 		}
-		if (ImGui::Selectable("Rotation", bSelectLocal))
+		if (ImGui::Selectable("Rotation", !bIsAbsoluteRotation))
 		{
+			if (bIsAbsoluteRotation)
+			{
+				// 현재 월드 회전을 유지하면서 Relative로 전환
+				FQuaternion CurrentWorldRotation = SceneComponent->GetWorldRotationAsQuaternion();
+				SceneComponent->SetAbsoluteRotation(false);
+				SceneComponent->SetWorldRotation(CurrentWorldRotation);
+			}
 			bShowWorldRotation = false;
-			cachedRotation = SceneComponent->GetRelativeRotation().ToEuler();
+			CachedRotation = SceneComponent->GetRelativeRotation().ToEuler();
 			lastShowWorldRotation = bShowWorldRotation;
 			lastDraggedComponent = SceneComponent;
 			bIsDraggingRotation = false;
@@ -844,16 +868,16 @@ void UActorDetailWidget::RenderTransformEdit()
 	// 값 변경 시 컴포넌트에 반영
 	if (RotChanged)
 	{
-		cachedRotation.X = RotArray[0];
-		cachedRotation.Y = RotArray[1];
-		cachedRotation.Z = RotArray[2];
+		CachedRotation.X = RotArray[0];
+		CachedRotation.Y = RotArray[1];
+		CachedRotation.Z = RotArray[2];
 		if (bShowWorldRotation)
 		{
-			SceneComponent->SetWorldRotationPreservingChildren(cachedRotation);
+			SceneComponent->SetWorldRotation(CachedRotation);
 		}
 		else
 		{
-			SceneComponent->SetRelativeRotationPreservingChildren(FQuaternion::FromEuler(cachedRotation));
+			SceneComponent->SetRelativeRotation(FQuaternion::FromEuler(CachedRotation));
 		}
 	}
 
@@ -965,20 +989,20 @@ void UActorDetailWidget::RenderTransformEdit()
 			SceneComponent->SetRelativeScale3D(ComponentScale);
 		}
 	}
-	
+
 	ImGui::PopStyleColor(3);
-	
+
 	// Uniform Scale 체크박스 색상 설정
 	ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-	
+
 	ImGui::Checkbox("Uniform Scale", &bUniformScale);
 	SceneComponent->SetUniformScale(bUniformScale);
-	
+
 	ImGui::PopStyleColor(4);
-	
+
 	ImGui::PopID();
 }
 
@@ -1131,7 +1155,7 @@ UTexture* UActorDetailWidget::GetIconForActor(AActor* InActor)
 	// 클래스 이름 가져오기
 	FString OriginalClassName = InActor->GetClass()->GetName().ToString();
 	FString ClassName = OriginalClassName;
-	
+
 	// 'A' 접두사 제거 (예: AStaticMeshActor -> StaticMeshActor)
 	if (ClassName.size() > 1 && ClassName[0] == 'A')
 	{
