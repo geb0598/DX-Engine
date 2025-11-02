@@ -1004,7 +1004,7 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 			}
 		}
 		// 2) 동적 프리미티브 전부 수집
-		TArray<UPrimitiveComponent*>& DynamicPrimitives = WorldToRender->GetLevel()->GetDynamicPrimitives();
+		TArray<UPrimitiveComponent*> DynamicPrimitives = WorldToRender->GetLevel()->GetDynamicPrimitives();
 		for (UPrimitiveComponent* Primitive : DynamicPrimitives)
 		{
 			if (Primitive && Primitive->IsVisible())
@@ -1356,7 +1356,7 @@ void URenderer::RenderHitProxyPass(UCamera* InCamera, const D3D11_VIEWPORT& InVi
 	}
 
 	// 동적 프리미티브 수집
-	TArray<UPrimitiveComponent*>& DynamicPrimitives = CurrentLevel->GetDynamicPrimitives();
+	TArray<UPrimitiveComponent*> DynamicPrimitives = CurrentLevel->GetDynamicPrimitives();
 	for (UPrimitiveComponent* Primitive : DynamicPrimitives)
 	{
 		if (Primitive && Primitive->IsVisible())

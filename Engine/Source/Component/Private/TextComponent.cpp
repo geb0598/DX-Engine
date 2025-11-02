@@ -15,6 +15,10 @@ UTextComponent::UTextComponent()
 	Indices = &PickingAreaIndex;
 	NumIndices = static_cast<uint32>(PickingAreaIndex.Num());
 
+	// BoundingBox는 멤버 변수(PickingAreaBoundingBox)를 가리키므로
+	// Duplicate() 시 PrimitiveComponent::Duplicate()이 복사하지 않도록 함
+	bOwnsBoundingBox = true;
+
 	RegulatePickingAreaByTextLength();
 }
 
@@ -49,6 +53,12 @@ UObject* UTextComponent::Duplicate()
 {
 	UTextComponent* TextComponent = Cast<UTextComponent>(Super::Duplicate());
 	TextComponent->Text = Text;
+
+	// BoundingBox를 복사본 자신의 멤버 변수로 재설정
+	// RegulatePickingAreaByTextLength()는 생성자에서 이미 호출되었지만,
+	// SetText()로 텍스트가 변경되었으므로 다시 호출하여 BoundingBox 재계산
+	TextComponent->RegulatePickingAreaByTextLength();
+
 	return TextComponent;
 }
 

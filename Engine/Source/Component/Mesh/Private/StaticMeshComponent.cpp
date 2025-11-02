@@ -152,6 +152,16 @@ UObject* UStaticMeshComponent::Duplicate()
 	StaticMeshComponent->StaticMesh = StaticMesh;
 	StaticMeshComponent->OverrideMaterials = OverrideMaterials;
 	StaticMeshComponent->NormalMapEnabled = NormalMapEnabled;
+
+	// BoundingBox를 복사된 StaticMesh에 맞게 재설정
+	// PrimitiveComponent::Duplicate()이 원본의 BoundingBox를 복사했지만,
+	// 명시적으로 재설정하여 논리적 완결성 확보
+	if (StaticMesh)
+	{
+		UAssetManager& AssetManager = UAssetManager::GetInstance();
+		StaticMeshComponent->BoundingBox = &AssetManager.GetStaticMeshAABB(StaticMesh->GetAssetPathFileName());
+	}
+
 	return StaticMeshComponent;
 }
 
