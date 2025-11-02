@@ -164,7 +164,7 @@ protected:
 	bool bBegunPlay = false;
 	/** @brief True if the actor is marked for destruction. */
 	bool bIsPendingDestroy = false;
-	/** @brief True if the actor is a template (CDO-like). Hides in PIE but shows in Editor. */
+	/** @brief True if the actor is a template. Hides in PIE but shows in Editor. */
 	bool bIsTemplate = false;
 
 private:

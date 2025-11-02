@@ -87,7 +87,7 @@ void USceneHierarchyWidget::RenderWidget()
 	// Actor 리스트를 스크롤 가능한 영역으로 표시
 	if (ImGui::BeginChild("ActorList", ImVec2(0, 0), true))
 	{
-		// IMGui Clipper를 사용하여 눈에 보이는 부분만 렌더하여 비용을 절약한다.
+		// ImGui Clipper를 사용하여 눈에 보이는 부분만 렌더하여 비용을 절약한다.
 		if (SearchFilter.empty())
 		{
 			// 일반 액터와 템플릿 액터 분리
@@ -109,25 +109,50 @@ void USceneHierarchyWidget::RenderWidget()
 				}
 			}
 
-			// 일반 액터 렌더링
-			for (int32 i = 0; i < NormalActors.Num(); i++)
-			{
-				RenderActorInfo(NormalActors[i], i);
-			}
+			// 전체 항목 수 계산: 일반 액터 + (구분선 3줄) + 템플릿 액터
+			int32 normalCount = NormalActors.Num();
+			int32 templateCount = TemplateActors.Num();
+			int32 separatorLines = templateCount > 0 ? 3 : 0; // Separator 2개 + 텍스트 1개
+			int32 totalItems = normalCount + separatorLines + templateCount;
 
-			// 템플릿 액터가 있으면 구분선 추가
-			if (!TemplateActors.IsEmpty())
+			// 단일 Clipper로 전체 렌더링
+			ImGuiListClipper clipper;
+			clipper.Begin(totalItems);
+			while (clipper.Step())
 			{
-				ImGui::Separator();
-				ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.0f, 1.0f), "Template Actors");
-				ImGui::Separator();
-
-				// 템플릿 액터 렌더링
-				for (int32 i = 0; i < TemplateActors.Num(); i++)
+				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 				{
-					RenderActorInfo(TemplateActors[i], NormalActors.Num() + i);
+					if (i < normalCount)
+					{
+						// 일반 액터
+						RenderActorInfo(NormalActors[i], i);
+					}
+					else if (i < normalCount + separatorLines)
+					{
+						// 구분선 영역 (3줄)
+						int separatorLine = i - normalCount;
+						if (separatorLine == 0)
+						{
+							ImGui::Separator();
+						}
+						else if (separatorLine == 1)
+						{
+							ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.0f, 1.0f), "Template Actors");
+						}
+						else if (separatorLine == 2)
+						{
+							ImGui::Separator();
+						}
+					}
+					else
+					{
+						// 템플릿 액터
+						int templateIndex = i - normalCount - separatorLines;
+						RenderActorInfo(TemplateActors[templateIndex], i);
+					}
 				}
 			}
+			clipper.End();
 		}
 		else
 		{
