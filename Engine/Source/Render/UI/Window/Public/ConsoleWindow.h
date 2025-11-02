@@ -30,8 +30,11 @@ public:
 
 	bool IsSingleton() override { return true; }
 
+	bool OnWindowClose() override;
+
 protected:
 	void OnPreRenderWindow(float MenuBarOffset) override;
+	void OnPostRenderWindow() override;
 
 private:
 	// Console Widget
@@ -54,4 +57,7 @@ private:
 	float AnimationProgress;
 	float AnimationDuration;
 	float BottomMargin;
+
+	// 사용자가 조절한 Console 높이 (0이면 DefaultSize 사용)
+	float UserAdjustedHeight = 0.0f;
 };

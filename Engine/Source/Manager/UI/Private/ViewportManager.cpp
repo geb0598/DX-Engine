@@ -281,10 +281,26 @@ void UViewportManager::Update()
 				}
 				else if (Client && !Client->IsOrtho() && InputManager.IsKeyDown(EKeyInput::MouseRight))
 				{
-					// Perspective 뷰: 우클릭 중 휠로 이동 속도 조절
-					constexpr float SpeedStep = 3.0f;
-					float NewSpeed = EditorCameraSpeed + (WheelDelta * SpeedStep);
-					SetEditorCameraSpeed(NewSpeed);
+					// Perspective 뷰: 우클릭 중 휠로 이동 속도 조절 (레벨 기반)
+					// 현재 속도에서 가장 가까운 레벨 찾기
+					int32 CurrentLevel = 3;
+					float MinDiff = FLT_MAX;
+					for (int32 i = 0; i < CAMERA_SPEED_LEVELS; ++i)
+					{
+						float Diff = std::abs(EditorCameraSpeed - CAMERA_SPEED_TABLE[i]);
+						if (Diff < MinDiff)
+						{
+							MinDiff = Diff;
+							CurrentLevel = i;
+						}
+					}
+
+					// 휠 방향에 따라 레벨 변경
+					int32 NewLevel = CurrentLevel + static_cast<int32>(WheelDelta);
+					NewLevel = clamp(NewLevel, 0, CAMERA_SPEED_LEVELS - 1);
+
+					// 새 속도 설정
+					SetEditorCameraSpeed(CAMERA_SPEED_TABLE[NewLevel]);
 				}
 			}
 		}

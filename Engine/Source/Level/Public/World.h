@@ -64,12 +64,44 @@ public:
 	AActor* SpawnActor(const std::string& ClassName); // Helper for Lua binding (string overload)
 	bool DestroyActor(AActor* InActor); // Level의 void MarkActorForDeletion(AActor * InActor) 기능을 DestroyActor가 가짐
 
+<<<<<<< HEAD
 	// Template Actor 검색 (Lua binding용 wrapper)
 	AActor* FindTemplateActorByName(const std::string& InName);
 	TArray<AActor*> FindTemplateActorsByClass(const std::string& ClassName);
 
 	// TODO: World Scope Query Entrypoint
 	// Editor에서 쿼리 요청시 Level에 바로 요청하지 않고 World를 통해 요청하도록 변경
+=======
+	/**
+	 * @brief 월드(레벨)의 모든 액터를 순회하며 특정 클래스(및 자식 클래스)에 해당하는 액터들을 반환
+	 * @param InClass 찾으려는 부모 클래스
+	 * @return UClass*에 해당하는 AActor*의 TArray
+	 */
+	TArray<AActor*> FindActorsOfClass(UClass* InClass) const;
+
+	/**
+	 * @brief TArray<AActor*> FindActorsOfClass(UClass* InClass)의 템플릿 버전
+	 * @tparam T 찾으려는 액터 타입
+	 * @return T*의 TArray
+	 */
+	template<typename T>
+	TArray<T*> FindActorsOfClass() const
+	{
+		TArray<AActor*> FoundActors = FindActorsOfClass(T::StaticClass());
+
+		TArray<T*> CastedResult;
+		CastedResult.Reserve(FoundActors.Num());
+
+		for (AActor* Actor : FoundActors)
+		{
+			if (T* CastedActor = Cast<T>(Actor))
+			{
+				CastedResult.Add(CastedActor);
+			}
+		}
+		return CastedResult;
+	}
+>>>>>>> main
 
 	EWorldType GetWorldType() const;
 	void SetWorldType(EWorldType InWorldType);

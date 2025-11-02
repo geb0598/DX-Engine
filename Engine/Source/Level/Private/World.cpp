@@ -325,6 +325,28 @@ bool UWorld::DestroyActor(AActor* InActor)
 	return true;
 }
 
+TArray<AActor*> UWorld::FindActorsOfClass(UClass* InClass) const
+{
+	TArray<AActor*> Result;
+
+	if (!Level || !InClass)
+	{
+		return Result;
+	}
+
+	const TArray<AActor*>& AllActors = Level->GetLevelActors(); // <--- ULevel에 이 함수가 필요합니다.
+
+	for (AActor* Actor : AllActors)
+	{
+		if (Actor && Actor->GetClass()->IsChildOf(InClass))
+		{
+			Result.Add(Actor);
+		}
+	}
+
+	return Result;
+}
+
 EWorldType UWorld::GetWorldType() const
 {
 	return WorldType;
