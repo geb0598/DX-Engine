@@ -17,9 +17,12 @@ void AGameMode::BeginPlay()
 
 		Player = GWorld->SpawnActor(WorldSettings.DefaultPlayerClass);
 
-		// SpawnActor Location 인자 있는 버전으로 바뀌면 변경
-		Player->SetActorLocation(PlayerStarts[0]->GetActorLocation());
-		Player->SetActorRotation(PlayerStarts[0]->GetActorRotation());
+		if (PlayerStarts.Num() > 0)
+		{
+			// SpawnActor Location 인자 있는 버전으로 바뀌면 변경
+			Player->SetActorLocation(PlayerStarts[0]->GetActorLocation());
+			Player->SetActorRotation(PlayerStarts[0]->GetActorRotation());
+		}
 
 		MainCamera = GEditor->GetMainCamera();
 		if (MainCamera) { MainCamera->SetViewTarget(Player); }
