@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "Manager/Lua/Public/LuaManager.h"
+#include "Manager/Lua/Public/LuaBinder.h"
 #include "Manager/Path/Public/PathManager.h"
 
 IMPLEMENT_SINGLETON_CLASS(ULuaManager, UObject)
@@ -34,96 +35,11 @@ void ULuaManager::Update(float DeltaTime)
 
 void ULuaManager::BindTypesToLua()
 {
-    // -- Vector -- //
-    MasterLuaState.new_usertype<FVector>("FVector",
-        sol::factories(
-            []() { return FVector(); },
-            [](float x, float y, float z) { return FVector(x, y, z); }
-        ),
-        "X", &FVector::X,
-        "Y", &FVector::Y,
-        "Z", &FVector::Z,
-
-        sol::meta_function::addition, sol::overload(
-            [](const FVector& a, const FVector& b) { return a + b; }
-        ),
-
-        sol::meta_function::subtraction, sol::overload(
-            [](const FVector& a, const FVector& b) { return a - b; }
-        ),
-
-        sol::meta_function::multiplication, sol::overload(
-            [](const FVector& a, const FVector& b) { return a * b; },
-            [](const FVector& v, float s) { return v * s; },
-            [](float s, const FVector& v) { return s * v; }
-        ),
-
-        sol::meta_function::division, sol::overload(
-            [](const FVector& a, const FVector& b) { return a / b; },
-            [](const FVector& v, float s) { return v / s; }
-        ),
-
-        // --- 함수 ---
-        "Normalize", &FVector::Normalize,
-        "Length", &FVector::Length
-    );
-
-    // -- Actor -- //
-    MasterLuaState.new_usertype<AActor>("AActor",
-        "Name", sol::property(
-            [](AActor* Actor) -> std::string { return Actor->GetName().ToString(); }
-        ),
-        "Location", sol::property(
-            &AActor::GetActorLocation,
-            &AActor::SetActorLocation
-        ),
-        "Scale", sol::property(
-            &AActor::GetActorScale3D,
-            &AActor::SetActorScale3D
-        ),
-        "UUID", sol::property(
-            &AActor::GetUUID
-        )
-    );
-
-    // -- UScriptComponent -- //
-	MasterLuaState.new_usertype<UScriptComponent>("ScriptComponent",
-		"StartCoroutine", &UScriptComponent::StartCoroutine,
-		"StopCoroutine", &UScriptComponent::StopCoroutine,
-		"StopAllCoroutines", &UScriptComponent::StopAllCoroutines
-	);
-
-    // -- Log -- //
-    MasterLuaState.set_function("Log", [](sol::variadic_args Vars) {
-            std::stringstream ss;
-            sol::state_view Lua(Vars.lua_state());
-
-            for (auto v : Vars)
-            {
-                sol::protected_function ToString = Lua["tostring"];
-                sol::protected_function_result Result = ToString(v);
-
-                FString Str;
-                if (Result.valid())
-                {
-                    Str = Result.get<std::string>();
-                }
-                else
-                {
-                    Str = "[nil or error]";
-                }
-                ss << Str << "\t";
-            }
-
-            std::string FinalLogMessage = ss.str();
-            if (!FinalLogMessage.empty())
-            {
-                FinalLogMessage.pop_back();
-            }
-
-            UE_LOG("%s", FinalLogMessage.c_str());
-        }
-    );
+	FLuaBinder::BindCoreTypes(MasterLuaState);
+	FLuaBinder::BindMathTypes(MasterLuaState);
+	FLuaBinder::BindActorTypes(MasterLuaState);
+	FLuaBinder::BindComponentTypes(MasterLuaState);
+	FLuaBinder::BindCoreFunctions(MasterLuaState);
 }
 
 void ULuaManager::LoadAllLuaScripts()

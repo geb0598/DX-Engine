@@ -59,7 +59,7 @@ public:
 	bool DestroyActor(AActor* InActor); // Level의 void MarkActorForDeletion(AActor * InActor) 기능을 DestroyActor가 가짐
 
 	// TODO: World Scope Query Entrypoint
-	// Editor에서 쿼리 요청시 Level에 바로 요청하지 않고 World를 통해 요청하도록 변경 
+	// Editor에서 쿼리 요청시 Level에 바로 요청하지 않고 World를 통해 요청하도록 변경
 
 	EWorldType GetWorldType() const;
 	void SetWorldType(EWorldType InWorldType);
@@ -74,11 +74,17 @@ private:
 	void FlushPendingDestroy(); // Destroy marking 된 액터들을 실제 삭제
 
 	void SwitchToLevel(ULevel* InNewLevel);
-	
+
 public:
 	virtual UObject* Duplicate() override;
 
 protected:
 	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 
+	// GameMode
+public:
+	class AGameMode* GetGameMode() const { return AuthorityGameMode; }
+
+private:
+	AGameMode* AuthorityGameMode = nullptr;
 };

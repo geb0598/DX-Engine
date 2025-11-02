@@ -180,6 +180,7 @@
     <ClInclude Include="Source\Actor\Public\DecalActor.h" />
     <ClInclude Include="Source\Actor\Public\DecalSpotLightActor.h" />
     <ClInclude Include="Source\Actor\Public\DirectionalLight.h" />
+    <ClInclude Include="Source\Actor\Public\GameMode.h" />
     <ClInclude Include="Source\Actor\Public\HeightFogActor.h" />
     <ClInclude Include="Source\Actor\Public\Light.h" />
     <ClInclude Include="Source\Actor\Public\MovingCubeActor.h" />
@@ -234,6 +235,7 @@
     <ClInclude Include="Source\Manager\Asset\Public\ObjImporter.h" />
     <ClInclude Include="Source\Manager\Asset\Public\ObjManager.h" />
     <ClInclude Include="Source\Manager\Asset\Public\TextureManager.h" />
+    <ClInclude Include="Source\Manager\Lua\Public\LuaBinder.h" />
     <ClInclude Include="Source\Manager\Lua\Public\LuaManager.h" />
     <ClInclude Include="Source\Manager\Render\Public\CascadeManager.h" />
     <ClInclude Include="Source\Manager\UI\Public\ViewportManager.h" />
@@ -400,6 +402,7 @@
     <ClCompile Include="Source\Actor\Private\DecalActor.cpp" />
     <ClCompile Include="Source\Actor\Private\DecalSpotLightActor.cpp" />
     <ClCompile Include="Source\Actor\Private\DirectionalLight.cpp" />
+    <ClCompile Include="Source\Actor\Private\GameMode.cpp" />
     <ClCompile Include="Source\Actor\Private\HeightFogActor.cpp" />
     <ClCompile Include="Source\Actor\Private\Light.cpp" />
     <ClCompile Include="Source\Actor\Private\MovingCubeActor.cpp">
@@ -456,6 +459,7 @@
     <ClCompile Include="Source\Manager\Asset\Private\ObjImporter.cpp" />
     <ClCompile Include="Source\Manager\Asset\Private\ObjManager.cpp" />
     <ClCompile Include="Source\Manager\Asset\Private\TextureManager.cpp" />
+    <ClCompile Include="Source\Manager\Lua\Private\LuaBinder.cpp" />
     <ClCompile Include="Source\Manager\Lua\Private\LuaManager.cpp" />
     <ClCompile Include="Source\Manager\Render\Private\CascadeManager.cpp" />
     <ClCompile Include="Source\Manager\UI\Private\ViewportManager.cpp" />

@@ -2,6 +2,7 @@
 #include "Level/Public/World.h"
 #include "Level/Public/Level.h"
 #include "Actor/Public/AmbientLight.h"
+#include "Actor/Public/GameMode.h"
 #include "Utility/Public/JsonSerializer.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Manager/Path/Public/PathManager.h"
@@ -44,6 +45,15 @@ void UWorld::BeginPlay()
 		return;
 	}
 
+	// GameMode는 오직 PIE 월드나 Game 월드에서만 스폰
+	if (WorldType == EWorldType::PIE || WorldType == EWorldType::Game)
+	{
+		if (AuthorityGameMode == nullptr)
+		{
+			AuthorityGameMode = Cast<AGameMode>(SpawnActor(AGameMode::StaticClass()));
+		}
+	}
+
 	Level->Init();
 	bBegunPlay = true;
 }
@@ -84,7 +94,7 @@ void UWorld::Tick(float DeltaTimes)
 			{
 				Actor->Tick(DeltaTimes);
 			}
-			
+
 			if (Actor->IsPendingDestroy())
 			{
 				DestroyActor(Actor);
@@ -100,7 +110,7 @@ void UWorld::Tick(float DeltaTimes)
 			{
 				Actor->Tick(DeltaTimes);
 			}
-			
+
 			if (Actor->IsPendingDestroy())
 			{
 				DestroyActor(Actor);
