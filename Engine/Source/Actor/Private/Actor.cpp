@@ -484,10 +484,19 @@ void AActor::DuplicateSubObjectsForEditor(UObject* DuplicatedObject)
 	TMap<UActorComponent*, UActorComponent*> OldToNewComponentMap;
 
 	// EditorOnly 체크 없이 모든 컴포넌트를 복제해 맵에 저장
+	// Visualization 컴포넌트는 제외 (EnsureVisualizationIcon으로 나중에 생성)
 	for (UActorComponent* OldComponent : OwnedComponents)
 	{
 		if (OldComponent)
 		{
+			if (UEditorIconComponent* IconComp = Cast<UEditorIconComponent>(OldComponent))
+			{
+				if (IconComp->IsVisualizationComponent())
+				{
+					continue;
+				}
+			}
+
 			UActorComponent* NewComponent = Cast<UActorComponent>(OldComponent->Duplicate());
 			NewComponent->SetOwner(DuplicatedActor);
 			DuplicatedActor->OwnedComponents.Add(NewComponent);

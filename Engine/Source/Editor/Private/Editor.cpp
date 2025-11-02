@@ -1646,6 +1646,22 @@ AActor* UEditor::DuplicateActor(AActor* InSourceActor)
 	// BeginPlay 호출 (에디터에서 생성된 Actor는 즉시 활성화)
 	NewActor->BeginPlay();
 
+	// LightComponent Visualization Icon 생성
+	// 순회 중 OwnedComponents 수정 방지를 위해 먼저 수집 후 생성
+	TArray<ULightComponent*> LightComponents;
+	for (UActorComponent* Component : NewActor->GetOwnedComponents())
+	{
+		if (ULightComponent* LightComp = Cast<ULightComponent>(Component))
+		{
+			LightComponents.Add(LightComp);
+		}
+	}
+
+	for (ULightComponent* LightComp : LightComponents)
+	{
+		LightComp->EnsureVisualizationIcon();
+	}
+
 	return NewActor;
 }
 

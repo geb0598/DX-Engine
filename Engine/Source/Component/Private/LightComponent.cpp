@@ -62,25 +62,9 @@ void ULightComponent::DuplicateSubObjects(UObject* DuplicatedObject)
 		return;
 	}
 
-	// VisualizationIcon 복사
-	if (VisualizationIcon)
-	{
-		UEditorIconComponent* DuplicatedIcon = Cast<UEditorIconComponent>(VisualizationIcon->Duplicate());
-		if (DuplicatedIcon)
-		{
-			DuplicatedIcon->SetOwner(DuplicatedLight->GetOwner());
-			DuplicatedIcon->AttachToComponent(DuplicatedLight);
-			DuplicatedLight->SetEditorIconComponent(DuplicatedIcon);
-
-			// Owner Actor에 등록
-			if (AActor* OwnerActor = DuplicatedLight->GetOwner())
-			{
-				OwnerActor->RegisterComponent(DuplicatedIcon);
-			}
-		}
-	}
+	// Icon 포인터 초기화 (DuplicateActor에서 EnsureVisualizationIcon으로 생성)
+	DuplicatedLight->VisualizationIcon = nullptr;
 }
-
 
 void ULightComponent::SetIntensity(float InIntensity)
 {
