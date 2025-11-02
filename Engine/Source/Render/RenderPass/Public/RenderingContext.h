@@ -1,12 +1,14 @@
 ﻿#pragma once
 
+struct FSharedLightResources;
+
 struct FRenderingContext
 {
     FRenderingContext(){}
 
     FRenderingContext(const FCameraConstants* InViewProj, class UCamera* InCurrentCamera, EViewModeIndex InViewMode, uint64 InShowFlags, const D3D11_VIEWPORT& InViewport, const FVector2& InRenderTargetSize)
         : ViewProjConstants(InViewProj), CurrentCamera(InCurrentCamera), ViewMode(InViewMode), ShowFlags(InShowFlags), Viewport(InViewport), RenderTargetSize(InRenderTargetSize) {}
-    
+
     const FCameraConstants* ViewProjConstants= nullptr;
     UCamera* CurrentCamera = nullptr;
     EViewModeIndex ViewMode;
@@ -27,4 +29,11 @@ struct FRenderingContext
     TArray<class UDirectionalLightComponent*> DirectionalLights;
     TArray<class UAmbientLightComponent*> AmbientLights;
     TArray<class UHeightFogComponent*> Fogs;
+
+    /**
+     * @brief FLightPass가 생성한 Light 리소스 참조
+     * FLightPass::Execute()에서 설정되며, 같은 프레임 내에서만 유효합니다.
+     * 소유권은 FLightPass에 있으며, 이 포인터는 읽기 전용 참조입니다.
+     */
+    const FSharedLightResources* SharedLightResources = nullptr;
 };

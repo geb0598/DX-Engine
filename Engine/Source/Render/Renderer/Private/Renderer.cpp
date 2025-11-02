@@ -29,6 +29,7 @@
 #include "Render/RenderPass/Public/FogPass.h"
 #include "Render/RenderPass/Public/HitProxyPass.h"
 #include "Render/RenderPass/Public/LightPass.h"
+#include "Render/RenderPass/Public/LightSensorPass.h"
 #include "Render/RenderPass/Public/PointLightPass.h"
 #include "Render/RenderPass/Public/RenderPass.h"
 #include "Render/RenderPass/Public/SceneDepthPass.h"
@@ -88,6 +89,9 @@ void URenderer::Init(HWND InWindowHandle)
 
 	LightPass = new FLightPass(Pipeline, ConstantBufferViewProj, GizmoInputLayout, GizmoVS, GizmoPS, DefaultDepthStencilState);
 	RenderPasses.Add(LightPass);
+
+	LightSensorPass = new FLightSensorPass(Pipeline, ConstantBufferViewProj);
+	RenderPasses.Add(LightSensorPass);
 
 	FStaticMeshPass* StaticMeshPass = new FStaticMeshPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
 		UberLitVertexShader, UberLitPixelShader, UberLitInputLayout, DefaultDepthStencilState);

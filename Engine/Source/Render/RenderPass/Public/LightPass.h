@@ -1,6 +1,7 @@
 #pragma once
 #include "Global/Vector.h"
 #include "Render/RenderPass/Public/RenderPass.h"
+#include "Render/RenderPass/Public/SharedLightResources.h"
 
 struct FViewClusterInfo 
 {
@@ -122,8 +123,9 @@ private:
 	bool bClusterGizmoSet = false;
 	bool bSpotIntersectOpti = true;
 
-
-
-
-
+	/**
+	 * @brief 다른 Pass와 공유할 Light 리소스 구조체
+	 * Execute() 시점에 업데이트되며, FRenderingContext를 통해 전달됩니다.
+	 */
+	FSharedLightResources SharedLightResources;
 };

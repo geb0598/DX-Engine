@@ -348,6 +348,17 @@ void FLightPass::Execute(FRenderingContext& Context)
 	}
 
 	UStatOverlay::GetInstance().RecordShadowStats(DirectionalCount, PointLightCount, SpotLightCount, AmbientCount, ShadowMapMemory, RenderTargetMemory, UsedAtlasTiles, MaxAtlasTiles);
+
+	// SharedLightResources 업데이트 - 다른 Pass에서 사용할 수 있도록 Context에 전달
+	SharedLightResources.GlobalLightConstantBuffer = GlobalLightConstantBuffer;
+	SharedLightResources.ClusterSliceInfoConstantBuffer = ClusterSliceInfoConstantBuffer;
+	SharedLightResources.LightCountInfoConstantBuffer = LightCountInfoConstantBuffer;
+	SharedLightResources.PointLightIndicesSRV = PointLightIndicesRWStructuredBufferSRV;
+	SharedLightResources.SpotLightIndicesSRV = SpotLightIndicesRWStructuredBufferSRV;
+	SharedLightResources.PointLightInfosSRV = PointLightStructuredBufferSRV;
+	SharedLightResources.SpotLightInfosSRV = SpotLightStructuredBufferSRV;
+
+	Context.SharedLightResources = &SharedLightResources;
 }
 
 

@@ -12,6 +12,7 @@ class FClusteredRenderingGridPass;
 class FFXAAPass;
 class FHitProxyPass;
 class FLightPass;
+class FLightSensorPass;
 class FShadowMapFilterPass;
 class FShadowMapPass;
 class FViewport;
@@ -121,6 +122,7 @@ public:
 	ID3D11PixelShader* GetPixelShader(EViewModeIndex ViewModeIndex) const;
 
 	FLightPass* GetLightPass() { return LightPass; }
+	FLightSensorPass* GetLightSensorPass() { return LightSensorPass; }
 	FClusteredRenderingGridPass* GetClusteredRenderingGridPass() { return ClusteredRenderingGridPass; }
 	FShadowMapPass* GetShadowMapPass() const { return ShadowMapPass; }
 
@@ -228,6 +230,7 @@ private:
 
 	FFXAAPass* FXAAPass = nullptr;
 	FLightPass* LightPass = nullptr;
+	FLightSensorPass* LightSensorPass = nullptr;
 	FClusteredRenderingGridPass* ClusteredRenderingGridPass = nullptr;
 	FShadowMapPass* ShadowMapPass = nullptr;
 	FShadowMapFilterPass* ShadowMapFilterPass = nullptr;
