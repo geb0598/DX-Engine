@@ -56,6 +56,7 @@ public:
 
 	// Actor Spawn & Destroy
 	AActor* SpawnActor(UClass* InActorClass, JSON* ActorJsonData = nullptr);
+	AActor* SpawnActor(const std::string& ClassName); // Helper for Lua binding (string overload)
 	bool DestroyActor(AActor* InActor); // Level의 void MarkActorForDeletion(AActor * InActor) 기능을 DestroyActor가 가짐
 
 	// TODO: World Scope Query Entrypoint

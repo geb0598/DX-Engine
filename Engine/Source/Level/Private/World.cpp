@@ -88,7 +88,9 @@ void UWorld::Tick(float DeltaTimes)
 
 	if (WorldType == EWorldType::Editor )
 	{
-		for (AActor* Actor : Level->GetLevelActors())
+		// 액터 배열 복사본으로 순회 (Tick 도중 액터가 추가/삭제될 수 있음)
+		TArray<AActor*> ActorsToTick = Level->GetLevelActors();
+		for (AActor* Actor : ActorsToTick)
 		{
 			if(Actor->CanTickInEditor() && Actor->CanTick())
 			{
@@ -104,7 +106,9 @@ void UWorld::Tick(float DeltaTimes)
 
 	if (WorldType == EWorldType::Game || WorldType == EWorldType::PIE)
 	{
-		for (AActor* Actor : Level->GetLevelActors())
+		// 액터 배열 복사본으로 순회 (Tick 도중 액터가 추가/삭제될 수 있음)
+		TArray<AActor*> ActorsToTick = Level->GetLevelActors();
+		for (AActor* Actor : ActorsToTick)
 		{
 			if(Actor->CanTick())
 			{
@@ -220,6 +224,24 @@ AActor* UWorld::SpawnActor(UClass* InActorClass, JSON* ActorJsonData)
 	}
 
 	return Level->SpawnActorToLevel(InActorClass, ActorJsonData);
+}
+
+AActor* UWorld::SpawnActor(const std::string& ClassName)
+{
+	if (!Level)
+	{
+		UE_LOG_ERROR("World: Actor를 Spawn할 수 있는 Level이 없습니다.");
+		return nullptr;
+	}
+
+	UClass* ActorClass = UClass::FindClass(FName(ClassName));
+	if (!ActorClass)
+	{
+		UE_LOG_ERROR("World: SpawnActor - Class not found: %s", ClassName.c_str());
+		return nullptr;
+	}
+
+	return Level->SpawnActorToLevel(ActorClass);
 }
 
 /**

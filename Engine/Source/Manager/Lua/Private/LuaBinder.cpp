@@ -8,7 +8,10 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 {
 	// --- UWorld ---
     LuaState.new_usertype<UWorld>("UWorld",
-        "SpawnActor", &UWorld::SpawnActor,
+        "SpawnActor", sol::overload(
+            sol::resolve<AActor*(const std::string&)>(&UWorld::SpawnActor),
+            sol::resolve<AActor*(UClass*, JSON*)>(&UWorld::SpawnActor)
+        ),
         "GetTimeSeconds", &UWorld::GetTimeSeconds,
         "DestroyActor", &UWorld::DestroyActor,
         "GetGameMode", &UWorld::GetGameMode
