@@ -1150,11 +1150,13 @@ FIllumination CalculatePointLight(
 
     LightDir = SafeNormalize3(LightDir);
     float NdotL = saturate(dot(WorldNormal, LightDir));
-    // attenuation based on distance: (1 - d / R)^n
-    float Attenuation = pow(saturate(1.0f - Distance / Info.Range), Info.DistanceFalloffExponent);
+    // attenuation based on distance: (1 - d / R)^n (거리 감쇠만 0~1 범위로 정규화)
+    float DistanceAttenuation = pow(saturate(1.0f - Distance / Info.Range), Info.DistanceFalloffExponent);
+    // Intensity는 saturate 이후에 곱하여 높은 값이 반영되도록
+    float Attenuation = DistanceAttenuation * Info.Intensity;
 
 #if LIGHTING_MODEL_GOURAUD
-    Result.Diffuse = Info.Color * Info.Intensity * NdotL * Attenuation;
+    Result.Diffuse = Info.Color * NdotL * Attenuation;
 #else
     // Calculate shadow factor (0 = shadow, 1 = lit)
     float ShadowFactor = 1.0f;
@@ -1181,7 +1183,7 @@ FIllumination CalculatePointLight(
     }
 
     // diffuse illumination (affected by shadow)
-    Result.Diffuse = Info.Color * Info.Intensity * NdotL * Attenuation * ShadowFactor;
+    Result.Diffuse = Info.Color * NdotL * Attenuation * ShadowFactor;
 #endif
 
 #if LIGHTING_MODEL_BLINNPHONG || LIGHTING_MODEL_GOURAUD
@@ -1195,9 +1197,9 @@ FIllumination CalculatePointLight(
 #endif
 
 #if LIGHTING_MODEL_BLINNPHONG
-    Result.Specular = Info.Color * Info.Intensity * Spec * Attenuation * ShadowFactor;
+    Result.Specular = Info.Color * Spec * Attenuation * ShadowFactor;
 #elif LIGHTING_MODEL_GOURAUD
-    Result.Specular = Info.Color * Info.Intensity * Spec * Attenuation;
+    Result.Specular = Info.Color * Spec * Attenuation;
 #endif
 
     return Result;
@@ -1237,9 +1239,10 @@ FIllumination CalculateSpotLight(
 
     float NdotL = saturate(dot(WorldNormal, LightDir));
 
-    // attenuation based on distance: (1 - d / R)^n
+    // attenuation based on distance: (1 - d / R)^n (거리 감쇠만 0~1 범위로 정규화)
     float AttenuationDistance = pow(saturate(1.0f - Distance / Info.Range), Info.DistanceFalloffExponent);
 
+    // 각도 감쇠 (0~1 범위로 정규화)
     float AttenuationAngle = 0.0f;
     if (CosAngle >= CosInner || CosInner - CosOuter <= 1e-6)
     {
@@ -1250,8 +1253,11 @@ FIllumination CalculateSpotLight(
         AttenuationAngle = pow(saturate((CosAngle - CosOuter) / (CosInner - CosOuter)), Info.AngleFalloffExponent);
     }
 
+    // 최종 감쇠 = 거리 감쇠 * 각도 감쇠 * Intensity
+    float Attenuation = AttenuationDistance * AttenuationAngle * Info.Intensity;
+
 #if LIGHTING_MODEL_GOURAUD
-    Result.Diffuse = Info.Color * Info.Intensity * NdotL * AttenuationDistance * AttenuationAngle;
+    Result.Diffuse = Info.Color * NdotL * Attenuation;
 #else
     // Shadow factor
     float ShadowFactor = 1.0f;
@@ -1286,7 +1292,7 @@ FIllumination CalculateSpotLight(
         );
     }
 
-    Result.Diffuse = Info.Color * Info.Intensity * NdotL * AttenuationDistance * AttenuationAngle * ShadowFactor;
+    Result.Diffuse = Info.Color * NdotL * Attenuation * ShadowFactor;
 #endif
 
 #if LIGHTING_MODEL_BLINNPHONG || LIGHTING_MODEL_GOURAUD
@@ -1300,9 +1306,9 @@ FIllumination CalculateSpotLight(
 #endif
 
 #if LIGHTING_MODEL_BLINNPHONG
-    Result.Specular = Info.Color * Info.Intensity * Spec * AttenuationDistance * AttenuationAngle * ShadowFactor;;
+    Result.Specular = Info.Color * Spec * Attenuation * ShadowFactor;
 #elif LIGHTING_MODEL_GOURAUD
-    Result.Specular = Info.Color * Info.Intensity * Spec * AttenuationDistance * AttenuationAngle;
+    Result.Specular = Info.Color * Spec * Attenuation;
 #endif
 
     return Result;

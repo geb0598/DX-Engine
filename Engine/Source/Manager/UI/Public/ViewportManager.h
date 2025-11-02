@@ -97,8 +97,21 @@ public:
     void UpdateInitialOffset(int32 Index, const FVector& NewOffset);
 
     static constexpr float MIN_CAMERA_SPEED = 1.0f;
-    static constexpr float MAX_CAMERA_SPEED = 100.0f;
+    static constexpr float MAX_CAMERA_SPEED = 512.0f;
     static constexpr float DEFAULT_CAMERA_SPEED = 50.0f;
+
+    // 카메라 속도 레벨
+    static constexpr int32 CAMERA_SPEED_LEVELS = 8;
+    static constexpr float CAMERA_SPEED_TABLE[CAMERA_SPEED_LEVELS] = {
+        4.0f,     // Level 1
+        16.0f,    // Level 2
+        32.0f,    // Level 3
+        64.0f,    // Level 4 (기본)
+        128.0f,   // Level 5
+        256.0f,   // Level 6
+        384.0f,   // Level 7
+        512.0f    // Level 8
+    };
 
     // ========================================
     // Rotation Snap Settings

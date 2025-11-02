@@ -119,15 +119,14 @@ public:
 	{
 		LastWindowPosition = Position;
 		bShouldRestorePosition = true;
-		RestoreFrameCount = 10;
+		RestoreFrameCount = 3;
 	}
 
 	void SetLastWindowSize(const ImVec2& Size)
 	{
 		LastWindowSize = Size;
 		bShouldRestoreSize = true;
-		RestoreFrameCount = 10;
-		bForceSize = true;
+		RestoreFrameCount = 3;
 	}
 
 	bool IsVisible() const
@@ -156,6 +155,7 @@ public:
 protected:
 	void ApplyDockingSettings() const;
 	virtual void OnPreRenderWindow(float MenuBarOffset);
+	virtual void OnPostRenderWindow();
 	void UpdateWindowInfo();
 
 	// Render
@@ -189,9 +189,8 @@ private:
 	ImVec2 SizeRatio = { 0.5f, 0.5f };
 	bool bIsResized = false;
 
-	// 최소화된 UI 복원 관련
+	// 최소화된 UI 복원 관련 (3프레임 동안 복원 시도)
 	bool bShouldRestorePosition = false;
 	bool bShouldRestoreSize = false;
 	int RestoreFrameCount = 0;
-	bool bForceSize = false;
 };
