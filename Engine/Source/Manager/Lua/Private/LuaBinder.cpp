@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Manager/Lua/Public/LuaBinder.h"
 #include "Actor/Public/GameMode.h"
 #include "Component/Public/ScriptComponent.h"
@@ -15,8 +15,7 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
         "GetTimeSeconds", &UWorld::GetTimeSeconds,
         "DestroyActor", &UWorld::DestroyActor,
         "GetGameMode", &UWorld::GetGameMode,
-        "FindTemplateActorByName", &UWorld::FindTemplateActorByName,
-        "FindTemplateActorsByClass", &UWorld::FindTemplateActorsByClass
+        "FindTemplateActorOfName", &UWorld::FindTemplateActorOfName
     );
 
     // --- GWorld 인스턴스 접근자 (전역 함수) ---

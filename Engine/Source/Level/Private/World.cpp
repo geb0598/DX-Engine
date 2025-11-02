@@ -436,7 +436,7 @@ void UWorld::CreateNewLevel(const FName& InLevelName)
 	NewLevel->UpdateOctreeImmediate();
 }
 
-AActor* UWorld::FindTemplateActorByName(const std::string& InName)
+AActor* UWorld::FindTemplateActorOfName(const std::string& InName)
 {
 	if (!Level)
 	{
@@ -445,24 +445,4 @@ AActor* UWorld::FindTemplateActorByName(const std::string& InName)
 	}
 
 	return Level->FindTemplateActorByName(FName(InName));
-}
-
-TArray<AActor*> UWorld::FindTemplateActorsByClass(const std::string& ClassName)
-{
-	TArray<AActor*> EmptyResult;
-
-	if (!Level)
-	{
-		UE_LOG_ERROR("World: Level이 없어 template actor를 검색할 수 없습니다.");
-		return EmptyResult;
-	}
-
-	UClass* ActorClass = UClass::FindClass(FName(ClassName));
-	if (!ActorClass)
-	{
-		UE_LOG_ERROR("World: FindTemplateActorsByClass - Class not found: %s", ClassName.c_str());
-		return EmptyResult;
-	}
-
-	return Level->FindTemplateActorsByClass(ActorClass);
 }
