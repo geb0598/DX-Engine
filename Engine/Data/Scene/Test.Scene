@@ -1,6 +1,6 @@
 {
   "Actors" : {
-    "262" : {
+    "317" : {
       "Components" : [{
           "Intensity" : 0.550000,
           "IsEditorOnly" : "false",
@@ -29,7 +29,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_0",
           "ParentName" : "UAmbientLightComponent_0",
-          "Rotation" : [12.977466, 15.084702, 41.525562],
+          "Rotation" : [-0.000000, 70.000008, -0.000000],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -51,7 +51,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "266" : {
+    "321" : {
       "Components" : [{
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
@@ -77,7 +77,7 @@
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
           "Name" : "UScriptComponent_0",
-          "ScriptPath" : "Untitled_AStaticMeshActor_0.lua",
+          "ScriptPath" : "Player.lua",
           "Type" : "UScriptComponent"
         }],
       "Location" : [0.000000, 3.553125, 3.913781],
@@ -87,7 +87,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "270" : {
+    "325" : {
       "Components" : [{
           "Intensity" : 3.000000,
           "IsEditorOnly" : "false",
@@ -99,7 +99,7 @@
           "PSMSlideBackEnabled" : true,
           "PSMUnitCubeClip" : true,
           "ParentName" : "",
-          "Rotation" : [36.597702, 31.186226, 84.174980],
+          "Rotation" : [36.597687, 31.186226, 84.174965],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "ShadowBias" : 0.005000,
           "ShadowModeIndex" : 0,
@@ -120,7 +120,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_4",
           "ParentName" : "UDirectionalLightComponent_0",
-          "Rotation" : [12.335584, -24.127291, -35.809307],
+          "Rotation" : [-43.261288, -7.799052, -50.762253],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -136,13 +136,13 @@
           "bVisible" : "true"
         }],
       "Location" : [0.000000, 0.000000, 7.023633],
-      "Rotation" : [36.597702, 31.186226, 84.174980],
+      "Rotation" : [36.597687, 31.186226, 84.174965],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "ADirectionalLight",
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "419" : {
+    "329" : {
       "Components" : [{
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
@@ -171,6 +171,42 @@
       "Type" : "AStaticMeshActor",
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
+    },
+    "332" : {
+      "Components" : [{
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 11.094017, 2.326893],
+          "Name" : "UStaticMeshComponent_5",
+          "ObjStaticMeshAsset" : "Data/Shapes/Cube.obj",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UStaticMeshComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent_11",
+          "ParentName" : "UStaticMeshComponent_5",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_3",
+          "ScriptPath" : "Enemy.lua",
+          "Type" : "UScriptComponent"
+        }],
+      "Location" : [0.000000, 11.094017, 2.326893],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AStaticMeshActor",
+      "bCanEverTick" : "true",
+      "bTickInEditor" : "false"
     }
   },
   "NextUUID" : 0,
@@ -180,7 +216,7 @@
       "FarClip" : 5000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [0.000000, 0.000000, 100.000000],
+      "Location" : [0.000000, 3.553125, 100.000000],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, 0.000000, 0.000000]
@@ -190,7 +226,7 @@
       "FarClip" : 5000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [-100.000000, 0.000000, 0.000000],
+      "Location" : [-100.000000, 3.553125, 3.913781],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, 0.000000, 0.000000]
@@ -200,17 +236,17 @@
       "FarClip" : 1000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [-14.813127, 3.581797, 6.928313],
+      "Location" : [-8.272714, 7.109590, 13.913781],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
-      "Rotation" : [0.000000, -19.800009, -39.800037]
+      "Rotation" : [0.000000, -70.000000, 0.000000]
     },
     "3" : {
       "CameraType" : 0,
       "FarClip" : 5000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [0.000000, -100.000000, 0.000000],
+      "Location" : [0.000000, -100.000000, 3.913781],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, 0.000000, 0.000000]
