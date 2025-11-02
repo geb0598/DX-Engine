@@ -3,6 +3,7 @@
 #include "Level/Public/Level.h"
 #include "Actor/Public/AmbientLight.h"
 #include "Actor/Public/GameMode.h"
+#include "Actor/Public/DefaultPawn.h"
 #include "Utility/Public/JsonSerializer.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Manager/Path/Public/PathManager.h"
@@ -10,15 +11,16 @@
 IMPLEMENT_CLASS(UWorld, UObject)
 
 UWorld::UWorld()
-	: WorldType(EWorldType::Editor)
-	, bBegunPlay(false)
+	: WorldType(EWorldType::Editor),
+	  WorldTimeSeconds(0)
 {
+	Settings.DefaultPlayerClass = ADefaultPawn::StaticClass();
 }
 
 UWorld::UWorld(EWorldType InWorldType)
 	: WorldType(InWorldType)
-	, bBegunPlay(false)
 {
+	Settings.DefaultPlayerClass = ADefaultPawn::StaticClass();
 }
 
 UWorld::~UWorld()
@@ -86,13 +88,13 @@ void UWorld::Tick(float DeltaTimes)
 	// TODO: 현재 임시로 OCtree 업데이트 처리
 	Level->UpdateOctree();
 
-	if (WorldType == EWorldType::Editor )
+	if (WorldType == EWorldType::Editor)
 	{
 		// 액터 배열 복사본으로 순회 (Tick 도중 액터가 추가/삭제될 수 있음)
 		TArray<AActor*> ActorsToTick = Level->GetLevelActors();
 		for (AActor* Actor : ActorsToTick)
 		{
-			if(Actor->CanTickInEditor() && Actor->CanTick())
+			if (Actor->CanTickInEditor() && Actor->CanTick())
 			{
 				Actor->Tick(DeltaTimes);
 			}
@@ -110,7 +112,7 @@ void UWorld::Tick(float DeltaTimes)
 		TArray<AActor*> ActorsToTick = Level->GetLevelActors();
 		for (AActor* Actor : ActorsToTick)
 		{
-			if(Actor->CanTick())
+			if (Actor->CanTick())
 			{
 				Actor->Tick(DeltaTimes);
 			}
@@ -188,7 +190,7 @@ bool UWorld::SaveCurrentLevel(path InLevelFilePath) const
 		return false;
 	}
 
-	if(WorldType != EWorldType::Editor && WorldType != EWorldType::EditorPreview)
+	if (WorldType != EWorldType::Editor && WorldType != EWorldType::EditorPreview)
 	{
 		UE_LOG_ERROR("World: 게임 또는 PIE 모드에서는 Level 저장이 허용되지 않습니다.");
 		return false;
@@ -204,7 +206,6 @@ bool UWorld::SaveCurrentLevel(path InLevelFilePath) const
 			UE_LOG_ERROR("World: Level 저장에 실패했습니다: %s", InLevelFilePath.string().c_str());
 			return false;
 		}
-
 	}
 	catch (const exception& Exception)
 	{
@@ -279,6 +280,17 @@ AActor* UWorld::SpawnActor(const std::string& ClassName)
 	}
 
 	return Level->SpawnActorToLevel(ActorClass);
+}
+
+AActor* UWorld::SpawnActor(UClass* InActorClass, const FVector& InLocation, const FQuaternion& InRotation)
+{
+	AActor* NewActor = SpawnActor(InActorClass);
+	if (NewActor)
+	{
+		NewActor->SetActorLocation(InLocation);
+		NewActor->SetActorRotation(InRotation);
+	}
+	return NewActor;
 }
 
 /**
@@ -406,7 +418,7 @@ void UWorld::DuplicateSubObjects(UObject* DuplicatedObject)
 	Super::DuplicateSubObjects(DuplicatedObject);
 	UWorld* World = Cast<UWorld>(DuplicatedObject);
 	World->Level = Cast<ULevel>(Level->Duplicate());
-	World->Level->SetOuter(World);  // Level의 Outer를 World로 설정
+	World->Level->SetOuter(World); // Level의 Outer를 World로 설정
 }
 
 void UWorld::CreateNewLevel(const FName& InLevelName)

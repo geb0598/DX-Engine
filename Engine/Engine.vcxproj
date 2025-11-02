@@ -97,7 +97,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions) /FS</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions) /FS</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -124,7 +124,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -153,7 +153,7 @@
       <PrecompiledHeader>Use</PrecompiledHeader>
       <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/utf-8 /bigobj %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
@@ -225,7 +225,10 @@
     <ClInclude Include="Source\Core\Public\ObjectIterator.h" />
     <ClInclude Include="Source\Core\Public\WindowsBinReader.h" />
     <ClInclude Include="Source\Core\Public\WindowsBinWriter.h" />
-    <ClInclude Include="Source\Demo\Public\Player.h" />
+    <ClInclude Include="Source\Actor\Public\Pawn.h" />
+    <ClInclude Include="Source\Actor\Public\Controller.h" />
+    <ClInclude Include="Source\Actor\Public\PlayerController.h" />
+    <ClInclude Include="Source\Demo\Public\DefaultPawn.h" />
     <ClInclude Include="Source\Editor\Public\EditorEngine.h" />
     <ClInclude Include="Source\Global\BVH.h" />
     <ClInclude Include="Source\Global\FString.h" />
@@ -237,6 +240,7 @@
     <ClInclude Include="Source\Manager\Asset\Public\ObjImporter.h" />
     <ClInclude Include="Source\Manager\Asset\Public\ObjManager.h" />
     <ClInclude Include="Source\Manager\Asset\Public\TextureManager.h" />
+    <ClInclude Include="Source\Manager\LocalPlayer\Public\LocalPlayerManager.h" />
     <ClInclude Include="Source\Manager\Lua\Public\LuaBinder.h" />
     <ClInclude Include="Source\Manager\Lua\Public\LuaManager.h" />
     <ClInclude Include="Source\Manager\Render\Public\CascadeManager.h" />
@@ -450,7 +454,10 @@
     <ClCompile Include="Source\Core\Private\ObjectIterator.cpp" />
     <ClCompile Include="Source\Core\Private\WindowsBinReader.cpp" />
     <ClCompile Include="Source\Core\Private\WindowsBinWriter.cpp" />
-    <ClCompile Include="Source\Demo\Private\Player.cpp" />
+    <ClCompile Include="Source\Actor\Private\Pawn.cpp" />
+    <ClCompile Include="Source\Actor\Private\Controller.cpp" />
+    <ClCompile Include="Source\Actor\Private\PlayerController.cpp" />
+    <ClCompile Include="Source\Demo\Private\DefaultPawn.cpp" />
     <ClCompile Include="Source\Editor\Private\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\Private\GizmoGeometry.cpp" />
     <ClCompile Include="Source\Editor\Private\GizmoMath.cpp" />
@@ -464,6 +471,7 @@
     <ClCompile Include="Source\Manager\Asset\Private\ObjImporter.cpp" />
     <ClCompile Include="Source\Manager\Asset\Private\ObjManager.cpp" />
     <ClCompile Include="Source\Manager\Asset\Private\TextureManager.cpp" />
+    <ClCompile Include="Source\Manager\LocalPlayer\Private\LocalPlayerManager.cpp" />
     <ClCompile Include="Source\Manager\Lua\Private\LuaBinder.cpp" />
     <ClCompile Include="Source\Manager\Lua\Private\LuaManager.cpp" />
     <ClCompile Include="Source\Manager\Render\Private\CascadeManager.cpp" />

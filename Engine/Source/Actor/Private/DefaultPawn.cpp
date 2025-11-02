@@ -1,11 +1,13 @@
-﻿#include "pch.h"
-#include "Demo/Public/Player.h"
+#include "pch.h"
+#include "Actor/Public/DefaultPawn.h"
 #include "Component/Public/ScriptComponent.h"
 
-IMPLEMENT_CLASS(APlayer, AActor)
-APlayer::APlayer()
+IMPLEMENT_CLASS(ADefaultPawn, APawn)
+
+ADefaultPawn::ADefaultPawn()
 {
 	bCanEverTick = true;
+
 	ScriptComponent = CreateDefaultSubobject<UScriptComponent>();
 	ScriptComponent->SetScriptName(FName("Player"));
 }

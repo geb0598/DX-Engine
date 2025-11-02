@@ -62,6 +62,24 @@ public:
 	USceneComponent* GetRootComponent() const { return RootComponent; }
 	TArray<UActorComponent*>& GetOwnedComponents()  { return OwnedComponents; }
 
+	/** UClass 기반으로 컴포넌트 찾기 (런타임) */
+	UActorComponent* FindComponentByClass(UClass* ComponentClass) const;
+
+	/** 템플릿 버전 - 특정 타입의 컴포넌트 찾기 */
+	template<typename T>
+	T* FindComponentByClass() const
+	{
+		static_assert(std::is_base_of_v<UActorComponent, T>, "T must inherit from UActorComponent");
+		return Cast<T>(FindComponentByClass(T::StaticClass()));
+	}
+
+	/** GetComponentByClass는 FindComponentByClass의 별칭 (언리얼 호환) */
+	template<typename T>
+	T* GetComponentByClass() const
+	{
+		return FindComponentByClass<T>();
+	}
+
 	void SetRootComponent(USceneComponent* InOwnedComponents) { RootComponent = InOwnedComponents; }
 
 	// World Access

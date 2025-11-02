@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Actor/Public/Actor.h"
+#include "Actor/Public/GameMode.h"
 #include "Component/Public/LightComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Component/Public/PointLightComponent.h"
@@ -27,6 +28,17 @@ ULevel::ULevel()
 
 ULevel::~ULevel()
 {
+	// GameMode를 먼저 찾아서 EndPlay 호출 (Controller / Pawn 참조 정리)
+	AGameMode* GameMode = nullptr;
+	for (AActor* Actor : LevelActors)
+	{
+		if (GameMode = Cast<AGameMode>(Actor))
+		{
+			GameMode->EndPlay();
+			break;
+		}
+	}
+
 	// LevelActors 배열에 남아있는 모든 액터의 메모리를 해제합니다.
 	// 역순 루프를 사용하여 DestroyActor 내부의 Remove 호출로 인한 반복자 무효화 방지
 	while (!LevelActors.IsEmpty())
