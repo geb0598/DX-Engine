@@ -89,9 +89,6 @@ void UWorld::Tick(float DeltaTimes)
 		return;
 	}
 
-	// Deferred BeginPlay 처리 (속성 설정 후 BeginPlay 호출)
-	Level->ProcessPendingBeginPlay();
-
 	// 스폰 / 삭제 처리
 	FlushPendingDestroy();
 

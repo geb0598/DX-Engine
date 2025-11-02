@@ -34,10 +34,6 @@ public:
 	AActor* FindTemplateActorByName(const FName& InName) const;
 	TArray<AActor*> FindTemplateActorsByClass(UClass* InClass) const;
 
-	// Deferred BeginPlay 시스템 (Unreal Engine 방식)
-	void AddPendingBeginPlayActor(AActor* InActor);
-	void ProcessPendingBeginPlay();
-
 	void AddLevelComponent(AActor* Actor);
 
 	void RegisterComponent(UActorComponent* InComponent);
@@ -89,9 +85,6 @@ private:
 
 	// 지연 삭제를 위한 리스트
 	TArray<AActor*> ActorsToDelete;
-
-	// Deferred BeginPlay - 다음 Tick에서 BeginPlay를 호출할 Actor들 (중복 방지를 위해 TSet 사용)
-	TSet<AActor*> PendingBeginPlayActors;
 
 	uint64 ShowFlags =
 		static_cast<uint64>(EEngineShowFlags::SF_Billboard) |

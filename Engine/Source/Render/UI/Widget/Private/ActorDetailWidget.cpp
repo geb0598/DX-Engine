@@ -89,7 +89,7 @@ void UActorDetailWidget::RenderWidget()
 		}
 
 		bool bIsTemplate = SelectedActor->IsTemplate();
-		if (ImGui::Checkbox("Is Template", &bIsTemplate))
+		if (ImGui::Checkbox("Is Template (CDO-like)", &bIsTemplate))
 		{
 			SelectedActor->SetIsTemplate(bIsTemplate);
 		}

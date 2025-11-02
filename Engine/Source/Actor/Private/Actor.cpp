@@ -652,8 +652,8 @@ AActor* AActor::DuplicateFromTemplate(ULevel* TargetLevel)
 			// Level의 Actor 리스트에 추가
 			LevelToAddTo->AddActorToLevel(NewActor);
 
-			// Deferred BeginPlay - 다음 Tick에서 호출 (속성 설정 후)
-			LevelToAddTo->AddPendingBeginPlayActor(NewActor);
+			// BeginPlay 호출 (ScriptComponent 등 초기화)
+			NewActor->BeginPlay();
 
 			// Level의 Component 시스템에 등록
 			LevelToAddTo->AddLevelComponent(NewActor);

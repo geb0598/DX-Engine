@@ -92,9 +92,13 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 void ULevel::Init()
 {
-	// Deferred BeginPlay 시스템으로 인해 Pending Actor들이 있을 수 있음
-	// 즉시 BeginPlay를 처리 (Level 로드 시 등)
-	ProcessPendingBeginPlay();
+	for (AActor* Actor: LevelActors)
+	{
+		if (Actor)
+		{
+			Actor->BeginPlay();
+		}
+	}
 }
 
 AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, JSON* ActorJsonData)
@@ -116,18 +120,13 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, JSON* ActorJsonData)
 		{
 			NewActor->InitializeComponents();
 		}
-
+		NewActor->BeginPlay();
 		AddLevelComponent(NewActor);
 
 		// 템플릿 액터면 캐시에 추가
 		if (NewActor->IsTemplate())
 		{
 			RegisterTemplateActor(NewActor);
-		}
-		else
-		{
-			// 템플릿 액터가 아닌 경우만 Deferred BeginPlay 등록
-			AddPendingBeginPlayActor(NewActor);
 		}
 
 		return NewActor;
@@ -360,11 +359,6 @@ void ULevel::DuplicateSubObjects(UObject* DuplicatedObject)
 		{
 			DuplicatedLevel->RegisterTemplateActor(DuplicatedActor);
 		}
-		else
-		{
-			// Template actor가 아닌 경우만 Deferred BeginPlay 등록 (PIE 진입 시)
-			DuplicatedLevel->AddPendingBeginPlayActor(DuplicatedActor);
-		}
 	}
 }
 
@@ -529,41 +523,4 @@ TArray<AActor*> ULevel::FindTemplateActorsByClass(UClass* InClass) const
 		}
 	}
 	return Result;
-}
-
-void ULevel::AddPendingBeginPlayActor(AActor* InActor)
-{
-	if (!InActor)
-	{
-		return;
-	}
-
-	// TSet이 자동으로 중복을 방지함
-	PendingBeginPlayActors.Add(InActor);
-}
-
-void ULevel::ProcessPendingBeginPlay()
-{
-	if (PendingBeginPlayActors.IsEmpty())
-	{
-		return;
-	}
-
-	// BeginPlay를 호출할 Actor들을 배열로 복사 (BeginPlay 중 새로운 Actor가 추가될 수 있음)
-	TArray<AActor*> ActorsToBeginPlay;
-	ActorsToBeginPlay.Reserve(PendingBeginPlayActors.Num());
-	for (AActor* Actor : PendingBeginPlayActors)
-	{
-		ActorsToBeginPlay.Add(Actor);
-	}
-	PendingBeginPlayActors.Empty();
-
-	// 모든 Pending Actor들의 BeginPlay 호출
-	for (AActor* Actor : ActorsToBeginPlay)
-	{
-		if (Actor)
-		{
-			Actor->BeginPlay();
-		}
-	}
 }
