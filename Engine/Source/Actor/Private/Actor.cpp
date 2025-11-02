@@ -660,6 +660,11 @@ AActor* AActor::DuplicateFromTemplate(ULevel* TargetLevel)
 		// 위치를 (0, 0, 0)으로 초기화
 		NewActor->SetActorLocation(FVector(0, 0, 0));
 
+		// TODO: 리팩토링 필요
+		// - Level 내부 메소드를 직접 호출하지 말고 통합된 등록 함수로 위임
+		// - World의 bBegunPlay 체크 없이 직접 BeginPlay() 호출 (일관성 문제)
+		// - 제안: ULevel::RegisterActor(AActor*, bool bCallBeginPlay) 같은 통합 메소드
+
 		// Level에 추가
 		ULevel* LevelToAddTo = TargetLevel ? TargetLevel : Cast<ULevel>(GetOuter());
 		if (LevelToAddTo)

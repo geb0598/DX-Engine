@@ -243,6 +243,10 @@ AActor* UWorld::SpawnActor(UClass* InActorClass, JSON* ActorJsonData)
 		return nullptr;
 	}
 
+	// TODO: 리팩토링 필요
+	// - Level->SpawnActorToLevel()로 위임하여 중복 코드 제거
+	// - Level의 private 멤버(LevelActors) 직접 접근 문제
+	// - bBegunPlay 체크를 파라미터로 전달하는 방식 검토
 	AActor* NewActor = Cast<AActor>(NewObject(InActorClass, this));
 	if (NewActor)
 	{

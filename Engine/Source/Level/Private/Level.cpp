@@ -110,6 +110,10 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, JSON* ActorJsonData)
 		return nullptr;
 	}
 
+	// TODO: BeginPlay 타이밍 문제
+	// - 현재: 항상 BeginPlay() 호출 -> Level::Init()에서도 호출 (중복)
+	// - Level::Serialize에서 호출 시 레벨 로드된 액터는 BeginPlay 2번 호출됨
+	// - 제안: bCallBeginPlay 파라미터 추가 또는 deferred beginplay 재도입 검토
 	AActor* NewActor = Cast<AActor>(NewObject(InActorClass, this));
 	if (NewActor)
 	{
