@@ -3,6 +3,7 @@
 #include "Actor/Public/GameMode.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Manager/Input/Public/InputManager.h"
+#include "Level/Public/World.h"
 
 void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 {
@@ -132,6 +133,9 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		),
 		"UUID", sol::property(
 			&AActor::GetUUID
+		),
+		"Tag", sol::property(
+			[](AActor* Actor) -> int32 { return static_cast<int32>(Actor->GetCollisionTag()); }
 		),
 		"IsTemplate", sol::property(
 			&AActor::IsTemplate,

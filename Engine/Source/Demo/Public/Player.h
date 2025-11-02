@@ -7,6 +7,6 @@ class APlayer : public AActor
 public:
 	APlayer();
 
-private:
-	UScriptComponent* ScriptComponent = nullptr;
+	UClass* GetDefaultRootComponent() override;
+	void InitializeComponents() override;
 };
