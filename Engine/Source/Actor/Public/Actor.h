@@ -68,6 +68,10 @@ public:
 	const FQuaternion& GetActorRotation() const;
 	const FVector& GetActorScale3D() const;
 
+	FVector GetActorForwardVector() const;
+	FVector GetActorUpVector() const;
+	FVector GetActorRightVector() const;
+
 	// === Overlap Query API ===
 	bool IsOverlappingActor(const AActor* OtherActor) const;
 	void GetOverlappingComponents(const AActor* OtherActor, TArray<UPrimitiveComponent*>& OutComponents) const;
@@ -103,7 +107,7 @@ public:
 		// 4. 정확한 타입(T*)으로 캐스팅 없이 바로 반환합니다.
 		return NewComponent;
 	}
-	
+
 	UActorComponent* CreateDefaultSubobject(UClass* Class)
 	{
 		UActorComponent* NewComponent = Cast<UActorComponent>(::NewObject(Class, this));
@@ -112,7 +116,7 @@ public:
 			NewComponent->SetOwner(this);
 			OwnedComponents.Add(NewComponent);
 		}
-		
+
 		return NewComponent;
 	}
 
@@ -155,7 +159,7 @@ protected:
 	bool bCanEverTick = false;
 	bool bTickInEditor = false;
 	bool bBegunPlay = false;
-	/** @brief True if the actor is marked for destruction. */  
+	/** @brief True if the actor is marked for destruction. */
 	bool bIsPendingDestroy = false;
 
 private:

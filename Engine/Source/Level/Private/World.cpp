@@ -219,7 +219,33 @@ AActor* UWorld::SpawnActor(UClass* InActorClass, JSON* ActorJsonData)
 		return nullptr;
 	}
 
-	return Level->SpawnActorToLevel(InActorClass, ActorJsonData);
+	if (!InActorClass)
+	{
+		return nullptr;
+	}
+
+	AActor* NewActor = Cast<AActor>(NewObject(InActorClass, this));
+	if (NewActor)
+	{
+		Level->LevelActors.Add(NewActor);
+		if (ActorJsonData != nullptr)
+		{
+			NewActor->Serialize(true, *ActorJsonData);
+		}
+		else
+		{
+			NewActor->InitializeComponents();
+		}
+
+		if (bBegunPlay)
+		{
+			NewActor->BeginPlay();
+		}
+		Level->AddLevelComponent(NewActor);
+		return NewActor;
+	}
+
+	return nullptr;
 }
 
 /**
@@ -307,6 +333,7 @@ void UWorld::SwitchToLevel(ULevel* InNewLevel)
 UObject* UWorld::Duplicate()
 {
 	UWorld* World = Cast<UWorld>(Super::Duplicate());
+	World->Settings = Settings;
 	return World;
 }
 

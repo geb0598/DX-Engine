@@ -26,6 +26,11 @@ public:
 
 public:
     /**
+     * @brief 스크립트 이름만 바인딩 (BeginPlay 등에서 Assign)
+     */
+    void SetScriptName(const FName& NewScriptName) { ScriptName = NewScriptName; }
+
+    /**
      * @brief 캐시된 스크립트 찾아 로드하고 바인딩
      */
     void AssignScript(const FName& NewScriptName);

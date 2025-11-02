@@ -43,7 +43,7 @@ ULevelTabBarWidget::ULevelTabBarWidget()
 	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/New.png", nullptr, NewIconSRV.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/CreateActor.png", nullptr, CreateActorIconSRV.GetAddressOf());
-
+	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/WorldSettings.png", nullptr, WorldSettingsIconSRV.GetAddressOf());
 
 	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/Play.png", nullptr, PlayPIEIconSRV.GetAddressOf());
 	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/Pause.png", nullptr, PausePIEIconSRV.GetAddressOf());
@@ -69,7 +69,7 @@ void ULevelTabBarWidget::Update()
 void ULevelTabBarWidget::RenderWidget()
 {
 	ImGuiViewport* vp = ImGui::GetMainViewport();
-	
+
 	// ① 메뉴바 높이 (MainBarWidget에서 계산해 UIManager에 저장했다고 가정)
 	// 20px 부터 그려짐
 	const float mainBarH = 20.0f;
@@ -83,7 +83,7 @@ void ULevelTabBarWidget::RenderWidget()
 	const ImVec2 screenSize = ImGui::GetIO().DisplaySize;
 	ImGui::SetNextWindowPos(ImVec2(0.0f, mainBarH));
 	ImGui::SetNextWindowSize(ImVec2(screenSize.x, TabStripHeight));
-	
+
 	ImGuiWindowFlags flags =
 		ImGuiWindowFlags_NoTitleBar |
 		ImGuiWindowFlags_NoResize |
@@ -94,7 +94,7 @@ void ULevelTabBarWidget::RenderWidget()
 		ImGuiWindowFlags_NoCollapse |
 		ImGuiWindowFlags_NoBringToFrontOnFocus |
 		ImGuiWindowFlags_NoNavFocus;
-	
+
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 6));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
@@ -116,7 +116,7 @@ void ULevelTabBarWidget::RenderWidget()
 
 
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + leftGap);
-	
+
 		ImGui::PushStyleVar(ImGuiStyleVar_TabRounding, 6.0f);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(12, 6));
 		ImGui::PushStyleVar(ImGuiStyleVar_TabBarBorderSize, 0.0f);  // ★ 탭바 하단 라인 제거
@@ -147,18 +147,18 @@ void ULevelTabBarWidget::RenderWidget()
 					}
 				}
 			}
-			
+
 			if (ImGui::BeginTabItem(LevelName.c_str())) { ImGui::EndTabItem(); }
 			// ... 더 많은 탭 ...
 			ImGui::EndTabBar();
 		}
-	
+
 		// 색/스타일 복원
-		ImGui::PopStyleColor(5); 
+		ImGui::PopStyleColor(5);
 		ImGui::PopStyleVar(3);
 	}
 	ImGui::End();
-	
+
 	ImGui::PopStyleColor(1);
 	ImGui::PopStyleVar(3);
 
@@ -374,6 +374,89 @@ void ULevelTabBarWidget::RenderWidget()
 			}
 		}
 
+		ImGui::SameLine(0.0f, 10.0f);
+
+		if (IconButton("##btn_World", WorldSettingsIconSRV.Get(), "World Settings"))
+		{
+			ImGui::OpenPopup("WorldSettingsMenu"); // ← 팝업 열기
+		}
+
+		if (ImGui::BeginPopup("WorldSettingsMenu"))
+		{
+		    // 1. GWorld 유효성 검사 (CreateActorMenu 스타일 참조)
+		    if (!GWorld)
+		    {
+		        ImGui::EndPopup();
+		    }
+		    else
+		    {
+		        ImGui::Text("World Settings");
+		        ImGui::Separator();
+		        ImGui::Spacing();
+
+		        // 2. GWorld에서 현재 설정의 *복사본*을 가져옵니다.
+		        FWorldSettings WorldSettings = GWorld->GetWorldSettings();
+
+		        // 3. DefaultPlayerClass 위젯 (콤보 박스)
+		        {
+		            // --- 3a. 현재 선택된 클래스의 이름을 가져옵니다. ---
+		            std::string CurrentClassName = "None";
+		            if (WorldSettings.DefaultPlayerClass != nullptr)
+		            {
+		                CurrentClassName = WorldSettings.DefaultPlayerClass->GetName().ToString();
+		                // 'A' 접두사 제거 (CreateActorMenu 스타일)
+		                if (CurrentClassName.size() > 0 && CurrentClassName[0] == 'A')
+		                {
+		                    CurrentClassName = CurrentClassName.substr(1);
+		                }
+		            }
+
+		            // --- 3b. 콤보 박스(드롭다운)를 시작합니다. ---
+		            if (ImGui::BeginCombo("Default Player Class", CurrentClassName.c_str()))
+		            {
+		                // --- 3c. "None" 옵션을 추가합니다. ---
+		                bool bIsNoneSelected = (WorldSettings.DefaultPlayerClass == nullptr);
+		                if (ImGui::MenuItem("None", "", bIsNoneSelected))
+		                {
+		                    WorldSettings.DefaultPlayerClass = nullptr; // 복사본 수정
+		                }
+
+		                // --- 3d. APlayer(또는 ACharacter)를 상속받는 모든 클래스를 찾습니다. ---
+		                // (APlayer::StaticClass()가 플레이어의 기본 클래스라고 가정)
+		                static TArray<UClass*> AllPlayerClasses = UClass::FindClasses(AActor::StaticClass());
+
+		                for (UClass* PlayerClass : AllPlayerClasses)
+		                {
+		                    // 'A' 접두사 제거
+		                    std::string ItemName = static_cast<string>(PlayerClass->GetName().ToString());
+		                    if (ItemName.size() > 0 && ItemName[0] == 'A')
+		                    {
+		                        ItemName = ItemName.substr(1);
+		                    }
+
+		                    bool is_selected = (WorldSettings.DefaultPlayerClass == PlayerClass);
+
+		                    if (ImGui::MenuItem(ItemName.c_str(), "", is_selected))
+		                    {
+		                        WorldSettings.DefaultPlayerClass = PlayerClass; // 복사본 수정
+		                    }
+		                }
+
+		                ImGui::EndCombo();
+		            }
+		        } // End of DefaultPlayerClass Widget
+
+		        // (여기에 다른 WorldSettings 위젯들을 추가할 수 있습니다)
+		        ImGui::Spacing();
+		        ImGui::Separator();
+
+		        // 4. 수정된 설정(복사본)을 GWorld에 다시 적용합니다.
+		        GWorld->SetWorldSettings(WorldSettings);
+
+		        ImGui::EndPopup();
+		    }
+		}
+
 		ToolbarVSeparator(10.0f, 6.0f, 6.0f, 1.0f, separatorColor, 5.0f);
 
 		// PIE 세션이 활성화되어 있지 않을 때: 초록 재생 + 회색 정지
@@ -426,7 +509,7 @@ void ULevelTabBarWidget::RenderWidget()
 		{
 			ImGui::OpenPopup("ControlCascadeMenu");
 		}
-		
+
 		// 팝업 메뉴: Cascade 조정 메뉴
 		if (ImGui::BeginPopup("ControlCascadeMenu"))
 		{
@@ -498,28 +581,28 @@ void ULevelTabBarWidget::RenderWidget()
 
 			ImGui::EndPopup();
 		}
-		
+
 		ToolbarVSeparator(10.0f, 6.0f, 6.0f, 1.0f, separatorColor, 5.0f);
-		
+
 		// Grid Spacing 조절
 		ImGui::Text("Grid:");
 		ImGui::SameLine();
 		ImGui::SetNextItemWidth(100);
-		
+
 		// 슬라이더 색상을 검은색으로 설정
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));          // 배경
 		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));  // 호버
 		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f)); // 액티브
 		ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));      // 그랩
 		ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // 그랩 액티브
-		
+
 		if (BatchLine && ImGui::SliderFloat("##GridSpacing", &GridCellSize, 0.1f, 10.0f, "%.1f"))
 		{
 			BatchLine->UpdateUGridVertices(GridCellSize);
 		}
-		
+
 		ImGui::PopStyleColor(5);
-		
+
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::SetTooltip("Grid Spacing");

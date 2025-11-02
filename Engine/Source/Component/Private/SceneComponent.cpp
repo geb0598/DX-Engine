@@ -235,6 +235,22 @@ FVector USceneComponent::GetWorldScale3D() const
     return GetWorldTransformMatrix().GetScale();
 }
 
+FVector USceneComponent::GetForwardVector() const
+{
+	return GetWorldRotationAsQuaternion().RotateVector(FVector::ForwardVector());
+}
+
+FVector USceneComponent::GetUpVector() const
+{
+	return GetWorldRotationAsQuaternion().RotateVector(FVector::UpVector());
+
+}
+
+FVector USceneComponent::GetRightVector() const
+{
+	return GetWorldRotationAsQuaternion().RotateVector(FVector::RightVector());
+}
+
 void USceneComponent::SetWorldLocation(const FVector& NewLocation)
 {
     if (AttachParent && !IsUsingAbsoluteLocation())

@@ -38,6 +38,10 @@ public:
     FQuaternion GetWorldRotationAsQuaternion() const;
     FVector GetWorldScale3D() const;
 
+	FVector GetForwardVector() const;
+	FVector GetUpVector() const;
+	FVector GetRightVector() const;
+
     void SetWorldLocation(const FVector& NewLocation);
     void SetWorldRotation(const FVector& NewRotation);
     void SetWorldRotation(const FQuaternion& NewRotation);

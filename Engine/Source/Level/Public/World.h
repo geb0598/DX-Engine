@@ -11,6 +11,11 @@ class UClass;
 namespace json { class JSON; }
 using JSON = json::JSON;
 
+struct FWorldSettings
+{
+	UClass* DefaultPlayerClass = nullptr;
+};
+
 // It represents the context in which the world is being used.
 enum EWorldType
 {
@@ -81,10 +86,13 @@ public:
 protected:
 	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 
-	// GameMode
+// GameMode & Settings
 public:
 	class AGameMode* GetGameMode() const { return AuthorityGameMode; }
+	const FWorldSettings& GetWorldSettings() const { return Settings; }
+	void SetWorldSettings(const FWorldSettings& InWorldSettings) { Settings = InWorldSettings; }
 
 private:
 	AGameMode* AuthorityGameMode = nullptr;
+	FWorldSettings Settings;
 };

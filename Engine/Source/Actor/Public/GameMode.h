@@ -18,6 +18,7 @@ public:
 public:
 	AGameMode() = default;
 	void BeginPlay() override;
+	void EndPlay() override;
 
 	virtual void InitGame();
 	virtual void StartGame();
@@ -26,7 +27,11 @@ public:
 	bool IsGameRunning() const { return bGameRunning; }
 	bool IsGameEnded() const { return bGameEnded; }
 
+protected:
+	AActor* Player = nullptr;
+
 private:
+	class UCamera* MainCamera = nullptr;
 	bool bGameRunning = false;
 	bool bGameEnded = false;
 };

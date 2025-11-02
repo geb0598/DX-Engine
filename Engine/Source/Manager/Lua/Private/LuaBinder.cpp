@@ -128,7 +128,10 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		),
 		"UUID", sol::property(
 			&AActor::GetUUID
-		)
+		),
+		"GetActorForwardVector", sol::resolve<FVector() const>(&AActor::GetActorForwardVector),
+		"GetActorUpVector", sol::resolve<FVector() const>(&AActor::GetActorUpVector),
+		"GetActorRightVector", sol::resolve<FVector() const>(&AActor::GetActorRightVector)
 	);
 
 	// --- AGameMode ---
@@ -252,5 +255,14 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 	});
 	LuaState.set_function("IsKeyReleased", [&InputMgr](int32 Key) {
 		return InputMgr.IsKeyReleased(static_cast<EKeyInput>(Key));
+	});
+	LuaState.set_function("GetMouseNDCPosition", [&InputMgr]() {
+		return InputMgr.GetMouseNDCPosition();
+	});
+	LuaState.set_function("GetMousePosition", [&InputMgr]() {
+		return InputMgr.GetMousePosition();
+	});
+	LuaState.set_function("GetMouseDelta", [&InputMgr]() {
+		return InputMgr.GetMouseDelta();
 	});
 }

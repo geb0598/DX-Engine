@@ -81,7 +81,7 @@ public:
 	// Input enable for main editor camera (disable when hovering other viewports)
 	void SetInputEnabled(bool b) { bInputEnabled = b; }
 	bool GetInputEnabled() const { return bInputEnabled; }
-	
+
 	// Camera Movement Speed Control
 	float GetMoveSpeed() const { return CurrentMoveSpeed; }
 	void SetMoveSpeed(float InSpeed)
@@ -125,7 +125,15 @@ private:
 	// Whether this camera consumes input (movement/rotation). Only used by editor main camera.
 	bool bInputEnabled = true;
 	bool bIsMainDrraging = false;
-	
+
 	// Dynamic Movement Speed
 	float CurrentMoveSpeed = DEFAULT_SPEED;
+
+// ViewTarget Section
+public:
+	bool HasViewTarget() const { return ViewTarget != nullptr; }
+	void SetViewTarget(AActor* InViewTarget) { ViewTarget = InViewTarget; }
+
+private:
+	AActor* ViewTarget = nullptr;
 };

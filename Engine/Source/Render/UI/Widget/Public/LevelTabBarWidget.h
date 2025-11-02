@@ -25,8 +25,7 @@ public:
     void Update() override;
     void RenderWidget() override;
 
-
-    float GetLevelBarHeight()const ;
+    float GetLevelBarHeight() const;
 
 private:
     void SaveLevel(const FString& InFilePath);
@@ -58,6 +57,9 @@ private:
 
     // CreateActor
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CreateActorIconSRV;
+
+    // WorldSettings
+    Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> WorldSettingsIconSRV;
 
     // Play Pause Stop
     Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> PlayPIEIconSRV;

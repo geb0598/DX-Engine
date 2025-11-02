@@ -224,6 +224,7 @@
     <ClInclude Include="Source\Core\Public\ObjectIterator.h" />
     <ClInclude Include="Source\Core\Public\WindowsBinReader.h" />
     <ClInclude Include="Source\Core\Public\WindowsBinWriter.h" />
+    <ClInclude Include="Source\Demo\Public\Player.h" />
     <ClInclude Include="Source\Editor\Public\EditorEngine.h" />
     <ClInclude Include="Source\Global\BVH.h" />
     <ClInclude Include="Source\Global\FString.h" />
@@ -446,6 +447,7 @@
     <ClCompile Include="Source\Core\Private\ObjectIterator.cpp" />
     <ClCompile Include="Source\Core\Private\WindowsBinReader.cpp" />
     <ClCompile Include="Source\Core\Private\WindowsBinWriter.cpp" />
+    <ClCompile Include="Source\Demo\Private\Player.cpp" />
     <ClCompile Include="Source\Editor\Private\EditorEngine.cpp" />
     <ClCompile Include="Source\Editor\Private\GizmoGeometry.cpp" />
     <ClCompile Include="Source\Editor\Private\GizmoMath.cpp" />
