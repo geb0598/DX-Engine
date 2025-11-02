@@ -36,14 +36,13 @@ void USceneHierarchyWidget::Update()
 
 void USceneHierarchyWidget::RenderWidget()
 {
-	// 에디터 UI는 항상 Editor World를 참조해야 함
-	UWorld* EditorWorld = GEditor->GetEditorWorldContext().World();
-	if (!EditorWorld)
+	UWorld* World = GWorld;
+	if (!World)
 	{
 		return;
 	}
 
-	ULevel* CurrentLevel = EditorWorld->GetLevel();
+	ULevel* CurrentLevel = World->GetLevel();
 
 	if (!CurrentLevel)
 	{
@@ -242,7 +241,7 @@ void USceneHierarchyWidget::RenderActorInfo(AActor* InActor, int32 InIndex)
 		ImGui::PopStyleVar();
 	}
 	ImGui::PopStyleColor(3);
-	
+
 	// 아이콘 표시
 	ImGui::SameLine();
 	UTexture* IconTexture = GetIconForActor(InActor);
@@ -260,13 +259,13 @@ void USceneHierarchyWidget::RenderActorInfo(AActor* InActor, int32 InIndex)
 		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-		
+
 		// 이름 변경 입력창
 		ImGui::PushItemWidth(-1.0f);
 		bool bEnterPressed = ImGui::InputText("##Rename", RenameBuffer, sizeof(RenameBuffer),
 		                                      ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
 		ImGui::PopItemWidth();
-		
+
 		ImGui::PopStyleColor(3);
 
 		// Enter 키로 확인
@@ -369,16 +368,16 @@ void USceneHierarchyWidget::RenderSearchBar()
 
 	// 검색창
 	ImGui::SameLine();
-	
+
 	// 입력 필드 색상을 검은색으로 설정
 	ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-	
+
 	ImGui::PushItemWidth(-1.0f); // 나머지 너비 모두 사용
 	bool bTextChanged = ImGui::InputTextWithHint("##Search", "검색...", SearchBuffer, sizeof(SearchBuffer));
 	ImGui::PopItemWidth();
-	
+
 	ImGui::PopStyleColor(3);
 
 	// 검색어가 변경되면 필터 업데이트 플래그 설정
