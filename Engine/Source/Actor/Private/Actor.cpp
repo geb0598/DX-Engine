@@ -647,7 +647,7 @@ void AActor::GetOverlappingComponents(const AActor* OtherActor, TArray<UPrimitiv
 	}
 }
 
-AActor* AActor::DuplicateFromTemplate(ULevel* TargetLevel)
+AActor* AActor::DuplicateFromTemplate(ULevel* TargetLevel, const FVector& InLocation, const FQuaternion& InRotation)
 {
 	// 일반 Duplicate 수행
 	AActor* NewActor = Cast<AActor>(Duplicate());
@@ -656,9 +656,6 @@ AActor* AActor::DuplicateFromTemplate(ULevel* TargetLevel)
 	{
 		// 템플릿 플래그 해제
 		NewActor->SetIsTemplate(false);
-
-		// 위치를 (0, 0, 0)으로 초기화
-		NewActor->SetActorLocation(FVector(0, 0, 0));
 
 		// TODO: 리팩토링 필요
 		// - Level 내부 메소드를 직접 호출하지 말고 통합된 등록 함수로 위임
@@ -672,10 +669,14 @@ AActor* AActor::DuplicateFromTemplate(ULevel* TargetLevel)
 			// Outer 설정
 			NewActor->SetOuter(LevelToAddTo);
 
+			// BeginPlay 이전에 Location/Rotation 설정 (스크립트에서 사용 가능)
+			NewActor->SetActorLocation(InLocation);
+			NewActor->SetActorRotation(InRotation);
+
 			// Level의 Actor 리스트에 추가
 			LevelToAddTo->AddActorToLevel(NewActor);
 
-			// BeginPlay 호출 (ScriptComponent 등 초기화)
+			// BeginPlay 호출 (이 시점에 Location/Rotation이 이미 설정되어 있음)
 			NewActor->BeginPlay();
 
 			// Level의 Component 시스템에 등록

@@ -139,10 +139,22 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		),
 		"Duplicate", &AActor::Duplicate,
 		"DuplicateFromTemplate", sol::overload(
-			// 파라미터 없음 - 템플릿의 Outer Level에 추가
-			[](AActor* Self) { return Self->DuplicateFromTemplate(); },
-			// Level 지정 - 지정된 Level에 추가
-			[](AActor* Self, ULevel* TargetLevel) { return Self->DuplicateFromTemplate(TargetLevel); }
+			// 파라미터 없음 - 템플릿의 Outer Level에 추가, 기본 위치/회전
+			[](AActor* Self) {
+				return Self->DuplicateFromTemplate();
+			},
+			// Level 지정 - 지정된 Level에 추가, 기본 위치/회전
+			[](AActor* Self, ULevel* TargetLevel) {
+				return Self->DuplicateFromTemplate(TargetLevel);
+			},
+			// Level + Location 지정
+			[](AActor* Self, ULevel* TargetLevel, const FVector& InLocation) {
+				return Self->DuplicateFromTemplate(TargetLevel, InLocation);
+			},
+			// Level + Location + Rotation 지정 (완전한 제어)
+			[](AActor* Self, ULevel* TargetLevel, const FVector& InLocation, const FQuaternion& InRotation) {
+				return Self->DuplicateFromTemplate(TargetLevel, InLocation, InRotation);
+			}
 		),
 		"GetActorForwardVector", sol::resolve<FVector() const>(&AActor::GetActorForwardVector),
 		"GetActorUpVector", sol::resolve<FVector() const>(&AActor::GetActorUpVector),
