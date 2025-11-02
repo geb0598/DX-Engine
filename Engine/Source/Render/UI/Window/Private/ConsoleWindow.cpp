@@ -3,7 +3,6 @@
 #include "Render/UI/Widget/Public/ConsoleWidget.h"
 #include "Manager/Time/Public/TimeManager.h"
 #include "Manager/UI/Public/UIManager.h"
-#include <algorithm>
 
 IMPLEMENT_SINGLETON_CLASS(UConsoleWindow, UUIWindow)
 
@@ -32,7 +31,7 @@ UConsoleWindow::UConsoleWindow()
 	Config.InitialState = EUIWindowState::Hidden;
 	Config.bResizable = true;
 	Config.bMovable = false;
-	Config.bCollapsible = true;
+	Config.bCollapsible = false;
 	Config.DockDirection = EUIDockDirection::BottomLeft; // 왼쪽 하단 도킹
 	Config.UpdateWindowFlags();
 	SetConfig(Config);
@@ -106,12 +105,58 @@ void UConsoleWindow::OnPreRenderWindow(float MenuBarOffset)
 	const float DeltaTime = UTimeManager::GetInstance().GetDeltaTime();
 	UpdateAnimation(DeltaTime);
 
-	if (AnimationState == EConsoleAnimationState::Hidden)
+	if (AnimationState != EConsoleAnimationState::Hidden)
 	{
-		return;
+		ApplyAnimatedLayout(MenuBarOffset);
+	}
+}
+
+void UConsoleWindow::OnPostRenderWindow()
+{
+	// Visible 상태에서 사용자가 크기를 조절하면 저장
+	if (AnimationState == EConsoleAnimationState::Visible)
+	{
+		ImVec2 CurrentSize = ImGui::GetWindowSize();
+		ImVec2 CurrentPos = ImGui::GetWindowPos();
+
+		const ImGuiViewport* Viewport = ImGui::GetMainViewport();
+		const ImVec2 WorkPos = Viewport ? Viewport->WorkPos : ImVec2(0.0f, 0.0f);
+		const ImVec2 WorkSize = Viewport ? Viewport->WorkSize : ImVec2(ImGui::GetIO().DisplaySize.x, ImGui::GetIO().DisplaySize.y);
+		const float StatusBarHeight = UUIManager::GetInstance().GetStatusBarHeight();
+		const float MenuBarOffset = GetMenuBarOffset();
+
+		// 사용자가 조절한 높이 저장
+		if (CurrentSize.y > 1.0f)
+		{
+			UserAdjustedHeight = CurrentSize.y;
+		}
+
+		// 하단 고정 위치 재계산 (사용자가 크기를 조절했을 때)
+		const float ConsoleBottomY = WorkPos.y + WorkSize.y - StatusBarHeight;
+		float ConsoleTopY = ConsoleBottomY - CurrentSize.y;
+		ConsoleTopY = std::max(ConsoleTopY, MenuBarOffset);
+
+		// 현재 위치가 하단 고정 위치와 다르면 보정
+		if (std::abs(CurrentPos.y - ConsoleTopY) > 1.0f)
+		{
+			ImGui::SetWindowPos(ImVec2(WorkPos.x, ConsoleTopY));
+		}
+	}
+}
+
+bool UConsoleWindow::OnWindowClose()
+{
+	// X 버튼으로 닫을 때 AnimationState를 Hidden으로 설정
+	AnimationState = EConsoleAnimationState::Hidden;
+	AnimationProgress = 0.0f;
+
+	// 콘솔이 닫힐 때 선택 해제
+	if (ConsoleWidget)
+	{
+		ConsoleWidget->ClearSelection();
 	}
 
-	ApplyAnimatedLayout(MenuBarOffset);
+	return true; // 닫기 허용
 }
 
 void UConsoleWindow::StartShowAnimation()
@@ -182,7 +227,10 @@ void UConsoleWindow::UpdateAnimation(float DeltaTime)
 void UConsoleWindow::ApplyAnimatedLayout(float MenuBarOffset)
 {
 	const float ClampedProgress = std::clamp(AnimationProgress, 0.0f, 1.0f);
-	float AnimatedHeight = Config.DefaultSize.y * ClampedProgress;
+
+	// 사용자가 조절한 높이가 있으면 사용, 없으면 DefaultSize 사용
+	float TargetHeight = (UserAdjustedHeight > 0.0f) ? UserAdjustedHeight : Config.DefaultSize.y;
+	float AnimatedHeight = TargetHeight * ClampedProgress;
 	AnimatedHeight = std::max(AnimatedHeight, 1.0f);
 
 	const ImGuiViewport* Viewport = ImGui::GetMainViewport();
@@ -200,8 +248,20 @@ void UConsoleWindow::ApplyAnimatedLayout(float MenuBarOffset)
 	ConsoleTopY = std::max(ConsoleTopY, MenuBarOffset);
 
 	ImVec2 TargetPos(WorkPos.x, ConsoleTopY);
-	ImGui::SetNextWindowPos(TargetPos, ImGuiCond_Always);
-	ImGui::SetNextWindowSize(ImVec2(WorkSize.x, AnimatedHeight), ImGuiCond_Always);
+
+	// 애니메이션 중일 때는 크기 고정, 완전히 열렸을 때는 사용자가 크기 조절 가능
+	if (AnimationState == EConsoleAnimationState::Visible)
+	{
+		// Visible 상태: 위치는 항상 하단 고정, 크기는 사용자 조절 가능
+		ImGui::SetNextWindowPos(TargetPos, ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(WorkSize.x, AnimatedHeight), ImGuiCond_Once);
+	}
+	else
+	{
+		// Showing / Hiding 상태: 위치와 크기 모두 애니메이션으로 제어
+		ImGui::SetNextWindowPos(TargetPos, ImGuiCond_Always);
+		ImGui::SetNextWindowSize(ImVec2(WorkSize.x, AnimatedHeight), ImGuiCond_Always);
+	}
 }
 
 /**

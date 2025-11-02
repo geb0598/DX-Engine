@@ -319,10 +319,8 @@ void URenderer::CreateDefaultShader()
 
 void URenderer::CreateTextureShader()
 {
-	const std::wstring VSFilePathString = L"Asset/Shader/TextureVS.hlsl";
-	const std::filesystem::path VSPath(VSFilePathString);
-	const std::wstring PSFilePathString = L"Asset/Shader/TexturePS.hlsl";
-	const std::filesystem::path PSPath(PSFilePathString);
+	const std::wstring ShaderFilePathString = L"Asset/Shader/TextureShader.hlsl";
+	const std::filesystem::path ShaderPath(ShaderFilePathString);
 
 	TArray<D3D11_INPUT_ELEMENT_DESC> TextureLayout =
 	{
@@ -331,11 +329,10 @@ void URenderer::CreateTextureShader()
 		{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FNormalVertex, Color), D3D11_INPUT_PER_VERTEX_DATA, 0	},
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FNormalVertex, TexCoord), D3D11_INPUT_PER_VERTEX_DATA, 0	}
 	};
-	FRenderResourceFactory::CreateVertexShaderAndInputLayout(VSFilePathString, TextureLayout, &TextureVertexShader, &TextureInputLayout);
-	FRenderResourceFactory::CreatePixelShader(PSFilePathString, &TexturePixelShader);
+	FRenderResourceFactory::CreateVertexShaderAndInputLayout(ShaderFilePathString, TextureLayout, &TextureVertexShader, &TextureInputLayout);
+	FRenderResourceFactory::CreatePixelShader(ShaderFilePathString, &TexturePixelShader);
 
-	RegisterShaderReloadCache(VSPath, ShaderUsage::TEXTURE);
-	RegisterShaderReloadCache(PSPath, ShaderUsage::TEXTURE);
+	RegisterShaderReloadCache(ShaderPath, ShaderUsage::TEXTURE);
 }
 
 void URenderer::CreateDecalShader()

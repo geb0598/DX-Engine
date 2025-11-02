@@ -185,48 +185,44 @@ void UUIWindow::RenderWindow()
 	// 메인 메뉴바 높이 고려용 오프셋 계산
 	float MenuBarOffset = GetMenuBarOffset();
 
-	// FIXME(KHJ): ImGui 윈도우 복원 로직이 잘 작동하지 않음. 중복 코드도 많아 개편 및 작동 수정 필요
-	// ImGui 윈도우 시작
-	// 복원이 필요한 경우 위치와 크기 강제 설정
-	if (bShouldRestorePosition && RestoreFrameCount > 0)
+	// 복원 프레임 카운터 감소
+	const bool bIsRestoring = (RestoreFrameCount > 0);
+	if (bIsRestoring)
+	{
+		--RestoreFrameCount;
+	}
+
+	// 위치 설정
+	if (bShouldRestorePosition && bIsRestoring)
 	{
 		ImVec2 AdjustedPosition = LastWindowPosition;
 		AdjustedPosition.y = max(AdjustedPosition.y, MenuBarOffset);
 		ImGui::SetNextWindowPos(AdjustedPosition, ImGuiCond_Always);
-		--RestoreFrameCount;
-		if (RestoreFrameCount <= 0)
+	}
+	else
+	{
+		if (bShouldRestorePosition)
 		{
 			bShouldRestorePosition = false;
 		}
-	}
 
-	else if (!bShouldRestorePosition)
-	{
 		ImVec2 AdjustedDefaultPosition = Config.DefaultPosition;
 		AdjustedDefaultPosition.y = max(AdjustedDefaultPosition.y, MenuBarOffset);
 		ImGui::SetNextWindowPos(AdjustedDefaultPosition, ImGuiCond_FirstUseEver);
 	}
 
-	// ImGui의 내부 상태를 무시하고 강제로 적용
-	if (bShouldRestoreSize && RestoreFrameCount > 0)
+	// 크기 설정
+	if (bShouldRestoreSize && bIsRestoring)
 	{
 		ImGui::SetNextWindowSize(LastWindowSize, ImGuiCond_Always);
-		ImGui::SetNextWindowSizeConstraints(LastWindowSize, LastWindowSize);
-
-		// ImGui 내부 상태 초기화를 위해 FirstUseEver도 시도
-		ImGui::SetNextWindowSize(LastWindowSize, ImGuiCond_FirstUseEver);
-
-		// 크기 복원도 같은 프레임 카운터 사용
-		if (RestoreFrameCount <= 0)
+	}
+	else
+	{
+		if (bShouldRestoreSize)
 		{
 			bShouldRestoreSize = false;
-			bForceSize = false;
-			ImGui::SetNextWindowSizeConstraints(ImVec2(0, 0), ImVec2(10000, 10000));
 		}
-	}
 
-	else if (!bShouldRestoreSize)
-	{
 		ImGui::SetNextWindowSize(Config.DefaultSize, ImGuiCond_FirstUseEver);
 	}
 
@@ -236,16 +232,6 @@ void UUIWindow::RenderWindow()
 
 	if (ImGui::Begin(Config.WindowTitle.ToString().data(), &bIsOpen, Config.WindowFlags))
 	{
-		// 잘 적용되지 않는 문제로 인해 여러 번 강제 적용 시도
-		if (bShouldRestoreSize && RestoreFrameCount > 0)
-		{
-			ImGui::SetWindowSize(LastWindowSize, ImGuiCond_Always);
-			ImGui::SetWindowSize(LastWindowSize);
-			if (bShouldRestorePosition)
-			{
-				ImGui::SetWindowPos(LastWindowPosition, ImGuiCond_Always);
-			}
-		}
 
 		if (!bIsResized)
 		{
@@ -265,6 +251,9 @@ void UUIWindow::RenderWindow()
 
 		// 윈도우 정보 업데이트
 		UpdateWindowInfo();
+
+		// Post-render 처리
+		OnPostRenderWindow();
 	}
 
 	if (bIsResized)
@@ -298,10 +287,10 @@ void UUIWindow::RenderWindow()
 	}
 }
 
-void UUIWindow::RenderWidget() 
+void UUIWindow::RenderWidget()
 {
 	// 위젯 추가 대비 복사본 순회
-	TArray<UWidget*> WidgetsToRender = Widgets; 
+	TArray<UWidget*> WidgetsToRender = Widgets;
 
 	for (auto* Widget : WidgetsToRender)
 	{
@@ -418,6 +407,10 @@ void UUIWindow::OnPreRenderWindow(float MenuBarOffset)
 	// Default implementation does nothing. Derived windows may override.
 }
 
+void UUIWindow::OnPostRenderWindow()
+{
+	// Default implementation does nothing. Derived windows may override.
+}
 
 /**
  * @brief ImGui 컨텍스트에서 현재 윈도우 정보 업데이트

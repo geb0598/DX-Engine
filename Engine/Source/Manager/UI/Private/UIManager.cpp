@@ -515,8 +515,6 @@ void UUIManager::ArrangeRightPanelsDynamic(UUIWindow* InOutlinerWindow, UUIWindo
             {
                 OutlinerHeight = SavedOutlinerHeightForDual;
                 DetailHeight = SavedDetailHeightForDual;
-                UE_LOG("UIManager: 저장된 레이아웃 복원 (Outliner: %.1f, Detail: %.1f)", OutlinerHeight,
-                       DetailHeight);
             }
             else
             {
@@ -645,7 +643,7 @@ void UUIManager::OnWindowMinimized()
 
     bIsMinimized = true;
     SavedWindowStates.Empty();
-    UE_LOG("UIManager: %d개의 윈도우에 대해 상태 저장 시도", UIWindows.Num());
+    UE_LOG("UIManager: UI 상태 저장 시작");
 
     // 모든 UI 윈도우의 현재 상태 저장
     for (auto* Window : UIWindows)
@@ -658,18 +656,11 @@ void UUIManager::OnWindowMinimized()
             SavedState.SavedSize = Window->GetLastWindowSize();
             SavedState.bWasVisible = Window->IsVisible();
 
-            UE_LOG(
-                "UIManager: Saving Window ID=%u, Position=(%.1f,%.1f), Size=(%.1f,%.1f), Visible=%s",
-                SavedState.WindowID,
-                SavedState.SavedPosition.x, SavedState.SavedPosition.y,
-                SavedState.SavedSize.x, SavedState.SavedSize.y,
-                (SavedState.bWasVisible ? "true" : "false"));
-
             SavedWindowStates.Add(SavedState);
         }
     }
 
-    UE_LOG("UIManager: 최소화로 인한 %d개의 윈도우 상태 저장 완료", SavedWindowStates.Num());
+    UE_LOG("UIManager: UI 상태 저장 완료");
 }
 
 /**
@@ -678,15 +669,13 @@ void UUIManager::OnWindowMinimized()
  */
 void UUIManager::OnWindowRestored()
 {
-    UE_LOG("UIManager: UI Restore 작업 시작");
-
     if (!bIsInitialized || !bIsMinimized)
     {
         return;
     }
 
     bIsMinimized = false;
-    UE_LOG("UIManager: %d개의 윈도우에 대해 상태 복원 시도", SavedWindowStates.Num());
+    UE_LOG("UIManager: UI 복원 시작");
 
     // 저장된 상태로 모든 UI 윈도우 복원
     for (auto* Window : UIWindows)
@@ -694,7 +683,6 @@ void UUIManager::OnWindowRestored()
         if (Window)
         {
             uint32 CurrentWindowID = Window->GetWindowID();
-            UE_LOG("UIManager: Restoring Window ID=%u", CurrentWindowID);
 
             // 저장된 상태에서 해당 윈도우 찾기
             FUIWindowSavedState* FoundState = nullptr;
@@ -709,40 +697,25 @@ void UUIManager::OnWindowRestored()
 
             if (FoundState)
             {
-                UE_LOG(
-                    "UIManager: Restoring Window ID=%u: Position=(%.1f,%.1f) -> (%.1f,%.1f), Size=(%.1f,%.1f) -> (%.1f,%.1f)",
-                    CurrentWindowID,
-                    Window->GetLastWindowPosition().x, Window->GetLastWindowPosition().y,
-                    FoundState->SavedPosition.x, FoundState->SavedPosition.y,
-                    Window->GetLastWindowSize().x, Window->GetLastWindowSize().y,
-                    FoundState->SavedSize.x, FoundState->SavedSize.y);
-
-                // 위치와 크기 복원
+                // 위치와 크기 복원 (3프레임 동안 시도)
                 Window->SetLastWindowPosition(FoundState->SavedPosition);
                 Window->SetLastWindowSize(FoundState->SavedSize);
-                UE_LOG("UIManager: %u번 윈도우에 대해 이후 10프레임 동안 복원을 시도합니다", CurrentWindowID);
 
                 // 가시성 복원
                 if (FoundState->bWasVisible)
                 {
                     Window->SetWindowState(EUIWindowState::Visible);
-                    UE_LOG("UIManager: %u번 윈도우가 Visible 상태로 복원됩니다", CurrentWindowID);
                 }
                 else
                 {
                     Window->SetWindowState(EUIWindowState::Hidden);
-                    UE_LOG("UIManager: %u번 윈도우가 Hidden 상태로 복원됩니다", CurrentWindowID);
                 }
-            }
-            else
-            {
-                UE_LOG("UIManager: %u번 윈도우에 대한 정보를 찾을 수 없습니다", CurrentWindowID);
             }
         }
     }
 
-    UE_LOG("UIManager: %d개의 윈도우 상태가 복원되었습니다", SavedWindowStates.Num());
     SavedWindowStates.Empty();
+    UE_LOG("UIManager: UI 복원 완료");
 }
 
 /**

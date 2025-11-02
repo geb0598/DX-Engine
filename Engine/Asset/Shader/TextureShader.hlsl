@@ -1,12 +1,17 @@
-cbuffer constants : register(b0)
+// TextureShader.hlsl - Vertex and Pixel Shader for Textured Rendering
+
+cbuffer Model : register(b0)
 {
-	row_major float4x4 world;
+	row_major float4x4 World;
 }
 
-cbuffer PerFrame : register(b1)
+cbuffer Camera : register(b1)
 {
-	row_major float4x4 View;		// View Matrix Calculation of MVP Matrix
-	row_major float4x4 Projection;	// Projection Matrix Calculation of MVP Matrix
+	row_major float4x4 View;
+	row_major float4x4 Projection;
+	float3 ViewWorldLocation;
+	float NearClip;
+	float FarClip;
 };
 
 cbuffer MaterialConstants : register(b2)
@@ -26,7 +31,7 @@ Texture2D AmbientTexture : register(t1);	// map_Ka
 Texture2D SpecularTexture : register(t2);	// map_Ks
 Texture2D NormalTexture : register(t3);		// map_Ns
 Texture2D AlphaTexture : register(t4);		// map_d
-Texture2D BumpTexture : register(t5);		// map_bump
+Texture2D BumpTexture : register(t5);		// map_Bump
 
 SamplerState SamplerWrap : register(s0);
 
@@ -40,33 +45,19 @@ SamplerState SamplerWrap : register(s0);
 
 struct VS_INPUT
 {
-	float3 position : POSITION;
-	float3 normal : NORMAL;
-	float4 color : COLOR;
-	float2 tex : TEXCOORD0;
+	float3 Position : POSITION;
+	float3 Normal : NORMAL;
+	float4 Color : COLOR;
+	float2 Tex : TEXCOORD0;
 };
 
 struct PS_INPUT
 {
-	float4 position : SV_POSITION;	// Transformed position to pass to the pixel shader
-	float3 normal : TEXCOORD0;
-	float2 tex : TEXCOORD1;
+	float4 Position : SV_POSITION;
+	float3 WorldPosition: TEXCOORD0;
+	float3 WorldNormal : TEXCOORD1;
+	float2 Tex : TEXCOORD2;
 };
-
-PS_INPUT mainVS(VS_INPUT input)
-{
-	PS_INPUT output;
-
-	float4 tmp = float4(input.position, 1.0f);
-	tmp = mul(tmp, world);
-	tmp = mul(tmp, View);
-	tmp = mul(tmp, Projection);
-	output.position = tmp;
-	output.normal = normalize(mul(float4(input.normal, 0.0f), world).xyz);
-	output.tex = input.tex;
-
-	return output;
-}
 
 struct PS_OUTPUT
 {
@@ -74,40 +65,58 @@ struct PS_OUTPUT
 	float4 NormalData : SV_Target1;
 };
 
-PS_OUTPUT mainPS(PS_INPUT input) : SV_TARGET
+PS_INPUT mainVS(VS_INPUT Input)
 {
-	PS_OUTPUT output;
-	float4 finalColor = float4(0.f, 0.f, 0.f, 1.f);
-	float2 UV = input.tex;
+	PS_INPUT Output;
+	Output.WorldPosition = mul(float4(Input.Position, 1.0f), World).xyz;
+	Output.Position = mul(mul(mul(float4(Input.Position, 1.0f), World), View), Projection);
+	Output.WorldNormal = normalize(mul(Input.Normal, (float3x3)World));
+	Output.Tex = Input.Tex;
+
+	return Output;
+}
+
+PS_OUTPUT mainPS(PS_INPUT Input) : SV_TARGET
+{
+	PS_OUTPUT Output;
+
+	float4 FinalColor = float4(0.f, 0.f, 0.f, 1.f);
+	float2 UV = Input.Tex;
 
 	// Base diffuse color
-	float4 diffuseColor = Kd;
+	float4 DiffuseColor = Kd;
 	if (MaterialFlags & HAS_DIFFUSE_MAP)
 	{
-		diffuseColor *= DiffuseTexture.Sample(SamplerWrap, UV);
-		finalColor.a = diffuseColor.a;
+		DiffuseColor *= DiffuseTexture.Sample(SamplerWrap, UV);
+		FinalColor.a = DiffuseColor.a;
 	}
 
 	// Ambient contribution
-	float4 ambientColor = Ka;
+	float4 AmbientColor = Ka;
 	if (MaterialFlags & HAS_AMBIENT_MAP)
 	{
-		ambientColor *= AmbientTexture.Sample(SamplerWrap, UV);
+		AmbientColor *= AmbientTexture.Sample(SamplerWrap, UV);
 	}
 
-	finalColor.rgb = diffuseColor.rgb + ambientColor.rgb;
+	FinalColor.rgb = DiffuseColor.rgb;
 
 	// Alpha handling
 	if (MaterialFlags & HAS_ALPHA_MAP)
 	{
 		float alpha = AlphaTexture.Sample(SamplerWrap, UV).r;
-		finalColor.a = D;
-		finalColor.a *= alpha;
+		FinalColor.a = D;
+		FinalColor.a *= alpha;
 	}
 
-	output.SceneColor = finalColor;
-	float3 encodedNormal = normalize(input.normal) * 0.5f + 0.5f; // [-1,1] → [0,1]
-	output.NormalData = float4(encodedNormal, 1.0f);
-	
-	return output;
+	// Discard fully transparent pixels to prevent depth write
+	if (FinalColor.a < 0.01f)
+	{
+		discard;
+	}
+
+	Output.SceneColor = FinalColor;
+	float3 EncodedNormal = normalize(Input.WorldNormal) * 0.5f + 0.5f;
+	Output.NormalData = float4(EncodedNormal, 1.0f);
+
+	return Output;
 }
