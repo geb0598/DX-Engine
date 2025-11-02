@@ -59,6 +59,12 @@ public:
 	virtual UClass* GetSpecificWidgetClass() const override;
 
 	/*-----------------------------------------------------------------------------
+	    IDelegateProvider Implementation
+	 -----------------------------------------------------------------------------*/
+public:
+	TArray<FDelegateInfoBase*> GetDelegates() const override;
+
+	/*-----------------------------------------------------------------------------
 	    ULightSensorComponent Features
 	 -----------------------------------------------------------------------------*/
 public:

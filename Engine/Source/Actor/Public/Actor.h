@@ -4,6 +4,7 @@
 #include "Component/Public/SceneComponent.h"
 #include "Core/Public/NewObject.h"
 #include "Core/Public/Delegate.h"
+#include "Core/Public/IDelegateProvider.h"
 #include "Physics/Public/HitResult.h"
 
 class UUUIDTextComponent;
@@ -32,7 +33,7 @@ DECLARE_DELEGATE(FActorHitSignature,
  */
 UCLASS()
 
-class AActor : public UObject
+class AActor : public UObject, public IDelegateProvider
 {
 	GENERATED_BODY()
 	DECLARE_CLASS(AActor, UObject)
@@ -78,27 +79,10 @@ public:
 	FActorHitSignature OnActorHit;
 
 	/**
-	 * @brief ScriptComponent가 자동 바인딩에 사용할 Delegate 목록 반환
-	 * @return 등록된 모든 Delegate 정보
+	 * @brief IDelegateProvider 구현 - Actor의 Delegate 목록 반환
+	 * @return Lua에 노출할 Delegate 정보 배열
 	 */
-	const TArray<FDelegateInfoBase*>& GetAllDelegates() const { return DelegateList; }
-
-	/**
-	 * @brief Delegate를 DelegateList에 등록 (하위 클래스/컴포넌트용)
-	 *
-	 * ⚠️ 주의사항:
-	 * - BeginPlay 이전에 호출해야 ScriptComponent 자동 바인딩에 포함됨
-	 * - DelegateInfo 포인터의 수명은 이 Actor가 관리함 (소멸자에서 delete)
-	 * - MakeDelegateInfo() 헬퍼 함수 사용 권장
-	 *
-	 * @code
-	 * // 생성자에서 멤버 변수 등록:
-	 * RegisterDelegate(MakeDelegateInfo("OnMyEvent", &OnMyEvent));
-	 * @endcode
-	 *
-	 * @param DelegateInfo 등록할 Delegate 정보 (MakeDelegateInfo로 생성)
-	 */
-	void RegisterDelegate(FDelegateInfoBase* DelegateInfo);
+	TArray<FDelegateInfoBase*> GetDelegates() const override;
 
 	template<class T>
 	T* CreateDefaultSubobject(const FName& InName = FName::None)
@@ -177,9 +161,6 @@ protected:
 private:
 	USceneComponent* RootComponent = nullptr;
 	TArray<UActorComponent*> OwnedComponents;
-
-	/** @brief Lua 자동 바인딩을 위한 Delegate 목록 */
-	TArray<FDelegateInfoBase*> DelegateList;
 
 public:
 	virtual UObject* Duplicate() override;

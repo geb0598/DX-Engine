@@ -3,6 +3,7 @@
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/RenderPass/Public/LightSensorPass.h"
 #include "Render/UI/Widget/Public/LightSensorComponentWidget.h"
+#include "Component/Public/ScriptComponent.h"  // FDelegateInfo 템플릿 구현용
 
 IMPLEMENT_CLASS(ULightSensorComponent, USceneComponent)
 
@@ -58,13 +59,6 @@ void ULightSensorComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// TODO: Component Delegate 패턴 구현 필요
-	// Actor의 RegisterDelegate는 Actor 소유 Delegate만 등록 가능
-	// Component 소유 Delegate는 별도 패턴 필요 (향후 작업)
-	// - Component → Owner Actor에 등록?
-	// - ScriptComponent가 Component Delegate도 탐색?
-	// - 별도 Component Delegate 시스템?
-
 	// 초기 측정
 	FrameCounter = 0;
 	CurrentLuminance = 0.0f;
@@ -103,6 +97,18 @@ void ULightSensorComponent::EndPlay()
 UClass* ULightSensorComponent::GetSpecificWidgetClass() const
 {
 	return ULightSensorComponentWidget::StaticClass();
+}
+
+TArray<FDelegateInfoBase*> ULightSensorComponent::GetDelegates() const
+{
+	TArray<FDelegateInfoBase*> Result;
+
+	// const_cast 필요 (Delegate는 mutable)
+	ULightSensorComponent* MutableThis = const_cast<ULightSensorComponent*>(this);
+
+	Result.Add(MakeDelegateInfo("OnLightIntensityChanged", &MutableThis->OnLightIntensityChanged));
+
+	return Result;
 }
 
 void ULightSensorComponent::RequestCalculation()

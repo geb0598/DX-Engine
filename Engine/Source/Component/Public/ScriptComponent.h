@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "ActorComponent.h"
 #include <sol/sol.hpp>
 
@@ -20,7 +20,7 @@ class UScriptComponent : public UActorComponent
 public:
     UScriptComponent();
 
-    void BeginPlay() override;
+	void BeginPlay() override;
     void EndPlay() override;
     void TickComponent(float DeltaTime) override;
 

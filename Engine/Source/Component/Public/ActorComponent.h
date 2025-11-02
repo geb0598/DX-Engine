@@ -1,11 +1,12 @@
 #pragma once
 #include "Core/Public/Object.h"
+#include "Core/Public/IDelegateProvider.h"
 
 class AActor;
 class UWidget;
 
 UCLASS()
-class UActorComponent : public UObject
+class UActorComponent : public UObject, public IDelegateProvider
 {
 	GENERATED_BODY()
 	DECLARE_CLASS(UActorComponent, UObject)
@@ -30,6 +31,12 @@ public:
 	 * @brief 특정 컴포넌트 전용 Widget이 필요할 경우 재정의 필요
 	 */
 	virtual UClass* GetSpecificWidgetClass() const { return nullptr; }
+
+	/**
+	 * @brief IDelegateProvider 구현 - Component의 Delegate 목록 반환
+	 * @return Lua에 노출할 Delegate 정보 배열 (기본: 빈 배열)
+	 */
+	TArray<FDelegateInfoBase*> GetDelegates() const override { return {}; }
 
 	void SetOwner(AActor* InOwner) { Owner = InOwner; }
 	AActor* GetOwner() const { return Owner; }

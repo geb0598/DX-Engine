@@ -179,15 +179,40 @@ void UScriptComponent::BindOwnerDelegates()
         return;
     }
 
-    const TArray<FDelegateInfoBase*>& Delegates = Owner->GetAllDelegates();
-    for (FDelegateInfoBase* DelegateInfo : Delegates)
+    // 1. Actor의 Delegate 바인딩
+    if (IDelegateProvider* ActorProvider = dynamic_cast<IDelegateProvider*>(Owner))
     {
-        if (DelegateInfo)
+        for (FDelegateInfoBase* DelegateInfo : ActorProvider->GetDelegates())
         {
-            uint32 BindingID = DelegateInfo->AddLuaHandler(this);
-            if (BindingID != 0)
+            if (DelegateInfo)
             {
-                BoundDelegates.Add({DelegateInfo, BindingID});
+                uint32 BindingID = DelegateInfo->AddLuaHandler(this);
+                if (BindingID != 0)
+                {
+                    BoundDelegates.Add({DelegateInfo, BindingID});
+                }
+            }
+        }
+    }
+
+    // 2. 모든 Component의 Delegate 바인딩
+    TArray<UActorComponent*>& Components = Owner->GetOwnedComponents();
+    for (UActorComponent* Comp : Components)
+    {
+        if (Comp == this) continue;  // 자기 자신 제외
+
+        if (IDelegateProvider* CompProvider = dynamic_cast<IDelegateProvider*>(Comp))
+        {
+            for (FDelegateInfoBase* DelegateInfo : CompProvider->GetDelegates())
+            {
+                if (DelegateInfo)
+                {
+                    uint32 BindingID = DelegateInfo->AddLuaHandler(this);
+                    if (BindingID != 0)
+                    {
+                        BoundDelegates.Add({DelegateInfo, BindingID});
+                    }
+                }
             }
         }
     }
