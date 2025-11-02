@@ -64,6 +64,9 @@ public:
 
 	void SetRootComponent(USceneComponent* InOwnedComponents) { RootComponent = InOwnedComponents; }
 
+	// World Access
+	class UWorld* GetWorld() const;
+
 	const FVector& GetActorLocation() const;
 	const FQuaternion& GetActorRotation() const;
 	const FVector& GetActorScale3D() const;

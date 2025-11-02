@@ -64,6 +64,10 @@ public:
 
     bool IsPIESessionActive() const;
 
+    // PIE Mouse Input Detach (Shift + F1)
+    void TogglePIEMouseDetach();
+    bool IsPIEMouseDetached() const { return bPIEMouseDetached; }
+
 private:
     // PIE 월드의 FWorldContext를 찾아서 반환
     FWorldContext* GetPIEWorldContext();
@@ -73,6 +77,9 @@ private:
     EPIEState PIEState = EPIEState::Stopped;
     TArray<FWorldContext> WorldContexts;
     UEditor* EditorModule;
+
+    // PIE Mouse Detach State (Shift + F1)
+    bool bPIEMouseDetached = false;
 };
 
 // UEditorEngine의 전역 인스턴스 포인터

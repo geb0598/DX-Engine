@@ -569,8 +569,25 @@ void AActor::DuplicateSubObjectsForEditor(UObject* DuplicatedObject)
 	}
 }
 
+UWorld* AActor::GetWorld() const
+{
+	TObjectPtr<ULevel> Level = Cast<ULevel>(GetOuter());
+	if (Level)
+	{
+		return Level->GetOwningWorld();
+	}
+	return nullptr;
+}
+
 void AActor::Tick(float DeltaTimes)
 {
+	// PIE World에서 입력 차단 중이면 Tick 스킵 (Shift + F1 detach)
+	UWorld* World = GetWorld();
+	if (World && World->IsIgnoringInput())
+	{
+		return;
+	}
+
 	for (auto& Component : OwnedComponents)
 	{
 		if (Component && Component->CanEverTick())

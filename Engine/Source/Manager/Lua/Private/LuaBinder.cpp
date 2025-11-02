@@ -275,12 +275,27 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 	// -- InputManager -- //
 	UInputManager& InputMgr = UInputManager::GetInstance();
 	LuaState.set_function("IsKeyDown", [&InputMgr](int32 Key) {
+		// PIE World에서 입력 차단 중이면 false 반환
+		if (GWorld && GWorld->IsIgnoringInput())
+		{
+			return false;
+		}
 		return InputMgr.IsKeyDown(static_cast<EKeyInput>(Key));
 	});
 	LuaState.set_function("IsKeyPressed", [&InputMgr](int32 Key) {
+		// PIE World에서 입력 차단 중이면 false 반환
+		if (GWorld && GWorld->IsIgnoringInput())
+		{
+			return false;
+		}
 		return InputMgr.IsKeyPressed(static_cast<EKeyInput>(Key));
 	});
 	LuaState.set_function("IsKeyReleased", [&InputMgr](int32 Key) {
+		// PIE World에서 입력 차단 중이면 false 반환
+		if (GWorld && GWorld->IsIgnoringInput())
+		{
+			return false;
+		}
 		return InputMgr.IsKeyReleased(static_cast<EKeyInput>(Key));
 	});
 	LuaState.set_function("GetMouseNDCPosition", [&InputMgr]() {
@@ -290,6 +305,11 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 		return InputMgr.GetMousePosition();
 	});
 	LuaState.set_function("GetMouseDelta", [&InputMgr]() {
+		// PIE World에서 입력 차단 중이면 0 벡터 반환
+		if (GWorld && GWorld->IsIgnoringInput())
+		{
+			return FVector(0, 0, 0);
+		}
 		return InputMgr.GetMouseDelta();
 	});
 }

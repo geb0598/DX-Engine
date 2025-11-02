@@ -381,6 +381,11 @@ void UWorld::SwitchToLevel(ULevel* InNewLevel)
 	}
 
 	Level = InNewLevel;
+	if (Level)
+	{
+		Level->OwningWorld = this;
+	}
+
 	PendingDestroyActors.Empty();
 	bBegunPlay = false;
 }

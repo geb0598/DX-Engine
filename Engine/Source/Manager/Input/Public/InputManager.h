@@ -81,4 +81,5 @@ private:
 	void InitializeMouseClickStatus();
 	void UpdateDoubleClickDetection();
 	void HandleConsoleShortcut();
+	void HandlePIEMouseDetachShortcut() const;
 };

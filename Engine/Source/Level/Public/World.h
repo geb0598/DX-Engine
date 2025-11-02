@@ -103,10 +103,15 @@ public:
 	UWorld* GetSourceEditorWorld() const { return SourceEditorWorld; }
 	void SetSourceEditorWorld(UWorld* InSourceWorld) { SourceEditorWorld = InSourceWorld; }
 
+	// Input Ignore
+	void SetIgnoreInput(bool bInIgnore) { bIgnoreInput = bInIgnore; }
+	bool IsIgnoringInput() const { return bIgnoreInput; }
+
 private:
 	EWorldType WorldType;
 	ULevel* Level = nullptr; // Persistance Level. Sublevels are not considered in Engine.
 	bool bBegunPlay = false;
+	bool bIgnoreInput = false;
 	TArray<AActor*> PendingDestroyActors;
 	float WorldTimeSeconds;
 	UWorld* SourceEditorWorld = nullptr; // PIE World가 복제된 원본 Editor World (Editor/Game world에서는 nullptr)

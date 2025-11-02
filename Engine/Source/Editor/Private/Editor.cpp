@@ -77,11 +77,27 @@ void UEditor::Update()
 		// Quad 모드: 마우스 우클릭 중이고 해당 뷰포트 위에 있을 때만 그 카메라 입력 활성화
 		FViewportClient* ActiveOrthoClient = nullptr;
 
+		// PIE 마우스 detach 상태 확인
+		int32 PIEViewportIndex = -1;
+		bool bIsPIEMouseDetached = (GEditor && GEditor->IsPIEMouseDetached());
+		if (bIsPIEMouseDetached)
+		{
+			PIEViewportIndex = ViewportManager.GetPIEActiveViewportIndex();
+		}
+
 		for (int32 i = 0; i < 4; ++i)
 		{
 			if (ViewportManager.GetClients()[i] && ViewportManager.GetClients()[i]->GetCamera())
 			{
 				UCamera* Cam = ViewportManager.GetClients()[i]->GetCamera();
+
+				// PIE 마우스 detach 상태일 때 PIE 뷰포트는 입력 비활성화 유지
+				if (bIsPIEMouseDetached && i == PIEViewportIndex)
+				{
+					Cam->SetInputEnabled(false);
+					continue;
+				}
+
 				// 마우스 우클릭 중이고 해당 뷰포트가 활성화된 뷰포트면 카메라 입력 활성화
 				bool bEnableInput = (ActiveViewportIndexForInput == i && bIsRightMouseDown);
 				Cam->SetInputEnabled(bEnableInput);
@@ -95,6 +111,7 @@ void UEditor::Update()
 		}
 
 		// 오쏘 뷰 드래그 시 모든 오쏘 뷰를 공유 중심점 기준으로 업데이트
+		// PIE 마우스 detach 상태에서는 PIE 뷰포트 동기화 스킵
 		if (ActiveOrthoClient && bIsRightMouseDown)
 		{
 			UCamera* ActiveOrthoCam = ActiveOrthoClient->GetCamera();
@@ -122,8 +139,22 @@ void UEditor::Update()
 					ViewportManager.SetOrthoGraphicCameraPoint(CurrentLocation - ViewportManager.GetInitialOffsets()[OrthoIdx]);
 
 					// 모든 오쏘 뷰를 공유 중심점 기준으로 업데이트
+					// PIE 마우스 detach 상태일 때는 PIE 뷰포트 제외
+					int32 PIEViewportIndex = -1;
+					bool bShouldSkipPIEViewport = (GEditor && GEditor->IsPIEMouseDetached());
+					if (bShouldSkipPIEViewport)
+					{
+						PIEViewportIndex = ViewportManager.GetPIEActiveViewportIndex();
+					}
+
 					for (int32 i = 0; i < 4; ++i)
 					{
+						// PIE 마우스 detach 상태에서 PIE 뷰포트는 스킵
+						if (bShouldSkipPIEViewport && i == PIEViewportIndex)
+						{
+							continue;
+						}
+
 						if (ViewportManager.GetClients()[i] && ViewportManager.GetClients()[i]->IsOrtho())
 						{
 							FViewportClient* Client = ViewportManager.GetClients()[i];
@@ -154,9 +185,17 @@ void UEditor::Update()
 		// 싱글 모드: 뷰포트 위에서 마우스 우클릭 시 카메라 입력 활성화
 		if (Camera)
 		{
-			// Single 모드에서는 ActiveViewportIndexForInput이 유효한 뷰포트면 입력 활성화
-			bool bEnableInput = (ActiveViewportIndexForInput >= 0 && bIsRightMouseDown);
-			Camera->SetInputEnabled(bEnableInput);
+			// PIE 마우스 detach 상태일 때는 카메라 입력 비활성화
+			if (GEditor && GEditor->IsPIEMouseDetached())
+			{
+				Camera->SetInputEnabled(false);
+			}
+			else
+			{
+				// Single 모드에서는 ActiveViewportIndexForInput이 유효한 뷰포트면 입력 활성화
+				bool bEnableInput = (ActiveViewportIndexForInput >= 0 && bIsRightMouseDown);
+				Camera->SetInputEnabled(bEnableInput);
+			}
 		}
 	}
 
@@ -1196,19 +1235,15 @@ bool UEditor::GetActorFocusTarget(AActor* Actor, FVector& OutCenter, float& OutR
 		}
 	}
 
-	// Primitive가 없으면 LightComponent 찾기 (Light Actor 처리)
+	// Primitive가 없으면 RootComponent 위치 사용 (Light, ScriptComponent 등)
 	if (PrimitiveComponents.IsEmpty())
 	{
-		for (UActorComponent* Comp : Actor->GetOwnedComponents())
+		if (USceneComponent* RootComp = Actor->GetRootComponent())
 		{
-			if (ULightComponent* LightComp = Cast<ULightComponent>(Comp))
-			{
-				FVector LightLoc = LightComp->GetWorldLocation();
-				// 10x10x10 박스 가정
-				OutCenter = LightLoc;
-				OutRadius = 8.66f; // sqrt(10^2 + 10^2 + 10^2) / 2
-				return true;
-			}
+			OutCenter = RootComp->GetWorldLocation();
+			// 10x10x10 박스 가정한 AABB 반경
+			OutRadius = 8.66f; // sqrt(10^2 + 10^2 + 10^2) / 2
+			return true;
 		}
 
 		UE_LOG_WARNING("Editor: GetActorFocusTarget: No valid component found");

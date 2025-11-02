@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Core/Public/AppWindow.h"
+#include "Manager/UI/Public/ViewportManager.h"
 #include "Render/UI/Window/Public/ConsoleWindow.h"
 
 IMPLEMENT_SINGLETON_CLASS(UInputManager, UObject)
@@ -156,6 +157,7 @@ void UInputManager::Update(const FAppWindow* InWindow)
 	}
 
 	HandleConsoleShortcut();
+	HandlePIEMouseDetachShortcut();
 }
 
 void UInputManager::UpdateMousePosition(const FAppWindow* InWindow)
@@ -235,6 +237,29 @@ void UInputManager::ProcessKeyMessage(uint32 InMessage, WPARAM WParam, LPARAM LP
 		{
 			return;
 		}
+	}
+
+	// PIE 중 마우스 분리 상태일 때
+	if (GEditor && GEditor->IsPIEMouseDetached())
+	{
+		// PIE 뷰포트에 대한 모든 입력 차단 (재부착 제외)
+		UViewportManager& ViewportManager = UViewportManager::GetInstance();
+		int32 HoveredViewportIndex = ViewportManager.GetMouseHoveredViewportIndex();
+		int32 PIEViewportIndex = ViewportManager.GetPIEActiveViewportIndex();
+
+		if (HoveredViewportIndex == PIEViewportIndex)
+		{
+			// PIE 뷰포트 클릭 시 마우스 재부착
+			if (InMessage == WM_LBUTTONDOWN || InMessage == WM_RBUTTONDOWN)
+			{
+				GEditor->TogglePIEMouseDetach();
+			}
+
+			// PIE 뷰포트에 대한 모든 입력 차단
+			return;
+		}
+
+		// 다른 뷰포트는 에디터 작동 허용
 	}
 
 	switch (InMessage)
@@ -470,6 +495,21 @@ void UInputManager::HandleConsoleShortcut()
 }
 
 /**
+ * @brief PIE 마우스 분리 단축키 처리 (Shift + F1)
+ */
+void UInputManager::HandlePIEMouseDetachShortcut() const
+{
+	if (IsKeyPressed(EKeyInput::F1) && IsKeyDown(EKeyInput::Shift))
+	{
+		// EditorEngine을 통해 마우스 분리 토글
+		if (GEditor)
+		{
+			GEditor->TogglePIEMouseDetach();
+		}
+	}
+}
+
+/**
  * @brief 마우스 더블클릭 감지 (소비 기반, 읽으면 즉시 리셋)
  * @param InMouseButton 확인할 마우스 버튼
  * @return 더블클릭 되었으면 true, 아니면 false
@@ -483,7 +523,7 @@ bool UInputManager::IsMouseDoubleClicked(EKeyInput InMouseButton) const
 		*FoundValuePtr = false;
 		return true;
 	}
-    
+
 	return false;
 }
 

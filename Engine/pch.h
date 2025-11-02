@@ -33,6 +33,7 @@
 #include <thread>
 #include <condition_variable>
 #include <atomic>
+#include <mutex>
 #include <xmmintrin.h>
 
 // JSON
@@ -54,8 +55,7 @@
 #include "Source/Editor/Public/EditorEngine.h"
 
 // Pointer
-#include <mutex>
-
+#include "Source/Runtime/Core/Public/Templates/ObjectPtr.h"
 #include "Source/Runtime/Core/Public/Templates/SharedPtr.h"
 #include "Source/Runtime/Core/Public/Templates/UniquePtr.h"
 #include "Source/Runtime/Core/Public/Templates/WeakPtr.h"

@@ -265,6 +265,13 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 	if (ImGui::Begin(WinName, nullptr, flags))
 	{
 		// ========================================
+		// PIE 상태 확인
+		// ========================================
+		const bool bIsPIEActive = (GEditor && GEditor->IsPIESessionActive());
+		const bool bIsPIEMouseDetached = (GEditor && GEditor->IsPIEMouseDetached());
+		const bool bIsPIEViewport = (bIsPIEActive && ViewportIndex == ViewportManager.GetPIEActiveViewportIndex());
+
+		// ========================================
 		// Gizmo Mode 버튼들 (Select/Translate/Rotate/Scale)
 		// ========================================
 		UEditor* Editor = GEditor ? GEditor->GetEditorModule() : nullptr;
@@ -275,236 +282,258 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 		constexpr float GizmoIconSize = 16.0f;
 		constexpr float GizmoButtonSpacing = 4.0f;
 
-		// Select 버튼 (아직 기능 없음 - 미연결)
-		if (IconSelect && IconSelect->GetTextureSRV())
+		// 기즈모 버튼 렌더링
+		if (!bIsPIEViewport)
 		{
-			bool bActive = false; // Select 모드는 아직 없음
-			ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-			ImGui::InvisibleButton("##GizmoSelect", ImVec2(GizmoButtonSize, GizmoButtonSize));
-			bool bClicked = ImGui::IsItemClicked();
-			bool bHovered = ImGui::IsItemHovered();
+			// Select 버튼 (아직 기능 없음 - 미연결)
+			if (IconSelect && IconSelect->GetTextureSRV())
+			{
+				bool bActive = false; // Select 모드는 아직 없음
+				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+				ImGui::InvisibleButton("##GizmoSelect", ImVec2(GizmoButtonSize, GizmoButtonSize));
+				bool bClicked = ImGui::IsItemClicked();
+				bool bHovered = ImGui::IsItemHovered();
 
-			ImDrawList* DL = ImGui::GetWindowDrawList();
-			ImU32 BgColor = bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-			if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+				ImDrawList* DL = ImGui::GetWindowDrawList();
+				ImU32 BgColor = bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
 
-			DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-			DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), IM_COL32(96, 96, 96, 255), 4.0f);
+				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
+				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), IM_COL32(96, 96, 96, 255), 4.0f);
 
-			// 아이콘 (중앙 정렬)
-			ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-			DL->AddImage(IconSelect->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize));
+				// 아이콘 (중앙 정렬)
+				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
+				DL->AddImage(IconSelect->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize));
 
-			if (bHovered) ImGui::SetTooltip("Select (Q)");
+				if (bHovered) ImGui::SetTooltip("Select (Q)");
+			}
+
+			ImGui::SameLine(0.0f, GizmoButtonSpacing);
+
+			// Translate 버튼
+			if (IconTranslate && IconTranslate->GetTextureSRV())
+			{
+				bool bActive = (CurrentGizmoMode == EGizmoMode::Translate);
+				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+				ImGui::InvisibleButton("##GizmoTranslate", ImVec2(GizmoButtonSize, GizmoButtonSize));
+				bool bClicked = ImGui::IsItemClicked();
+				bool bHovered = ImGui::IsItemHovered();
+
+				ImDrawList* DL = ImGui::GetWindowDrawList();
+				ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
+				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+
+				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
+				ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
+				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
+
+				// 아이콘 (활성화 시 파란색 틴트)
+				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
+				ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
+				DL->AddImage(IconTranslate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
+
+				if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Translate);
+				if (bHovered) ImGui::SetTooltip("Translate (W)");
+			}
+
+			ImGui::SameLine(0.0f, GizmoButtonSpacing);
+
+			// Rotate 버튼
+			if (IconRotate && IconRotate->GetTextureSRV())
+			{
+				bool bActive = (CurrentGizmoMode == EGizmoMode::Rotate);
+				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+				ImGui::InvisibleButton("##GizmoRotate", ImVec2(GizmoButtonSize, GizmoButtonSize));
+				bool bClicked = ImGui::IsItemClicked();
+				bool bHovered = ImGui::IsItemHovered();
+
+				ImDrawList* DL = ImGui::GetWindowDrawList();
+				ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
+				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+
+				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
+				ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
+				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
+
+				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
+				ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
+				DL->AddImage(IconRotate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
+
+				if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Rotate);
+				if (bHovered) ImGui::SetTooltip("Rotate (E)");
+			}
+
+			ImGui::SameLine(0.0f, GizmoButtonSpacing);
+
+			// Scale 버튼
+			if (IconScale && IconScale->GetTextureSRV())
+			{
+				bool bActive = (CurrentGizmoMode == EGizmoMode::Scale);
+				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+				ImGui::InvisibleButton("##GizmoScale", ImVec2(GizmoButtonSize, GizmoButtonSize));
+				bool bClicked = ImGui::IsItemClicked();
+				bool bHovered = ImGui::IsItemHovered();
+
+				ImDrawList* DL = ImGui::GetWindowDrawList();
+				ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
+				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+
+				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
+				ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
+				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
+
+				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
+				ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
+				DL->AddImage(IconScale->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
+
+				if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Scale);
+				if (bHovered) ImGui::SetTooltip("Scale (R)");
+			}
 		}
-
-		ImGui::SameLine(0.0f, GizmoButtonSpacing);
-
-		// Translate 버튼
-		if (IconTranslate && IconTranslate->GetTextureSRV())
+		else
 		{
-			bool bActive = (CurrentGizmoMode == EGizmoMode::Translate);
-			ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-			ImGui::InvisibleButton("##GizmoTranslate", ImVec2(GizmoButtonSize, GizmoButtonSize));
-			bool bClicked = ImGui::IsItemClicked();
-			bool bHovered = ImGui::IsItemHovered();
+			// PIE 상태 텍스트 표시 (마우스 detach 상태가 아닐 때만)
+			if (!bIsPIEMouseDetached)
+			{
+				// 텍스트 세로 중앙 정렬
+				const float TextHeight = ImGui::GetTextLineHeight();
+				const float ToolbarHeight = 32.0f;
+				const float OffsetY = (ToolbarHeight - TextHeight) * 0.5f;
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + OffsetY);
 
-			ImDrawList* DL = ImGui::GetWindowDrawList();
-			ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-			if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-			DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-			ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-			DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-			// 아이콘 (활성화 시 파란색 틴트)
-			ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-			ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-			DL->AddImage(IconTranslate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-			if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Translate);
-			if (bHovered) ImGui::SetTooltip("Translate (W)");
-		}
-
-		ImGui::SameLine(0.0f, GizmoButtonSpacing);
-
-		// Rotate 버튼
-		if (IconRotate && IconRotate->GetTextureSRV())
-		{
-			bool bActive = (CurrentGizmoMode == EGizmoMode::Rotate);
-			ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-			ImGui::InvisibleButton("##GizmoRotate", ImVec2(GizmoButtonSize, GizmoButtonSize));
-			bool bClicked = ImGui::IsItemClicked();
-			bool bHovered = ImGui::IsItemHovered();
-
-			ImDrawList* DL = ImGui::GetWindowDrawList();
-			ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-			if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-			DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-			ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-			DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-			ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-			ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-			DL->AddImage(IconRotate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-			if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Rotate);
-			if (bHovered) ImGui::SetTooltip("Rotate (E)");
-		}
-
-		ImGui::SameLine(0.0f, GizmoButtonSpacing);
-
-		// Scale 버튼
-		if (IconScale && IconScale->GetTextureSRV())
-		{
-			bool bActive = (CurrentGizmoMode == EGizmoMode::Scale);
-			ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-			ImGui::InvisibleButton("##GizmoScale", ImVec2(GizmoButtonSize, GizmoButtonSize));
-			bool bClicked = ImGui::IsItemClicked();
-			bool bHovered = ImGui::IsItemHovered();
-
-			ImDrawList* DL = ImGui::GetWindowDrawList();
-			ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-			if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-			DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-			ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-			DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-			ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-			ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-			DL->AddImage(IconScale->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-			if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Scale);
-			if (bHovered) ImGui::SetTooltip("Scale (R)");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 100, 255));
+				ImGui::Text("Playing (Shift + F1 to detach mouse)");
+				ImGui::PopStyleColor();
+			}
 		}
 
 		// ========================================
 		// Rotation Snap 버튼들
 		// ========================================
-
-		ImGui::SameLine(0.0f, 8.0f);
-
-		// 회전 스냅 토글 버튼 (아이콘)
+		if (!bIsPIEViewport)
 		{
-			constexpr float SnapToggleButtonSize = 24.0f;
-			constexpr float SnapToggleIconSize = 16.0f;
+			ImGui::SameLine(0.0f, 8.0f);
 
-			bool bSnapEnabled = ViewportManager.IsRotationSnapEnabled();
-
-			ImVec2 SnapToggleButtonPos = ImGui::GetCursorScreenPos();
-			ImGui::InvisibleButton("##RotationSnapToggle", ImVec2(SnapToggleButtonSize, SnapToggleButtonSize));
-			bool bSnapToggleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
-			bool bSnapToggleHovered = ImGui::IsItemHovered();
-
-			// 버튼 배경 그리기
-			ImDrawList* SnapToggleDrawList = ImGui::GetWindowDrawList();
-			ImU32 SnapToggleBgColor;
-			if (bSnapEnabled)
+			// 회전 스냅 토글 버튼 (아이콘)
 			{
-				SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(40, 40, 40, 255) : IM_COL32(20, 20, 20, 255);
-			}
-			else
-			{
-				SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-			}
-			if (ImGui::IsItemActive())
-			{
-				SnapToggleBgColor = IM_COL32(50, 50, 50, 255);
-			}
-			SnapToggleDrawList->AddRectFilled(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBgColor, 4.0f);
+				constexpr float SnapToggleButtonSize = 24.0f;
+				constexpr float SnapToggleIconSize = 16.0f;
 
-			// 테두리
-			ImU32 SnapToggleBorderColor = bSnapEnabled ? IM_COL32(150, 150, 150, 255) : IM_COL32(96, 96, 96, 255);
-			SnapToggleDrawList->AddRect(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBorderColor, 4.0f);
+				bool bSnapEnabled = ViewportManager.IsRotationSnapEnabled();
 
-			// 회전 아이콘 (중앙 정렬)
-			ImVec2 SnapToggleIconCenter = ImVec2(
-				SnapToggleButtonPos.x + SnapToggleButtonSize * 0.5f,
-				SnapToggleButtonPos.y + SnapToggleButtonSize * 0.5f
-			);
-			float SnapToggleIconRadius = SnapToggleIconSize * 0.4f;
-			ImU32 SnapToggleIconColor = bSnapEnabled ? IM_COL32(220, 220, 220, 255) : IM_COL32(120, 120, 120, 255);
-			SnapToggleDrawList->AddCircle(SnapToggleIconCenter, SnapToggleIconRadius, SnapToggleIconColor, 12, 1.5f);
-			SnapToggleDrawList->PathArcTo(SnapToggleIconCenter, SnapToggleIconRadius + 2.0f, 0.0f, 1.5f, 8);
-			SnapToggleDrawList->PathStroke(SnapToggleIconColor, 0, 1.5f);
+				ImVec2 SnapToggleButtonPos = ImGui::GetCursorScreenPos();
+				ImGui::InvisibleButton("##RotationSnapToggle", ImVec2(SnapToggleButtonSize, SnapToggleButtonSize));
+				bool bSnapToggleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+				bool bSnapToggleHovered = ImGui::IsItemHovered();
 
-			if (bSnapToggleClicked)
-			{
-				ViewportManager.SetRotationSnapEnabled(!bSnapEnabled);
-			}
-
-			if (bSnapToggleHovered)
-			{
-				ImGui::SetTooltip("Toggle rotation snap");
-			}
-		}
-
-		ImGui::SameLine(0.0f, 4.0f);
-
-		// 회전 스냅 각도 선택 버튼
-		{
-			char SnapAngleText[16];
-			(void)snprintf(SnapAngleText, sizeof(SnapAngleText), "%.0f°", ViewportManager.GetRotationSnapAngle());
-
-			constexpr float SnapAngleButtonHeight = 24.0f;
-			constexpr float SnapAnglePadding = 8.0f;
-			const ImVec2 SnapAngleTextSize = ImGui::CalcTextSize(SnapAngleText);
-			const float SnapAngleButtonWidth = SnapAngleTextSize.x + SnapAnglePadding * 2;
-
-			ImVec2 SnapAngleButtonPos = ImGui::GetCursorScreenPos();
-			ImGui::InvisibleButton("##RotationSnapAngle", ImVec2(SnapAngleButtonWidth, SnapAngleButtonHeight));
-			bool bSnapAngleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
-			bool bSnapAngleHovered = ImGui::IsItemHovered();
-
-			// 버튼 배경 그리기
-			ImDrawList* SnapAngleDrawList = ImGui::GetWindowDrawList();
-			ImU32 SnapAngleBgColor = bSnapAngleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-			if (ImGui::IsItemActive())
-			{
-				SnapAngleBgColor = IM_COL32(38, 38, 38, 255);
-			}
-			SnapAngleDrawList->AddRectFilled(SnapAngleButtonPos, ImVec2(SnapAngleButtonPos.x + SnapAngleButtonWidth, SnapAngleButtonPos.y + SnapAngleButtonHeight), SnapAngleBgColor, 4.0f);
-			SnapAngleDrawList->AddRect(SnapAngleButtonPos, ImVec2(SnapAngleButtonPos.x + SnapAngleButtonWidth, SnapAngleButtonPos.y + SnapAngleButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
-
-			// 텍스트 그리기
-			ImVec2 SnapAngleTextPos = ImVec2(
-				SnapAngleButtonPos.x + SnapAnglePadding,
-				SnapAngleButtonPos.y + (SnapAngleButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
-			);
-			SnapAngleDrawList->AddText(SnapAngleTextPos, IM_COL32(220, 220, 220, 255), SnapAngleText);
-
-			if (bSnapAngleClicked)
-			{
-				ImGui::OpenPopup("##RotationSnapAnglePopup");
-			}
-
-			// 각도 선택 팝업
-			if (ImGui::BeginPopup("##RotationSnapAnglePopup"))
-			{
-				ImGui::Text("Rotation Snap Angle");
-				ImGui::Separator();
-
-				const float CurrentSnapAngle = ViewportManager.GetRotationSnapAngle();
-				constexpr float SnapAngles[] = { 5.0f, 10.0f, 15.0f, 22.5f, 30.0f, 45.0f, 60.0f, 90.0f };
-				constexpr const char* SnapAngleLabels[] = { "5°", "10°", "15°", "22.5°", "30°", "45°", "60°", "90°" };
-
-				for (int i = 0; i < IM_ARRAYSIZE(SnapAngles); ++i)
+				// 버튼 배경 그리기
+				ImDrawList* SnapToggleDrawList = ImGui::GetWindowDrawList();
+				ImU32 SnapToggleBgColor;
+				if (bSnapEnabled)
 				{
-					const bool bIsSelected = (std::abs(CurrentSnapAngle - SnapAngles[i]) < 0.1f);
-					if (ImGui::MenuItem(SnapAngleLabels[i], nullptr, bIsSelected))
-					{
-						ViewportManager.SetRotationSnapAngle(SnapAngles[i]);
-					}
+					SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(40, 40, 40, 255) : IM_COL32(20, 20, 20, 255);
+				}
+				else
+				{
+					SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+				}
+				if (ImGui::IsItemActive())
+				{
+					SnapToggleBgColor = IM_COL32(50, 50, 50, 255);
+				}
+				SnapToggleDrawList->AddRectFilled(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBgColor, 4.0f);
+
+				// 테두리
+				ImU32 SnapToggleBorderColor = bSnapEnabled ? IM_COL32(150, 150, 150, 255) : IM_COL32(96, 96, 96, 255);
+				SnapToggleDrawList->AddRect(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBorderColor, 4.0f);
+
+				// 회전 아이콘 (중앙 정렬)
+				ImVec2 SnapToggleIconCenter = ImVec2(
+					SnapToggleButtonPos.x + SnapToggleButtonSize * 0.5f,
+					SnapToggleButtonPos.y + SnapToggleButtonSize * 0.5f
+				);
+				float SnapToggleIconRadius = SnapToggleIconSize * 0.4f;
+				ImU32 SnapToggleIconColor = bSnapEnabled ? IM_COL32(220, 220, 220, 255) : IM_COL32(120, 120, 120, 255);
+				SnapToggleDrawList->AddCircle(SnapToggleIconCenter, SnapToggleIconRadius, SnapToggleIconColor, 12, 1.5f);
+				SnapToggleDrawList->PathArcTo(SnapToggleIconCenter, SnapToggleIconRadius + 2.0f, 0.0f, 1.5f, 8);
+				SnapToggleDrawList->PathStroke(SnapToggleIconColor, 0, 1.5f);
+
+				if (bSnapToggleClicked)
+				{
+					ViewportManager.SetRotationSnapEnabled(!bSnapEnabled);
 				}
 
-				ImGui::EndPopup();
+				if (bSnapToggleHovered)
+				{
+					ImGui::SetTooltip("Toggle rotation snap");
+				}
 			}
 
-			if (bSnapAngleHovered)
+			ImGui::SameLine(0.0f, 4.0f);
+
+			// 회전 스냅 각도 선택 버튼
 			{
-				ImGui::SetTooltip("Choose rotation snap angle");
+				char SnapAngleText[16];
+				(void)snprintf(SnapAngleText, sizeof(SnapAngleText), "%.0f°", ViewportManager.GetRotationSnapAngle());
+
+				constexpr float SnapAngleButtonHeight = 24.0f;
+				constexpr float SnapAnglePadding = 8.0f;
+				const ImVec2 SnapAngleTextSize = ImGui::CalcTextSize(SnapAngleText);
+				const float SnapAngleButtonWidth = SnapAngleTextSize.x + SnapAnglePadding * 2;
+
+				ImVec2 SnapAngleButtonPos = ImGui::GetCursorScreenPos();
+				ImGui::InvisibleButton("##RotationSnapAngle", ImVec2(SnapAngleButtonWidth, SnapAngleButtonHeight));
+				bool bSnapAngleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+				bool bSnapAngleHovered = ImGui::IsItemHovered();
+
+				// 버튼 배경 그리기
+				ImDrawList* SnapAngleDrawList = ImGui::GetWindowDrawList();
+				ImU32 SnapAngleBgColor = bSnapAngleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+				if (ImGui::IsItemActive())
+				{
+					SnapAngleBgColor = IM_COL32(38, 38, 38, 255);
+				}
+				SnapAngleDrawList->AddRectFilled(SnapAngleButtonPos, ImVec2(SnapAngleButtonPos.x + SnapAngleButtonWidth, SnapAngleButtonPos.y + SnapAngleButtonHeight), SnapAngleBgColor, 4.0f);
+				SnapAngleDrawList->AddRect(SnapAngleButtonPos, ImVec2(SnapAngleButtonPos.x + SnapAngleButtonWidth, SnapAngleButtonPos.y + SnapAngleButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
+
+				// 텍스트 그리기
+				ImVec2 SnapAngleTextPos = ImVec2(
+					SnapAngleButtonPos.x + SnapAnglePadding,
+					SnapAngleButtonPos.y + (SnapAngleButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
+				);
+				SnapAngleDrawList->AddText(SnapAngleTextPos, IM_COL32(220, 220, 220, 255), SnapAngleText);
+
+				if (bSnapAngleClicked)
+				{
+					ImGui::OpenPopup("##RotationSnapAnglePopup");
+				}
+
+				// 각도 선택 팝업
+				if (ImGui::BeginPopup("##RotationSnapAnglePopup"))
+				{
+					ImGui::Text("Rotation Snap Angle");
+					ImGui::Separator();
+
+					const float CurrentSnapAngle = ViewportManager.GetRotationSnapAngle();
+					constexpr float SnapAngles[] = { 5.0f, 10.0f, 15.0f, 22.5f, 30.0f, 45.0f, 60.0f, 90.0f };
+					constexpr const char* SnapAngleLabels[] = { "5°", "10°", "15°", "22.5°", "30°", "45°", "60°", "90°" };
+
+					for (int i = 0; i < IM_ARRAYSIZE(SnapAngles); ++i)
+					{
+						const bool bIsSelected = (std::abs(CurrentSnapAngle - SnapAngles[i]) < 0.1f);
+						if (ImGui::MenuItem(SnapAngleLabels[i], nullptr, bIsSelected))
+						{
+							ViewportManager.SetRotationSnapAngle(SnapAngles[i]);
+						}
+					}
+
+					ImGui::EndPopup();
+				}
+
+				if (bSnapAngleHovered)
+				{
+					ImGui::SetTooltip("Choose rotation snap angle");
+				}
 			}
 		}
 

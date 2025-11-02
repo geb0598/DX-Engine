@@ -71,6 +71,10 @@ public:
 	}
 
 	friend class UWorld;
+
+	// Owning World
+	UWorld* GetOwningWorld() const { return OwningWorld; }
+
 public:
 	virtual UObject* Duplicate() override;
 
@@ -80,6 +84,7 @@ protected:
 private:
 	AActor* SpawnActorToLevel(UClass* InActorClass, JSON* ActorJsonData = nullptr);
 
+	UWorld* OwningWorld = nullptr; // 이 레벨을 소유한 World
 	TArray<AActor*> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.
 	TArray<AActor*> TemplateActors;	// bIsTemplate이 true인 Actor들의 캐시 (빠른 조회용)
 
@@ -93,7 +98,7 @@ private:
 		static_cast<uint64>(EEngineShowFlags::SF_Decal) |
 		static_cast<uint64>(EEngineShowFlags::SF_Fog) |
 		static_cast<uint64>(EEngineShowFlags::SF_Collision);
-	
+
 	/*-----------------------------------------------------------------------------
 		Octree Management
 	-----------------------------------------------------------------------------*/
@@ -109,7 +114,7 @@ private:
 
 	/** @brief 한 프레임에 Octree에 삽입할 오브젝트의 최대 크기를 결정해서 부하를 여러 프레임에 분산함. */
 	static constexpr uint32 MAX_OBJECTS_TO_INSERT_PER_FRAME = 256;
-	
+
 	/** @brief 가장 오래전에 움직인 UPrimitiveComponent를 Octree에 삽입하기 위해 필요한 구조체. */
 	struct FDynamicPrimitiveData
 	{
@@ -121,7 +126,7 @@ private:
 			return LastMoveTimePoint > Other.LastMoveTimePoint;
 		}
 	};
-	
+
 	using FDynamicPrimitiveQueue = TQueue<FDynamicPrimitiveData>;
 
 	FOctree* StaticOctree = nullptr;
@@ -131,12 +136,12 @@ private:
 
 	/** @brief 각 UPrimitiveComponent가 움직인 가장 마지막 시간을 기록 */
 	TMap<UPrimitiveComponent*, float> DynamicPrimitiveMap;
-	
+
 	/*-----------------------------------------------------------------------------
 		Lighting Management
 	-----------------------------------------------------------------------------*/
 public:
-	const TArray<ULightComponent*>& GetLightComponents() const { return LightComponents; } 
+	const TArray<ULightComponent*>& GetLightComponents() const { return LightComponents; }
 
 private:
 	TArray<ULightComponent*> LightComponents;

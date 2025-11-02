@@ -141,6 +141,21 @@ void UEditorEngine::StartPIE()
     int32 LastClickedViewport = ViewportMgr.GetLastClickedViewportIndex();
     ViewportMgr.SetPIEActiveViewportIndex(LastClickedViewport);
 
+    // PIE 뷰포트 중앙으로 마우스 이동
+    if (LastClickedViewport >= 0 && LastClickedViewport < ViewportMgr.GetViewports().Num())
+    {
+        FViewport* PIEViewport = ViewportMgr.GetViewports()[LastClickedViewport];
+        if (PIEViewport)
+        {
+            FRect ViewportRect = PIEViewport->GetRect();
+            int32 CenterX = static_cast<int32>(ViewportRect.Left + ViewportRect.Width / 2);
+            int32 CenterY = static_cast<int32>(ViewportRect.Top + ViewportRect.Height / 2);
+
+            // Windows API로 마우스 커서 이동
+            SetCursorPos(CenterX, CenterY);
+        }
+    }
+
     UWorld* PIEWorld = Cast<UWorld>(EditorWorld->Duplicate());
 
     if (PIEWorld)
@@ -165,6 +180,9 @@ void UEditorEngine::EndPIE()
         return;
     }
     PIEState = EPIEState::Stopped;
+
+    // PIE Mouse Detach 상태 초기화
+    bPIEMouseDetached = false;
 
     // PIE 전용 뷰포트 인덱스 리셋
     UViewportManager::GetInstance().SetPIEActiveViewportIndex(-1);
@@ -345,4 +363,34 @@ FWorldContext* UEditorEngine::GetActiveWorldContext()
     }
 
     return nullptr;
+}
+
+/**
+ * @brief PIE 중 마우스 입력 분리 / 재부착 토글 (Shift + F1)
+ * PIE 중에만 작동하며, 마우스 입력을 게임에서 분리하여 에디터 UI를 조작 가능하게 함
+ */
+void UEditorEngine::TogglePIEMouseDetach()
+{
+    if (!IsPIESessionActive())
+    {
+        return;
+    }
+
+    bPIEMouseDetached = !bPIEMouseDetached;
+
+    // PIE World의 입력 차단 플래그 설정
+    FWorldContext* PIEContext = GetPIEWorldContext();
+    if (PIEContext && PIEContext->World())
+    {
+        PIEContext->World()->SetIgnoreInput(bPIEMouseDetached);
+    }
+
+    if (bPIEMouseDetached)
+    {
+        UE_LOG_INFO("PIE: Mouse Input Detached (Shift+F1)");
+    }
+    else
+    {
+        UE_LOG_INFO("PIE: Mouse Input Reattached (Shift+F1)");
+    }
 }
