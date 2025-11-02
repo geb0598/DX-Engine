@@ -2,6 +2,7 @@
 #include "Manager/Lua/Public/LuaBinder.h"
 #include "Actor/Public/GameMode.h"
 #include "Component/Public/ScriptComponent.h"
+#include "Manager/Input/Public/InputManager.h"
 
 void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 {
@@ -240,4 +241,16 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 			UE_LOG("%s", FinalLogMessage.c_str());
 		}
 	);
+
+	// -- InputManager -- //
+	UInputManager& InputMgr = UInputManager::GetInstance();
+	LuaState.set_function("IsKeyDown", [&InputMgr](int32 Key) {
+		return InputMgr.IsKeyDown(static_cast<EKeyInput>(Key));
+	});
+	LuaState.set_function("IsKeyPressed", [&InputMgr](int32 Key) {
+		return InputMgr.IsKeyPressed(static_cast<EKeyInput>(Key));
+	});
+	LuaState.set_function("IsKeyReleased", [&InputMgr](int32 Key) {
+		return InputMgr.IsKeyReleased(static_cast<EKeyInput>(Key));
+	});
 }
