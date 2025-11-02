@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "Actor/Public/GameMode.h"
+#include "Actor/Public/PlayerStart.h"
 #include "Editor/Public/Camera.h"
 #include "Editor/Public/Editor.h"
 
@@ -12,7 +13,14 @@ void AGameMode::BeginPlay()
 	const FWorldSettings& WorldSettings = GWorld->GetWorldSettings();
 	if (WorldSettings.DefaultPlayerClass)
 	{
+		TArray<APlayerStart*> PlayerStarts = GWorld->FindActorsOfClass<APlayerStart>();
+
 		Player = GWorld->SpawnActor(WorldSettings.DefaultPlayerClass);
+
+		// SpawnActor Location 인자 있는 버전으로 바뀌면 변경
+		Player->SetActorLocation(PlayerStarts[0]->GetActorLocation());
+		Player->SetActorRotation(PlayerStarts[0]->GetActorRotation());
+
 		MainCamera = GEditor->GetMainCamera();
 		if (MainCamera) { MainCamera->SetViewTarget(Player); }
 	}
