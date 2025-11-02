@@ -153,8 +153,8 @@ void FDecalPass::Execute(FRenderingContext& Context)
     // --- Decals Stats ---
     uint32 RenderedDecal = 0;
     uint32 CollidedComps = 0;
-    
-    TArray<UPrimitiveComponent*>& DynamicPrimitives = GWorld->GetLevel()->GetDynamicPrimitives();
+
+    TArray<UPrimitiveComponent*> DynamicPrimitives = GWorld->GetLevel()->GetDynamicPrimitives();
     
     // --- Render Decals ---
     for (UDecalComponent* Decal : Context.Decals)

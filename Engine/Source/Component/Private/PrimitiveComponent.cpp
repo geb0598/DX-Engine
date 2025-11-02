@@ -297,7 +297,7 @@ void UPrimitiveComponent::UpdateOverlaps()
 	Level->GetStaticOctree()->QueryAABB(MyAABB, Candidates);
 
 	// Also check dynamic primitives (objects outside octree bounds)
-	TArray<UPrimitiveComponent*>& DynamicPrims = Level->GetDynamicPrimitives();
+	TArray<UPrimitiveComponent*> DynamicPrims = Level->GetDynamicPrimitives();
 	Candidates.Append(DynamicPrims);
 
 	// Store previous overlaps for comparison

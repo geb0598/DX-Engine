@@ -153,9 +153,10 @@ void UCamera::Update(const D3D11_VIEWPORT& InViewport)
     ULevel* CurrentLevel = GWorld->GetLevel();
     if (CurrentLevel)
     {
+        TArray<UPrimitiveComponent*> DynamicPrimitives = CurrentLevel->GetDynamicPrimitives();
         ViewVolumeCuller.Cull(
             CurrentLevel->GetStaticOctree(),
-            CurrentLevel->GetDynamicPrimitives(),
+            DynamicPrimitives,
             CameraConstants
         );
     }

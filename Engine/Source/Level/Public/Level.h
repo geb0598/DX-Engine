@@ -40,16 +40,27 @@ public:
 
 	FOctree* GetStaticOctree() { return StaticOctree; }
 
-	/** @todo: 효율 개선을 위해 DirtyFlag와 캐시 도입 가능 */
-	TArray<UPrimitiveComponent*>& GetDynamicPrimitives()
+	/**
+	 * @brief Octree 범위 밖에 있는 동적 프리미티브 목록 반환
+	 * @return 동적 프리미티브 배열 (값 복사)
+	 * @note 참조 무효화 방지를 위해 값으로 반환 (각 호출자가 독립적인 복사본 획득)
+	 * @todo 성능 최적화: DirtyFlag와 캐시된 배열 도입
+	 *       - 멤버 변수: TArray<UPrimitiveComponent*> CachedDynamicPrimitives
+	 *       - 플래그: bool bIsDynamicPrimitivesCacheDirty
+	 *       - OnPrimitiveUpdated/OnPrimitiveUnregistered에서 DirtyFlag 설정
+	 *       - GetDynamicPrimitives()에서 캐시가 유효하면 재사용
+	 *       - 예상 성능 개선: 매 프레임 복사 비용 제거 (특히 다중 호출 시)
+	 */
+	TArray<UPrimitiveComponent*> GetDynamicPrimitives() const
 	{
-		DynamicPrimitives.Empty();
+		TArray<UPrimitiveComponent*> Result;
+		Result.Reserve(DynamicPrimitiveMap.Num());
 
 		for (auto [Component, TimePoint] : DynamicPrimitiveMap)
 		{
-			DynamicPrimitives.Add(Component);
+			Result.Add(Component);
 		}
-		return DynamicPrimitives;
+		return Result;
 	}
 
 	friend class UWorld;
@@ -104,11 +115,8 @@ private:
 	};
 	
 	using FDynamicPrimitiveQueue = TQueue<FDynamicPrimitiveData>;
-	
-	FOctree* StaticOctree = nullptr;
 
-	/** @deprecated 기존 코드와의 호환성을 위해 유지, 직접 사용하거나 업데이트하는 것을 금지함 */
-	TArray<UPrimitiveComponent*> DynamicPrimitives;
+	FOctree* StaticOctree = nullptr;
 
 	/** @brief 가장 오래전에 움직인 UPrimitiveComponent부터 순서대로 Octree에 삽입할 수 있도록 보관 */
 	FDynamicPrimitiveQueue DynamicPrimitiveQueue;
