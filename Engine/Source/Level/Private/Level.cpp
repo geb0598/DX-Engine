@@ -110,6 +110,10 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, JSON* ActorJsonData)
 		return nullptr;
 	}
 
+	// TODO: BeginPlay 타이밍 문제
+	// - 현재: 항상 BeginPlay() 호출 -> Level::Init()에서도 호출 (중복)
+	// - Level::Serialize에서 호출 시 레벨 로드된 액터는 BeginPlay 2번 호출됨
+	// - 제안: bCallBeginPlay 파라미터 추가 또는 deferred beginplay 재도입 검토
 	AActor* NewActor = Cast<AActor>(NewObject(InActorClass, this));
 	if (NewActor)
 	{
@@ -125,6 +129,13 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, JSON* ActorJsonData)
 
 		NewActor->BeginPlay();
 		AddLevelComponent(NewActor);
+
+		// 템플릿 액터면 캐시에 추가
+		if (NewActor->IsTemplate())
+		{
+			RegisterTemplateActor(NewActor);
+		}
+
 		return NewActor;
 	}
 
@@ -215,6 +226,32 @@ void ULevel::AddActorToLevel(AActor* InActor)
 	LevelActors.Add(InActor);
 }
 
+void ULevel::RegisterTemplateActor(AActor* InActor)
+{
+	if (!InActor)
+	{
+		return;
+	}
+
+	// 중복 등록 방지
+	if (TemplateActors.Contains(InActor))
+	{
+		return;
+	}
+
+	TemplateActors.Add(InActor);
+}
+
+void ULevel::UnregisterTemplateActor(AActor* InActor)
+{
+	if (!InActor)
+	{
+		return;
+	}
+
+	TemplateActors.Remove(InActor);
+}
+
 void ULevel::AddLevelComponent(AActor* Actor)
 {
 	if (!Actor)
@@ -269,6 +306,12 @@ bool ULevel::DestroyActor(AActor* InActor)
 
 	InActor->EndPlay();
 
+	// 템플릿 액터면 캐시에서 제거
+	if (InActor->IsTemplate())
+	{
+		UnregisterTemplateActor(InActor);
+	}
+
 	// 컴포넌트들을 옥트리에서 제거
 	for (auto& Component : InActor->GetOwnedComponents())
 	{
@@ -315,6 +358,12 @@ void ULevel::DuplicateSubObjects(UObject* DuplicatedObject)
 
 	for (AActor* Actor : LevelActors)
 	{
+		// Template actor는 PIE World로 복제하지 않음 (Editor World에만 존재)
+		if (Actor->IsTemplate())
+		{
+			continue;
+		}
+
 		AActor* DuplicatedActor = Cast<AActor>(Actor->Duplicate());
 		DuplicatedActor->SetOuter(DuplicatedLevel);  // Actor의 Outer를 Level로 설정
 		DuplicatedLevel->LevelActors.Add(DuplicatedActor);
@@ -453,4 +502,34 @@ void ULevel::OnPrimitiveUnregistered(UPrimitiveComponent* InComponent)
 	}
 
 	DynamicPrimitiveMap.Remove(InComponent);
+}
+
+AActor* ULevel::FindTemplateActorByName(const FName& InName) const
+{
+	for (AActor* TemplateActor : TemplateActors)
+	{
+		if (TemplateActor && TemplateActor->GetName() == InName)
+		{
+			return TemplateActor;
+		}
+	}
+	return nullptr;
+}
+
+TArray<AActor*> ULevel::FindTemplateActorsByClass(UClass* InClass) const
+{
+	TArray<AActor*> Result;
+	if (!InClass)
+	{
+		return Result;
+	}
+
+	for (AActor* TemplateActor : TemplateActors)
+	{
+		if (TemplateActor && TemplateActor->GetClass() == InClass)
+		{
+			Result.Add(TemplateActor);
+		}
+	}
+	return Result;
 }

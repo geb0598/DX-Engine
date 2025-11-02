@@ -24,8 +24,15 @@ public:
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
 	const TArray<AActor*>& GetLevelActors() const { return LevelActors; }
+	const TArray<AActor*>& GetTemplateActors() const { return TemplateActors; }
 
 	void AddActorToLevel(AActor* InActor);
+	void RegisterTemplateActor(AActor* InActor);
+	void UnregisterTemplateActor(AActor* InActor);
+
+	// Template Actor 검색 함수
+	AActor* FindTemplateActorByName(const FName& InName) const;
+	TArray<AActor*> FindTemplateActorsByClass(UClass* InClass) const;
 
 	void AddLevelComponent(AActor* Actor);
 
@@ -74,6 +81,7 @@ private:
 	AActor* SpawnActorToLevel(UClass* InActorClass, JSON* ActorJsonData = nullptr);
 
 	TArray<AActor*> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.
+	TArray<AActor*> TemplateActors;	// bIsTemplate이 true인 Actor들의 캐시 (빠른 조회용)
 
 	// 지연 삭제를 위한 리스트
 	TArray<AActor*> ActorsToDelete;

@@ -155,12 +155,17 @@ public:
 	bool IsPendingDestroy() const { return bIsPendingDestroy; }
 	void SetIsPendingDestroy(bool bInIsPendingDestroy) { bIsPendingDestroy = bInIsPendingDestroy; }
 
+	bool IsTemplate() const { return bIsTemplate; }
+	void SetIsTemplate(bool bInIsTemplate);
+
 protected:
 	bool bCanEverTick = false;
 	bool bTickInEditor = false;
 	bool bBegunPlay = false;
 	/** @brief True if the actor is marked for destruction. */
 	bool bIsPendingDestroy = false;
+	/** @brief True if the actor is a template. Hides in PIE but shows in Editor. */
+	bool bIsTemplate = false;
 
 private:
 	USceneComponent* RootComponent = nullptr;
@@ -172,4 +177,19 @@ public:
 
 	virtual UObject* DuplicateForEditor() override;
 	virtual void DuplicateSubObjectsForEditor(UObject* DuplicatedObject) override;
+
+	/**
+	 * @brief 템플릿 액터로부터 인스턴스를 생성하고 레벨에 배치합니다.
+	 * @details bIsTemplate을 false로 설정하고, BeginPlay 이전에 Location/Rotation을 설정합니다.
+	 *          자동으로 지정된 Level(또는 템플릿의 Outer Level)에 추가되어 렌더링 및 Tick이 작동합니다.
+	 * @param TargetLevel 인스턴스를 배치할 대상 Level (nullptr이면 템플릿의 Outer Level 사용)
+	 * @param InLocation 인스턴스의 초기 위치
+	 * @param InRotation 인스턴스의 초기 회전
+	 * @return 복제된 액터 (템플릿이 아닌 일반 액터, Level에 추가된 상태)
+	 */
+	AActor* DuplicateFromTemplate(
+		ULevel* TargetLevel = nullptr,
+		const FVector& InLocation = FVector::Zero(),
+		const FQuaternion& InRotation = FQuaternion::Identity()
+	);
 };

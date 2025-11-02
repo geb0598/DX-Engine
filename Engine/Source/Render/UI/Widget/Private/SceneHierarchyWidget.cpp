@@ -87,22 +87,72 @@ void USceneHierarchyWidget::RenderWidget()
 	// Actor 리스트를 스크롤 가능한 영역으로 표시
 	if (ImGui::BeginChild("ActorList", ImVec2(0, 0), true))
 	{
-		// IMGui Clipper를 사용하여 눈에 보이는 부분만 렌더하여 비용을 절약한다.
+		// ImGui Clipper를 사용하여 눈에 보이는 부분만 렌더하여 비용을 절약한다.
 		if (SearchFilter.empty())
 		{
-			// 검색어가 없으면 모든 Actor 표시
+			// 일반 액터와 템플릿 액터 분리
+			TArray<AActor*> NormalActors;
+			TArray<AActor*> TemplateActors;
+
+			for (AActor* Actor : LevelActors)
+			{
+				if (Actor)
+				{
+					if (Actor->IsTemplate())
+					{
+						TemplateActors.Add(Actor);
+					}
+					else
+					{
+						NormalActors.Add(Actor);
+					}
+				}
+			}
+
+			// 전체 항목 수 계산: 일반 액터 + (구분선 3줄) + 템플릿 액터
+			int32 normalCount = NormalActors.Num();
+			int32 templateCount = TemplateActors.Num();
+			int32 separatorLines = templateCount > 0 ? 3 : 0; // Separator 2개 + 텍스트 1개
+			int32 totalItems = normalCount + separatorLines + templateCount;
+
+			// 단일 Clipper로 전체 렌더링
 			ImGuiListClipper clipper;
-			clipper.Begin(LevelActors.Num());
+			clipper.Begin(totalItems);
 			while (clipper.Step())
 			{
 				for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
 				{
-					if (LevelActors[i])
-						RenderActorInfo(LevelActors[i], i);
+					if (i < normalCount)
+					{
+						// 일반 액터
+						RenderActorInfo(NormalActors[i], i);
+					}
+					else if (i < normalCount + separatorLines)
+					{
+						// 구분선 영역 (3줄)
+						int separatorLine = i - normalCount;
+						if (separatorLine == 0)
+						{
+							ImGui::Separator();
+						}
+						else if (separatorLine == 1)
+						{
+							ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.0f, 1.0f), "Template Actors");
+						}
+						else if (separatorLine == 2)
+						{
+							ImGui::Separator();
+						}
+					}
+					else
+					{
+						// 템플릿 액터
+						int templateIndex = i - normalCount - separatorLines;
+						RenderActorInfo(TemplateActors[templateIndex], i);
+					}
 				}
 			}
 			clipper.End();
-
 		}
 		else
 		{

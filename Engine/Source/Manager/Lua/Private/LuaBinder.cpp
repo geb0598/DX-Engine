@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Manager/Lua/Public/LuaBinder.h"
 #include "Actor/Public/GameMode.h"
 #include "Component/Public/ScriptComponent.h"
@@ -8,10 +8,14 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 {
 	// --- UWorld ---
     LuaState.new_usertype<UWorld>("UWorld",
-        "SpawnActor", &UWorld::SpawnActor,
+        "SpawnActor", sol::overload(
+            sol::resolve<AActor*(const std::string&)>(&UWorld::SpawnActor),
+            sol::resolve<AActor*(UClass*, JSON*)>(&UWorld::SpawnActor)
+        ),
         "GetTimeSeconds", &UWorld::GetTimeSeconds,
         "DestroyActor", &UWorld::DestroyActor,
-        "GetGameMode", &UWorld::GetGameMode
+        "GetGameMode", &UWorld::GetGameMode,
+        "FindTemplateActorOfName", &UWorld::FindTemplateActorOfName
     );
 
     // --- GWorld 인스턴스 접근자 (전역 함수) ---
@@ -128,6 +132,29 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		),
 		"UUID", sol::property(
 			&AActor::GetUUID
+		),
+		"IsTemplate", sol::property(
+			&AActor::IsTemplate,
+			&AActor::SetIsTemplate
+		),
+		"Duplicate", &AActor::Duplicate,
+		"DuplicateFromTemplate", sol::overload(
+			// 파라미터 없음 - 템플릿의 Outer Level에 추가, 기본 위치/회전
+			[](AActor* Self) {
+				return Self->DuplicateFromTemplate();
+			},
+			// Level 지정 - 지정된 Level에 추가, 기본 위치/회전
+			[](AActor* Self, ULevel* TargetLevel) {
+				return Self->DuplicateFromTemplate(TargetLevel);
+			},
+			// Level + Location 지정
+			[](AActor* Self, ULevel* TargetLevel, const FVector& InLocation) {
+				return Self->DuplicateFromTemplate(TargetLevel, InLocation);
+			},
+			// Level + Location + Rotation 지정 (완전한 제어)
+			[](AActor* Self, ULevel* TargetLevel, const FVector& InLocation, const FQuaternion& InRotation) {
+				return Self->DuplicateFromTemplate(TargetLevel, InLocation, InRotation);
+			}
 		),
 		"GetActorForwardVector", sol::resolve<FVector() const>(&AActor::GetActorForwardVector),
 		"GetActorUpVector", sol::resolve<FVector() const>(&AActor::GetActorUpVector),

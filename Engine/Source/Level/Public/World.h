@@ -61,8 +61,11 @@ public:
 
 	// Actor Spawn & Destroy
 	AActor* SpawnActor(UClass* InActorClass, JSON* ActorJsonData = nullptr);
+	AActor* SpawnActor(const std::string& ClassName); // Helper for Lua binding (string overload)
 	bool DestroyActor(AActor* InActor); // Level의 void MarkActorForDeletion(AActor * InActor) 기능을 DestroyActor가 가짐
 
+	// Template Actor 검색 (Lua binding용 wrapper)
+	AActor* FindTemplateActorOfName(const std::string& InName);
 	/**
 	 * @brief 월드(레벨)의 모든 액터를 순회하며 특정 클래스(및 자식 클래스)에 해당하는 액터들을 반환
 	 * @param InClass 찾으려는 부모 클래스
@@ -96,12 +99,17 @@ public:
 	EWorldType GetWorldType() const;
 	void SetWorldType(EWorldType InWorldType);
 
+	// Source Editor World 참조 (PIE World가 어느 Editor World로부터 복제되었는지 추적)
+	UWorld* GetSourceEditorWorld() const { return SourceEditorWorld; }
+	void SetSourceEditorWorld(UWorld* InSourceWorld) { SourceEditorWorld = InSourceWorld; }
+
 private:
 	EWorldType WorldType;
 	ULevel* Level = nullptr; // Persistance Level. Sublevels are not considered in Engine.
 	bool bBegunPlay = false;
 	TArray<AActor*> PendingDestroyActors;
 	float WorldTimeSeconds;
+	UWorld* SourceEditorWorld = nullptr; // PIE World가 복제된 원본 Editor World (Editor/Game world에서는 nullptr)
 
 	void FlushPendingDestroy(); // Destroy marking 된 액터들을 실제 삭제
 

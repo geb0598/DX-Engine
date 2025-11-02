@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Manager/Lua/Public/LuaManager.h"
 #include "Manager/Lua/Public/LuaBinder.h"
 #include "Manager/Path/Public/PathManager.h"
@@ -16,7 +16,13 @@ ULuaManager::~ULuaManager()
 
 void ULuaManager::Initialize()
 {
-    MasterLuaState.open_libraries(sol::lib::base, sol::lib::coroutine, sol::lib::string, sol::lib::io);
+    MasterLuaState.open_libraries(
+		sol::lib::base,
+		sol::lib::coroutine,
+		sol::lib::string,
+		sol::lib::io,
+		sol::lib::math,
+		sol::lib::table);
     MasterLuaState.script("print('--- [LuaManager] sol2 & Lua link SUCCESS! ---')");
 
     BindTypesToLua();

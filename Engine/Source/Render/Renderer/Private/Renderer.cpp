@@ -983,6 +983,7 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	if (!CurrentLevel) { return; }
 
 	const FCameraConstants& ViewProj = InViewport->GetViewportClient()->GetCamera()->GetFViewProjConstants();
+
 	static bool bCullingEnabled = false; // 임시 토글(초기값: 컬링 비활성)
 	TArray<UPrimitiveComponent*> FinalVisiblePrims;
 	if (!bCullingEnabled)
@@ -992,6 +993,7 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 		{
 			TArray<UPrimitiveComponent*> AllStatics;
 			StaticOctree->GetAllPrimitives(AllStatics);
+
 			for (UPrimitiveComponent* Primitive : AllStatics)
 			{
 				if (Primitive && Primitive->IsVisible())
@@ -1002,6 +1004,7 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 		}
 		// 2) 동적 프리미티브 전부 수집
 		TArray<UPrimitiveComponent*> DynamicPrimitives = WorldToRender->GetLevel()->GetDynamicPrimitives();
+
 		for (UPrimitiveComponent* Primitive : DynamicPrimitives)
 		{
 			if (Primitive && Primitive->IsVisible())
@@ -1070,7 +1073,7 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 		if (auto PointLightComponent = Cast<UPointLightComponent>(LightComponent))
 		{
 			auto SpotLightComponent = Cast<USpotLightComponent>(LightComponent);
-			
+
 			if (SpotLightComponent &&
 				SpotLightComponent->GetVisible() &&
 				SpotLightComponent->GetLightEnabled())

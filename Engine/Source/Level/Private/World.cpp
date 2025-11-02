@@ -88,7 +88,9 @@ void UWorld::Tick(float DeltaTimes)
 
 	if (WorldType == EWorldType::Editor )
 	{
-		for (AActor* Actor : Level->GetLevelActors())
+		// 액터 배열 복사본으로 순회 (Tick 도중 액터가 추가/삭제될 수 있음)
+		TArray<AActor*> ActorsToTick = Level->GetLevelActors();
+		for (AActor* Actor : ActorsToTick)
 		{
 			if(Actor->CanTickInEditor() && Actor->CanTick())
 			{
@@ -104,7 +106,9 @@ void UWorld::Tick(float DeltaTimes)
 
 	if (WorldType == EWorldType::Game || WorldType == EWorldType::PIE)
 	{
-		for (AActor* Actor : Level->GetLevelActors())
+		// 액터 배열 복사본으로 순회 (Tick 도중 액터가 추가/삭제될 수 있음)
+		TArray<AActor*> ActorsToTick = Level->GetLevelActors();
+		for (AActor* Actor : ActorsToTick)
 		{
 			if(Actor->CanTick())
 			{
@@ -224,6 +228,10 @@ AActor* UWorld::SpawnActor(UClass* InActorClass, JSON* ActorJsonData)
 		return nullptr;
 	}
 
+	// TODO: 리팩토링 필요
+	// - Level->SpawnActorToLevel()로 위임하여 중복 코드 제거
+	// - Level의 private 멤버(LevelActors) 직접 접근 문제
+	// - bBegunPlay 체크를 파라미터로 전달하는 방식 검토
 	AActor* NewActor = Cast<AActor>(NewObject(InActorClass, this));
 	if (NewActor)
 	{
@@ -242,10 +250,35 @@ AActor* UWorld::SpawnActor(UClass* InActorClass, JSON* ActorJsonData)
 			NewActor->BeginPlay();
 		}
 		Level->AddLevelComponent(NewActor);
+
+		// 템플릿 액터면 캐시에 추가
+		if (NewActor->IsTemplate())
+		{
+			Level->RegisterTemplateActor(NewActor);
+		}
+
 		return NewActor;
 	}
 
 	return nullptr;
+}
+
+AActor* UWorld::SpawnActor(const std::string& ClassName)
+{
+	if (!Level)
+	{
+		UE_LOG_ERROR("World: Actor를 Spawn할 수 있는 Level이 없습니다.");
+		return nullptr;
+	}
+
+	UClass* ActorClass = UClass::FindClass(FName(ClassName));
+	if (!ActorClass)
+	{
+		UE_LOG_ERROR("World: SpawnActor - Class not found: %s", ClassName.c_str());
+		return nullptr;
+	}
+
+	return Level->SpawnActorToLevel(ActorClass);
 }
 
 /**
@@ -356,6 +389,10 @@ UObject* UWorld::Duplicate()
 {
 	UWorld* World = Cast<UWorld>(Super::Duplicate());
 	World->Settings = Settings;
+
+	// PIE World가 어느 Editor World로부터 복제되었는지 추적
+	World->SetSourceEditorWorld(this);
+
 	return World;
 }
 
@@ -386,4 +423,28 @@ void UWorld::CreateNewLevel(const FName& InLevelName)
 
 	// 새 레벨 생성 후 Octree 전체 구축
 	NewLevel->UpdateOctreeImmediate();
+}
+
+AActor* UWorld::FindTemplateActorOfName(const std::string& InName)
+{
+	// PIE World인 경우 원본 Editor World에서 template actor 검색
+	if (SourceEditorWorld != nullptr)
+	{
+		ULevel* EditorLevel = SourceEditorWorld->GetLevel();
+		if (!EditorLevel)
+		{
+			UE_LOG_ERROR("World: SourceEditorWorld의 Level이 없어 template actor를 검색할 수 없습니다.");
+			return nullptr;
+		}
+		return EditorLevel->FindTemplateActorByName(FName(InName));
+	}
+
+	// Editor/Game World인 경우 자신의 Level에서 검색
+	if (!Level)
+	{
+		UE_LOG_ERROR("World: Level이 없어 template actor를 검색할 수 없습니다.");
+		return nullptr;
+	}
+
+	return Level->FindTemplateActorByName(FName(InName));
 }
