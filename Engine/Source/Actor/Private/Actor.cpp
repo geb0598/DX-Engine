@@ -314,6 +314,23 @@ const FVector& AActor::GetActorScale3D() const
 	return RootComponent->GetRelativeScale3D();
 }
 
+UActorComponent* AActor::FindComponentByClass(UClass* ComponentClass) const
+{
+	if (!ComponentClass)
+	{
+		return nullptr;
+	}
+
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		if (Component && Component->GetClass()->IsChildOf(ComponentClass))
+		{
+			return Component;
+		}
+	}
+	return nullptr;
+}
+
 FVector AActor::GetActorForwardVector() const
 {
 	assert(RootComponent);
