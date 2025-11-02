@@ -206,7 +206,7 @@ void UPrimitiveComponent::MarkAsDirty()
 UObject* UPrimitiveComponent::Duplicate()
 {
 	UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(Super::Duplicate());
-	
+
 	PrimitiveComponent->Color = Color;
 	PrimitiveComponent->Topology = Topology;
 	PrimitiveComponent->RenderState = RenderState;
@@ -224,7 +224,7 @@ UObject* UPrimitiveComponent::Duplicate()
 	{
 		PrimitiveComponent->BoundingBox = BoundingBox;
 	}
-	
+
 	return PrimitiveComponent;
 }
 
@@ -284,7 +284,7 @@ void UPrimitiveComponent::UpdateOverlaps()
 	if (!MyOwner)
 		return;
 
-	ULevel* Level = Cast<ULevel>(MyOwner->GetOuter());
+	ULevel* Level = GWorld->GetLevel();
 	if (!Level || !Level->GetStaticOctree())
 		return;
 

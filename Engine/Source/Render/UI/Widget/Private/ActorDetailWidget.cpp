@@ -101,6 +101,41 @@ void UActorDetailWidget::RenderWidget()
 		ImGui::PopStyleColor(4);
 	}
 
+	if (ImGui::CollapsingHeader("Collision"))
+	{
+		ECollisionTag CurrentTag = SelectedActor->GetCollisionTag();
+
+		const char* TagNames[] = { "None", "Player", "Enemy", "Wall" };
+
+		int32 CurrentTagIndex = static_cast<int>(CurrentTag);
+
+		const char* CurrentTagName = "Unknown";
+		if (CurrentTagIndex >= 0 && CurrentTagIndex < IM_ARRAYSIZE(TagNames))
+		{
+			CurrentTagName = TagNames[CurrentTagIndex];
+		}
+
+		if (ImGui::BeginCombo("Collision Tag", CurrentTagName))
+		{
+			for (int32 Idx = 0; Idx < IM_ARRAYSIZE(TagNames); ++Idx)
+			{
+				const bool bIsSelected = (CurrentTagIndex == Idx);
+
+				if (ImGui::MenuItem(TagNames[Idx], "", bIsSelected))
+				{
+					ECollisionTag NewTag = static_cast<ECollisionTag>(Idx);
+					SelectedActor->SetCollisionTag(NewTag);
+				}
+
+				if (bIsSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+			ImGui::EndCombo();
+		}
+	}
+
 	ImGui::PopStyleColor(3);
 	ImGui::Separator();
 

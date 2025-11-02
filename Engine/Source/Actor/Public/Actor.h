@@ -93,16 +93,6 @@ public:
 	FVector GetActorUpVector() const;
 	FVector GetActorRightVector() const;
 
-	// === Overlap Query API ===
-	bool IsOverlappingActor(const AActor* OtherActor) const;
-	void GetOverlappingComponents(const AActor* OtherActor, TArray<UPrimitiveComponent*>& OutComponents) const;
-
-	// === Collision Event Delegates ===
-	// Public so users can bind to these events
-	FActorBeginOverlapSignature OnActorBeginOverlap;
-	FActorEndOverlapSignature OnActorEndOverlap;
-	FActorHitSignature OnActorHit;
-
 	/**
 	 * @brief IDelegateProvider 구현 - Actor의 Delegate 목록 반환
 	 * @return Lua에 노출할 Delegate 정보 배열
@@ -129,17 +119,7 @@ public:
 		return NewComponent;
 	}
 
-	UActorComponent* CreateDefaultSubobject(UClass* Class)
-	{
-		UActorComponent* NewComponent = Cast<UActorComponent>(::NewObject(Class, this));
-		if (NewComponent)
-		{
-			NewComponent->SetOwner(this);
-			OwnedComponents.Add(NewComponent);
-		}
-
-		return NewComponent;
-	}
+	UActorComponent* CreateDefaultSubobject(UClass* Class);
 
 	/**
 	 * @brief 런타임에 이 액터에 새로운 컴포넌트를 생성하고 등록합니다.
@@ -213,4 +193,21 @@ public:
 		const FVector& InLocation = FVector::Zero(),
 		const FQuaternion& InRotation = FQuaternion::Identity()
 	);
+// Collision Section
+public:
+	ECollisionTag GetCollisionTag() const { return CollisionTag; }
+	void SetCollisionTag(const ECollisionTag Tag) { CollisionTag = Tag; }
+
+	// === Overlap Query API ===
+	bool IsOverlappingActor(const AActor* OtherActor) const;
+	void GetOverlappingComponents(const AActor* OtherActor, TArray<UPrimitiveComponent*>& OutComponents) const;
+
+	// === Collision Event Delegates ===
+	// Public so users can bind to these events
+	FActorBeginOverlapSignature OnActorBeginOverlap;
+	FActorEndOverlapSignature OnActorEndOverlap;
+	FActorHitSignature OnActorHit;
+
+private:
+	ECollisionTag CollisionTag = ECollisionTag::None;
 };

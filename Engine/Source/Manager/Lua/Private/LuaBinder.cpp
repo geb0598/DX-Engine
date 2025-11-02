@@ -147,6 +147,9 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		"UUID", sol::property(
 			&AActor::GetUUID
 		),
+		"Tag", sol::property(
+			[](AActor* Actor) -> int32 { return static_cast<int32>(Actor->GetCollisionTag()); }
+		),
 		"IsTemplate", sol::property(
 			&AActor::IsTemplate,
 			&AActor::SetIsTemplate
