@@ -144,6 +144,12 @@ FVector FQuaternion::ToEuler() const
 	return Euler;
 }
 
+FRotator FQuaternion::ToRotator() const
+{
+	const FVector EulerDeg = ToEuler();
+	return {EulerDeg.Y, EulerDeg.Z, EulerDeg.X};
+}
+
 FMatrix FQuaternion::ToRotationMatrix() const
 {
     FMatrix M;

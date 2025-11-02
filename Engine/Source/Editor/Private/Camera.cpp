@@ -89,11 +89,18 @@ FVector UCamera::UpdateInput()
 
 void UCamera::Update(const D3D11_VIEWPORT& InViewport)
 {
-	// 입력이 활성화되어 있으면 입력 처리
-
-	if (bInputEnabled)
+	if (HasViewTarget()) // 뷰 타겟 존재할 시
 	{
-		UpdateInput();
+		SetInputEnabled(false);
+		RelativeLocation = ViewTarget->GetActorLocation();
+		RelativeRotation = ViewTarget->GetActorRotation().ToRotator();
+	}
+	else // 뷰 타겟 없을 시 에디터 카메라 동작
+	{
+		if (GetInputEnabled())
+		{
+			UpdateInput();
+		}
 	}
 
 	// Perspective 모드에서만 회전 행렬로 Forward/Up/Right 계산
@@ -193,7 +200,7 @@ void UCamera::UpdateMatrixByPers()
 	P.Data[3][3] = 0.0f;
 
 	CameraConstants.Projection = P;
-	
+
 	CameraConstants.ViewWorldLocation = RelativeLocation;
 	CameraConstants.NearClip = NearZ;
 	CameraConstants.FarClip = FarZ;
@@ -208,8 +215,8 @@ void UCamera::UpdateMatrixByPers()
  * UnitsPerPixel = (OrthoZoom / (ViewportWidth * 15)) * Factor
  *               = (OrthoZoom / (ViewportWidth * 15)) * (ViewportWidth / 500)
  *               = OrthoZoom / 7500  (ViewportWidth가 약분됨!)
- * @param ViewportWidth 
- * @return 
+ * @param ViewportWidth
+ * @return
  */
 float UCamera::GetOrthoUnitsPerPixel(float ViewportWidth) const
 {

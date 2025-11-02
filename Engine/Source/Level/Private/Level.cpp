@@ -59,9 +59,9 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 				FString TypeString;
 				FJsonSerializer::ReadString(ActorDataJson, "Type", TypeString);
-				
+
 				UClass* ActorClass = UClass::FindClass(TypeString);
-				SpawnActorToLevel(ActorClass, &ActorDataJson); 
+				SpawnActorToLevel(ActorClass, &ActorDataJson);
 			}
 		}
 
@@ -79,7 +79,7 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		{
 			JSON ActorJson;
 			ActorJson["Type"] = Actor->GetClass()->GetName().ToString();
-			Actor->Serialize(bInIsLoading, ActorJson); 
+			Actor->Serialize(bInIsLoading, ActorJson);
 
 			ActorsJson[std::to_string(Actor->GetUUID())] = ActorJson;
 		}
@@ -92,8 +92,10 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 void ULevel::Init()
 {
-	for (AActor* Actor: LevelActors)
+	// BeginPlay 도중 생성되는 액터가 존재할 수 있으므로 인덱스 기반
+	for (int32 Idx = 0; Idx < LevelActors.Num(); ++Idx)
 	{
+		AActor* Actor = LevelActors[Idx];
 		if (Actor)
 		{
 			Actor->BeginPlay();
@@ -120,6 +122,7 @@ AActor* ULevel::SpawnActorToLevel(UClass* InActorClass, JSON* ActorJsonData)
 		{
 			NewActor->InitializeComponents();
 		}
+
 		NewActor->BeginPlay();
 		AddLevelComponent(NewActor);
 
@@ -177,8 +180,8 @@ void ULevel::RegisterComponent(UActorComponent* InComponent)
 		{
 			LightComponents.Add(AmbientLightComponent);
 		}
-		
-		
+
+
 	}
 	UE_LOG("Level: '%s' 컴포넌트를 씬에 등록했습니다.", InComponent->GetName().ToString().data());
 }
@@ -199,14 +202,14 @@ void ULevel::UnregisterComponent(UActorComponent* InComponent)
 	{
 		// StaticOctree에서 제거 시도
 		StaticOctree->Remove(PrimitiveComponent);
-	
+
 		OnPrimitiveUnregistered(PrimitiveComponent);
 	}
 	else if (auto LightComponent = Cast<ULightComponent>(InComponent))
 	{
 		LightComponents.Remove(LightComponent);
 	}
-	
+
 }
 
 void ULevel::AddActorToLevel(AActor* InActor)
@@ -284,7 +287,7 @@ void ULevel::AddLevelComponent(AActor* Actor)
 			{
 				LightComponents.Add(AmbientLightComponent);
 			}
-			
+
 		}
 	}
 }
@@ -296,6 +299,8 @@ bool ULevel::DestroyActor(AActor* InActor)
 	{
 		return false;
 	}
+
+	InActor->EndPlay();
 
 	// 템플릿 액터면 캐시에서 제거
 	if (InActor->IsTemplate())
@@ -372,10 +377,10 @@ void ULevel::UpdateOctree()
 	{
 		return;
 	}
-	
+
 	uint32 Count = 0;
 	FDynamicPrimitiveQueue NotInsertedQueue;
-	
+
 	while (!DynamicPrimitiveQueue.empty() && Count < MAX_OBJECTS_TO_INSERT_PER_FRAME)
 	{
 		auto [Component, TimePoint] = DynamicPrimitiveQueue.front();
@@ -406,7 +411,7 @@ void ULevel::UpdateOctree()
 			}
 		}
 	}
-	
+
 	DynamicPrimitiveQueue = NotInsertedQueue;
 	if (Count != 0)
 	{

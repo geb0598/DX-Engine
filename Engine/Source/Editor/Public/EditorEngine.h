@@ -13,7 +13,7 @@ private:
     UWorld* WorldPtr = nullptr;
 public:
     UWorld* World() const { return WorldPtr; }
-    EWorldType GetType() const { return WorldPtr ? WorldPtr->GetWorldType() : EWorldType::Game; } 
+    EWorldType GetType() const { return WorldPtr ? WorldPtr->GetWorldType() : EWorldType::Game; }
     void SetWorld(UWorld* InWorld) { WorldPtr = InWorld; }
     bool operator==(const FWorldContext& Other) const { return WorldPtr == Other.WorldPtr; }
 };
@@ -60,6 +60,8 @@ public:
     UWorld* GetWorldForViewport(int32 ViewportIndex);
     EPIEState GetPIEState() const { return PIEState; }
     UEditor* GetEditorModule() const { return EditorModule; }
+	class UCamera* GetMainCamera() const;
+
     bool IsPIESessionActive() const;
 
 private:
@@ -67,7 +69,7 @@ private:
     FWorldContext* GetPIEWorldContext();
     // 현재 PIE 세션 중인지 확인하고, 그렇다면 현재 WorldContext를 반환
     FWorldContext* GetActiveWorldContext();
-    
+
     EPIEState PIEState = EPIEState::Stopped;
     TArray<FWorldContext> WorldContexts;
     UEditor* EditorModule;

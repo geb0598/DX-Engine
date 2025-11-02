@@ -78,7 +78,7 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
             {
                 FString TypeString;
                 FString NameString;
-        
+
                 FJsonSerializer::ReadString(ComponentData, "Type", TypeString);
                 FJsonSerializer::ReadString(ComponentData, "Name", NameString);
 
@@ -91,7 +91,7 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
                 	NewComp->SetOwner(this);
                 	OwnedComponents.Add(NewComp);
                     NewComp->Serialize(bInIsLoading, ComponentData);
-                	
+
                 	if (USceneComponent* NewSceneComp = Cast<USceneComponent>(NewComp))
                 	{
                 		FString ParentNameStd;
@@ -100,27 +100,27 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
                 		FSceneCompData LoadData;
                 		LoadData.Component = NewSceneComp;
                 		LoadData.ParentName = ParentNameStd;
-                    
+
                 		ComponentMap[NameString] = LoadData;
                 		LoadList.Add(&ComponentMap[NameString]);
                 	}
                 }
             }
-            
+
             // --- [PASS 2: Hierarchy Rebuild] ---
             for (FSceneCompData* LoadDataPtr : LoadList)
             {
                 USceneComponent* ChildComp = LoadDataPtr->Component;
                 const FString& ParentName = LoadDataPtr->ParentName;
-                
+
                 if (!ParentName.empty())
                 {
-                	auto* ParentInfoPtr = ComponentMap.Find(ParentName); 
-    
+                	auto* ParentInfoPtr = ComponentMap.Find(ParentName);
+
                 	if (ParentInfoPtr)
                 	{
                 		USceneComponent* ParentComp = ParentInfoPtr->Component;
-        
+
                 		// 부착 함수 호출
                 		if (ParentComp)
                 		{
@@ -150,13 +150,13 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
         	if (RootComponent)
         	{
     			FVector Location, RotationEuler, Scale;
-    	        
+
     		    FJsonSerializer::ReadVector(InOutHandle, "Location", Location, GetActorLocation());
     		    FJsonSerializer::ReadVector(InOutHandle, "Rotation", RotationEuler, GetActorRotation().ToEuler());
     		    FJsonSerializer::ReadVector(InOutHandle, "Scale", Scale, GetActorScale3D());
-    	        
+
     		    SetActorLocation(Location);
-    		    SetActorRotation(FQuaternion::FromEuler(RotationEuler));	    		SetActorScale3D(Scale); 
+    		    SetActorRotation(FQuaternion::FromEuler(RotationEuler));	    		SetActorScale3D(Scale);
         	}
 
 			FString bCanEverTickString;
@@ -185,9 +185,9 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		InOutHandle["bTickInEditor"] = bTickInEditor ? "true" : "false";
 		InOutHandle["bIsTemplate"] = bIsTemplate ? "true" : "false";
 
-        JSON ComponentsJson = json::Array(); 
+        JSON ComponentsJson = json::Array();
 
-        for (UActorComponent* Component : OwnedComponents) 
+        for (UActorComponent* Component : OwnedComponents)
         {
         	JSON ComponentJson;
         	ComponentJson["Type"] = Component->GetClass()->GetName().ToString();
@@ -297,11 +297,29 @@ const FVector& AActor::GetActorScale3D() const
 	return RootComponent->GetRelativeScale3D();
 }
 
+FVector AActor::GetActorForwardVector() const
+{
+	assert(RootComponent);
+	return RootComponent->GetForwardVector();
+}
+
+FVector AActor::GetActorUpVector() const
+{
+	assert(RootComponent);
+	return RootComponent->GetUpVector();
+}
+
+FVector AActor::GetActorRightVector() const
+{
+	assert(RootComponent);
+	return RootComponent->GetRightVector();
+}
+
 UActorComponent* AActor::AddComponent(UClass* InClass)
 {
 	if (!InClass->IsChildOf(UActorComponent::StaticClass())) { return nullptr; }
 	UActorComponent* NewComponent = Cast<UActorComponent>(NewObject(InClass, this));
-	
+
 	if (NewComponent)
 	{
 		RegisterComponent(NewComponent);
@@ -315,7 +333,7 @@ UActorComponent* AActor::AddComponent(UClass* InClass)
 		LightComp->EnsureVisualizationIcon();
 	}
 
-	
+
 	return NewComponent;
 }
 
@@ -344,7 +362,7 @@ void AActor::RegisterComponent(UActorComponent* InNewComponent)
 bool AActor::RemoveComponent(UActorComponent* InComponentToDelete, bool bShouldDetachChildren)
 {
     if (!InComponentToDelete) { return false; }
-    
+
 	if (!OwnedComponents.Contains(InComponentToDelete)) { return false; }
 
     if (InComponentToDelete == RootComponent)
@@ -391,7 +409,7 @@ bool AActor::RemoveComponent(UActorComponent* InComponentToDelete, bool bShouldD
             // 자식을 함께 파괴함 (Destroy - 런타임 기본 방식)
             for (USceneComponent* Child : ChildrenToProcess)
             {
-                RemoveComponent(Child); 
+                RemoveComponent(Child);
             }
         }
     }
@@ -441,7 +459,7 @@ void AActor::DuplicateSubObjects(UObject* DuplicatedObject)
 		if (!OldSceneComp) { continue; } // SceneComponent Check
 		USceneComponent* NewSceneComp = Cast<USceneComponent>(NewComp);
 		USceneComponent* OldParent = OldSceneComp->GetAttachParent();
-        
+
 		// 원본 부모가 있었다면, 그에 맞는 새 부모를 찾아 연결
 		while (OldParent)
 		{
@@ -456,7 +474,7 @@ void AActor::DuplicateSubObjects(UObject* DuplicatedObject)
 			OldParent = OldParent->GetAttachParent();
 		}
 	}
-    
+
 	// Set Root Component
 	USceneComponent* OldRoot = GetRootComponent();
 

@@ -18,6 +18,7 @@ struct FQuaternion
 	static FQuaternion FromEuler(const FVector& EulerDeg);
 	static FQuaternion FromRotationMatrix(const FMatrix& M);
 	FVector ToEuler() const;
+	FRotator ToRotator() const;
 
 	FMatrix ToRotationMatrix() const;
 

@@ -238,7 +238,40 @@ AActor* UWorld::SpawnActor(UClass* InActorClass, JSON* ActorJsonData)
 		return nullptr;
 	}
 
-	return Level->SpawnActorToLevel(InActorClass, ActorJsonData);
+	if (!InActorClass)
+	{
+		return nullptr;
+	}
+
+	AActor* NewActor = Cast<AActor>(NewObject(InActorClass, this));
+	if (NewActor)
+	{
+		Level->LevelActors.Add(NewActor);
+		if (ActorJsonData != nullptr)
+		{
+			NewActor->Serialize(true, *ActorJsonData);
+		}
+		else
+		{
+			NewActor->InitializeComponents();
+		}
+
+		if (bBegunPlay)
+		{
+			NewActor->BeginPlay();
+		}
+		Level->AddLevelComponent(NewActor);
+
+		// 템플릿 액터면 캐시에 추가
+		if (NewActor->IsTemplate())
+		{
+			Level->RegisterTemplateActor(NewActor);
+		}
+
+		return NewActor;
+	}
+
+	return nullptr;
 }
 
 AActor* UWorld::SpawnActor(const std::string& ClassName)
@@ -344,6 +377,7 @@ void UWorld::SwitchToLevel(ULevel* InNewLevel)
 UObject* UWorld::Duplicate()
 {
 	UWorld* World = Cast<UWorld>(Super::Duplicate());
+	World->Settings = Settings;
 	return World;
 }
 
