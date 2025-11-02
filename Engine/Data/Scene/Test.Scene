@@ -1,6 +1,6 @@
 {
   "Actors" : {
-    "317" : {
+    "262" : {
       "Components" : [{
           "Intensity" : 0.550000,
           "IsEditorOnly" : "false",
@@ -51,7 +51,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "321" : {
+    "266" : {
       "Components" : [{
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
@@ -87,7 +87,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "325" : {
+    "270" : {
       "Components" : [{
           "Intensity" : 3.000000,
           "IsEditorOnly" : "false",
@@ -142,7 +142,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "329" : {
+    "274" : {
       "Components" : [{
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
@@ -172,7 +172,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "332" : {
+    "277" : {
       "Components" : [{
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
@@ -207,6 +207,53 @@
       "Type" : "AStaticMeshActor",
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
+    },
+    "402" : {
+      "Components" : [{
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "USceneComponent_0",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent"
+        }, {
+          "EditorIconScreenSize" : "0.100000",
+          "EditorIconScreenSizeScaled" : "true",
+          "EditorIconSprite" : "Data\\Icons\\Actor_64x.png",
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UEditorIconComponent_17",
+          "ParentName" : "USceneComponent_0",
+          "Rotation" : [-0.000000, 70.000008, -0.000000],
+          "Scale" : [2.000000, 2.000000, 2.000000],
+          "Type" : "UEditorIconComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent_6",
+          "ParentName" : "USceneComponent_0",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_16",
+          "ScriptPath" : "UIManager.lua",
+          "Type" : "UScriptComponent"
+        }],
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AActor",
+      "bCanEverTick" : "true",
+      "bTickInEditor" : "false"
     }
   },
   "NextUUID" : 0,
@@ -236,7 +283,7 @@
       "FarClip" : 1000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [-8.272714, 7.109590, 13.913781],
+      "Location" : [-2.000000, 3.553125, 13.913781],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, -70.000000, 0.000000]
