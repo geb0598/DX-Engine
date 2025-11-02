@@ -5,7 +5,9 @@
 #include "ImGui/imgui.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Manager/Input/Public/InputManager.h"
+#include "Manager/UI/Public/ViewportManager.h"
 #include "Render/Renderer/Public/Renderer.h"
+#include "Render/UI/Viewport/Public/Viewport.h"
 
 FAppWindow::FAppWindow(FClientApp* InOwner)
 	: Owner(InOwner), InstanceHandle(nullptr), MainWindowHandle(nullptr)
@@ -180,6 +182,42 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 
 	switch (InMessage)
 	{
+	case WM_SETCURSOR:
+	{
+		// PIE 뷰포트 내부에서만 커서 숨김 처리
+		if (LOWORD(InLParam) == HTCLIENT)
+		{
+			if (GEditor->IsPIESessionActive() && !GEditor->IsPIEMouseDetached())
+			{
+				// 마우스 위치 가져오기
+				POINT CursorPos;
+				GetCursorPos(&CursorPos);
+				ScreenToClient(InWindowHandle, &CursorPos);
+
+				// PIE 활성 뷰포트 확인
+				UViewportManager& ViewportMgr = UViewportManager::GetInstance();
+				int32 PIEViewportIndex = ViewportMgr.GetPIEActiveViewportIndex();
+				if (PIEViewportIndex >= 0 && PIEViewportIndex < ViewportMgr.GetViewports().Num())
+				{
+					FViewport* PIEViewport = ViewportMgr.GetViewports()[PIEViewportIndex];
+					if (PIEViewport)
+					{
+						FRect ViewportRect = PIEViewport->GetRect();
+						// 뷰포트 내부에 있는지 체크
+						if (CursorPos.x >= ViewportRect.Left && CursorPos.x <= ViewportRect.Left + ViewportRect.Width &&
+							CursorPos.y >= ViewportRect.Top && CursorPos.y <= ViewportRect.Top + ViewportRect.Height)
+						{
+							// 뷰포트 내부에서는 커서 숨김
+							SetCursor(nullptr);
+							return TRUE;
+						}
+					}
+				}
+			}
+		}
+		break;
+	}
+
 	case WM_NCCALCSIZE:
 		// non-client 영역을 완전히 제거 (borderless window)
 		if (InWParam == TRUE)
