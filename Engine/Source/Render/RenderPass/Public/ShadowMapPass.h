@@ -63,6 +63,33 @@ public:
 
 	FShadowMapResource* GetShadowAtlas();
 
+	// --- Shadow Resources Access ---
+	// TODO: 나중에 FSharedShadowResources 구조체를 만들어 FSharedLightResources와 같은 패턴으로 리팩토링할 것
+
+	/**
+	 * @brief Cascade Shadow Map 데이터 Constant Buffer 반환
+	 * @return CascadeShadowMapData constant buffer (b6)
+	 */
+	ID3D11Buffer* GetCascadeShadowMapDataBuffer() const { return ConstantCascadeData; }
+
+	/**
+	 * @brief Directional Light Tile Position SRV 반환
+	 * @return Directional light shadow atlas tile position SRV (t12)
+	 */
+	ID3D11ShaderResourceView* GetDirectionalLightTilePosSRV() const { return ShadowAtlasDirectionalLightTilePosStructuredSRV; }
+
+	/**
+	 * @brief Spot Light Tile Position SRV 반환
+	 * @return Spot light shadow atlas tile position SRV (t13)
+	 */
+	ID3D11ShaderResourceView* GetSpotLightTilePosSRV() const { return ShadowAtlasSpotLightTilePosStructuredSRV; }
+
+	/**
+	 * @brief Point Light Tile Position SRV 반환
+	 * @return Point light shadow atlas tile position SRV (t14)
+	 */
+	ID3D11ShaderResourceView* GetPointLightTilePosSRV() const { return ShadowAtlasPointLightTilePosStructuredSRV; }
+
 	/**
 	 * @brief Directional Light의 Atlas Tile 위치를 가져옵니다.
 	 * @param Index Directional Light의 인덱스
