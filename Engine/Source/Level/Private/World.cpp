@@ -52,15 +52,6 @@ void UWorld::BeginPlay()
 		{
 			AuthorityGameMode = Cast<AGameMode>(SpawnActor(AGameMode::StaticClass()));
 		}
-
-		// PIE/Game 모드에서 템플릿 액터들을 멀리 이동
-		for (AActor* TemplateActor : Level->GetTemplateActors())
-		{
-			if (TemplateActor)
-			{
-				TemplateActor->SetActorLocation(FVector(99999.0f, 99999.0f, 99999.0f));
-			}
-		}
 	}
 
 	Level->Init();
@@ -119,12 +110,6 @@ void UWorld::Tick(float DeltaTimes)
 		TArray<AActor*> ActorsToTick = Level->GetLevelActors();
 		for (AActor* Actor : ActorsToTick)
 		{
-			// PIE/Game 모드에서는 템플릿 액터 Tick 스킵
-			if (Actor->IsTemplate())
-			{
-				continue;
-			}
-
 			if(Actor->CanTick())
 			{
 				Actor->Tick(DeltaTimes);
@@ -404,6 +389,10 @@ UObject* UWorld::Duplicate()
 {
 	UWorld* World = Cast<UWorld>(Super::Duplicate());
 	World->Settings = Settings;
+
+	// PIE World가 어느 Editor World로부터 복제되었는지 추적
+	World->SetSourceEditorWorld(this);
+
 	return World;
 }
 
@@ -438,6 +427,19 @@ void UWorld::CreateNewLevel(const FName& InLevelName)
 
 AActor* UWorld::FindTemplateActorOfName(const std::string& InName)
 {
+	// PIE World인 경우 원본 Editor World에서 template actor 검색
+	if (SourceEditorWorld != nullptr)
+	{
+		ULevel* EditorLevel = SourceEditorWorld->GetLevel();
+		if (!EditorLevel)
+		{
+			UE_LOG_ERROR("World: SourceEditorWorld의 Level이 없어 template actor를 검색할 수 없습니다.");
+			return nullptr;
+		}
+		return EditorLevel->FindTemplateActorByName(FName(InName));
+	}
+
+	// Editor/Game World인 경우 자신의 Level에서 검색
 	if (!Level)
 	{
 		UE_LOG_ERROR("World: Level이 없어 template actor를 검색할 수 없습니다.");

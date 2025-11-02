@@ -663,7 +663,21 @@ AActor* AActor::DuplicateFromTemplate(ULevel* TargetLevel, const FVector& InLoca
 		// - 제안: ULevel::RegisterActor(AActor*, bool bCallBeginPlay) 같은 통합 메소드
 
 		// Level에 추가
-		ULevel* LevelToAddTo = TargetLevel ? TargetLevel : Cast<ULevel>(GetOuter());
+		ULevel* LevelToAddTo = TargetLevel;
+		if (!LevelToAddTo)
+		{
+			// TargetLevel이 지정되지 않으면 현재 활성 World의 Level 사용 (PIE World 대응)
+			if (GWorld)
+			{
+				LevelToAddTo = GWorld->GetLevel();
+			}
+			else
+			{
+				// Fallback: 템플릿의 Outer Level (Editor World)
+				LevelToAddTo = Cast<ULevel>(GetOuter());
+			}
+		}
+
 		if (LevelToAddTo)
 		{
 			// Outer 설정

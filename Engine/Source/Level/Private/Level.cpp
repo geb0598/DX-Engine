@@ -358,16 +358,16 @@ void ULevel::DuplicateSubObjects(UObject* DuplicatedObject)
 
 	for (AActor* Actor : LevelActors)
 	{
+		// Template actor는 PIE World로 복제하지 않음 (Editor World에만 존재)
+		if (Actor->IsTemplate())
+		{
+			continue;
+		}
+
 		AActor* DuplicatedActor = Cast<AActor>(Actor->Duplicate());
 		DuplicatedActor->SetOuter(DuplicatedLevel);  // Actor의 Outer를 Level로 설정
 		DuplicatedLevel->LevelActors.Add(DuplicatedActor);
 		DuplicatedLevel->AddLevelComponent(DuplicatedActor);
-
-		// Template actor 캐시 재구축 (PIE World에서도 template actor를 찾을 수 있도록)
-		if (DuplicatedActor->IsTemplate())
-		{
-			DuplicatedLevel->RegisterTemplateActor(DuplicatedActor);
-		}
 	}
 }
 

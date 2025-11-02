@@ -99,12 +99,17 @@ public:
 	EWorldType GetWorldType() const;
 	void SetWorldType(EWorldType InWorldType);
 
+	// Source Editor World 참조 (PIE World가 어느 Editor World로부터 복제되었는지 추적)
+	UWorld* GetSourceEditorWorld() const { return SourceEditorWorld; }
+	void SetSourceEditorWorld(UWorld* InSourceWorld) { SourceEditorWorld = InSourceWorld; }
+
 private:
 	EWorldType WorldType;
 	ULevel* Level = nullptr; // Persistance Level. Sublevels are not considered in Engine.
 	bool bBegunPlay = false;
 	TArray<AActor*> PendingDestroyActors;
 	float WorldTimeSeconds;
+	UWorld* SourceEditorWorld = nullptr; // PIE World가 복제된 원본 Editor World (Editor/Game world에서는 nullptr)
 
 	void FlushPendingDestroy(); // Destroy marking 된 액터들을 실제 삭제
 
