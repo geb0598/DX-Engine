@@ -17,10 +17,6 @@ IMPLEMENT_CLASS(AActor, UObject)
 
 AActor::AActor()
 {
-	// Delegate 등록 (Lua 자동 바인딩용)
-	RegisterDelegate(MakeDelegateInfo("OnActorBeginOverlap", &OnActorBeginOverlap));
-	RegisterDelegate(MakeDelegateInfo("OnActorEndOverlap", &OnActorEndOverlap));
-	RegisterDelegate(MakeDelegateInfo("OnActorHit", &OnActorHit));
 }
 
 AActor::AActor(UObject* InOuter) : AActor()
@@ -28,12 +24,18 @@ AActor::AActor(UObject* InOuter) : AActor()
 	SetOuter(InOuter);
 }
 
-void AActor::RegisterDelegate(FDelegateInfoBase* DelegateInfo)
+TArray<FDelegateInfoBase*> AActor::GetDelegates() const
 {
-	if (DelegateInfo)
-	{
-		DelegateList.Add(DelegateInfo);
-	}
+	TArray<FDelegateInfoBase*> Result;
+
+	// const_cast 필요 (Delegate는 mutable)
+	AActor* MutableThis = const_cast<AActor*>(this);
+
+	Result.Add(MakeDelegateInfo("OnActorBeginOverlap", &MutableThis->OnActorBeginOverlap));
+	Result.Add(MakeDelegateInfo("OnActorEndOverlap", &MutableThis->OnActorEndOverlap));
+	Result.Add(MakeDelegateInfo("OnActorHit", &MutableThis->OnActorHit));
+
+	return Result;
 }
 
 AActor::~AActor()
@@ -44,13 +46,6 @@ AActor::~AActor()
 	}
 	SetOuter(nullptr);
 	OwnedComponents.Empty();
-
-	// DelegateList 메모리 정리
-	for (FDelegateInfoBase* DelegateInfo : DelegateList)
-	{
-		SafeDelete(DelegateInfo);
-	}
-	DelegateList.Empty();
 }
 
 void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
