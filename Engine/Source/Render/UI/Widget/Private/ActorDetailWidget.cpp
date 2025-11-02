@@ -58,40 +58,40 @@ void UActorDetailWidget::RenderWidget()
 		SelectedComponent = SelectedActor->GetRootComponent();
 	}
 
-	    // Actor 헤더 렌더링 (이름 + rename 기능)
-	    RenderActorHeader(SelectedActor);
+	// Actor 헤더 렌더링 (이름 + rename 기능)
+	RenderActorHeader(SelectedActor);
 
-	    ImGui::Separator();
+	ImGui::Separator();
 
-	    // CollapsingHeader 검은색 스타일 적용
-	    ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-	    ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-	    ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+	// CollapsingHeader 검은색 스타일 적용
+	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
 
-	    if (ImGui::CollapsingHeader("Tick Settings"))
-	    {
-	        // 체크박스 검은색 스타일 적용
-	        ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-	        ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-	        ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-	        ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
+	if (ImGui::CollapsingHeader("Tick Settings"))
+	{
+		// 체크박스 검은색 스타일 적용
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
 
-	        bool bCanEverTick = SelectedActor->CanTick();
-	        if (ImGui::Checkbox("Enable Tick", &bCanEverTick))
-	        {
-	            SelectedActor->SetCanTick(bCanEverTick);
-	        }
+		bool bCanEverTick = SelectedActor->CanTick();
+		if (ImGui::Checkbox("Enable Tick", &bCanEverTick))
+		{
+			SelectedActor->SetCanTick(bCanEverTick);
+		}
 
-	        bool bTickInEditor = SelectedActor->CanTickInEditor();
-	        if (ImGui::Checkbox("Tick in Editor", &bTickInEditor))
-	        {
-	            SelectedActor->SetTickInEditor(bTickInEditor);
-	        }
+		bool bTickInEditor = SelectedActor->CanTickInEditor();
+		if (ImGui::Checkbox("Tick in Editor", &bTickInEditor))
+		{
+			SelectedActor->SetTickInEditor(bTickInEditor);
+		}
 
-	        ImGui::PopStyleColor(4);
-	    }
+		ImGui::PopStyleColor(4);
+	}
 
-	    ImGui::PopStyleColor(3);
+	ImGui::PopStyleColor(3);
 	ImGui::Separator();
 
 	// 컴포넌트 트리 렌더링
@@ -213,7 +213,8 @@ void UActorDetailWidget::RenderSceneComponents(USceneComponent* InSceneComponent
 	if (!InSceneComponent || InSceneComponent->IsVisualizationComponent()) { return; }
 	FString ComponentName = InSceneComponent->GetName().ToString();
 
-	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
+	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth |
+		ImGuiTreeNodeFlags_DefaultOpen;
 
 	bool bHasNonVisualizationChildren = false;
 	if (InSceneComponent)
@@ -271,20 +272,23 @@ void UActorDetailWidget::RenderSceneComponents(USceneComponent* InSceneComponent
 
 			if (!DraggedComp || DraggedComp == InSceneComponent)
 			{
-				ImGui::EndDragDropTarget();		ImGui::TreePop();
+				ImGui::EndDragDropTarget();
+				ImGui::TreePop();
 				return;
 			}
 
 			AActor* Owner = DraggedComp->GetOwner();
 			if (!Owner)
 			{
-				ImGui::EndDragDropTarget();		ImGui::TreePop();
+				ImGui::EndDragDropTarget();
+				ImGui::TreePop();
 				return;
 			}
 
 			if (DraggedComp->GetAttachParent() == InSceneComponent)
 			{
-				ImGui::EndDragDropTarget();		ImGui::TreePop();
+				ImGui::EndDragDropTarget();
+				ImGui::TreePop();
 				return;
 			}
 
@@ -316,14 +320,16 @@ void UActorDetailWidget::RenderSceneComponents(USceneComponent* InSceneComponent
 				// 드롭 대상이 유효한 SceneComponent가 아니면, 작업을 진행하지 않습니다.
 				if (!InSceneComponent)
 				{
-					ImGui::EndDragDropTarget();		ImGui::TreePop();
+					ImGui::EndDragDropTarget();
+					ImGui::TreePop();
 					return;
 				}
 
 				// 자기 부모에게 드롭하는 경우, 아무 작업도 하지 않음
 				if (InSceneComponent == DraggedComp->GetAttachParent())
 				{
-					ImGui::EndDragDropTarget();		ImGui::TreePop();
+					ImGui::EndDragDropTarget();
+					ImGui::TreePop();
 					return;
 				}
 
@@ -418,7 +424,7 @@ void UActorDetailWidget::RenderAddComponentButton(AActor* InSelectedActor)
 		ImGui::OpenPopup("AddComponentPopup");
 	}
 
-    ImGui::SetNextWindowContentSize(ImVec2(200.0f, 0.0f));
+	ImGui::SetNextWindowContentSize(ImVec2(200.0f, 0.0f));
 	if (ImGui::BeginPopup("AddComponentPopup"))
 	{
 		ImGui::Text("Add Component");
@@ -494,7 +500,8 @@ void UActorDetailWidget::AddComponentByName(AActor* InSelectedActor, const FStri
 			// 3. 선택된 컴포넌트(부모)에 새로 만든 컴포넌트(자식)를 붙임
 			//    (SetupAttachment는 UCLASS 내에서 호출하는 것을 가정)
 			NewSceneComponent->AttachToComponent(ParentSceneComponent);
-			UE_LOG_SUCCESS("'%s'를 '%s'의 자식으로 추가했습니다.", NewComponent->GetName().ToString().data(), ParentSceneComponent->GetName().ToString().data());
+			UE_LOG_SUCCESS("'%s'를 '%s'의 자식으로 추가했습니다.", NewComponent->GetName().ToString().data(),
+			               ParentSceneComponent->GetName().ToString().data());
 		}
 		else
 		{
@@ -617,7 +624,9 @@ void UActorDetailWidget::RenderTransformEdit()
 	// 컴포넌트 전환 또는 World/Local 모드 전환 시 캐싱
 	if (lastDraggedLocationComponent != SceneComponent || LastShowWorldLocation != bShowWorldLocation)
 	{
-		CachedLocation = bShowWorldLocation ? SceneComponent->GetWorldLocation() : SceneComponent->GetRelativeLocation();
+		CachedLocation = bShowWorldLocation
+			                 ? SceneComponent->GetWorldLocation()
+			                 : SceneComponent->GetRelativeLocation();
 		lastDraggedLocationComponent = SceneComponent;
 		LastShowWorldLocation = bShowWorldLocation;
 		bIsDraggingLocation = false;
@@ -626,10 +635,12 @@ void UActorDetailWidget::RenderTransformEdit()
 	// 드래그 중이 아닐 때만 동기화
 	if (!bIsDraggingLocation)
 	{
-		CachedLocation = bShowWorldLocation ? SceneComponent->GetWorldLocation() : SceneComponent->GetRelativeLocation();
+		CachedLocation = bShowWorldLocation
+			                 ? SceneComponent->GetWorldLocation()
+			                 : SceneComponent->GetRelativeLocation();
 	}
 
-	float PosArray[3] = { CachedLocation.X, CachedLocation.Y, CachedLocation.Z };
+	float PosArray[3] = {CachedLocation.X, CachedLocation.Y, CachedLocation.Z};
 	bool PosChanged = false;
 
 	// Location Label (드롭다운 메뉴)
@@ -675,7 +686,8 @@ void UActorDetailWidget::RenderTransformEdit()
 	PosChanged |= ImGui::DragFloat("##PosX", &PosArray[0], 0.1f, 0.0f, 0.0f, "%.3f");
 	if (ImGui::IsItemHovered()) { ImGui::SetTooltip("X: %.3f", PosArray[0]); }
 	ImVec2 SizeX = ImGui::GetItemRectSize();
-	DrawList->AddLine(ImVec2(PosX.x + 5, PosX.y + 2), ImVec2(PosX.x + 5, PosX.y + SizeX.y - 2), IM_COL32(255, 0, 0, 255), 2.0f);
+	DrawList->AddLine(ImVec2(PosX.x + 5, PosX.y + 2), ImVec2(PosX.x + 5, PosX.y + SizeX.y - 2),
+	                  IM_COL32(255, 0, 0, 255), 2.0f);
 
 	// 드래그 상태 추적
 	bool bIsAnyLocationItemActive = ImGui::IsItemActive();
@@ -686,7 +698,8 @@ void UActorDetailWidget::RenderTransformEdit()
 	PosChanged |= ImGui::DragFloat("##PosY", &PosArray[1], 0.1f, 0.0f, 0.0f, "%.3f");
 	if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Y: %.3f", PosArray[1]); }
 	ImVec2 SizeY = ImGui::GetItemRectSize();
-	DrawList->AddLine(ImVec2(PosY.x + 5, PosY.y + 2), ImVec2(PosY.x + 5, PosY.y + SizeY.y - 2), IM_COL32(0, 255, 0, 255), 2.0f);
+	DrawList->AddLine(ImVec2(PosY.x + 5, PosY.y + 2), ImVec2(PosY.x + 5, PosY.y + SizeY.y - 2),
+	                  IM_COL32(0, 255, 0, 255), 2.0f);
 
 	bIsAnyLocationItemActive |= ImGui::IsItemActive();
 	ImGui::SameLine();
@@ -696,7 +709,8 @@ void UActorDetailWidget::RenderTransformEdit()
 	PosChanged |= ImGui::DragFloat("##PosZ", &PosArray[2], 0.1f, 0.0f, 0.0f, "%.3f");
 	if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Z: %.3f", PosArray[2]); }
 	ImVec2 SizeZ = ImGui::GetItemRectSize();
-	DrawList->AddLine(ImVec2(PosZ.x + 5, PosZ.y + 2), ImVec2(PosZ.x + 5, PosZ.y + SizeZ.y - 2), IM_COL32(0, 0, 255, 255), 2.0f);
+	DrawList->AddLine(ImVec2(PosZ.x + 5, PosZ.y + 2), ImVec2(PosZ.x + 5, PosZ.y + SizeZ.y - 2),
+	                  IM_COL32(0, 0, 255, 255), 2.0f);
 
 	bIsAnyLocationItemActive |= ImGui::IsItemActive();
 	ImGui::SameLine();
@@ -742,7 +756,7 @@ void UActorDetailWidget::RenderTransformEdit()
 
 	// 기즈모로 회전 중인지 확인
 	bool bIsGizmoDragging = GEditor->GetEditorModule()->GetGizmo()->IsDragging() &&
-	                        GEditor->GetEditorModule()->GetGizmo()->GetGizmoMode() == EGizmoMode::Rotate;
+		GEditor->GetEditorModule()->GetGizmo()->GetGizmoMode() == EGizmoMode::Rotate;
 
 	// 컴포넌트 전환 또는 World / Local 모드 전환 시 캐싱
 	if (lastDraggedComponent != SceneComponent || lastShowWorldRotation != bShowWorldRotation)
@@ -790,7 +804,7 @@ void UActorDetailWidget::RenderTransformEdit()
 		CachedRotation.Z = 0.0f;
 	}
 
-	float RotArray[3] = { CachedRotation.X, CachedRotation.Y, CachedRotation.Z };
+	float RotArray[3] = {CachedRotation.X, CachedRotation.Y, CachedRotation.Z};
 	bool RotChanged = false;
 
 	// Rotation Label (드롭다운 메뉴)
@@ -836,9 +850,13 @@ void UActorDetailWidget::RenderTransformEdit()
 	ImVec2 RotX = ImGui::GetCursorScreenPos();
 	ImGui::SetNextItemWidth(75.0f);
 	RotChanged |= ImGui::DragFloat("##RotX", &RotArray[0], 1.0f, 0.0f, 0.0f, "%.3f");
-	if (ImGui::IsItemHovered()) { ImGui::SetTooltip("X: %.3f", RotArray[0]); }
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Roll: %.3f", RotArray[0]);
+	}
 	ImVec2 SizeRotX = ImGui::GetItemRectSize();
-	DrawList->AddLine(ImVec2(RotX.x + 5, RotX.y + 2), ImVec2(RotX.x + 5, RotX.y + SizeRotX.y - 2), IM_COL32(255, 0, 0, 255), 2.0f);
+	DrawList->AddLine(ImVec2(RotX.x + 5, RotX.y + 2), ImVec2(RotX.x + 5, RotX.y + SizeRotX.y - 2),
+	                  IM_COL32(255, 0, 0, 255), 2.0f);
 
 	// 드래그 상태 추적
 	bool bIsAnyItemActive = ImGui::IsItemActive();
@@ -847,9 +865,13 @@ void UActorDetailWidget::RenderTransformEdit()
 	ImVec2 RotY = ImGui::GetCursorScreenPos();
 	ImGui::SetNextItemWidth(75.0f);
 	RotChanged |= ImGui::DragFloat("##RotY", &RotArray[1], 1.0f, 0.0f, 0.0f, "%.3f");
-	if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Y: %.3f", RotArray[1]); }
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Pitch: %.3f", RotArray[1]);
+	}
 	ImVec2 SizeRotY = ImGui::GetItemRectSize();
-	DrawList->AddLine(ImVec2(RotY.x + 5, RotY.y + 2), ImVec2(RotY.x + 5, RotY.y + SizeRotY.y - 2), IM_COL32(0, 255, 0, 255), 2.0f);
+	DrawList->AddLine(ImVec2(RotY.x + 5, RotY.y + 2), ImVec2(RotY.x + 5, RotY.y + SizeRotY.y - 2),
+	                  IM_COL32(0, 255, 0, 255), 2.0f);
 
 	bIsAnyItemActive |= ImGui::IsItemActive();
 	ImGui::SameLine();
@@ -857,9 +879,13 @@ void UActorDetailWidget::RenderTransformEdit()
 	ImVec2 RotZ = ImGui::GetCursorScreenPos();
 	ImGui::SetNextItemWidth(75.0f);
 	RotChanged |= ImGui::DragFloat("##RotZ", &RotArray[2], 1.0f, 0.0f, 0.0f, "%.3f");
-	if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Z: %.3f", RotArray[2]); }
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Yaw: %.3f", RotArray[2]);
+	}
 	ImVec2 SizeRotZ = ImGui::GetItemRectSize();
-	DrawList->AddLine(ImVec2(RotZ.x + 5, RotZ.y + 2), ImVec2(RotZ.x + 5, RotZ.y + SizeRotZ.y - 2), IM_COL32(0, 0, 255, 255), 2.0f);
+	DrawList->AddLine(ImVec2(RotZ.x + 5, RotZ.y + 2), ImVec2(RotZ.x + 5, RotZ.y + SizeRotZ.y - 2),
+	                  IM_COL32(0, 0, 255, 255), 2.0f);
 
 	bIsAnyItemActive |= ImGui::IsItemActive();
 	ImGui::SameLine();
@@ -911,7 +937,7 @@ void UActorDetailWidget::RenderTransformEdit()
 		bool ScaleChanged = false;
 
 		// Scale Label (드롭다운 메뉴)
-		const char* ScaleLabel = bIsAbsoluteScale ? "Absolute Scale" : "Scale";
+		const char* ScaleLabel = bIsAbsoluteScale ? "Abs Scale" : "Scale";
 		ImGui::SetNextItemWidth(88.0f);
 		if (ImGui::BeginCombo("##ScaleMode", ScaleLabel, ImGuiComboFlags_NoArrowButton))
 		{
@@ -975,7 +1001,8 @@ void UActorDetailWidget::RenderTransformEdit()
 		ScaleChanged = ImGui::DragFloat("##UniformScale", &UniformScale, 0.1f, 0.0f, 0.0f, "%.3f");
 		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Scale: %.3f", UniformScale); }
 		ImVec2 SizeScale = ImGui::GetItemRectSize();
-		DrawList->AddLine(ImVec2(PosScale.x + 5, PosScale.y + 2), ImVec2(PosScale.x + 5, PosScale.y + SizeScale.y - 2), IM_COL32(255, 255, 255, 255), 2.0f);
+		DrawList->AddLine(ImVec2(PosScale.x + 5, PosScale.y + 2), ImVec2(PosScale.x + 5, PosScale.y + SizeScale.y - 2),
+		                  IM_COL32(255, 255, 255, 255), 2.0f);
 		ImGui::SameLine();
 
 		// Reset button
@@ -991,7 +1018,10 @@ void UActorDetailWidget::RenderTransformEdit()
 
 		ImGui::PopStyleColor(3);
 
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Reset to 1.0"); }
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Reset to 1.0");
+		}
 
 		if (ScaleChanged)
 		{
@@ -1008,11 +1038,11 @@ void UActorDetailWidget::RenderTransformEdit()
 	}
 	else
 	{
-		float ScaleArray[3] = { ComponentScale.X, ComponentScale.Y, ComponentScale.Z };
+		float ScaleArray[3] = {ComponentScale.X, ComponentScale.Y, ComponentScale.Z};
 		bool ScaleChanged = false;
 
 		// Scale Label (드롭다운 메뉴)
-		const char* ScaleLabel = bIsAbsoluteScale ? "Absolute Scale" : "Scale";
+		const char* ScaleLabel = bIsAbsoluteScale ? "Abs Scale" : "Scale";
 		ImGui::SetNextItemWidth(88.0f);
 		if (ImGui::BeginCombo("##ScaleMode", ScaleLabel, ImGuiComboFlags_NoArrowButton))
 		{
@@ -1069,17 +1099,25 @@ void UActorDetailWidget::RenderTransformEdit()
 		ImVec2 ScaleX = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(75.0f);
 		ScaleChanged |= ImGui::DragFloat("##ScaleX", &ScaleArray[0], 0.1f, 0.0f, 0.0f, "%.3f");
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("X: %.3f", ScaleArray[0]); }
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("X: %.3f", ScaleArray[0]);
+		}
 		ImVec2 SizeScaleX = ImGui::GetItemRectSize();
-		DrawList->AddLine(ImVec2(ScaleX.x + 5, ScaleX.y + 2), ImVec2(ScaleX.x + 5, ScaleX.y + SizeScaleX.y - 2), IM_COL32(255, 0, 0, 255), 2.0f);
+		DrawList->AddLine(ImVec2(ScaleX.x + 5, ScaleX.y + 2), ImVec2(ScaleX.x + 5, ScaleX.y + SizeScaleX.y - 2),
+		                  IM_COL32(255, 0, 0, 255), 2.0f);
 		ImGui::SameLine();
 
 		ImVec2 ScaleY = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(75.0f);
 		ScaleChanged |= ImGui::DragFloat("##ScaleY", &ScaleArray[1], 0.1f, 0.0f, 0.0f, "%.3f");
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Y: %.3f", ScaleArray[1]); }
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Y: %.3f", ScaleArray[1]);
+		}
 		ImVec2 SizeScaleY = ImGui::GetItemRectSize();
-		DrawList->AddLine(ImVec2(ScaleY.x + 5, ScaleY.y + 2), ImVec2(ScaleY.x + 5, ScaleY.y + SizeScaleY.y - 2), IM_COL32(0, 255, 0, 255), 2.0f);
+		DrawList->AddLine(ImVec2(ScaleY.x + 5, ScaleY.y + 2), ImVec2(ScaleY.x + 5, ScaleY.y + SizeScaleY.y - 2),
+		                  IM_COL32(0, 255, 0, 255), 2.0f);
 		ImGui::SameLine();
 
 		ImVec2 ScaleZ = ImGui::GetCursorScreenPos();
@@ -1087,7 +1125,8 @@ void UActorDetailWidget::RenderTransformEdit()
 		ScaleChanged |= ImGui::DragFloat("##ScaleZ", &ScaleArray[2], 0.1f, 0.0f, 0.0f, "%.3f");
 		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Z: %.3f", ScaleArray[2]); }
 		ImVec2 SizeScaleZ = ImGui::GetItemRectSize();
-		DrawList->AddLine(ImVec2(ScaleZ.x + 5, ScaleZ.y + 2), ImVec2(ScaleZ.x + 5, ScaleZ.y + SizeScaleZ.y - 2), IM_COL32(0, 0, 255, 255), 2.0f);
+		DrawList->AddLine(ImVec2(ScaleZ.x + 5, ScaleZ.y + 2), ImVec2(ScaleZ.x + 5, ScaleZ.y + SizeScaleZ.y - 2),
+		                  IM_COL32(0, 0, 255, 255), 2.0f);
 		ImGui::SameLine();
 
 		// Reset button
@@ -1133,8 +1172,8 @@ void UActorDetailWidget::SwapComponents(UActorComponent* A, UActorComponent* B)
 
 	auto& Components = Owner->GetOwnedComponents();
 
-	auto ItA = std::find(Components.begin(), Components.end(), A);
-	auto ItB = std::find(Components.begin(), Components.end(), B);
+	auto ItA = std::ranges::find(Components, A);
+	auto ItB = std::ranges::find(Components, B);
 
 	if (ItA != Components.end() && ItB != Components.end())
 	{
@@ -1164,20 +1203,21 @@ void UActorDetailWidget::SwapComponents(UActorComponent* A, UActorComponent* B)
 	}
 }
 
-void UActorDetailWidget::DecomposeMatrix(const FMatrix& InMatrix, FVector& OutLocation, FVector& OutRotation, FVector& OutScale)
+void UActorDetailWidget::DecomposeMatrix(const FMatrix& InMatrix, FVector& OutLocation, FVector& OutRotation,
+                                         FVector& OutScale)
 {
-    // 스케일 추출
-    OutScale.X = FVector(InMatrix.Data[0][0], InMatrix.Data[0][1], InMatrix.Data[0][2]).Length();
-    OutScale.Y = FVector(InMatrix.Data[1][0], InMatrix.Data[1][1], InMatrix.Data[1][2]).Length();
-    OutScale.Z = FVector(InMatrix.Data[2][0], InMatrix.Data[2][1], InMatrix.Data[2][2]).Length();
+	// 스케일 추출
+	OutScale.X = FVector(InMatrix.Data[0][0], InMatrix.Data[0][1], InMatrix.Data[0][2]).Length();
+	OutScale.Y = FVector(InMatrix.Data[1][0], InMatrix.Data[1][1], InMatrix.Data[1][2]).Length();
+	OutScale.Z = FVector(InMatrix.Data[2][0], InMatrix.Data[2][1], InMatrix.Data[2][2]).Length();
 
-    // 위치 추출
-    OutLocation.X = InMatrix.Data[3][0];
-    OutLocation.Y = InMatrix.Data[3][1];
-    OutLocation.Z = InMatrix.Data[3][2];
+	// 위치 추출
+	OutLocation.X = InMatrix.Data[3][0];
+	OutLocation.Y = InMatrix.Data[3][1];
+	OutLocation.Z = InMatrix.Data[3][2];
 
-    // 회전 행렬 추출 (스케일 제거)
-    FMatrix RotationMatrix;
+	// 회전 행렬 추출 (스케일 제거)
+	FMatrix RotationMatrix;
 	for (int i = 0; i < 3; ++i)
 	{
 		RotationMatrix.Data[i][0] = InMatrix.Data[i][0] / OutScale.X;
@@ -1185,10 +1225,12 @@ void UActorDetailWidget::DecomposeMatrix(const FMatrix& InMatrix, FVector& OutLo
 		RotationMatrix.Data[i][2] = InMatrix.Data[i][2] / OutScale.Z;
 	}
 
-    // 오일러 각으로 변환 (Pitch, Yaw, Roll)
-    OutRotation.X = atan2(RotationMatrix.Data[2][1], RotationMatrix.Data[2][2]);
-    OutRotation.Y = atan2(-RotationMatrix.Data[2][0], sqrt(RotationMatrix.Data[2][1] * RotationMatrix.Data[2][1] + RotationMatrix.Data[2][2] * RotationMatrix.Data[2][2]));
-    OutRotation.Z = atan2(RotationMatrix.Data[1][0], RotationMatrix.Data[0][0]);
+	// 오일러 각으로 변환 (Pitch, Yaw, Roll)
+	OutRotation.X = atan2(RotationMatrix.Data[2][1], RotationMatrix.Data[2][2]);
+	OutRotation.Y = atan2(-RotationMatrix.Data[2][0],
+	                      sqrt(RotationMatrix.Data[2][1] * RotationMatrix.Data[2][1] + RotationMatrix.Data[2][2] *
+		                      RotationMatrix.Data[2][2]));
+	OutRotation.Z = atan2(RotationMatrix.Data[1][0], RotationMatrix.Data[0][0]);
 
 	OutRotation = FVector::GetRadianToDegree(OutRotation);
 }
@@ -1293,78 +1335,78 @@ UTexture* UActorDetailWidget::GetIconForActor(AActor* InActor)
 	}
 
 	// 특정 클래스에 대한 매핑
-    UTexture* FoundIcon = IconTextureMap.FindRef(ClassName);
-    if (FoundIcon)
-    {
-       return FoundIcon;
-    }
+	UTexture* FoundIcon = IconTextureMap.FindRef(ClassName);
+	if (FoundIcon)
+	{
+		return FoundIcon;
+	}
 
 	// Light 계열 처리
-    if (ClassName.Contains("Light"))
-    {
+	if (ClassName.Contains("Light"))
+	{
 		if (ClassName.Contains("Directional"))
 		{
 			if (UTexture* Icon = IconTextureMap.FindRef("DirectionalLight"))
 			{
-			  return Icon;
+				return Icon;
 			}
 		}
 		else if (ClassName.Contains("Point"))
 		{
 			if (UTexture* Icon = IconTextureMap.FindRef("PointLight"))
 			{
-			  return Icon;
+				return Icon;
 			}
 		}
 		else if (ClassName.Contains("Spot"))
 		{
 			if (UTexture* Icon = IconTextureMap.FindRef("SpotLight"))
 			{
-			  return Icon;
+				return Icon;
 			}
 		}
 		else if (ClassName.Contains("Sky") || ClassName.Contains("Ambient"))
 		{
 			if (UTexture* Icon = IconTextureMap.FindRef("SkyLight"))
 			{
-			  return Icon;
+				return Icon;
 			}
 		}
-    }
+	}
 
-    // Fog 처리
-    if (ClassName.Contains("Fog"))
-    {
-       if (UTexture* Icon = IconTextureMap.FindRef("ExponentialHeightFog"))
-       {
-	       return Icon;
-       }
-    }
+	// Fog 처리
+	if (ClassName.Contains("Fog"))
+	{
+		if (UTexture* Icon = IconTextureMap.FindRef("ExponentialHeightFog"))
+		{
+			return Icon;
+		}
+	}
 
-    // Decal 처리
-    if (ClassName.Contains("Decal"))
-    {
-       if (UTexture* Icon = IconTextureMap.FindRef("DecalActor"))
-       {
-	       return Icon;
-       }
-    }
+	// Decal 처리
+	if (ClassName.Contains("Decal"))
+	{
+		if (UTexture* Icon = IconTextureMap.FindRef("DecalActor"))
+		{
+			return Icon;
+		}
+	}
 
-    // 기본 Actor 아이콘 반환
-    if (UTexture* Icon = IconTextureMap.FindRef("Actor"))
-    {
-       return Icon;
-    }
+	// 기본 Actor 아이콘 반환
+	if (UTexture* Icon = IconTextureMap.FindRef("Actor"))
+	{
+		return Icon;
+	}
 
 	// 아이콘을 찾지 못했을 경우 1회만 로그 출력
-    static TSet<FString> LoggedClasses;
-    if (!LoggedClasses.Contains(OriginalClassName))
-    {
-       UE_LOG("ActorDetailWidget: '%s' (변환: '%s')에 대한 아이콘을 찾을 수 없습니다", OriginalClassName.data(), ClassName.data());
-       LoggedClasses.Add(OriginalClassName);
-    }
+	static TSet<FString> LoggedClasses;
+	if (!LoggedClasses.Contains(OriginalClassName))
+	{
+		UE_LOG("ActorDetailWidget: '%s' (변환: '%s')에 대한 아이콘을 찾을 수 없습니다", OriginalClassName.data(), ClassName.data());
+		LoggedClasses.Add(OriginalClassName);
+	}
 
-    return nullptr;
+	return nullptr;
 }
 
 void UActorDetailWidget::DeleteActorOrComponent(AActor* InActor)

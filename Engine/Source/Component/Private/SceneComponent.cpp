@@ -33,6 +33,10 @@ void USceneComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		RelativeRotation = FQuaternion::FromEuler(RotationEuler);
 
 		FJsonSerializer::ReadVector(InOutHandle, "Scale", RelativeScale3D, FVector::OneVector());
+
+		FJsonSerializer::ReadBool(InOutHandle, "AbsoluteLocation", bAbsoluteLocation, false);
+		FJsonSerializer::ReadBool(InOutHandle, "AbsoluteRotation", bAbsoluteRotation, false);
+		FJsonSerializer::ReadBool(InOutHandle, "AbsoluteScale", bAbsoluteScale, false);
 	}
 	// 저장
 	else
@@ -40,6 +44,10 @@ void USceneComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		InOutHandle["Location"] = FJsonSerializer::VectorToJson(RelativeLocation);
 		InOutHandle["Rotation"] = FJsonSerializer::VectorToJson(RelativeRotation.ToEuler());
 		InOutHandle["Scale"] = FJsonSerializer::VectorToJson(RelativeScale3D);
+
+		InOutHandle["AbsoluteLocation"] = bAbsoluteLocation;
+		InOutHandle["AbsoluteRotation"] = bAbsoluteRotation;
+		InOutHandle["AbsoluteScale"] = bAbsoluteScale;
 	}
 }
 
