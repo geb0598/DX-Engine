@@ -208,7 +208,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "402" : {
+    "281" : {
       "Components" : [{
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
@@ -247,6 +247,12 @@
           "Name" : "UScriptComponent_16",
           "ScriptPath" : "UIManager.lua",
           "Type" : "UScriptComponent"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_3",
+          "ScriptPath" : "GameManager.lua",
+          "Type" : "UScriptComponent"
         }],
       "Location" : [0.000000, 0.000000, 0.000000],
       "Rotation" : [-0.000000, 0.000000, 0.000000],
@@ -283,7 +289,7 @@
       "FarClip" : 1000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [-2.000000, 3.553125, 13.913781],
+      "Location" : [-12.570356, -3.039684, 13.913781],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, -70.000000, 0.000000]
