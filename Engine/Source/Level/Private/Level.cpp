@@ -25,7 +25,7 @@ IMPLEMENT_CLASS(ULevel, UObject)
 
 ULevel::ULevel()
 {
-	StaticOctree = new FOctree(FVector(0, 0, 0), 20000, 0);
+	StaticOctree = new FOctree(FVector(0, 0, 0), 1000, 0);
 }
 
 ULevel::~ULevel()

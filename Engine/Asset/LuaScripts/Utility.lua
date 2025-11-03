@@ -83,4 +83,6 @@ CollisionTag = {
     Player = 1,
     Enemy = 2,
     Wall = 3,
+    Score = 4,
+    Clear = 5
 }

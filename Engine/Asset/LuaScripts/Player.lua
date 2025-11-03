@@ -6,7 +6,7 @@
 local bStarted = false
 
 -- [Movement]
-local moveSpeed = 50.0
+local moveSpeed = 500.0
 local rotationSpeed = 30.0
 local currentRotation = FVector(0, 0, 0)
 
@@ -320,6 +320,12 @@ function OnActorBeginOverlap(overlappedActor, otherActor)
     -- [Health] 적 태그 확인
     if otherActor.Tag == CollisionTag.Enemy then
         TakeDamage(1)
+    elseif otherActor.Tag == CollisionTag.Score then
+        Log("Score!")
+        --GetWorld():DestroyActor(otherActor)
+    elseif otherActor.Tag == CollisionTag.Clear then
+        Log("Clear!")
+        --GetWorld():DestroyActor(otherActor)
     end
 end
 

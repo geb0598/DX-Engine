@@ -105,7 +105,7 @@ void UActorDetailWidget::RenderWidget()
 	{
 		ECollisionTag CurrentTag = SelectedActor->GetCollisionTag();
 
-		const char* TagNames[] = { "None", "Player", "Enemy", "Wall" };
+		const char* TagNames[] = { "None", "Player", "Enemy", "Wall", "Score", "Clear" };
 
 		int32 CurrentTagIndex = static_cast<int>(CurrentTag);
 
