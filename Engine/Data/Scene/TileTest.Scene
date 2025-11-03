@@ -1,0 +1,444 @@
+{
+  "Actors" : {
+    "16443" : {
+      "ActorName" : "AmbientLight",
+      "Components" : [{
+          "Intensity" : 0.550000,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "LightColor" : [1.000000, 1.000000, 1.000000],
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UAmbientLightComponent_0",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : 0.005000,
+          "ShadowModeIndex" : 0,
+          "ShadowResolutionScale" : 1024.000000,
+          "ShadowSharpen" : 0.500000,
+          "ShadowSlopeBias" : 1.000000,
+          "Type" : "UAmbientLightComponent",
+          "bCastShadows" : "true",
+          "bLightEnabled" : "true",
+          "bVisible" : "true"
+        }, {
+          "EditorIconScreenSize" : "0.100000",
+          "EditorIconScreenSizeScaled" : "true",
+          "EditorIconSprite" : "Data\\Icons\\SkyLight.PNG",
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UEditorIconComponent_0",
+          "ParentName" : "UAmbientLightComponent_0",
+          "Rotation" : [0.103188, 45.900303, 0.143689],
+          "Scale" : [5.000000, 5.000000, 5.000000],
+          "Type" : "UEditorIconComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent_0",
+          "ParentName" : "UAmbientLightComponent_0",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }],
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AAmbientLight",
+      "bCanEverTick" : "false",
+      "bTickInEditor" : "false"
+    },
+    "16447" : {
+      "ActorName" : "DirectionalLight",
+      "Components" : [{
+          "Intensity" : 3.000000,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "LightColor" : [1.000000, 1.000000, 1.000000],
+          "Location" : [0.000000, 0.000000, 7.023633],
+          "Name" : "UDirectionalLightComponent_0",
+          "PSMMinInfinityZ" : 1.500000,
+          "PSMSlideBackEnabled" : true,
+          "PSMUnitCubeClip" : true,
+          "ParentName" : "",
+          "Rotation" : [36.597687, 31.186226, 84.174965],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : 0.005000,
+          "ShadowModeIndex" : 0,
+          "ShadowProjectionMode" : 0,
+          "ShadowResolutionScale" : 1024.000000,
+          "ShadowSharpen" : 0.500000,
+          "ShadowSlopeBias" : 1.000000,
+          "Type" : "UDirectionalLightComponent",
+          "bCastShadows" : "true",
+          "bLightEnabled" : "true",
+          "bVisible" : "true"
+        }, {
+          "EditorIconScreenSize" : "0.100000",
+          "EditorIconScreenSizeScaled" : "true",
+          "EditorIconSprite" : "Data\\Icons\\S_LightDirectional.PNG",
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UEditorIconComponent_4",
+          "ParentName" : "UDirectionalLightComponent_0",
+          "Rotation" : [-23.227055, -22.259485, -55.995014],
+          "Scale" : [5.000000, 5.000000, 5.000000],
+          "Type" : "UEditorIconComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent_2",
+          "ParentName" : "UDirectionalLightComponent_0",
+          "Rotation" : [27.206163, -39.442577, -83.544495],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }],
+      "Location" : [0.000000, 0.000000, 7.023633],
+      "Rotation" : [36.597687, 31.186226, 84.174965],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "ADirectionalLight",
+      "bCanEverTick" : "false",
+      "bTickInEditor" : "false"
+    },
+    "16451" : {
+      "ActorName" : "TestMap",
+      "Components" : [{
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [-50.000000, -50.000000, 0.000000],
+          "Name" : "UStaticMeshComponent_14",
+          "ObjStaticMeshAsset" : "Data/Tile.obj",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UStaticMeshComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent_4",
+          "ParentName" : "UStaticMeshComponent_14",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_8",
+          "ScriptPath" : "Tile.lua",
+          "Type" : "UScriptComponent"
+        }],
+      "Location" : [-50.000000, -50.000000, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AStaticMeshActor",
+      "bCanEverTick" : "true",
+      "bTickInEditor" : "false"
+    },
+    "16454" : {
+      "ActorName" : "Managers",
+      "Components" : [{
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "USceneComponent_0",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent"
+        }, {
+          "EditorIconScreenSize" : "0.100000",
+          "EditorIconScreenSizeScaled" : "true",
+          "EditorIconSprite" : "Data\\Icons\\Actor_64x.png",
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UEditorIconComponent_17",
+          "ParentName" : "USceneComponent_0",
+          "Rotation" : [0.103188, 45.900303, 0.143689],
+          "Scale" : [2.000000, 2.000000, 2.000000],
+          "Type" : "UEditorIconComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent_6",
+          "ParentName" : "USceneComponent_0",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_16",
+          "ScriptPath" : "UIManager.lua",
+          "Type" : "UScriptComponent"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_3",
+          "ScriptPath" : "GameManager.lua",
+          "Type" : "UScriptComponent"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_5",
+          "ScriptPath" : "EnemySpawner.lua",
+          "Type" : "UScriptComponent"
+        }],
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AActor",
+      "bCanEverTick" : "true",
+      "bTickInEditor" : "false"
+    },
+    "16461" : {
+      "ActorName" : "APlayer_0",
+      "Components" : [{
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent",
+          "ScriptPath" : "Player.lua",
+          "Type" : "UScriptComponent"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "USphereComponent",
+          "ParentName" : "UStaticMeshComponent",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "ShapeColor" : {
+            "A" : 255.000000,
+            "B" : 255.000000,
+            "G" : 0.000000,
+            "R" : 200.000000
+          },
+          "SphereRadius" : 20.000000,
+          "Type" : "USphereComponent",
+          "bDrawOnlyIfSelected" : "false",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 6.636385, 0.000000],
+          "Name" : "UStaticMeshComponent",
+          "ObjStaticMeshAsset" : "Data/Dice.obj",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UStaticMeshComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent",
+          "ParentName" : "UStaticMeshComponent",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }],
+      "Location" : [0.000000, 6.636385, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "APlayer",
+      "bCanEverTick" : "true",
+      "bTickInEditor" : "false"
+    },
+    "60143" : {
+      "ActorName" : "AStaticMeshActor_2",
+      "Components" : [{
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [-50.000000, 50.000000, 0.000000],
+          "Name" : "UStaticMeshComponent_14",
+          "ObjStaticMeshAsset" : "Data/Tile.obj",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UStaticMeshComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent_4",
+          "ParentName" : "UStaticMeshComponent_14",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_8",
+          "ScriptPath" : "Tile.lua",
+          "Type" : "UScriptComponent"
+        }],
+      "Location" : [-50.000000, 50.000000, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AStaticMeshActor",
+      "bCanEverTick" : "true",
+      "bTickInEditor" : "false"
+    },
+    "69666" : {
+      "ActorName" : "AStaticMeshActor_3",
+      "Components" : [{
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [50.000000, 50.000000, 0.000000],
+          "Name" : "UStaticMeshComponent_14",
+          "ObjStaticMeshAsset" : "Data/Tile.obj",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UStaticMeshComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent_4",
+          "ParentName" : "UStaticMeshComponent_14",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_8",
+          "ScriptPath" : "Tile.lua",
+          "Type" : "UScriptComponent"
+        }],
+      "Location" : [50.000000, 50.000000, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AStaticMeshActor",
+      "bCanEverTick" : "true",
+      "bTickInEditor" : "false"
+    },
+    "71931" : {
+      "ActorName" : "AStaticMeshActor_4",
+      "Components" : [{
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [50.000000, -50.000000, 0.000000],
+          "Name" : "UStaticMeshComponent_14",
+          "ObjStaticMeshAsset" : "Data/Tile.obj",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UStaticMeshComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent_4",
+          "ParentName" : "UStaticMeshComponent_14",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_8",
+          "ScriptPath" : "Tile.lua",
+          "Type" : "UScriptComponent"
+        }],
+      "Location" : [50.000000, -50.000000, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AStaticMeshActor",
+      "bCanEverTick" : "true",
+      "bTickInEditor" : "false"
+    }
+  },
+  "NextUUID" : 0,
+  "PerspectiveCamera" : {
+    "0" : {
+      "CameraType" : 0,
+      "FarClip" : 5000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [0.000000, 0.000000, 100.000000],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, 0.000000, 0.000000]
+    },
+    "1" : {
+      "CameraType" : 0,
+      "FarClip" : 5000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [-100.000000, 0.000000, 0.000000],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, 0.000000, 0.000000]
+    },
+    "2" : {
+      "CameraType" : 0,
+      "FarClip" : 1000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [-39.005577, 1.700186, 16.051798],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, -45.900391, -0.099995]
+    },
+    "3" : {
+      "CameraType" : 0,
+      "FarClip" : 5000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [0.000000, -100.000000, 0.000000],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, 0.000000, 0.000000]
+    }
+  },
+  "ViewportSystem" : {
+    "ActiveIndex" : 2,
+    "Layout" : 0,
+    "RotationSnapAngle" : 10.000000,
+    "RotationSnapEnabled" : 1,
+    "SharedOrthoZoom" : 500.000000,
+    "SplitterH" : 0.500000,
+    "SplitterV" : 0.500000,
+    "Viewports" : [{
+        "Index" : 0,
+        "ViewMode" : 4,
+        "ViewType" : 1
+      }, {
+        "Index" : 1,
+        "ViewMode" : 4,
+        "ViewType" : 5
+      }, {
+        "Index" : 2,
+        "ViewMode" : 2,
+        "ViewType" : 0
+      }, {
+        "Index" : 3,
+        "ViewMode" : 4,
+        "ViewType" : 4
+      }]
+  }
+}
