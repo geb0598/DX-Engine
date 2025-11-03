@@ -4,11 +4,13 @@
 ------------------------------------------------------------------
 
 local bStarted = false
+local bGameEnded = false
 
 -- [Movement]
 local moveSpeed = 500.0
 local rotationSpeed = 30.0
 local currentRotation = FVector(0, 0, 0)
+local InitLocation = FVector(0, 0, 0)
 
 -- [Health]
 local MaxHP = 5
@@ -20,10 +22,12 @@ local LightCriticalPoint = 1.0
 local MaxLightExposureTime = 5.0
 local CurrentLightExposureTime = 5.0
 local bLightWarningShown = false
-local CurrentLightLevel = 0.0  -- 현재 빛 강도 저장
+local CurrentLightLevel = 0.0
 
--- [Animation]
-local totalTime = 0.0   -- 전체 경과 시간 (애니메이션용)
+-- [Time & Score]
+local MaxTime = 180.0  -- 제한 시간 (3분)
+local remainingTime = 180.0
+local finalScore = 0
 
 ---
 -- [Health] HP가 0 이하가 되었는지 확인하고 GameMode의 EndGame을 호출
@@ -32,7 +36,7 @@ local function CheckForDeath()
     if currentHP <= 0 then
         if gameMode and gameMode.IsGameRunning then
             Log("PlayerHealth: HP is 0. Calling EndGame.")
-            gameMode:EndGame()
+            EndGameSequence()
         end
     end
 end
@@ -49,15 +53,31 @@ local function TakeDamage(damage)
     CheckForDeath()
 end
 
+---
+-- [Game] 게임 종료 시퀀스
+---
+function EndGameSequence()
+    bGameEnded = true
+    bStarted = false
+    
+    -- 점수 계산: 남은 시간이 많을수록 높은 점수
+    -- 남은 시간 1초당 100점
+    finalScore = math.floor(remainingTime * 100)
+    
+    Log(string.format("Game Ended! Remaining Time: %.2fs, Score: %d", remainingTime, finalScore))
+    
+    if gameMode then
+        gameMode:EndGame()
+    end
+end
+
 local function EndedTest()
     Log("GameEnded Delegate!")
 end
 
 function OnLightIntensityChanged(current, previous)
-    -- 현재 빛 강도만 저장
     CurrentLightLevel = current
     
-    -- 로그 출력
     local delta = current - previous
     if delta > 0 then
         Log(string.format("Light Changed: %.3f -> %.3f (Delta: %.3f)", previous, current, delta))
@@ -69,6 +89,7 @@ end
 ---
 function BeginPlay()
     bStarted = false
+    bGameEnded = false
     local world = GetWorld()
     if world then
         gameMode = world:GetGameMode()
@@ -81,17 +102,38 @@ end
 
 ---
 -- 매 프레임 호출됩니다.
--- @param dt (float): 이전 프레임으로부터 경과한 시간 (Delta Time)
 ---
 function Tick(dt)
-	if bStarted == false then
-		return
-	end
+    -- 게임 종료 화면
+    if bGameEnded then
+        DrawGameOverUI()
+        
+        -- Space 키로 재시작
+        if IsKeyDown(Keys.Space) then
+            RestartGame()
+        end
+        return
+    end
+    
+    -- 게임 진행 중
+    if bStarted == false then
+        return
+    end
 
-	totalTime = totalTime + dt
-	Movement(dt)
-	UpdateLightExposure(dt)
-	DrawUI()
+    -- 제한 시간 감소
+    remainingTime = remainingTime - dt
+    
+    -- 시간 초과 체크
+    if remainingTime <= 0 then
+        remainingTime = 0
+        Log("Time Over! Game Failed.")
+        EndGameSequence()
+        return
+    end
+    
+    Movement(dt)
+    UpdateLightExposure(dt)
+    DrawUI()
 end
 
 function Movement(dt)
@@ -114,7 +156,7 @@ function Movement(dt)
         RightScale = RightScale + 1.0
     end
     MoveDirection = Forward * ForwardScale + Right * RightScale
-    MoveDirection.Z = 0 -- (Z축 이동 방지)
+    MoveDirection.Z = 0
 
     if MoveDirection:Length() > 0.0 then
         MoveDirection:Normalize()
@@ -153,16 +195,13 @@ end
 -- [Light Exposure] 매 프레임 빛 노출 시간 업데이트
 ---
 function UpdateLightExposure(dt)
-    -- LightCriticalPoint 기준으로 노출 시간 조정
     if CurrentLightLevel >= LightCriticalPoint then
-        -- 밝은 곳: 노출 시간 감소
         CurrentLightExposureTime = CurrentLightExposureTime - dt
 
         if CurrentLightExposureTime < 0 then
             CurrentLightExposureTime = 0
         end
 
-        -- 0초가 되면 적 스폰 요청 + 경고 로그
         if CurrentLightExposureTime <= 0 then
             RequestSpawnEnemy()
 
@@ -172,14 +211,12 @@ function UpdateLightExposure(dt)
             end
         end
     else
-        -- 어두운 곳: 노출 시간 회복
         CurrentLightExposureTime = CurrentLightExposureTime + dt
 
         if CurrentLightExposureTime > MaxLightExposureTime then
             CurrentLightExposureTime = MaxLightExposureTime
         end
 
-        -- 회복되면 경고 플래그 리셋
         if CurrentLightExposureTime > 0 then
             bLightWarningShown = false
         end
@@ -187,7 +224,7 @@ function UpdateLightExposure(dt)
 end
 
 ---
--- [UI] HP 바 및 Light Exposure 바를 그립니다.
+-- [UI] 게임 플레이 중 UI
 ---
 function DrawUI()
     local ui_x = 80.0
@@ -196,10 +233,31 @@ function DrawUI()
     local bar_height = 20.0
     local bar_spacing = 10.0
     
+    -- ============ TIME DISPLAY ============
+    local time_y = ui_y - 30.0
+    
+    -- 남은 시간을 분:초 형식으로 변환
+    local minutes = math.floor(remainingTime / 60)
+    local seconds = math.floor(remainingTime % 60)
+    local time_text = string.format("TIME: %d:%02d", minutes, seconds)
+    
+    -- 시간이 30초 미만이면 빨간색으로 경고
+    local time_r, time_g, time_b = 1.0, 1.0, 0.3
+    if remainingTime < 30.0 then
+        local time_pulse = 0.5 + 0.5 * math.abs(math.sin(remainingTime * 5.0))
+        time_r, time_g, time_b = 1.0, time_pulse * 0.3, 0.0
+    end
+    
+    DebugDraw.Text(
+        time_text,
+        ui_x, time_y, ui_x + bar_width, time_y + 25.0,
+        time_r, time_g, time_b, 1.0,
+        16.0, true, false, "Consolas"
+    )
+    
     -- ============ HP BAR ============
     local hp_ratio = currentHP / MaxHP
     
-    -- HP 색상 결정
     local hp_c_r, hp_c_g, hp_c_b = 0.1, 1.0, 0.1
     if hp_ratio <= 0.3 then
         hp_c_r, hp_c_g, hp_c_b = 1.0, 0.1, 0.1
@@ -207,14 +265,12 @@ function DrawUI()
         hp_c_r, hp_c_g, hp_c_b = 1.0, 1.0, 0.1
     end
     
-    -- HP 바 배경
     DebugDraw.Rectangle(
         ui_x, ui_y, ui_x + bar_width, ui_y + bar_height,
         0.1, 0.1, 0.1, 0.8,
         true
     )
     
-    -- HP 바 채우기
     local hp_fill_width = bar_width * hp_ratio
     DebugDraw.Rectangle(
         ui_x, ui_y, ui_x + hp_fill_width, ui_y + bar_height,
@@ -222,7 +278,6 @@ function DrawUI()
         true
     )
     
-    -- HP 바 테두리
     local bar_end_x = ui_x + bar_width
     local bar_end_y = ui_y + bar_height
     DebugDraw.Line(ui_x, ui_y, bar_end_x, ui_y, 0.8, 0.8, 0.8, 1.0, 2.0)
@@ -230,7 +285,6 @@ function DrawUI()
     DebugDraw.Line(ui_x, ui_y, ui_x, bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(bar_end_x, ui_y, bar_end_x, bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     
-    -- HP 텍스트
     local hp_text = string.format("HP: %d / %d", currentHP, MaxHP)
     DebugDraw.Text(
         hp_text,
@@ -243,22 +297,19 @@ function DrawUI()
     local light_bar_y = ui_y + bar_height + bar_spacing
     local exposure_ratio = CurrentLightExposureTime / MaxLightExposureTime
     
-    -- Light 색상 결정 (시간이 적을수록 빨갛게)
-    local light_c_r, light_c_g, light_c_b = 0.1, 0.5, 1.0  -- 기본: 파란색
+    local light_c_r, light_c_g, light_c_b = 0.1, 0.5, 1.0
     if exposure_ratio <= 0.2 then
-        light_c_r, light_c_g, light_c_b = 1.0, 0.0, 0.0  -- 위험: 빨간색
+        light_c_r, light_c_g, light_c_b = 1.0, 0.0, 0.0
     elseif exposure_ratio <= 0.5 then
-        light_c_r, light_c_g, light_c_b = 1.0, 0.5, 0.0  -- 경고: 주황색
+        light_c_r, light_c_g, light_c_b = 1.0, 0.5, 0.0
     end
     
-    -- Light 바 배경
     DebugDraw.Rectangle(
         ui_x, light_bar_y, ui_x + bar_width, light_bar_y + bar_height,
         0.1, 0.1, 0.1, 0.8,
         true
     )
     
-    -- Light 바 채우기
     local light_fill_width = bar_width * exposure_ratio
     DebugDraw.Rectangle(
         ui_x, light_bar_y, ui_x + light_fill_width, light_bar_y + bar_height,
@@ -266,14 +317,12 @@ function DrawUI()
         true
     )
     
-    -- Light 바 테두리
     local light_bar_end_y = light_bar_y + bar_height
     DebugDraw.Line(ui_x, light_bar_y, bar_end_x, light_bar_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(ui_x, light_bar_end_y, bar_end_x, light_bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(ui_x, light_bar_y, ui_x, light_bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(bar_end_x, light_bar_y, bar_end_x, light_bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     
-    -- Light 텍스트
     local light_text = string.format("EXPOSURE: %.1fs", CurrentLightExposureTime)
     DebugDraw.Text(
         light_text,
@@ -282,9 +331,8 @@ function DrawUI()
         12.0, true, true, "Consolas"
     )
     
-    -- 경고 표시 (노출 시간 < 1초)
     if CurrentLightExposureTime < 1.0 then
-        local pulse = math.abs(math.sin(totalTime * 5.0))
+        local pulse = math.abs(math.sin(remainingTime * 5.0))
         DebugDraw.Text(
             "! DANGER !",
             ui_x + bar_width + 15.0, light_bar_y, ui_x + bar_width + 150.0, light_bar_end_y,
@@ -294,11 +342,123 @@ function DrawUI()
     end
 end
 
-function StartGame()
+---
+-- [UI] 게임 오버 화면
+---
+function DrawGameOverUI()
+    -- 화면 전체를 덮는 반투명 배경
+    local screen_w = 1920.0
+    local screen_h = 1080.0
+    
+    DebugDraw.Rectangle(
+        0, 0, screen_w, screen_h,
+        0.0, 0.0, 0.0, 0.7,  -- 어두운 배경
+        true
+    )
+    
+    -- 중앙 패널
+    local panel_w = 600.0
+    local panel_h = 400.0
+    local panel_x = (screen_w - panel_w) / 2.0
+    local panel_y = (screen_h - panel_h) / 2.0
+    
+    DebugDraw.Rectangle(
+        panel_x, panel_y, panel_x + panel_w, panel_y + panel_h,
+        0.1, 0.1, 0.15, 0.95,
+        true
+    )
+    
+    -- 패널 테두리 (빛나는 효과)
+    local pulse = 0.5 + 0.5 * math.abs(math.sin(remainingTime * 2.0))
+    DebugDraw.Line(panel_x, panel_y, panel_x + panel_w, panel_y, 0.2, 0.8, 1.0, pulse, 4.0)
+    DebugDraw.Line(panel_x, panel_y + panel_h, panel_x + panel_w, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
+    DebugDraw.Line(panel_x, panel_y, panel_x, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
+    DebugDraw.Line(panel_x + panel_w, panel_y, panel_x + panel_w, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
+    
+    -- "GAME CLEAR!" 또는 "GAME OVER" 또는 "TIME OVER" 텍스트
+    local title_text = "GAME OVER"
+    local title_color_r, title_color_g, title_color_b = 1.0, 0.2, 0.2
+    
+    if currentHP > 0 and remainingTime > 0 then
+        title_text = "GAME CLEAR!"
+        title_color_r, title_color_g, title_color_b = 0.2, 1.0, 0.2
+    elseif remainingTime <= 0 then
+        title_text = "TIME OVER!"
+        title_color_r, title_color_g, title_color_b = 1.0, 0.5, 0.0
+    end
+    
+    DebugDraw.Text(
+        title_text,
+        panel_x, panel_y + 40.0, panel_x + panel_w, panel_y + 100.0,
+        title_color_r, title_color_g, title_color_b, 1.0,
+        48.0, true, true, "Arial"
+    )
+    
+    -- 시간 표시
+    local minutes = math.floor(remainingTime / 60)
+    local seconds = math.floor(remainingTime % 60)
+    local time_text = string.format("Remaining Time: %d:%02d", minutes, seconds)
+    DebugDraw.Text(
+        time_text,
+        panel_x, panel_y + 140.0, panel_x + panel_w, panel_y + 180.0,
+        1.0, 1.0, 1.0, 1.0,
+        24.0, false, true, "Consolas"
+    )
+    
+    -- 점수 표시
+    local score_text = string.format("SCORE: %d", finalScore)
+    DebugDraw.Text(
+        score_text,
+        panel_x, panel_y + 200.0, panel_x + panel_w, panel_y + 260.0,
+        1.0, 0.84, 0.0, 1.0,  -- 금색
+        36.0, true, true, "Arial"
+    )
+    
+    -- 재시작 안내
+    local restart_pulse = 0.6 + 0.4 * math.abs(math.sin(remainingTime * 3.0))
+    DebugDraw.Text(
+        "Press SPACE to Restart",
+        panel_x, panel_y + 320.0, panel_x + panel_w, panel_y + 360.0,
+        1.0, 1.0, 1.0, restart_pulse,
+        20.0, false, true, "Arial"
+    )
+end
+
+---
+-- [Game] 게임 재시작
+---
+function RestartGame()
+    Log("Restarting game...")
+    
+    -- 게임 상태 초기화
+    bGameEnded = false
     bStarted = true
+    remainingTime = MaxTime
+    finalScore = 0
+    
+    -- 플레이어 상태 초기화
+    currentHP = MaxHP
+    CurrentLightExposureTime = MaxLightExposureTime
+    bLightWarningShown = false
+    
+    Owner.Location = InitLocation
+    
+    if gameMode then
+        gameMode:StartGame()
+    end
+    
+    Log("Game restarted successfully!")
+end
+
+function StartGame()
+    remainingTime = MaxTime
+    finalScore = 0
+    bStarted = true
+    bGameEnded = false
     currentHP = MaxHP
     CurrentLightExposureTime = MaxLightExposureTime
     currentRotation = Owner.Rotation:ToEuler()
+    InitLocation = Owner.Location
 
     Log(string.format("Player.lua BeginPlay. Owner: %s, HP: %d", Owner.UUID, currentHP))
 end
@@ -317,23 +477,12 @@ end
 function OnActorBeginOverlap(overlappedActor, otherActor)
     Log("Player: Overlap started with: " .. otherActor.Name)
 
-    -- [Health] 적 태그 확인
     if otherActor.Tag == CollisionTag.Enemy then
         TakeDamage(1)
-    elseif otherActor.Tag == CollisionTag.Score then
-        Log("Score!")
-        --GetWorld():DestroyActor(otherActor)
     elseif otherActor.Tag == CollisionTag.Clear then
         Log("Clear!")
-        --GetWorld():DestroyActor(otherActor)
+        EndGameSequence()
     end
-end
-
----
--- 다른 액터와 오버랩이 종료될 때 호출됩니다.
----
-function OnActorEndOverlap(overlappedActor, otherActor)
-    -- Log("Overlap ended with: " .. otherActor.Name)
 end
 
 ---
@@ -349,7 +498,6 @@ function RequestSpawnEnemy()
                 local spawner = actor:ToAEnemySpawnerActor()
                 if spawner then
                     spawner:RequestSpawn()
-                    -- 스폰 타이머는 EnemySpawner가 관리
                 end
             end
         end
