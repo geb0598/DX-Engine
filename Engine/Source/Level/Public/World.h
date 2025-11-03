@@ -52,6 +52,7 @@ public:
 	bool EndPlay();
 	void Tick(float DeltaTimes);
 	float GetTimeSeconds() const { return WorldTimeSeconds; }
+	uint32 GetFrameNumber() const { return FrameNumber; }
 
 	// Level Management Triggers
 	ULevel* GetLevel() const;
@@ -114,6 +115,7 @@ private:
 	bool bIgnoreInput = false;
 	TArray<AActor*> PendingDestroyActors;
 	float WorldTimeSeconds;
+	uint32 FrameNumber = 0;
 	UWorld* SourceEditorWorld = nullptr; // PIE World가 복제된 원본 Editor World (Editor/Game world에서는 nullptr)
 
 	void FlushPendingDestroy(); // Destroy marking 된 액터들을 실제 삭제

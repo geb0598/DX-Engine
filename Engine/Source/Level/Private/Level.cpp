@@ -9,11 +9,16 @@
 #include "Core/Public/Object.h"
 #include "Editor/Public/Editor.h"
 #include "Global/Octree.h"
+#include "Global/OverlapInfo.h"
 #include "Level/Public/Level.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Utility/Public/JsonSerializer.h"
 #include "Manager/UI/Public/ViewportManager.h"
+#include "Physics/Public/Bounds.h"
+#include "Physics/Public/AABB.h"
+#include "Physics/Public/CollisionHelper.h"
+#include "Physics/Public/HitResult.h"
 #include <json.hpp>
 
 IMPLEMENT_CLASS(ULevel, UObject)
@@ -162,6 +167,8 @@ void ULevel::RegisterComponent(UActorComponent* InComponent)
 			// 실패하면 DynamicPrimitiveQueue 목록에 추가
 			OnPrimitiveUpdated(PrimitiveComponent);
 		}
+
+		// Note: Initial overlaps will be detected in next Level::UpdateAllOverlaps() call
 	}
 	else if (auto LightComponent = Cast<ULightComponent>(InComponent))
 	{
@@ -532,4 +539,489 @@ TArray<AActor*> ULevel::FindTemplateActorsByClass(UClass* InClass) const
 		}
 	}
 	return Result;
+}
+
+/*-----------------------------------------------------------------------------
+	Centralized Overlap Management (Unreal-style)
+-----------------------------------------------------------------------------*/
+
+void ULevel::UpdateAllOverlaps()
+{
+	if (!StaticOctree)
+		return;
+
+	// 1. 모든 primitive component 수집
+	TArray<UPrimitiveComponent*> AllPrimitives;
+	for (AActor* Actor : LevelActors)
+	{
+		if (!Actor)
+			continue;
+
+		TArray<UActorComponent*>& Components = Actor->GetOwnedComponents();
+		for (UActorComponent* Comp : Components)
+		{
+			if (UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Comp))
+			{
+				AllPrimitives.Add(PrimComp);
+			}
+		}
+	}
+
+	// 중복 pair 방지용
+	TSet<TPair<UPrimitiveComponent*, UPrimitiveComponent*>, PairHash> ProcessedPairs;
+
+	// 2. 각 component의 Broad Phase + Narrow Phase
+	for (UPrimitiveComponent* A : AllPrimitives)
+	{
+		if (!A)
+			continue;
+
+		// Skip if overlap events are disabled (Unreal-style)
+		if (!A->GetGenerateOverlapEvents())
+			continue;
+
+		// === BROAD PHASE: Octree 쿼리로 후보 수집 ===
+		FBounds ABounds = A->CalcBounds();
+		FAABB AAABB(ABounds.Min, ABounds.Max);
+
+		TArray<UPrimitiveComponent*> Candidates;
+		StaticOctree->QueryAABB(AAABB, Candidates);
+
+		// Dynamic primitives도 추가
+		TArray<UPrimitiveComponent*> DynamicPrims = GetDynamicPrimitives();
+		Candidates.Append(DynamicPrims);
+
+		for (UPrimitiveComponent* B : Candidates)
+		{
+			if (!B)
+				continue;
+
+			// 자기 자신 스킵
+			if (B == A)
+				continue;
+
+			// 같은 액터 스킵
+			if (B->GetOwner() == A->GetOwner())
+				continue;
+
+			// Skip if B also has overlap events disabled
+			// Both components must have overlap events enabled (Unreal behavior)
+			if (!B->GetGenerateOverlapEvents())
+				continue;
+
+			// 중복 pair 방지 (정렬된 pair 생성)
+			TPair<UPrimitiveComponent*, UPrimitiveComponent*> Pair =
+				(A < B) ? TPair(A, B) : TPair(B, A);
+
+			if (ProcessedPairs.Contains(Pair))
+				continue;
+
+			ProcessedPairs.Add(Pair);
+
+			// === NARROW PHASE: 정밀 충돌 테스트 ===
+			FBounds BBounds = B->CalcBounds();
+
+			// AABB 레벨 rejection
+			if (!ABounds.Overlaps(BBounds))
+			{
+				// AABB가 겹치지 않음 → overlap이 아님
+				bool bWasOverlapping = PreviousOverlapState.FindRef(Pair);
+				if (bWasOverlapping)
+				{
+					// EndOverlap 발생
+					A->RemoveOverlapInfo(B);
+					B->RemoveOverlapInfo(A);
+					A->NotifyComponentEndOverlap(B);
+					B->NotifyComponentEndOverlap(A);
+				}
+				PreviousOverlapState[Pair] = false;
+				continue;
+			}
+
+			// 정밀 shape 테스트
+			const IBoundingVolume* ShapeA = A->GetCollisionShape();
+			const IBoundingVolume* ShapeB = B->GetCollisionShape();
+
+			if (!ShapeA || !ShapeB)
+			{
+				// Shape가 없음 → overlap이 아님
+				bool bWasOverlapping = PreviousOverlapState.FindRef(Pair);
+				if (bWasOverlapping)
+				{
+					// EndOverlap 발생
+					A->RemoveOverlapInfo(B);
+					B->RemoveOverlapInfo(A);
+					A->NotifyComponentEndOverlap(B);
+					B->NotifyComponentEndOverlap(A);
+				}
+				PreviousOverlapState[Pair] = false;
+				continue;
+			}
+
+			bool bIsOverlapping = FCollisionHelper::TestOverlap(ShapeA, ShapeB);
+
+			// 3. 이전 프레임 상태 비교
+			bool bWasOverlapping = PreviousOverlapState.FindRef(Pair);
+
+			// === EVENT HANDLING ===
+			if (bIsOverlapping && !bWasOverlapping)
+			{
+				// BeginOverlap - 양방향 상태 업데이트 (using public API)
+				A->AddOverlapInfo(B);
+				B->AddOverlapInfo(A);
+
+				// 양방향 delegate 브로드캐스트 (using public API)
+				FHitResult HitResult;
+				HitResult.Actor = B->GetOwner();
+				HitResult.Component = B;
+				A->NotifyComponentBeginOverlap(B, HitResult);
+
+				HitResult.Actor = A->GetOwner();
+				HitResult.Component = A;
+				B->NotifyComponentBeginOverlap(A, HitResult);
+			}
+			else if (!bIsOverlapping && bWasOverlapping)
+			{
+				// EndOverlap - 양방향 상태 업데이트 (using public API)
+				A->RemoveOverlapInfo(B);
+				B->RemoveOverlapInfo(A);
+
+				// 양방향 delegate 브로드캐스트 (using public API)
+				A->NotifyComponentEndOverlap(B);
+				B->NotifyComponentEndOverlap(A);
+			}
+
+			// 상태 저장
+			PreviousOverlapState[Pair] = bIsOverlapping;
+		}
+	}
+
+	// 4. EndOverlap 정리: 이전 프레임에 overlap이었지만 현재 프레임에 체크되지 않은 pair
+	//    (두 컴포넌트가 멀어져서 Octree 쿼리 결과에 나타나지 않은 경우)
+	TArray<TPair<UPrimitiveComponent*, UPrimitiveComponent*>> PairsToRemove;
+
+	for (auto& [Pair, bWasOverlapping] : PreviousOverlapState)
+	{
+		// 이번 프레임에 체크되지 않았지만 이전에는 overlap이었던 pair
+		if (bWasOverlapping && !ProcessedPairs.Contains(Pair))
+		{
+			UPrimitiveComponent* A = Pair.first;
+			UPrimitiveComponent* B = Pair.second;
+
+			// 컴포넌트가 여전히 유효한지 확인
+			if (A && B)
+			{
+				// 이벤트 발생 시에만 로깅
+				UE_LOG("[UpdateAllOverlaps] Octree query missed - EndOverlap: [%s]%s <-> [%s]%s",
+					A->GetOwner() ? A->GetOwner()->GetName().ToString().c_str() : "None",
+					A->GetName().ToString().c_str(),
+					B->GetOwner() ? B->GetOwner()->GetName().ToString().c_str() : "None",
+					B->GetName().ToString().c_str());
+
+				// EndOverlap - 양방향 상태 업데이트
+				A->RemoveOverlapInfo(B);
+				B->RemoveOverlapInfo(A);
+
+				// 양방향 delegate 브로드캐스트
+				A->NotifyComponentEndOverlap(B);
+				B->NotifyComponentEndOverlap(A);
+			}
+
+			// 제거할 pair 목록에 추가
+			PairsToRemove.Add(Pair);
+		}
+	}
+
+	// 더 이상 overlap이 아닌 pair 제거
+	for (const auto& Pair : PairsToRemove)
+	{
+		PreviousOverlapState.Remove(Pair);
+	}
+}
+
+bool ULevel::SweepComponentSingle(
+	UPrimitiveComponent* Component,
+	const FVector& TargetLocation,
+	FHitResult& OutHit)
+{
+	if (!Component || !StaticOctree)
+		return false;
+
+	// 1. Component의 현재 위치 저장
+	FVector OriginalLocation = Component->GetWorldLocation();
+
+	// 2. 임시로 목표 위치로 이동 (변환 행렬 계산용)
+	FVector LocalOffset = TargetLocation - OriginalLocation;
+
+	// 3. 목표 위치에서의 Bounds 계산
+	FBounds ComponentBounds = Component->CalcBounds();
+	FBounds TargetBounds(
+		ComponentBounds.Min + LocalOffset,
+		ComponentBounds.Max + LocalOffset
+	);
+
+	// === BROAD PHASE: Octree 쿼리 ===
+	FAABB TargetAABB(TargetBounds.Min, TargetBounds.Max);
+	TArray<UPrimitiveComponent*> Candidates;
+	StaticOctree->QueryAABB(TargetAABB, Candidates);
+
+	// Dynamic primitives도 추가
+	TArray<UPrimitiveComponent*> DynamicPrims = GetDynamicPrimitives();
+	Candidates.Append(DynamicPrims);
+
+	// 4. 목표 위치에서의 collision shape 준비
+	const IBoundingVolume* ComponentShape = Component->GetCollisionShape();
+	if (!ComponentShape)
+		return false;
+
+	// Temporary transform for target location
+	FMatrix TargetTransform = Component->GetWorldTransformMatrix();
+	TargetTransform.Data[3][0] = TargetLocation.X;
+	TargetTransform.Data[3][1] = TargetLocation.Y;
+	TargetTransform.Data[3][2] = TargetLocation.Z;
+
+	// === NARROW PHASE: 첫 번째 충돌만 찾기 ===
+	float ClosestDistance = FLT_MAX;
+	bool bFoundHit = false;
+
+	for (UPrimitiveComponent* Candidate : Candidates)
+	{
+		if (!Candidate)
+			continue;
+
+		// 자기 자신 스킵
+		if (Candidate == Component)
+			continue;
+
+		// 같은 액터 스킵
+		if (Candidate->GetOwner() == Component->GetOwner())
+			continue;
+
+		// AABB rejection
+		FBounds CandidateBounds = Candidate->CalcBounds();
+		if (!TargetBounds.Overlaps(CandidateBounds))
+			continue;
+
+		// 정밀 shape 테스트 (임시 transform 사용)
+		const IBoundingVolume* CandidateShape = Candidate->GetCollisionShape();
+		if (!CandidateShape)
+			continue;
+
+		// Create temporary shape at target location for testing
+		IBoundingVolume* TempShape = const_cast<IBoundingVolume*>(ComponentShape);
+		TempShape->Update(TargetTransform);
+
+		if (FCollisionHelper::TestOverlap(TempShape, CandidateShape))
+		{
+			// 충돌 거리 계산 (원래 위치에서 candidate까지)
+			FVector CandidateCenter = (CandidateBounds.Min + CandidateBounds.Max) * 0.5f;
+			float Distance = (CandidateCenter - OriginalLocation).Length();
+
+			if (Distance < ClosestDistance)
+			{
+				ClosestDistance = Distance;
+				OutHit.Component = Candidate;
+				OutHit.Actor = Candidate->GetOwner();
+				OutHit.Location = TargetLocation;
+				bFoundHit = true;
+			}
+		}
+
+		// Restore original transform
+		TempShape->Update(Component->GetWorldTransformMatrix());
+	}
+
+	return bFoundHit;
+}
+
+bool ULevel::SweepComponentMulti(
+	UPrimitiveComponent* Component,
+	const FVector& TargetLocation,
+	TArray<UPrimitiveComponent*>& OutOverlappingComponents)
+{
+	if (!Component || !StaticOctree)
+		return false;
+
+	OutOverlappingComponents.Empty();
+
+	// 1. Component의 현재 위치 저장
+	FVector OriginalLocation = Component->GetWorldLocation();
+
+	// 2. 임시로 목표 위치로 이동 (변환 행렬 계산용)
+	FVector LocalOffset = TargetLocation - OriginalLocation;
+
+	// 3. 목표 위치에서의 Bounds 계산
+	FBounds ComponentBounds = Component->CalcBounds();
+	FBounds TargetBounds(
+		ComponentBounds.Min + LocalOffset,
+		ComponentBounds.Max + LocalOffset
+	);
+
+	// === BROAD PHASE: Octree 쿼리 ===
+	FAABB TargetAABB(TargetBounds.Min, TargetBounds.Max);
+	TArray<UPrimitiveComponent*> Candidates;
+	StaticOctree->QueryAABB(TargetAABB, Candidates);
+
+	// Dynamic primitives도 추가
+	TArray<UPrimitiveComponent*> DynamicPrims = GetDynamicPrimitives();
+	Candidates.Append(DynamicPrims);
+
+	// 4. 목표 위치에서의 collision shape 준비
+	const IBoundingVolume* ComponentShape = Component->GetCollisionShape();
+	if (!ComponentShape)
+		return false;
+
+	// Temporary transform for target location
+	FMatrix TargetTransform = Component->GetWorldTransformMatrix();
+	TargetTransform.Data[3][0] = TargetLocation.X;
+	TargetTransform.Data[3][1] = TargetLocation.Y;
+	TargetTransform.Data[3][2] = TargetLocation.Z;
+
+	// === NARROW PHASE: 모든 충돌 찾기 ===
+	for (UPrimitiveComponent* Candidate : Candidates)
+	{
+		if (!Candidate)
+			continue;
+
+		// 자기 자신 스킵
+		if (Candidate == Component)
+			continue;
+
+		// 같은 액터 스킵
+		if (Candidate->GetOwner() == Component->GetOwner())
+			continue;
+
+		// AABB rejection
+		FBounds CandidateBounds = Candidate->CalcBounds();
+		if (!TargetBounds.Overlaps(CandidateBounds))
+			continue;
+
+		// 정밀 shape 테스트 (임시 transform 사용)
+		const IBoundingVolume* CandidateShape = Candidate->GetCollisionShape();
+		if (!CandidateShape)
+			continue;
+
+		// Create temporary shape at target location for testing
+		IBoundingVolume* TempShape = const_cast<IBoundingVolume*>(ComponentShape);
+		TempShape->Update(TargetTransform);
+
+		if (FCollisionHelper::TestOverlap(TempShape, CandidateShape))
+		{
+			OutOverlappingComponents.Add(Candidate);
+		}
+
+		// Restore original transform
+		TempShape->Update(Component->GetWorldTransformMatrix());
+	}
+
+	return OutOverlappingComponents.Num() > 0;
+}
+
+bool ULevel::SweepActorSingle(
+	AActor* Actor,
+	const FVector& TargetLocation,
+	FHitResult& OutHit,
+	ECollisionTag FilterTag)
+{
+	if (!Actor)
+		return false;
+
+	// Actor의 모든 PrimitiveComponent를 가져옴
+	TArray<UActorComponent*>& Components = Actor->GetOwnedComponents();
+
+	float ClosestDistance = FLT_MAX;
+	bool bFoundHit = false;
+	FHitResult ClosestHit;
+
+	// 각 PrimitiveComponent에 대해 sweep 테스트
+	for (UActorComponent* Comp : Components)
+	{
+		UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Comp);
+		if (!PrimComp)
+			continue;
+
+		// 이 컴포넌트에 대해 sweep 테스트
+		FHitResult TempHit;
+		if (SweepComponentSingle(PrimComp, TargetLocation, TempHit))
+		{
+			// CollisionTag 필터링
+			if (FilterTag != ECollisionTag::None && TempHit.Actor)
+			{
+				if (TempHit.Actor->GetCollisionTag() != FilterTag)
+					continue;  // 태그가 일치하지 않으면 스킵
+			}
+
+			// 거리 계산 (Actor 중심에서 충돌 지점까지)
+			FVector ActorLocation = Actor->GetActorLocation();
+			float Distance = (TempHit.Location - ActorLocation).Length();
+
+			if (Distance < ClosestDistance)
+			{
+				ClosestDistance = Distance;
+				ClosestHit = TempHit;
+				bFoundHit = true;
+			}
+		}
+	}
+
+	if (bFoundHit)
+	{
+		OutHit = ClosestHit;
+		return true;
+	}
+
+	return false;
+}
+
+bool ULevel::SweepActorMulti(
+	AActor* Actor,
+	const FVector& TargetLocation,
+	TArray<UPrimitiveComponent*>& OutOverlappingComponents,
+	ECollisionTag FilterTag)
+{
+	if (!Actor)
+		return false;
+
+	OutOverlappingComponents.Empty();
+
+	// Actor의 모든 PrimitiveComponent를 가져옴
+	TArray<UActorComponent*>& Components = Actor->GetOwnedComponents();
+
+	// 중복 제거용 (여러 컴포넌트가 같은 대상과 충돌할 수 있음)
+	TSet<UPrimitiveComponent*> UniqueCollisions;
+
+	// 각 PrimitiveComponent에 대해 sweep 테스트
+	for (UActorComponent* Comp : Components)
+	{
+		UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Comp);
+		if (!PrimComp)
+			continue;
+
+		// 이 컴포넌트에 대해 sweep 테스트
+		TArray<UPrimitiveComponent*> TempOverlaps;
+		if (SweepComponentMulti(PrimComp, TargetLocation, TempOverlaps))
+		{
+			// 결과를 UniqueCollisions에 추가 (필터링 적용)
+			for (UPrimitiveComponent* OverlapComp : TempOverlaps)
+			{
+				// CollisionTag 필터링
+				if (FilterTag != ECollisionTag::None)
+				{
+					AActor* OverlapActor = OverlapComp->GetOwner();
+					if (OverlapActor && OverlapActor->GetCollisionTag() != FilterTag)
+						continue;  // 태그가 일치하지 않으면 스킵
+				}
+
+				UniqueCollisions.Add(OverlapComp);
+			}
+		}
+	}
+
+	// TSet을 TArray로 변환
+	for (UPrimitiveComponent* Comp : UniqueCollisions)
+	{
+		OutOverlappingComponents.Add(Comp);
+	}
+
+	return OutOverlappingComponents.Num() > 0;
 }

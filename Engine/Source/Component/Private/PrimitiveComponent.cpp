@@ -12,6 +12,7 @@
 #include "Utility/Public/JsonSerializer.h"
 #include "Actor/Public/Actor.h"
 #include "Level/Public/Level.h"
+#include "Level/Public/World.h"
 #include "Global/Octree.h"
 #include <unordered_set>
 
@@ -25,6 +26,9 @@ UPrimitiveComponent::UPrimitiveComponent()
 void UPrimitiveComponent::TickComponent(float DeltaTime)
 {
     Super::TickComponent(DeltaTime);
+
+    // Note: Overlap updates are now managed centrally by Level::UpdateAllOverlaps()
+    // No per-component tick logic needed
 }
 void UPrimitiveComponent::OnSelected()
 {
@@ -186,8 +190,7 @@ void UPrimitiveComponent::MarkAsDirty()
 	bIsAABBCacheDirty = true;
 	Super::MarkAsDirty();
 
-	// Update octree position first, then check for overlaps
-	// This ensures that when this component queries the octree, it has the latest positions
+	// Update octree position immediately (required for rendering/culling/picking)
 	AActor* Owner = GetOwner();
 	if (Owner && Owner->GetOuter())
 	{
@@ -198,8 +201,8 @@ void UPrimitiveComponent::MarkAsDirty()
 		}
 	}
 
-	// Now update overlaps with the latest octree data
-	UpdateOverlaps();
+	// Note: Overlap updates are now managed centrally by Level::UpdateAllOverlaps()
+	// called once per frame in World::Tick()
 }
 
 
@@ -211,6 +214,8 @@ UObject* UPrimitiveComponent::Duplicate()
 	PrimitiveComponent->Topology = Topology;
 	PrimitiveComponent->RenderState = RenderState;
 	PrimitiveComponent->bVisible = bVisible;
+	PrimitiveComponent->bCanPick = bCanPick;
+	PrimitiveComponent->bGenerateOverlapEvents = bGenerateOverlapEvents;
 	PrimitiveComponent->bReceivesDecals = bReceivesDecals;
 
 	PrimitiveComponent->Vertices = Vertices;
@@ -242,10 +247,15 @@ void UPrimitiveComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		FString VisibleString;
 		FJsonSerializer::ReadString(InOutHandle, "bVisible", VisibleString, "true");
 		SetVisibility(VisibleString == "true");
+
+		FString GenerateOverlapString;
+		FJsonSerializer::ReadString(InOutHandle, "bGenerateOverlapEvents", GenerateOverlapString, "true");
+		SetGenerateOverlapEvents(GenerateOverlapString == "true");
 	}
 	else
 	{
 		InOutHandle["bVisible"] = bVisible ? "true" : "false";
+		InOutHandle["bGenerateOverlapEvents"] = bGenerateOverlapEvents ? "true" : "false";
 	}
 
 }
@@ -278,98 +288,29 @@ bool UPrimitiveComponent::IsOverlappingActor(const AActor* OtherActor) const
 	return false;
 }
 
-void UPrimitiveComponent::UpdateOverlaps()
+// === Overlap State Management API ===
+// Note: These are public APIs for Level::UpdateAllOverlaps() to manage overlap state
+
+void UPrimitiveComponent::AddOverlapInfo(UPrimitiveComponent* OtherComp)
 {
-	AActor* MyOwner = GetOwner();
-	if (!MyOwner)
+	if (!OtherComp)
 		return;
 
-	ULevel* Level = GWorld->GetLevel();
-	if (!Level || !Level->GetStaticOctree())
-		return;
-
-	// === PHASE 1: Broad Phase (Spatial Query) ===
-	// Use FBounds for fast AABB-based octree query
-	FBounds MyBounds = CalcBounds();
-	FAABB MyAABB(MyBounds.Min, MyBounds.Max);
-
-	TArray<UPrimitiveComponent*> Candidates;
-	Level->GetStaticOctree()->QueryAABB(MyAABB, Candidates);
-
-	// Also check dynamic primitives (objects outside octree bounds)
-	TArray<UPrimitiveComponent*> DynamicPrims = Level->GetDynamicPrimitives();
-	Candidates.Append(DynamicPrims);
-
-	// Store previous overlaps for comparison
-	TArray<FOverlapInfo> PreviousOverlaps = OverlappingComponents;
-
-	// === PHASE 2: Narrow Phase (Precise Collision) ===
-	// Use actual collision shapes for accurate overlap testing
-	TArray<FOverlapInfo> NewOverlaps;
-	const IBoundingVolume* MyShape = GetCollisionShape();
-
-	for (UPrimitiveComponent* Candidate : Candidates)
-	{
-		// Skip self
-		if (Candidate == this)
-			continue;
-
-		// Skip same actor components
-		if (Candidate->GetOwner() == MyOwner)
-			continue;
-
-		// Broad phase AABB rejection (per-primitive level)
-		// Note: Octree::QueryAABB() returns all primitives in overlapping nodes,
-		// so we need to test individual primitive AABBs here
-		FBounds CandidateBounds = Candidate->CalcBounds();
-		if (!MyBounds.Overlaps(CandidateBounds))
-			continue;
-
-		// Narrow phase: Precise shape-to-shape test
-		const IBoundingVolume* OtherShape = Candidate->GetCollisionShape();
-		if (FCollisionHelper::TestOverlap(MyShape, OtherShape))
-		{
-			NewOverlaps.Add(FOverlapInfo(Candidate));
-		}
-	}
-
-	// 5. Detect Begin Overlaps (in NewOverlaps but not in PreviousOverlaps)
-	// Optimize: Use unordered_set for O(1) lookup instead of O(N) linear search
-	std::unordered_set<FOverlapInfo> PreviousSet(PreviousOverlaps.begin(), PreviousOverlaps.end());
-
-	for (const FOverlapInfo& NewInfo : NewOverlaps)
-	{
-		// This is a new overlap - fire BeginOverlap event
-		if (PreviousSet.find(NewInfo) == PreviousSet.end() && NewInfo.IsValid())
-		{
-			FHitResult HitResult;
-			HitResult.Actor = NewInfo.GetActor();
-			HitResult.Component = NewInfo.OverlapComponent.Get();
-			// Note: For simple overlap detection, we don't have detailed hit info
-			// In a physics engine with continuous collision detection, you'd fill this in
-
-			NotifyComponentBeginOverlap(NewInfo.OverlapComponent.Get(), HitResult);
-		}
-	}
-
-	// 6. Detect End Overlaps (in PreviousOverlaps but not in NewOverlaps)
-	// Optimize: Use unordered_set for O(1) lookup instead of O(N) linear search
-	std::unordered_set<FOverlapInfo> NewSet(NewOverlaps.begin(), NewOverlaps.end());
-
-	for (const FOverlapInfo& PrevInfo : PreviousOverlaps)
-	{
-		// Overlap ended - fire EndOverlap event
-		if (NewSet.find(PrevInfo) == NewSet.end() && PrevInfo.IsValid())
-		{
-			NotifyComponentEndOverlap(PrevInfo.OverlapComponent.Get());
-		}
-	}
-
-	// 7. Update overlap list
-	OverlappingComponents = NewOverlaps;
+	OverlappingComponents.Add(FOverlapInfo(OtherComp));
 }
 
-// === Event Notification Helpers ===
+void UPrimitiveComponent::RemoveOverlapInfo(UPrimitiveComponent* OtherComp)
+{
+	if (!OtherComp)
+		return;
+
+	OverlappingComponents.RemoveAll([OtherComp](const FOverlapInfo& Info) {
+		return Info.OverlapComponent.Get() == OtherComp;
+	});
+}
+
+// === Event Notification API ===
+// Note: Overlap detection is now managed centrally by Level::UpdateAllOverlaps()
 
 void UPrimitiveComponent::NotifyComponentBeginOverlap(UPrimitiveComponent* OtherComp, const FHitResult& SweepResult)
 {
@@ -379,8 +320,8 @@ void UPrimitiveComponent::NotifyComponentBeginOverlap(UPrimitiveComponent* Other
 	AActor* MyOwner = GetOwner();
 	AActor* OtherOwner = OtherComp->GetOwner();
 
-	// 1. Broadcast component-level events (bidirectional)
-	// Log and broadcast for THIS component
+	// Broadcast component-level event (single-direction)
+	// Note: Level::UpdateAllOverlaps() calls this for both components
 	UE_LOG("BeginOverlap: [%s]%s overlaps with [%s]%s",
 		MyOwner ? MyOwner->GetName().ToString().c_str() : "None",
 		GetName().ToString().c_str(),
@@ -388,22 +329,10 @@ void UPrimitiveComponent::NotifyComponentBeginOverlap(UPrimitiveComponent* Other
 		OtherComp->GetName().ToString().c_str());
 	OnComponentBeginOverlap.Broadcast(this, OtherOwner, OtherComp, SweepResult);
 
-	// Log and broadcast for OTHER component
-	UE_LOG("BeginOverlap: [%s]%s overlaps with [%s]%s",
-		OtherOwner ? OtherOwner->GetName().ToString().c_str() : "None",
-		OtherComp->GetName().ToString().c_str(),
-		MyOwner ? MyOwner->GetName().ToString().c_str() : "None",
-		GetName().ToString().c_str());
-	OtherComp->OnComponentBeginOverlap.Broadcast(OtherComp, MyOwner, this, SweepResult);
-
-	// 2. Broadcast actor-level events (bidirectional)
+	// Broadcast actor-level event (single-direction)
 	if (MyOwner)
 	{
 		MyOwner->OnActorBeginOverlap.Broadcast(MyOwner, OtherOwner);
-	}
-	if (OtherOwner)
-	{
-		OtherOwner->OnActorBeginOverlap.Broadcast(OtherOwner, MyOwner);
 	}
 }
 
@@ -415,8 +344,8 @@ void UPrimitiveComponent::NotifyComponentEndOverlap(UPrimitiveComponent* OtherCo
 	AActor* MyOwner = GetOwner();
 	AActor* OtherOwner = OtherComp->GetOwner();
 
-	// 1. Broadcast component-level events (bidirectional)
-	// Log and broadcast for THIS component
+	// Broadcast component-level event (single-direction)
+	// Note: Level::UpdateAllOverlaps() calls this for both components
 	UE_LOG("EndOverlap: [%s]%s stopped overlapping with [%s]%s",
 		MyOwner ? MyOwner->GetName().ToString().c_str() : "None",
 		GetName().ToString().c_str(),
@@ -424,45 +353,9 @@ void UPrimitiveComponent::NotifyComponentEndOverlap(UPrimitiveComponent* OtherCo
 		OtherComp->GetName().ToString().c_str());
 	OnComponentEndOverlap.Broadcast(this, OtherOwner, OtherComp);
 
-	// Log and broadcast for OTHER component
-	UE_LOG("EndOverlap: [%s]%s stopped overlapping with [%s]%s",
-		OtherOwner ? OtherOwner->GetName().ToString().c_str() : "None",
-		OtherComp->GetName().ToString().c_str(),
-		MyOwner ? MyOwner->GetName().ToString().c_str() : "None",
-		GetName().ToString().c_str());
-	OtherComp->OnComponentEndOverlap.Broadcast(OtherComp, MyOwner, this);
-
-	// 2. Broadcast actor-level events (bidirectional)
+	// Broadcast actor-level event (single-direction)
 	if (MyOwner)
 	{
 		MyOwner->OnActorEndOverlap.Broadcast(MyOwner, OtherOwner);
-	}
-	if (OtherOwner)
-	{
-		OtherOwner->OnActorEndOverlap.Broadcast(OtherOwner, MyOwner);
-	}
-}
-
-void UPrimitiveComponent::NotifyComponentHit(UPrimitiveComponent* OtherComp, const FVector& NormalImpulse, const FHitResult& Hit)
-{
-	if (!OtherComp)
-		return;
-
-	AActor* MyOwner = GetOwner();
-	AActor* OtherOwner = OtherComp->GetOwner();
-
-	// 1. Broadcast component-level events (bidirectional)
-	// Note: NormalImpulse is negated for the other component
-	OnComponentHit.Broadcast(this, OtherOwner, OtherComp, NormalImpulse, Hit);
-	OtherComp->OnComponentHit.Broadcast(OtherComp, MyOwner, this, -NormalImpulse, Hit);
-
-	// 2. Broadcast actor-level events (bidirectional)
-	if (MyOwner)
-	{
-		MyOwner->OnActorHit.Broadcast(MyOwner, OtherOwner, NormalImpulse, Hit);
-	}
-	if (OtherOwner)
-	{
-		OtherOwner->OnActorHit.Broadcast(OtherOwner, MyOwner, -NormalImpulse, Hit);
 	}
 }

@@ -9,6 +9,19 @@ class UPointLightComponent;
 class ULightComponent;
 class FOctree;
 
+// Custom hash function for pair of pointers (used in overlap tracking)
+struct PairHash
+{
+	template <typename T1, typename T2>
+	std::size_t operator()(const std::pair<T1, T2>& Pair) const
+	{
+		// Combine hashes of both pointers
+		std::size_t H1 = std::hash<T1>{}(Pair.first);
+		std::size_t H2 = std::hash<T2>{}(Pair.second);
+		return H1 ^ (H2 << 1); // Simple hash combination
+	}
+};
+
 UCLASS()
 class ULevel :
 	public UObject
@@ -145,4 +158,85 @@ public:
 
 private:
 	TArray<ULightComponent*> LightComponents;
+
+	/*-----------------------------------------------------------------------------
+		Centralized Overlap Management (Unreal-style)
+	-----------------------------------------------------------------------------*/
+public:
+	/**
+	 * @brief 중앙집중식 overlap 업데이트 (Unreal Engine 방식)
+	 * @note World::Tick()에서 호출되며, 모든 primitive component의 overlap을 한번에 체크
+	 *       - Component tick 여부와 무관하게 동작
+	 *       - 양방향 상태 + 이벤트 동기화
+	 *       - 중복 overlap 테스트 방지 (각 pair는 한 번만 체크)
+	 */
+	void UpdateAllOverlaps();
+
+	/**
+	 * @brief 컴포넌트가 특정 위치로 이동했을 때 첫 번째로 충돌하는 컴포넌트 반환 (실제 이동 없이 테스트만)
+	 * @param Component 테스트할 컴포넌트
+	 * @param TargetLocation 이동할 목표 위치 (world space)
+	 * @param OutHit 충돌 정보 (충돌한 컴포넌트, 액터 등)
+	 * @return 충돌이 감지되면 true
+	 * @note 이동 전 미리 호출하여 충돌 여부 확인 (예: 벽 통과 방지, 가장 가까운 충돌만 필요한 경우)
+	 */
+	bool SweepComponentSingle(
+		UPrimitiveComponent* Component,
+		const FVector& TargetLocation,
+		struct FHitResult& OutHit
+	);
+
+	/**
+	 * @brief 컴포넌트가 특정 위치로 이동했을 때 충돌하는 모든 컴포넌트 반환 (실제 이동 없이 테스트만)
+	 * @param Component 테스트할 컴포넌트
+	 * @param TargetLocation 이동할 목표 위치 (world space)
+	 * @param OutOverlappingComponents 충돌이 감지된 모든 컴포넌트 배열 (출력)
+	 * @return 하나 이상의 충돌이 감지되면 true
+	 * @note 이동 전 미리 호출하여 모든 충돌 대상을 확인 (예: 범위 공격, 다중 상호작용)
+	 */
+	bool SweepComponentMulti(
+		UPrimitiveComponent* Component,
+		const FVector& TargetLocation,
+		TArray<UPrimitiveComponent*>& OutOverlappingComponents
+	);
+
+	/**
+	 * @brief 액터가 특정 위치로 이동했을 때 첫 번째로 충돌하는 컴포넌트 반환 (실제 이동 없이 테스트만)
+	 * @param Actor 테스트할 액터 (모든 PrimitiveComponent 검사)
+	 * @param TargetLocation 이동할 목표 위치 (world space)
+	 * @param OutHit 충돌 정보 (충돌한 컴포넌트, 액터 등)
+	 * @param FilterTag 필터링할 CollisionTag (None이면 모든 태그 허용)
+	 * @return 충돌이 감지되면 true
+	 * @note Actor의 모든 PrimitiveComponent를 기준으로 sweep 테스트 수행 (가장 가까운 충돌 반환)
+	 */
+	bool SweepActorSingle(
+		AActor* Actor,
+		const FVector& TargetLocation,
+		struct FHitResult& OutHit,
+		ECollisionTag FilterTag = ECollisionTag::None
+	);
+
+	/**
+	 * @brief 액터가 특정 위치로 이동했을 때 충돌하는 모든 컴포넌트 반환 (실제 이동 없이 테스트만)
+	 * @param Actor 테스트할 액터 (모든 PrimitiveComponent 검사)
+	 * @param TargetLocation 이동할 목표 위치 (world space)
+	 * @param OutOverlappingComponents 충돌이 감지된 모든 컴포넌트 배열 (출력)
+	 * @param FilterTag 필터링할 CollisionTag (None이면 모든 태그 허용)
+	 * @return 하나 이상의 충돌이 감지되면 true
+	 * @note Actor의 모든 PrimitiveComponent를 기준으로 sweep 테스트 수행
+	 */
+	bool SweepActorMulti(
+		AActor* Actor,
+		const FVector& TargetLocation,
+		TArray<UPrimitiveComponent*>& OutOverlappingComponents,
+		ECollisionTag FilterTag = ECollisionTag::None
+	);
+
+private:
+	/**
+	 * @brief 이전 프레임의 overlap 상태 추적 (변화 감지용)
+	 * @note Key: 정렬된 component pair (A < B 기준)
+	 *       Value: overlap 상태 (true = overlapping, false = not overlapping)
+	 */
+	TMap<TPair<UPrimitiveComponent*, UPrimitiveComponent*>, bool, PairHash> PreviousOverlapState;
 };

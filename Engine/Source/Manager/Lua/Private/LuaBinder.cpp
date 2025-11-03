@@ -1,8 +1,13 @@
 #include "pch.h"
 #include "Manager/Lua/Public/LuaBinder.h"
+#include "Actor/Public/Actor.h"
 #include "Actor/Public/GameMode.h"
 #include "Component/Public/ScriptComponent.h"
+#include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Input/Public/InputManager.h"
+#include "Level/Public/Level.h"
+#include "Physics/Public/HitResult.h"
+#include "Global/Enum.h"
 
 void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 {
@@ -15,6 +20,7 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
         "GetTimeSeconds", &UWorld::GetTimeSeconds,
         "DestroyActor", &UWorld::DestroyActor,
         "GetGameMode", &UWorld::GetGameMode,
+        "GetLevel", &UWorld::GetLevel,
         "FindTemplateActorOfName", &UWorld::FindTemplateActorOfName
     );
 
@@ -22,6 +28,65 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
     LuaState.set_function("GetWorld", []() -> UWorld* {
     	return GWorld;
     });
+
+	// --- ULevel ---
+	LuaState.new_usertype<ULevel>("ULevel",
+		// Sweep single collision test for Actor (returns first hit)
+		// Tests all PrimitiveComponents of the Actor
+		// Optional FilterTag parameter: only returns hits with matching CollisionTag
+		"SweepActorSingle", sol::overload(
+			// Without filter
+			[](ULevel* Level, AActor* Actor, const FVector& TargetLocation) -> sol::optional<FHitResult> {
+				if (!Level || !Actor)
+					return sol::nullopt;
+
+				FHitResult HitResult;
+				bool bHit = Level->SweepActorSingle(Actor, TargetLocation, HitResult);
+				if (bHit)
+					return HitResult;
+				return sol::nullopt;
+			},
+			// With filter
+			[](ULevel* Level, AActor* Actor, const FVector& TargetLocation, ECollisionTag FilterTag) -> sol::optional<FHitResult> {
+				if (!Level || !Actor)
+					return sol::nullopt;
+
+				FHitResult HitResult;
+				bool bHit = Level->SweepActorSingle(Actor, TargetLocation, HitResult, FilterTag);
+				if (bHit)
+					return HitResult;
+				return sol::nullopt;
+			}
+		),
+
+		// Sweep multi collision test for Actor (returns all overlapping components)
+		// Tests all PrimitiveComponents of the Actor
+		// Optional FilterTag parameter: only returns hits with matching CollisionTag
+		"SweepActorMulti", sol::overload(
+			// Without filter
+			[](ULevel* Level, AActor* Actor, const FVector& TargetLocation) -> sol::optional<TArray<UPrimitiveComponent*>> {
+				if (!Level || !Actor)
+					return sol::nullopt;
+
+				TArray<UPrimitiveComponent*> OverlappingComponents;
+				bool bHit = Level->SweepActorMulti(Actor, TargetLocation, OverlappingComponents);
+				if (bHit && OverlappingComponents.Num() > 0)
+					return OverlappingComponents;
+				return sol::nullopt;
+			},
+			// With filter
+			[](ULevel* Level, AActor* Actor, const FVector& TargetLocation, ECollisionTag FilterTag) -> sol::optional<TArray<UPrimitiveComponent*>> {
+				if (!Level || !Actor)
+					return sol::nullopt;
+
+				TArray<UPrimitiveComponent*> OverlappingComponents;
+				bool bHit = Level->SweepActorMulti(Actor, TargetLocation, OverlappingComponents, FilterTag);
+				if (bHit && OverlappingComponents.Num() > 0)
+					return OverlappingComponents;
+				return sol::nullopt;
+			}
+		)
+	);
 }
 
 void FLuaBinder::BindMathTypes(sol::state& LuaState)
@@ -108,6 +173,22 @@ void FLuaBinder::BindMathTypes(sol::state& LuaState)
 	        // Lua: local rotatedVec = myQuat:RotateVector(myVec)
 	        sol::resolve<FVector(const FVector&) const>(&FQuaternion::RotateVector)
 	    )
+	);
+
+	// -- HitResult -- //
+	LuaState.new_usertype<FHitResult>("FHitResult",
+		sol::call_constructor,
+		sol::factories(
+			[]() { return FHitResult(); },
+			[](const FVector& InLocation, const FVector& InNormal) { return FHitResult(InLocation, InNormal); }
+		),
+		// Members
+		"Location", &FHitResult::Location,
+		"Normal", &FHitResult::Normal,
+		"PenetrationDepth", &FHitResult::PenetrationDepth,
+		"Actor", &FHitResult::Actor,
+		"Component", &FHitResult::Component,
+		"bBlockingHit", &FHitResult::bBlockingHit
 	);
 }
 

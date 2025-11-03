@@ -46,6 +46,24 @@ void USphereComponentWidget::RenderWidget()
 	{
 		SphereComponent->SetSphereRadius(Radius);
 	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Radius of the sphere");
+	}
 
 	ImGui::PopStyleColor(3);
+
+	// Collision Settings
+	ImGui::Separator();
+	ImGui::Text("Collision");
+
+	bool bGenerateOverlap = SphereComponent->GetGenerateOverlapEvents();
+	if (ImGui::Checkbox("Generate Overlap Events", &bGenerateOverlap))
+	{
+		SphereComponent->SetGenerateOverlapEvents(bGenerateOverlap);
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("If enabled, this component will generate overlap events (BeginOverlap/EndOverlap)");
+	}
 }

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Component/Public/SceneComponent.h"
 #include "Physics/Public/BoundingVolume.h"
 #include "Global/OverlapInfo.h"
@@ -19,19 +19,12 @@ DECLARE_DELEGATE(FComponentEndOverlapSignature,
 	UPrimitiveComponent*  /* OtherComp */
 );
 
-DECLARE_DELEGATE(FComponentHitSignature,
-	UPrimitiveComponent*, /* HitComponent */
-	AActor*,              /* OtherActor */
-	UPrimitiveComponent*, /* OtherComp */
-	FVector,              /* NormalImpulse */
-	const FHitResult&     /* Hit */
-);
-
 UCLASS()
 class UPrimitiveComponent : public USceneComponent
 {
 	GENERATED_BODY()
 	DECLARE_CLASS(UPrimitiveComponent, USceneComponent)
+
 
 public:
 	UPrimitiveComponent();
@@ -55,9 +48,13 @@ public:
 
 	bool IsVisible() const { return bVisible; }
 	void SetVisibility(bool bVisibility) { bVisible = bVisibility; }
-	
+
 	bool CanPick() const { return bCanPick; }
 	void SetCanPick(bool bInCanPick) { bCanPick = bInCanPick; }
+
+	// === Overlap Events Control ===
+	bool GetGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
+	void SetGenerateOverlapEvents(bool bGenerate) { bGenerateOverlapEvents = bGenerate; }
 	
 
 	FVector4 GetColor() const { return Color; }
@@ -80,15 +77,19 @@ public:
 	// Public so users can bind to these events
 	FComponentBeginOverlapSignature OnComponentBeginOverlap;
 	FComponentEndOverlapSignature OnComponentEndOverlap;
-	FComponentHitSignature OnComponentHit;
 
 	// === Overlap Query API ===
 	const TArray<FOverlapInfo>& GetOverlapInfos() const { return OverlappingComponents; }
 	bool IsOverlappingComponent(const UPrimitiveComponent* OtherComp) const;
 	bool IsOverlappingActor(const AActor* OtherActor) const;
 
-	// Update overlaps (called by Level or when component moves)
-	void UpdateOverlaps();
+	// === Overlap State Management API (for Level::UpdateAllOverlaps) ===
+	void AddOverlapInfo(UPrimitiveComponent* OtherComp);
+	void RemoveOverlapInfo(UPrimitiveComponent* OtherComp);
+
+	// === Event Notification API (for Level::UpdateAllOverlaps) ===
+	void NotifyComponentBeginOverlap(UPrimitiveComponent* OtherComp, const struct FHitResult& SweepResult);
+	void NotifyComponentEndOverlap(UPrimitiveComponent* OtherComp);
 
 	virtual void MarkAsDirty() override;
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
@@ -117,6 +118,10 @@ protected:
 	bool bVisible = true;
 	bool bCanPick = true;
 
+	// Overlap event generation control (Unreal-style)
+	// If false, this component will be skipped in Level::UpdateAllOverlaps()
+	bool bGenerateOverlapEvents = true;
+
 	mutable IBoundingVolume* BoundingBox = nullptr;
 	bool bOwnsBoundingBox = false;
 	
@@ -126,11 +131,6 @@ protected:
 
 	// Overlap tracking
 	TArray<FOverlapInfo> OverlappingComponents;
-
-	// === Event Notification Helpers ===
-	void NotifyComponentBeginOverlap(UPrimitiveComponent* OtherComp, const FHitResult& SweepResult);
-	void NotifyComponentEndOverlap(UPrimitiveComponent* OtherComp);
-	void NotifyComponentHit(UPrimitiveComponent* OtherComp, const FVector& NormalImpulse, const FHitResult& Hit);
 
 public:
 	virtual UObject* Duplicate() override;
