@@ -181,7 +181,7 @@ void ULevelTabBarWidget::RenderWidget()
 	ImGui::SetNextWindowPos(ImVec2(0.0f, mainBarH + LevelBarHeight));
 	ImGui::SetNextWindowSize(ImVec2(screenSize.x, LevelBarHeight));
 
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 8));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 5));
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
 	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 	ImGui::PushStyleColor(ImGuiCol_WindowBg, toolBg);
@@ -189,38 +189,76 @@ void ULevelTabBarWidget::RenderWidget()
 	if (ImGui::Begin("LevelToolBar", nullptr, flags))
 	{
 		// 배경/호버/액티브(hover/active)는 스타일 컬러를 씀
-		const ImVec4 colBtn = ImVec4(0.10f, 0.10f, 0.11f, 1.0f);
-		const ImVec4 colBtnHover = ImVec4(0.20f, 0.20f, 0.22f, 1.0f);
-		const ImVec4 colBtnActive = ImVec4(0.28f, 0.28f, 0.30f, 1.0f);
-		const ImU32 separatorColor = ImGui::GetColorU32(ImGui::GetStyleColorVec4(ImGuiCol_Separator));
+		constexpr ImVec4 ColBtn = ImVec4(0.10f, 0.10f, 0.11f, 1.0f);
+		constexpr ImVec4 ColBtnHover = ImVec4(0.20f, 0.20f, 0.22f, 1.0f);
+		constexpr ImVec4 ColBtnActive = ImVec4(0.28f, 0.28f, 0.30f, 1.0f);
+		const ImU32 SeparatorColor = ImGui::GetColorU32(ImGui::GetStyleColorVec4(ImGuiCol_Separator));
 
-		auto IconButton = [&](const char* id, ID3D11ShaderResourceView* srv, const char* tooltip, bool bEnabled = true, ImVec4 tintColor = ImVec4(1, 1, 1, 1)) -> bool
+		auto IconButton = [&](const char* id, ID3D11ShaderResourceView* InSRV, const char* InToolTip,
+			bool bInEnabled = true, ImVec4 InTintColor = ImVec4(1, 1, 1, 1)) -> bool
 			{
-				if (!srv) return ImGui::Button(id, ImVec2(30, 30));
+				if (!InSRV)
+				{
+					return ImGui::Button(id, ImVec2(30, 30));
+				}
 
-				// ⚠️ ImTextureRef 로 변환: 프로젝트 타입에 맞게 필요시 수정
-				ImTextureRef tex_ref = (ImTextureRef)srv;  // 혹은 ImTextureRef(texID) 등
+				// ImTextureRef 로 변환: 프로젝트 타입에 맞게 필요시 수정
+				ImTextureRef TexRef = InSRV;
 
-				ImGui::PushStyleColor(ImGuiCol_Button, colBtn);
-				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bEnabled ? colBtnHover : colBtn);
-				ImGui::PushStyleColor(ImGuiCol_ButtonActive, bEnabled ? colBtnActive : colBtn);
+				ImGui::PushStyleColor(ImGuiCol_Button, ColBtn);
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, bInEnabled ? ColBtnHover : ColBtn);
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, bInEnabled ? ColBtnActive : ColBtn);
 
-				// 네 시그니처에 정확히 맞춰 호출
-				bool clicked = ImGui::ImageButton(
-					id,                     // const char* str_id
-					tex_ref,                // ImTextureRef
-					ImVec2(20, 20),         // image_size
-					ImVec2(0, 0),           // uv0
-					ImVec2(1, 1),           // uv1
-					ImVec4(0, 0, 0, 0),     // bg_col (투명 배경, 필요시 colBtn로 변경)
-					tintColor               // tint_col (색상 틴트)
+				// 버튼 크기를 26x26으로 설정하여 전체 영역 클릭 가능하도록
+				constexpr ImVec2 ButtonSize(26, 26);
+				constexpr ImVec2 ImageSize(18, 18);
+
+				// 현재 위치 저장
+				ImVec2 CursorScreenPos = ImGui::GetCursorScreenPos();
+				ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+				// 버튼 영역 정의
+				ImVec2 PMin = CursorScreenPos;
+				ImVec2 PMax = ImVec2(PMin.x + ButtonSize.x, PMin.y + ButtonSize.y);
+
+				// 마우스 상호작용 확인 (InvisibleButton 없이 직접 체크)
+				ImGuiIO& IO = ImGui::GetIO();
+				bool IsHovered = ImGui::IsMouseHoveringRect(PMin, PMax);
+				bool IsHeld = IsHovered && ImGui::IsMouseDown(0);
+				bool IsClicked = IsHovered && ImGui::IsMouseReleased(0);
+
+				// 배경 그리기 (호버/액티브 상태 반영)
+				ImVec4 BgColor = ColBtn;
+				if (IsHeld)
+					BgColor = bInEnabled ? ColBtnActive : ColBtn;
+				else if (IsHovered)
+					BgColor = bInEnabled ? ColBtnHover : ColBtn;
+
+				DrawList->AddRectFilled(PMin, PMax, ImGui::GetColorU32(BgColor));
+
+				// 이미지를 버튼 중앙에 그리기
+				ImVec2 ImagePosMin = ImVec2(
+					PMin.x + (ButtonSize.x - ImageSize.x) * 0.5f,
+					PMin.y + (ButtonSize.y - ImageSize.y) * 0.5f
 				);
+				ImVec2 ImagePosMax = ImVec2(
+					ImagePosMin.x + ImageSize.x,
+					ImagePosMin.y + ImageSize.y
+				);
+				DrawList->AddImage(TexRef, ImagePosMin, ImagePosMax, ImVec2(0, 0),
+					ImVec2(1, 1), ImGui::GetColorU32(InTintColor));
 
-				if (ImGui::IsItemHovered() && tooltip)
-					ImGui::SetTooltip("%s", tooltip);
+				// 툴팁
+				if (IsHovered && InToolTip)
+				{
+					ImGui::SetTooltip("%s", InToolTip);
+				}
+
+				// 더미 아이템으로 레이아웃 진행
+				ImGui::Dummy(ButtonSize);
 
 				ImGui::PopStyleColor(3);
-				return bEnabled ? clicked : false;
+				return bInEnabled && IsClicked;
 			};
 
 		// --- 버튼들 ---
@@ -248,7 +286,7 @@ void ULevelTabBarWidget::RenderWidget()
 			CreateNewLevel();
 		}
 
-		ToolbarVSeparator(10.0f, 6.0f, 6.0f, 1.0f, separatorColor, 5.0f);
+		ToolbarVSeparator(10.0f, 6.0f, 6.0f, 1.0f, SeparatorColor, 5.0f);
 
 		if (IconButton("##btn_Create", CreateActorIconSRV.Get(), "Create Actor"))
 		{
@@ -457,7 +495,7 @@ void ULevelTabBarWidget::RenderWidget()
 		    }
 		}
 
-		ToolbarVSeparator(10.0f, 6.0f, 6.0f, 1.0f, separatorColor, 5.0f);
+		ToolbarVSeparator(10.0f, 6.0f, 6.0f, 1.0f, SeparatorColor, 5.0f);
 
 		// PIE 세션이 활성화되어 있지 않을 때: 초록 재생 + 회색 정지
 		if (!GEditor || !GEditor->IsPIESessionActive())
@@ -503,7 +541,7 @@ void ULevelTabBarWidget::RenderWidget()
 			}
 		}
 
-		ToolbarVSeparator(10.0f, 6.0f, 6.0f, 1.0f, separatorColor, 5.0f);
+		ToolbarVSeparator(10.0f, 6.0f, 6.0f, 1.0f, SeparatorColor, 5.0f);
 
 		if (IconButton("##btn_ControlCascade", CascadeIconSRV.Get(), "Control Cascade", true, ImVec4(1.0f, 0.3f, 0.3f, 1.0f)))
 		{
@@ -582,7 +620,7 @@ void ULevelTabBarWidget::RenderWidget()
 			ImGui::EndPopup();
 		}
 
-		ToolbarVSeparator(10.0f, 6.0f, 6.0f, 1.0f, separatorColor, 5.0f);
+		ToolbarVSeparator(10.0f, 6.0f, 6.0f, 1.0f, SeparatorColor, 5.0f);
 
 		// Grid Spacing 조절
 		ImGui::Text("Grid:");
