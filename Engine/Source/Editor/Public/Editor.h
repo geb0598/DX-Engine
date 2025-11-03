@@ -25,7 +25,7 @@ public:
 
 	void Update();
 	void RenderEditorGeometry();
-	void Collect2DRender(UCamera* InCamera, const D3D11_VIEWPORT& InViewport);
+	void Collect2DRender(UCamera* InCamera, const D3D11_VIEWPORT& InViewport, bool bIsPIEViewport);
 	void RenderGizmo(UCamera* InCamera, const D3D11_VIEWPORT& InViewport);
 	void RenderGizmoForHitProxy(UCamera* InCamera, const D3D11_VIEWPORT& InViewport);
 
@@ -102,7 +102,7 @@ private:
 
 	void UpdateBatchLines();
 	void ProcessMouseInput();
-	
+
 	// 모든 기즈모 드래그 함수가 ActiveCamera를 받도록 통일
 	FVector GetGizmoDragLocation(UCamera* InActiveCamera, FRay& WorldRay);
 	FQuaternion GetGizmoDragRotation(UCamera* InActiveCamera, FRay& WorldRay);
@@ -113,7 +113,7 @@ private:
 	bool GetActorFocusTarget(AActor* Actor, FVector& OutCenter, float& OutRadius);
 
 	void UpdateCameraAnimation();
-	
+
 	void TogglePilotMode();
 	void UpdatePilotMode();
 	void ExitPilotMode();

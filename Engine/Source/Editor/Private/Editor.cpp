@@ -237,14 +237,17 @@ void UEditor::Update()
 	ProcessMouseInput();
 }
 
-void UEditor::Collect2DRender(UCamera* InCamera, const D3D11_VIEWPORT& InViewport)
+void UEditor::Collect2DRender(UCamera* InCamera, const D3D11_VIEWPORT& InViewport, bool bIsPIEViewport)
 {
 	// D2D 드로잉 정보 수집 시작
 	FD2DOverlayManager& OverlayManager = FD2DOverlayManager::GetInstance();
 	OverlayManager.BeginCollect(InCamera, InViewport);
 
-	// FAxis 렌더링 명령 수집
-	FAxis::CollectDrawCommands(OverlayManager, InCamera, InViewport);
+	if (!bIsPIEViewport)
+	{
+		// FAxis 렌더링 명령 수집
+		FAxis::CollectDrawCommands(OverlayManager, InCamera, InViewport);
+	}
 
 	// Gizmo 회전 각도 오버레이 수집
 	Gizmo.CollectRotationAngleOverlay(OverlayManager, InCamera, InViewport);

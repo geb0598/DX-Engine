@@ -57,7 +57,7 @@ void URenderer::Init(HWND InWindowHandle)
 	DeviceResources = new UDeviceResources(InWindowHandle);
 	Pipeline = new UPipeline(GetDeviceContext());
 	ViewportClient = new FViewport();
-	
+
 	// 렌더링 상태 및 리소스 생성
 	CreateDepthStencilState();
 	CreateBlendState();
@@ -100,7 +100,7 @@ void URenderer::Init(HWND InWindowHandle)
 	FDecalPass* DecalPass = new FDecalPass(Pipeline, ConstantBufferViewProj,
 		DecalVertexShader, DecalPixelShader, DecalInputLayout, DecalDepthStencilState, AlphaBlendState);
 	RenderPasses.Add(DecalPass);
-	
+
 	FBillboardPass* BillboardPass = new FBillboardPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
 		TextureVertexShader, TexturePixelShader, TextureInputLayout, DefaultDepthStencilState, AlphaBlendState);
 	RenderPasses.Add(BillboardPass);
@@ -379,7 +379,7 @@ void URenderer::CreateFXAAShader()
     };
 	FRenderResourceFactory::CreateVertexShaderAndInputLayout(ShaderFilePathString, FXAALayout, &FXAAVertexShader, &FXAAInputLayout);
 	FRenderResourceFactory::CreatePixelShader(ShaderFilePathString, &FXAAPixelShader);
-	
+
 	FXAASamplerState = FRenderResourceFactory::CreateFXAASamplerState();
 
 	RegisterShaderReloadCache(ShaderPath, ShaderUsage::FXAA);
@@ -398,7 +398,7 @@ void URenderer::CreateStaticMeshShader()
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FNormalVertex, TexCoord), D3D11_INPUT_PER_VERTEX_DATA, 0	},
 		{ "TANGENT",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FNormalVertex, Tangent),  D3D11_INPUT_PER_VERTEX_DATA, 0 }
 	};
-	
+
 	// Compile Lambert variant (default)
 	TArray<D3D_SHADER_MACRO> LambertMacros = {
 		{ "LIGHTING_MODEL_LAMBERT", "1" },
@@ -406,7 +406,7 @@ void URenderer::CreateStaticMeshShader()
 	};
 	FRenderResourceFactory::CreateVertexShaderAndInputLayout(ShaderFilePathString, ShaderMeshLayout, &UberLitVertexShader, &UberLitInputLayout, "Uber_VS", LambertMacros.GetData());
 	FRenderResourceFactory::CreatePixelShader(ShaderFilePathString, &UberLitPixelShader, "Uber_PS", LambertMacros.GetData());
-	
+
 	// Compile Gouraud variant
 	TArray<D3D_SHADER_MACRO> GouraudMacros = {
 		{ "LIGHTING_MODEL_GOURAUD", "1" },
@@ -416,7 +416,7 @@ void URenderer::CreateStaticMeshShader()
 	FRenderResourceFactory::CreateVertexShaderAndInputLayout(ShaderFilePathString, ShaderMeshLayout, &UberLitVertexShaderGouraud, &GouraudInputLayout, "Uber_VS", GouraudMacros.GetData());
 	SafeRelease(GouraudInputLayout);
 	FRenderResourceFactory::CreatePixelShader(ShaderFilePathString, &UberLitPixelShaderGouraud, "Uber_PS", GouraudMacros.GetData());
-	
+
 	// Compile Phong (Blinn-Phong) variant
 	TArray<D3D_SHADER_MACRO> PhongMacros = {
 		{ "LIGHTING_MODEL_BLINNPHONG", "1" },
@@ -595,7 +595,7 @@ TSet<ShaderUsage> URenderer::GatherHotReloadTargets()
 		{
 			continue;
 		}
-		
+
 		// 두 시간 비교해서 다르면 핫 리로드 대상에 추가
 		if (CurrentLastWriteTime != CachedLastWriteTime)
 		{
@@ -761,23 +761,23 @@ void URenderer::ReleaseDefaultShader()
 	SafeRelease(UberLitPixelShaderWorldNormal);
 	SafeRelease(UberLitVertexShader);
 	SafeRelease(UberLitVertexShaderGouraud);
-	
+
 	SafeRelease(DefaultInputLayout);
 	SafeRelease(DefaultPixelShader);
 	SafeRelease(DefaultVertexShader);
-	
+
 	SafeRelease(TextureInputLayout);
 	SafeRelease(TexturePixelShader);
 	SafeRelease(TextureVertexShader);
-	
+
 	SafeRelease(DecalVertexShader);
 	SafeRelease(DecalPixelShader);
 	SafeRelease(DecalInputLayout);
-	
+
 	SafeRelease(FogVertexShader);
 	SafeRelease(FogPixelShader);
 	SafeRelease(FogInputLayout);
-	
+
 	SafeRelease(FXAAVertexShader);
 	SafeRelease(FXAAPixelShader);
 	SafeRelease(FXAAInputLayout);
@@ -914,19 +914,18 @@ void URenderer::Update()
             continue;
         }
 
-        bool bIsPIEViewport = GEditor->IsPIESessionActive() &&
-                               ViewportIndex == UViewportManager::GetInstance().GetPIEActiveViewportIndex();
-        if (!bIsPIEViewport)
-        {
-            FRect SingleWindowRect = Viewport->GetRect();
-            const int32 ViewportToolBarHeight = 32;
-            D3D11_VIEWPORT LocalViewport = { static_cast<float>(SingleWindowRect.Left),static_cast<float>(SingleWindowRect.Top) + ViewportToolBarHeight, static_cast<float>(SingleWindowRect.Width), static_cast<float>(SingleWindowRect.Height) - ViewportToolBarHeight, 0.0f, 1.0f };
-            UCamera* CurrentCamera = Viewport->GetViewportClient()->GetCamera();
+    	bool bIsPIEViewport = GEditor->IsPIESessionActive() &&
+							  ViewportIndex == UViewportManager::GetInstance().GetPIEActiveViewportIndex();
 
-            GEditor->GetEditorModule()->Collect2DRender(CurrentCamera, LocalViewport);
-            TIME_PROFILE(FlushAndRender)
-            FD2DOverlayManager::GetInstance().FlushAndRender();
-        }
+    	FRect SingleWindowRect = Viewport->GetRect();
+    	const int32 ViewportToolBarHeight = 32;
+    	D3D11_VIEWPORT LocalViewport = { static_cast<float>(SingleWindowRect.Left),static_cast<float>(SingleWindowRect.Top) + ViewportToolBarHeight, static_cast<float>(SingleWindowRect.Width), static_cast<float>(SingleWindowRect.Height) - ViewportToolBarHeight, 0.0f, 1.0f };
+    	UCamera* CurrentCamera = Viewport->GetViewportClient()->GetCamera();
+
+    	GEditor->GetEditorModule()->Collect2DRender(CurrentCamera, LocalViewport, bIsPIEViewport);
+    	TIME_PROFILE(FlushAndRender)
+		FD2DOverlayManager::GetInstance().FlushAndRender();
+
     }
     {
         TIME_PROFILE(UUIManager)
@@ -1067,7 +1066,7 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 			RenderingContext.Decals.Add(Decal);
 		}
 	}
-	
+
 	for (const auto& LightComponent : CurrentLevel->GetLightComponents())
 	{
 		if (auto PointLightComponent = Cast<UPointLightComponent>(LightComponent))
@@ -1147,11 +1146,11 @@ void URenderer::RenderEditorPrimitive(const FEditorPrimitive& InPrimitive, const
 		FMatrix::GetModelMatrix(InPrimitive.Location, InPrimitive.Rotation, InPrimitive.Scale));
 	Pipeline->SetConstantBuffer(0, EShaderType::VS, ConstantBufferModels);
 	Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferViewProj);
-	
+
 	FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferColor, InPrimitive.Color);
 	Pipeline->SetConstantBuffer(2, EShaderType::PS, ConstantBufferColor);
 	Pipeline->SetConstantBuffer(2, EShaderType::VS, ConstantBufferColor);
-	
+
     Pipeline->SetVertexBuffer(InPrimitive.VertexBuffer, FinalStride);
 
     // The core logic: check for an index buffer
