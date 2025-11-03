@@ -77,4 +77,16 @@ void UCapsuleComponentWidget::RenderWidget()
 	{
 		ImGui::SetTooltip("If enabled, this component will generate overlap events (BeginOverlap/EndOverlap)");
 	}
+
+	// Mobility
+	const char* MobilityItems[] = { "Static", "Movable" };
+	int CurrentMobility = (CapsuleComponent->GetMobility() == EComponentMobility::Static) ? 0 : 1;
+	if (ImGui::Combo("Mobility", &CurrentMobility, MobilityItems, IM_ARRAYSIZE(MobilityItems)))
+	{
+		CapsuleComponent->SetMobility((CurrentMobility == 0) ? EComponentMobility::Static : EComponentMobility::Movable);
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("Static: Don't move during gameplay (overlap with Static skipped)\nMovable: Can move during gameplay (overlap checked every frame)");
+	}
 }

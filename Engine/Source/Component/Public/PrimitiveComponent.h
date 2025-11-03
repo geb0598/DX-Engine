@@ -55,7 +55,15 @@ public:
 	// === Overlap Events Control ===
 	bool GetGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
 	void SetGenerateOverlapEvents(bool bGenerate) { bGenerateOverlapEvents = bGenerate; }
-	
+
+	// === Mobility Control ===
+	EComponentMobility GetMobility() const { return Mobility; }
+	void SetMobility(EComponentMobility InMobility) { Mobility = InMobility; }
+
+	// === Overlap Update Control ===
+	bool GetNeedsOverlapUpdate() const { return bNeedsOverlapUpdate; }
+	void SetNeedsOverlapUpdate(bool bNeedsUpdate) { bNeedsOverlapUpdate = bNeedsUpdate; }
+
 
 	FVector4 GetColor() const { return Color; }
 	void SetColor(const FVector4& InColor) { Color = InColor; }
@@ -120,7 +128,14 @@ protected:
 
 	// Overlap event generation control (Unreal-style)
 	// If false, this component will be skipped in Level::UpdateAllOverlaps()
-	bool bGenerateOverlapEvents = true;
+	// DEFAULT: false (opt-in for overlap events, more efficient)
+	bool bGenerateOverlapEvents = false;
+
+	// Component mobility (Unreal-style)
+	// Static: Don't move during gameplay (overlap with Static skipped, only with Movable)
+	// Movable: Can move during gameplay (overlap checked every frame)
+	// DEFAULT: Movable (for backward compatibility)
+	EComponentMobility Mobility = EComponentMobility::Movable;
 
 	mutable IBoundingVolume* BoundingBox = nullptr;
 	bool bOwnsBoundingBox = false;
@@ -128,6 +143,11 @@ protected:
 	mutable FVector CachedWorldMin;
 	mutable FVector CachedWorldMax;
 	mutable bool bIsAABBCacheDirty = true;
+
+	// Overlap update tracking (성능 최적화)
+	// MarkAsDirty() 호출 시 true로 설정, UpdateAllOverlaps() 검사 후 false로 초기화
+	// Movable이어도 실제로 이동하지 않으면 overlap 재검사 불필요
+	bool bNeedsOverlapUpdate = true;
 
 	// Overlap tracking
 	TArray<FOverlapInfo> OverlappingComponents;

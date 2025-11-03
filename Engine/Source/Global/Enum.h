@@ -225,3 +225,27 @@ enum class ECollisionTag : uint8
 	Enemy = 2,
 	Wall = 3,
 };
+
+/**
+ * @brief Component Mobility (Unreal Engine-style)
+ * Controls whether a component can move and how overlap detection is handled
+ */
+UENUM()
+enum class EComponentMobility : uint8
+{
+	/**
+	 * Static components don't move during gameplay.
+	 * - Overlap with other Static: Checked once at initialization
+	 * - Overlap with Movable: Checked every frame (if Movable has bGenerateOverlapEvents)
+	 * - Most efficient for background/environment objects
+	 */
+	Static = 0,
+
+	/**
+	 * Movable components can move during gameplay.
+	 * - Overlap checked every frame
+	 * - Use for gameplay objects, characters, projectiles
+	 */
+	Movable = 1,
+};
+DECLARE_UINT8_ENUM_REFLECTION(EComponentMobility)

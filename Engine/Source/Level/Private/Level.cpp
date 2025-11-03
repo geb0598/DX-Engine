@@ -25,9 +25,7 @@ IMPLEMENT_CLASS(ULevel, UObject)
 
 ULevel::ULevel()
 {
-	// Octree covering -32000 to 32000 on each axis (64000 unit range)
-	// With MAX_DEPTH=14, minimum node size is ~3.9 units
-	StaticOctree = new FOctree(FVector(0, 0, 0), 64000, 0);
+	StaticOctree = new FOctree(FVector(0, 0, 0), 20000, 0);
 }
 
 ULevel::~ULevel()
@@ -613,7 +611,16 @@ void ULevel::UpdateAllOverlaps()
 	// 중복 pair 방지용
 	TSet<TPair<UPrimitiveComponent*, UPrimitiveComponent*>, PairHash> ProcessedPairs;
 
+	// 이번 프레임에 검사된 컴포넌트 추적 (cleanup 로직에서 사용)
+	TSet<UPrimitiveComponent*> CheckedComponents;
+
+	// Dynamic primitives 수집 (1회만 - 성능 최적화)
+	TArray<UPrimitiveComponent*> DynamicPrims = GetDynamicPrimitives();
+
 	// 2. 각 component의 Broad Phase + Narrow Phase
+	// 핵심 최적화: bNeedsOverlapUpdate 플래그가 있는 것만 검사 (Unreal-style)
+	// - MarkAsDirty() 호출 시 플래그 설정됨 (이동한 컴포넌트)
+	// - 검사 후 플래그 클리어하여 다음 프레임에는 검사 안 함
 	for (UPrimitiveComponent* A : AllPrimitives)
 	{
 		if (!A)
@@ -623,6 +630,17 @@ void ULevel::UpdateAllOverlaps()
 		if (!A->GetGenerateOverlapEvents())
 			continue;
 
+		// ✅ 핵심: bNeedsOverlapUpdate 플래그 체크 (이동한 것만 검사)
+		if (!A->GetNeedsOverlapUpdate())
+			continue;
+
+		// ✅ Static 컴포넌트 스킵 (Static은 MarkAsDirty 안 불리므로 플래그도 안 서지만 명시적으로 체크)
+		if (A->GetMobility() == EComponentMobility::Static)
+			continue;
+
+		// 이번 프레임에 검사된 컴포넌트로 추적
+		CheckedComponents.Add(A);
+
 		// === BROAD PHASE: Octree 쿼리로 후보 수집 ===
 		FBounds ABounds = A->CalcBounds();
 		FAABB AAABB(ABounds.Min, ABounds.Max);
@@ -630,8 +648,7 @@ void ULevel::UpdateAllOverlaps()
 		TArray<UPrimitiveComponent*> Candidates;
 		StaticOctree->QueryAABB(AAABB, Candidates);
 
-		// Dynamic primitives도 추가
-		TArray<UPrimitiveComponent*> DynamicPrims = GetDynamicPrimitives();
+		// Dynamic primitives 추가 (미리 수집한 리스트 재사용)
 		Candidates.Append(DynamicPrims);
 
 		for (UPrimitiveComponent* B : Candidates)
@@ -651,6 +668,10 @@ void ULevel::UpdateAllOverlaps()
 			// Both components must have overlap events enabled (Unreal behavior)
 			if (!B->GetGenerateOverlapEvents())
 				continue;
+
+			// NOTE: A는 bNeedsOverlapUpdate가 true인 것 (최근 이동함)
+			// B는 Octree/DynamicPrims에서 온 것 (Static 또는 다른 Movable)
+			// Static-Static는 자동 제외됨 (Static은 bNeedsOverlapUpdate가 false)
 
 			// 중복 pair 방지 (정렬된 pair 생성)
 			TPair<UPrimitiveComponent*, UPrimitiveComponent*> Pair =
@@ -737,10 +758,17 @@ void ULevel::UpdateAllOverlaps()
 			// 상태 저장
 			PreviousOverlapState[Pair] = bIsOverlapping;
 		}
+
+		// 검사 완료 후 플래그 클리어 (다음 프레임에는 이동하지 않으면 검사 안 함)
+		A->SetNeedsOverlapUpdate(false);
 	}
 
 	// 4. EndOverlap 정리: 이전 프레임에 overlap이었지만 현재 프레임에 체크되지 않은 pair
 	//    (두 컴포넌트가 멀어져서 Octree 쿼리 결과에 나타나지 않은 경우)
+	//
+	//    중요: "체크되지 않음"의 의미를 구분해야 함!
+	//    1. 실제로 멀어져서 검사 안 됨 → EndOverlap 발생 ✅
+	//    2. 양쪽 다 안 움직여서 검사 안 함 → overlap 상태 유지 ✅
 	TArray<TPair<UPrimitiveComponent*, UPrimitiveComponent*>> PairsToRemove;
 
 	for (auto& [Pair, bWasOverlapping] : PreviousOverlapState)
@@ -754,24 +782,55 @@ void ULevel::UpdateAllOverlaps()
 			// 컴포넌트가 여전히 유효한지 확인
 			if (A && B)
 			{
-				// 이벤트 발생 시에만 로깅
-				UE_LOG("[UpdateAllOverlaps] Octree query missed - EndOverlap: [%s]%s <-> [%s]%s",
-					A->GetOwner() ? A->GetOwner()->GetName().ToString().c_str() : "None",
-					A->GetName().ToString().c_str(),
-					B->GetOwner() ? B->GetOwner()->GetName().ToString().c_str() : "None",
-					B->GetName().ToString().c_str());
+				// ✅ 핵심: CheckedComponents로 이번 프레임에 검사되었는지 확인
+				bool bAWasChecked = CheckedComponents.Contains(A);
+				bool bBWasChecked = CheckedComponents.Contains(B);
 
-				// EndOverlap - 양방향 상태 업데이트
-				A->RemoveOverlapInfo(B);
-				B->RemoveOverlapInfo(A);
+				// ProcessedPairs에 없는 이유를 판단:
+				// 1. 둘 중 하나라도 검사되었다면 → 실제로 멀어진 것 (EndOverlap 발생)
+				// 2. 둘 다 검사 안 되었다면 → 양쪽 다 안 움직임 (overlap 상태 유지)
+				bool bShouldCleanup = false;
 
-				// 양방향 delegate 브로드캐스트
-				A->NotifyComponentEndOverlap(B);
-				B->NotifyComponentEndOverlap(A);
+				if (bAWasChecked || bBWasChecked)
+				{
+					// 둘 중 하나라도 검사되었는데 ProcessedPairs에 없다
+					// = 실제로 멀어져서 Octree 쿼리에서 안 나옴
+					bShouldCleanup = true;
+				}
+				else
+				{
+					// 둘 다 검사 안 됨 (양쪽 다 안 움직임)
+					// → overlap 상태 유지
+					bShouldCleanup = false;
+				}
+
+				// 추가 체크: overlap events가 꺼진 경우도 cleanup
+				if (!A->GetGenerateOverlapEvents() || !B->GetGenerateOverlapEvents())
+				{
+					bShouldCleanup = true;
+				}
+
+				if (bShouldCleanup)
+				{
+					// 이벤트 발생 시에만 로깅
+					UE_LOG("[UpdateAllOverlaps] Cleanup - EndOverlap: [%s]%s <-> [%s]%s",
+						A->GetOwner() ? A->GetOwner()->GetName().ToString().c_str() : "None",
+						A->GetName().ToString().c_str(),
+						B->GetOwner() ? B->GetOwner()->GetName().ToString().c_str() : "None",
+						B->GetName().ToString().c_str());
+
+					// EndOverlap - 양방향 상태 업데이트
+					A->RemoveOverlapInfo(B);
+					B->RemoveOverlapInfo(A);
+
+					// 양방향 delegate 브로드캐스트
+					A->NotifyComponentEndOverlap(B);
+					B->NotifyComponentEndOverlap(A);
+
+					// 제거할 pair 목록에 추가
+					PairsToRemove.Add(Pair);
+				}
 			}
-
-			// 제거할 pair 목록에 추가
-			PairsToRemove.Add(Pair);
 		}
 	}
 

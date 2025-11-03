@@ -188,6 +188,7 @@ void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax)
 void UPrimitiveComponent::MarkAsDirty()
 {
 	bIsAABBCacheDirty = true;
+	bNeedsOverlapUpdate = true;  // 이동했으므로 overlap 재검사 필요 (Unreal-style)
 	Super::MarkAsDirty();
 
 	// Update octree position immediately (required for rendering/culling/picking)
@@ -216,6 +217,8 @@ UObject* UPrimitiveComponent::Duplicate()
 	PrimitiveComponent->bVisible = bVisible;
 	PrimitiveComponent->bCanPick = bCanPick;
 	PrimitiveComponent->bGenerateOverlapEvents = bGenerateOverlapEvents;
+	PrimitiveComponent->Mobility = Mobility;  // Mobility 복제
+	PrimitiveComponent->bNeedsOverlapUpdate = true;  // 복제된 컴포넌트는 overlap 체크 필요
 	PrimitiveComponent->bReceivesDecals = bReceivesDecals;
 
 	PrimitiveComponent->Vertices = Vertices;
@@ -249,13 +252,22 @@ void UPrimitiveComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		SetVisibility(VisibleString == "true");
 
 		FString GenerateOverlapString;
-		FJsonSerializer::ReadString(InOutHandle, "bGenerateOverlapEvents", GenerateOverlapString, "true");
+		FJsonSerializer::ReadString(InOutHandle, "bGenerateOverlapEvents", GenerateOverlapString, "false");
 		SetGenerateOverlapEvents(GenerateOverlapString == "true");
+
+		// Mobility 로드
+		FString MobilityString;
+		FJsonSerializer::ReadString(InOutHandle, "Mobility", MobilityString, "Movable");
+		if (MobilityString == "Static")
+			Mobility = EComponentMobility::Static;
+		else
+			Mobility = EComponentMobility::Movable;
 	}
 	else
 	{
 		InOutHandle["bVisible"] = bVisible ? "true" : "false";
 		InOutHandle["bGenerateOverlapEvents"] = bGenerateOverlapEvents ? "true" : "false";
+		InOutHandle["Mobility"] = (Mobility == EComponentMobility::Static) ? "Static" : "Movable";
 	}
 
 }
