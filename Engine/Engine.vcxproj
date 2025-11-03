@@ -100,6 +100,7 @@
       <AdditionalOptions>/utf-8 %(AdditionalOptions) /FS /bigobj</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -180,6 +181,7 @@
     <ClInclude Include="Source\Actor\Public\DecalActor.h" />
     <ClInclude Include="Source\Actor\Public\DecalSpotLightActor.h" />
     <ClInclude Include="Source\Actor\Public\DirectionalLight.h" />
+    <ClInclude Include="Source\Actor\Public\EnemySpawnerActor.h" />
     <ClInclude Include="Source\Actor\Public\GameMode.h" />
     <ClInclude Include="Source\Actor\Public\HeightFogActor.h" />
     <ClInclude Include="Source\Actor\Public\Light.h" />
@@ -405,6 +407,7 @@
     <ClCompile Include="Source\Actor\Private\DecalActor.cpp" />
     <ClCompile Include="Source\Actor\Private\DecalSpotLightActor.cpp" />
     <ClCompile Include="Source\Actor\Private\DirectionalLight.cpp" />
+    <ClCompile Include="Source\Actor\Private\EnemySpawnerActor.cpp" />
     <ClCompile Include="Source\Actor\Private\GameMode.cpp" />
     <ClCompile Include="Source\Actor\Private\HeightFogActor.cpp" />
     <ClCompile Include="Source\Actor\Private\Light.cpp" />

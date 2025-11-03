@@ -13,16 +13,17 @@ local currentRotation = FVector(0, 0, 0)
 -- [Health]
 local MaxHP = 5
 local currentHP = 0
-local gameMode = nils
-local totalTime = 0.0
+local gameMode = nil
 
 -- [Light Exposure]
-local LightIntensity = 0.0
 local LightCriticalPoint = 1.0
 local MaxLightExposureTime = 5.0
 local CurrentLightExposureTime = 5.0
 local bLightWarningShown = false
 local CurrentLightLevel = 0.0  -- 현재 빛 강도 저장
+
+-- [Animation]
+local totalTime = 0.0   -- 전체 경과 시간 (애니메이션용)
 
 ---
 -- [Health] HP가 0 이하가 되었는지 확인하고 GameMode의 EndGame을 호출
@@ -83,14 +84,14 @@ end
 -- @param dt (float): 이전 프레임으로부터 경과한 시간 (Delta Time)
 ---
 function Tick(dt)
-    if bStarted == false then
-        return
-    end
-    
-    totalTime = totalTime + dt
-    Movement(dt)
-    UpdateLightExposure(dt)
-    DrawUI()
+	if bStarted == false then
+		return
+	end
+
+	totalTime = totalTime + dt
+	Movement(dt)
+	UpdateLightExposure(dt)
+	DrawUI()
 end
 
 function Movement(dt)
@@ -156,24 +157,28 @@ function UpdateLightExposure(dt)
     if CurrentLightLevel >= LightCriticalPoint then
         -- 밝은 곳: 노출 시간 감소
         CurrentLightExposureTime = CurrentLightExposureTime - dt
-        
+
         if CurrentLightExposureTime < 0 then
             CurrentLightExposureTime = 0
         end
-        
-        -- 0초가 되면 경고 로그 (한 번만)
-        if CurrentLightExposureTime <= 0 and not bLightWarningShown then
-            Log("WARNING: Light Exposure Time has reached 0! Player is critically exposed!")
-            bLightWarningShown = true
+
+        -- 0초가 되면 적 스폰 요청 + 경고 로그
+        if CurrentLightExposureTime <= 0 then
+            RequestSpawnEnemy()
+
+            if not bLightWarningShown then
+                Log("WARNING: Light Exposure Time has reached 0! Spawning enemies!")
+                bLightWarningShown = true
+            end
         end
     else
         -- 어두운 곳: 노출 시간 회복
         CurrentLightExposureTime = CurrentLightExposureTime + dt
-        
+
         if CurrentLightExposureTime > MaxLightExposureTime then
             CurrentLightExposureTime = MaxLightExposureTime
         end
-        
+
         -- 회복되면 경고 플래그 리셋
         if CurrentLightExposureTime > 0 then
             bLightWarningShown = false
@@ -323,4 +328,24 @@ end
 ---
 function OnActorEndOverlap(overlappedActor, otherActor)
     -- Log("Overlap ended with: " .. otherActor.Name)
+end
+
+---
+-- [Enemy Spawning] EnemySpawner에게 스폰 요청
+---
+function RequestSpawnEnemy()
+    local world = GetWorld()
+    if world then
+        local level = world:GetLevel()
+        if level then
+            local actor = level:FindActorByName("EnemySpawner")
+            if actor then
+                local spawner = actor:ToAEnemySpawnerActor()
+                if spawner then
+                    spawner:RequestSpawn()
+                    -- 스폰 타이머는 EnemySpawner가 관리
+                end
+            end
+        end
+    end
 end
