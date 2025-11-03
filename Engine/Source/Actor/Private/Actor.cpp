@@ -37,6 +37,18 @@ TArray<FDelegateInfoBase*> AActor::GetDelegates() const
 	return Result;
 }
 
+UActorComponent* AActor::CreateDefaultSubobject(UClass* Class)
+{
+	UActorComponent* NewComponent = Cast<UActorComponent>(NewObject(Class, this));
+	if (NewComponent)
+	{
+		NewComponent->SetOwner(this);
+		OwnedComponents.Add(NewComponent);
+	}
+
+	return NewComponent;
+}
+
 AActor::~AActor()
 {
 	for (UActorComponent* Component : OwnedComponents)
@@ -169,6 +181,10 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 			FString bIsTemplateString;
 			FJsonSerializer::ReadString(InOutHandle, "bIsTemplate", bIsTemplateString, "false");
 			bIsTemplate = bIsTemplateString == "true" ? true : false;
+
+        	uint32 CollisionTagInt;
+			FJsonSerializer::ReadUint32(InOutHandle, "CollisionTag", CollisionTagInt, 0);
+			CollisionTag = static_cast<ECollisionTag>(CollisionTagInt);
         }
     }
     // 저장 (Save)
@@ -183,6 +199,7 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		InOutHandle["bCanEverTick"] = bCanEverTick ? "true" : "false";
 		InOutHandle["bTickInEditor"] = bTickInEditor ? "true" : "false";
 		InOutHandle["bIsTemplate"] = bIsTemplate ? "true" : "false";
+		InOutHandle["CollisionTag"] = static_cast<uint32>(CollisionTag);
 
         JSON ComponentsJson = json::Array();
 
@@ -294,6 +311,23 @@ const FVector& AActor::GetActorScale3D() const
 {
 	assert(RootComponent);
 	return RootComponent->GetRelativeScale3D();
+}
+
+UActorComponent* AActor::FindComponentByClass(UClass* ComponentClass) const
+{
+	if (!ComponentClass)
+	{
+		return nullptr;
+	}
+
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		if (Component && Component->GetClass()->IsChildOf(ComponentClass))
+		{
+			return Component;
+		}
+	}
+	return nullptr;
 }
 
 FVector AActor::GetActorForwardVector() const
@@ -428,6 +462,7 @@ UObject* AActor::Duplicate()
 	Actor->bCanEverTick = bCanEverTick;
 	Actor->bIsTemplate = bIsTemplate;
 	Actor->SetName(GetName());  // Name 복사
+	Actor->CollisionTag = CollisionTag;
 	return Actor;
 }
 

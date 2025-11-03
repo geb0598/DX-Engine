@@ -55,6 +55,24 @@ public:
 	USceneComponent* GetRootComponent() const { return RootComponent; }
 	TArray<UActorComponent*>& GetOwnedComponents()  { return OwnedComponents; }
 
+	/** UClass 기반으로 컴포넌트 찾기 (런타임) */
+	UActorComponent* FindComponentByClass(UClass* ComponentClass) const;
+
+	/** 템플릿 버전 - 특정 타입의 컴포넌트 찾기 */
+	template<typename T>
+	T* FindComponentByClass() const
+	{
+		static_assert(std::is_base_of_v<UActorComponent, T>, "T must inherit from UActorComponent");
+		return Cast<T>(FindComponentByClass(T::StaticClass()));
+	}
+
+	/** GetComponentByClass는 FindComponentByClass의 별칭 (언리얼 호환) */
+	template<typename T>
+	T* GetComponentByClass() const
+	{
+		return FindComponentByClass<T>();
+	}
+
 	void SetRootComponent(USceneComponent* InOwnedComponents) { RootComponent = InOwnedComponents; }
 
 	// World Access
@@ -67,15 +85,6 @@ public:
 	FVector GetActorForwardVector() const;
 	FVector GetActorUpVector() const;
 	FVector GetActorRightVector() const;
-
-	// === Overlap Query API ===
-	bool IsOverlappingActor(const AActor* OtherActor) const;
-	void GetOverlappingComponents(const AActor* OtherActor, TArray<UPrimitiveComponent*>& OutComponents) const;
-
-	// === Collision Event Delegates ===
-	// Public so users can bind to these events
-	FActorBeginOverlapSignature OnActorBeginOverlap;
-	FActorEndOverlapSignature OnActorEndOverlap;
 
 	/**
 	 * @brief IDelegateProvider 구현 - Actor의 Delegate 목록 반환
@@ -103,17 +112,7 @@ public:
 		return NewComponent;
 	}
 
-	UActorComponent* CreateDefaultSubobject(UClass* Class)
-	{
-		UActorComponent* NewComponent = Cast<UActorComponent>(::NewObject(Class, this));
-		if (NewComponent)
-		{
-			NewComponent->SetOwner(this);
-			OwnedComponents.Add(NewComponent);
-		}
-
-		return NewComponent;
-	}
+	UActorComponent* CreateDefaultSubobject(UClass* Class);
 
 	/**
 	 * @brief 런타임에 이 액터에 새로운 컴포넌트를 생성하고 등록합니다.
@@ -187,4 +186,20 @@ public:
 		const FVector& InLocation = FVector::Zero(),
 		const FQuaternion& InRotation = FQuaternion::Identity()
 	);
+// Collision Section
+public:
+	ECollisionTag GetCollisionTag() const { return CollisionTag; }
+	void SetCollisionTag(const ECollisionTag Tag) { CollisionTag = Tag; }
+
+	// === Overlap Query API ===
+	bool IsOverlappingActor(const AActor* OtherActor) const;
+	void GetOverlappingComponents(const AActor* OtherActor, TArray<UPrimitiveComponent*>& OutComponents) const;
+
+	// === Collision Event Delegates ===
+	// Public so users can bind to these events
+	FActorBeginOverlapSignature OnActorBeginOverlap;
+	FActorEndOverlapSignature OnActorEndOverlap;
+
+private:
+	ECollisionTag CollisionTag = ECollisionTag::None;
 };

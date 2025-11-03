@@ -1,16 +1,30 @@
 #include "pch.h"
 #include "Manager/Lua/Public/LuaBinder.h"
 #include "Actor/Public/GameMode.h"
+#include "Actor/Public/Pawn.h"
+#include "Actor/Public/Controller.h"
+#include "Actor/Public/PlayerController.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Manager/Input/Public/InputManager.h"
+#include "Manager/LocalPlayer/Public/LocalPlayerManager.h"
 
 void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 {
 	// --- UWorld ---
     LuaState.new_usertype<UWorld>("UWorld",
         "SpawnActor", sol::overload(
-            sol::resolve<AActor*(const std::string&)>(&UWorld::SpawnActor),
-            sol::resolve<AActor*(UClass*, JSON*)>(&UWorld::SpawnActor)
+            [](UWorld* World, const std::string& ClassName) -> AActor* {
+                return World->SpawnActor(ClassName);
+            },
+            [](UWorld* World, UClass* ActorClass, JSON* JsonData) -> AActor* {
+                return World->SpawnActor(ActorClass, JsonData);
+            },
+            [](UWorld* World, UClass* ActorClass, const FVector& Location) -> AActor* {
+                return World->SpawnActor(ActorClass, Location);
+            },
+            [](UWorld* World, UClass* ActorClass, const FVector& Location, const FQuaternion& Rotation) -> AActor* {
+                return World->SpawnActor(ActorClass, Location, Rotation);
+            }
         ),
         "GetTimeSeconds", &UWorld::GetTimeSeconds,
         "DestroyActor", &UWorld::DestroyActor,
@@ -133,6 +147,9 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		"UUID", sol::property(
 			&AActor::GetUUID
 		),
+		"Tag", sol::property(
+			[](AActor* Actor) -> int32 { return static_cast<int32>(Actor->GetCollisionTag()); }
+		),
 		"IsTemplate", sol::property(
 			&AActor::IsTemplate,
 			&AActor::SetIsTemplate
@@ -159,6 +176,32 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		"GetActorForwardVector", sol::resolve<FVector() const>(&AActor::GetActorForwardVector),
 		"GetActorUpVector", sol::resolve<FVector() const>(&AActor::GetActorUpVector),
 		"GetActorRightVector", sol::resolve<FVector() const>(&AActor::GetActorRightVector)
+	);
+
+	// --- APawn ---
+	LuaState.new_usertype<APawn>("APawn",
+		sol::base_classes, sol::bases<AActor>(),
+		"GetController", &APawn::GetController,
+		"bUseControllerRotationPitch", &APawn::bUseControllerRotationPitch,
+		"bUseControllerRotationYaw", &APawn::bUseControllerRotationYaw,
+		"bUseControllerRotationRoll", &APawn::bUseControllerRotationRoll,
+		"BaseEyeHeight", &APawn::BaseEyeHeight
+	);
+
+	// --- AController ---
+	LuaState.new_usertype<AController>("AController",
+		sol::base_classes, sol::bases<AActor>(),
+		"Possess", &AController::Possess,
+		"UnPossess", &AController::UnPossess,
+		"GetPawn", &AController::GetPawn,
+		"GetControlRotation", &AController::GetControlRotation,
+		"SetControlRotation", &AController::SetControlRotation
+	);
+
+	// --- APlayerController ---
+	LuaState.new_usertype<APlayerController>("APlayerController",
+		sol::base_classes, sol::bases<AController, AActor>(),
+		"IsLocalPlayerController", &APlayerController::IsLocalPlayerController
 	);
 
 	// --- AGameMode ---
@@ -275,24 +318,24 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 	// -- InputManager -- //
 	UInputManager& InputMgr = UInputManager::GetInstance();
 	LuaState.set_function("IsKeyDown", [&InputMgr](int32 Key) {
-		// PIE World에서 입력 차단 중이면 false 반환
-		if (GWorld && GWorld->IsIgnoringInput())
+		// LocalPlayerManager에서 입력 비활성화 시 false 반환
+		if (!ULocalPlayerManager::GetInstance().IsInputEnabled())
 		{
 			return false;
 		}
 		return InputMgr.IsKeyDown(static_cast<EKeyInput>(Key));
 	});
 	LuaState.set_function("IsKeyPressed", [&InputMgr](int32 Key) {
-		// PIE World에서 입력 차단 중이면 false 반환
-		if (GWorld && GWorld->IsIgnoringInput())
+		// LocalPlayerManager에서 입력 비활성화 시 false 반환
+		if (!ULocalPlayerManager::GetInstance().IsInputEnabled())
 		{
 			return false;
 		}
 		return InputMgr.IsKeyPressed(static_cast<EKeyInput>(Key));
 	});
 	LuaState.set_function("IsKeyReleased", [&InputMgr](int32 Key) {
-		// PIE World에서 입력 차단 중이면 false 반환
-		if (GWorld && GWorld->IsIgnoringInput())
+		// LocalPlayerManager에서 입력 비활성화 시 false 반환
+		if (!ULocalPlayerManager::GetInstance().IsInputEnabled())
 		{
 			return false;
 		}
@@ -305,8 +348,8 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 		return InputMgr.GetMousePosition();
 	});
 	LuaState.set_function("GetMouseDelta", [&InputMgr]() {
-		// PIE World에서 입력 차단 중이면 0 벡터 반환
-		if (GWorld && GWorld->IsIgnoringInput())
+		// LocalPlayerManager에서 입력 비활성화 시 0 벡터 반환
+		if (!ULocalPlayerManager::GetInstance().IsInputEnabled())
 		{
 			return FVector(0, 0, 0);
 		}

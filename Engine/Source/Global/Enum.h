@@ -217,3 +217,11 @@ enum class EViewType : uint8
 	OrthoFront,
 	OrthoBack
 };
+
+enum class ECollisionTag : uint8
+{
+	None = 0,
+	Player = 1,
+	Enemy = 2,
+	Wall = 3,
+};

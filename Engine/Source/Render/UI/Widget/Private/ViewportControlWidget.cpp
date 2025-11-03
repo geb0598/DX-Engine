@@ -392,18 +392,20 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 		}
 		else
 		{
-			// PIE 상태 텍스트 표시 (마우스 detach 상태가 아닐 때만)
+			// PIE 상태 텍스트 표시
 			if (!bIsPIEMouseDetached)
 			{
-				// 텍스트 세로 중앙 정렬
-				const float TextHeight = ImGui::GetTextLineHeight();
-				const float ToolbarHeight = 32.0f;
-				const float OffsetY = (ToolbarHeight - TextHeight) * 0.5f;
-				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + OffsetY);
+				// Dummy 공간 확보
+				ImGui::Dummy(ImVec2(0.0f, GizmoButtonSize));
 
-				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(200, 200, 100, 255));
-				ImGui::Text("Playing (Shift + F1 to detach mouse)");
-				ImGui::PopStyleColor();
+				// DrawList로 직접 텍스트 렌더링
+				ImDrawList* DL = ImGui::GetWindowDrawList();
+				const float TextHeight = ImGui::GetTextLineHeight();
+				const float ButtonCenterOffset = (GizmoButtonSize - TextHeight) * 0.5f;
+				ImVec2 TextPos = ImGui::GetCursorScreenPos();
+				TextPos.y = TextPos.y - GizmoButtonSize + ButtonCenterOffset;
+
+				DL->AddText(TextPos, IM_COL32(200, 200, 100, 255), "Playing (Shift + F1 to detach mouse)");
 			}
 		}
 
