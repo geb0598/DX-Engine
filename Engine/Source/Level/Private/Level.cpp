@@ -592,9 +592,11 @@ void ULevel::UpdateAllOverlaps()
 		return;
 
 	// 1. 모든 primitive component 수집
+	// UpdateAllOverlaps 도중 생성되는 액터가 존재할 수 있으므로 인덱스 기반 (iterator invalidation 방지)
 	TArray<UPrimitiveComponent*> AllPrimitives;
-	for (AActor* Actor : LevelActors)
+	for (int32 Idx = 0; Idx < LevelActors.Num(); ++Idx)
 	{
+		AActor* Actor = LevelActors[Idx];
 		if (!Actor)
 			continue;
 
