@@ -698,8 +698,18 @@ void ULevel::UpdateAllOverlaps()
 					// EndOverlap 발생
 					A->RemoveOverlapInfo(B);
 					B->RemoveOverlapInfo(A);
+
+					// WeakObjectPtr 사용: Delegate 내부에서 객체 삭제 가능성 대비
+					TWeakObjectPtr<UPrimitiveComponent> WeakA(A);
+					TWeakObjectPtr<UPrimitiveComponent> WeakB(B);
+
 					A->NotifyComponentEndOverlap(B);
-					B->NotifyComponentEndOverlap(A);
+
+					// A의 delegate 호출 후 B가 여전히 유효한지 확인
+					if (WeakA.IsValid() && WeakB.IsValid())
+					{
+						B->NotifyComponentEndOverlap(A);
+					}
 				}
 				PreviousOverlapState[Pair] = false;
 				continue;
@@ -718,8 +728,18 @@ void ULevel::UpdateAllOverlaps()
 					// EndOverlap 발생
 					A->RemoveOverlapInfo(B);
 					B->RemoveOverlapInfo(A);
+
+					// WeakObjectPtr 사용: Delegate 내부에서 객체 삭제 가능성 대비
+					TWeakObjectPtr<UPrimitiveComponent> WeakA(A);
+					TWeakObjectPtr<UPrimitiveComponent> WeakB(B);
+
 					A->NotifyComponentEndOverlap(B);
-					B->NotifyComponentEndOverlap(A);
+
+					// A의 delegate 호출 후 B가 여전히 유효한지 확인
+					if (WeakA.IsValid() && WeakB.IsValid())
+					{
+						B->NotifyComponentEndOverlap(A);
+					}
 				}
 				PreviousOverlapState[Pair] = false;
 				continue;
@@ -738,14 +758,22 @@ void ULevel::UpdateAllOverlaps()
 				B->AddOverlapInfo(A);
 
 				// 양방향 delegate 브로드캐스트 (using public API)
+				// WeakObjectPtr 사용: Delegate 내부에서 객체 삭제 가능성 대비
+				TWeakObjectPtr<UPrimitiveComponent> WeakA(A);
+				TWeakObjectPtr<UPrimitiveComponent> WeakB(B);
+
 				FHitResult HitResult;
 				HitResult.Actor = B->GetOwner();
 				HitResult.Component = B;
 				A->NotifyComponentBeginOverlap(B, HitResult);
 
-				HitResult.Actor = A->GetOwner();
-				HitResult.Component = A;
-				B->NotifyComponentBeginOverlap(A, HitResult);
+				// A의 delegate 호출 후 B가 여전히 유효한지 확인
+				if (WeakA.IsValid() && WeakB.IsValid())
+				{
+					HitResult.Actor = A->GetOwner();
+					HitResult.Component = A;
+					B->NotifyComponentBeginOverlap(A, HitResult);
+				}
 			}
 			else if (!bIsOverlapping && bWasOverlapping)
 			{
@@ -754,8 +782,17 @@ void ULevel::UpdateAllOverlaps()
 				B->RemoveOverlapInfo(A);
 
 				// 양방향 delegate 브로드캐스트 (using public API)
+				// WeakObjectPtr 사용: Delegate 내부에서 객체 삭제 가능성 대비
+				TWeakObjectPtr<UPrimitiveComponent> WeakA(A);
+				TWeakObjectPtr<UPrimitiveComponent> WeakB(B);
+
 				A->NotifyComponentEndOverlap(B);
-				B->NotifyComponentEndOverlap(A);
+
+				// A의 delegate 호출 후 B가 여전히 유효한지 확인
+				if (WeakA.IsValid() && WeakB.IsValid())
+				{
+					B->NotifyComponentEndOverlap(A);
+				}
 			}
 
 			// 상태 저장
@@ -828,8 +865,17 @@ void ULevel::UpdateAllOverlaps()
 					B->RemoveOverlapInfo(A);
 
 					// 양방향 delegate 브로드캐스트
+					// WeakObjectPtr 사용: Delegate 내부에서 객체 삭제 가능성 대비
+					TWeakObjectPtr<UPrimitiveComponent> WeakA(A);
+					TWeakObjectPtr<UPrimitiveComponent> WeakB(B);
+
 					A->NotifyComponentEndOverlap(B);
-					B->NotifyComponentEndOverlap(A);
+
+					// A의 delegate 호출 후 B가 여전히 유효한지 확인
+					if (WeakA.IsValid() && WeakB.IsValid())
+					{
+						B->NotifyComponentEndOverlap(A);
+					}
 
 					// 제거할 pair 목록에 추가
 					PairsToRemove.Add(Pair);
