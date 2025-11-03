@@ -52,6 +52,7 @@ function BeginPlay()
     if not GameMode then
         return
     end
+    GameMode.OnGameEnded = OnGameReset
 
     -- Template Actor는 Editor World에만 존재하므로
     local editorWorld = world:GetSourceEditorWorld()
@@ -112,6 +113,32 @@ function OnEnemySpawnRequested()
 
     -- 타이머 리셋
     spawnTimer = spawnDelay
+end
+
+-- Owner의 OnGameReset Delegate가 호출할 콜백 (게임 종료/리셋 시)
+function OnGameReset()
+    Log("[EnemySpawner] Game reset - destroying all enemies")
+
+    local destroyedCount = 0
+
+    -- 모든 생성된 Enemy 삭제
+    for i, weakEnemy in ipairs(spawnedEnemies) do
+        if weakEnemy:IsValid() then
+            local enemy = weakEnemy:Get()
+            if enemy then
+                world:DestroyActor(enemy)
+                destroyedCount = destroyedCount + 1
+            end
+        end
+    end
+
+    -- 배열 초기화
+    spawnedEnemies = {}
+
+    -- 타이머 리셋
+    spawnTimer = 0.0
+
+    Log("[EnemySpawner] Destroyed " .. tostring(destroyedCount) .. " enemies")
 end
 
 -- 내부 스폰 함수 (Player 위치 기준 반경 내 랜덤 스폰)
