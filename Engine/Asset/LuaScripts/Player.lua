@@ -13,14 +13,18 @@ local currentRotation = FVector(0, 0, 0)
 -- [Health]
 local MaxHP = 5
 local currentHP = 0
-local gameMode = nils
+local gameMode = nil
 local LightIntensity = 0
+local LightThreshold = 3.0   -- 누적 밝기 임계치 (원하는 값으로 조정)
 ---
 -- [Health] HP가 0 이하가 되었는지 확인하고 GameMode의 EndGame을 호출
 ---
 
 function OnLightIntensityChanged(current, previous)
     local delta = current - previous
+
+    -- 누적 밝기 업데이트 (예: 현재 프레임의 밝기를 더해 누적)
+    LightIntensity = LightIntensity + current
 
     -- 조명 변화 로그
     Log(string.format("Light Changed: %.3f -> %.3f (Delta: %.3f)",
@@ -90,6 +94,19 @@ function Tick(dt)
 
 	Movement(dt)
 	DrawUI()
+
+    -- 임계치 도달 시 적 스폰 요청 (스포너로 위임)
+    if LightIntensity >= LightThreshold then
+        if SpawnerAPI and SpawnerAPI.SpawnEnemyAt then
+            -- 플레이어 근처에 스폰 요청
+            SpawnerAPI.SpawnEnemyAt(Owner.Location)
+            -- 임계치만큼 차감하여 연속 스폰 가능하도록 처리
+            LightIntensity = LightIntensity - LightThreshold
+        else
+            -- 스포너가 아직 준비되지 않음 (레벨에 EnemySpawner 스크립트 배치 필요)
+            Log("[Player] SpawnerAPI not available; cannot spawn")
+        end
+    end
 end
 
 function Movement(dt)

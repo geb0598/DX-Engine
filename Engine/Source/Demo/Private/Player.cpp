@@ -26,5 +26,4 @@ void APlayer::InitializeComponents()
 	// LightSensorComponent
 	ULightSensorComponent* LightSensorComp = CreateDefaultSubobject<ULightSensorComponent>();
 	LightSensorComp->AttachToComponent(GetRootComponent());
-
 }
