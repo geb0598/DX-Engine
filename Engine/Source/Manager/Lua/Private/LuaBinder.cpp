@@ -3,6 +3,7 @@
 #include "Actor/Public/Actor.h"
 #include "Actor/Public/GameMode.h"
 #include "Actor/Public/EnemySpawnerActor.h"
+#include "Demo/Public/Player.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Input/Public/InputManager.h"
@@ -329,8 +330,8 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		"GetActorRightVector", sol::resolve<FVector() const>(&AActor::GetActorRightVector),
 
 		// Type-safe casting functions - add new actor types here using the macro
-		BIND_ACTOR_CAST(AEnemySpawnerActor)
-		// BIND_ACTOR_CAST(AnotherActorType),  // Example for future additions
+		BIND_ACTOR_CAST(AEnemySpawnerActor),
+		BIND_ACTOR_CAST(APlayer)
 	);
 
 	// --- AGameMode ---
@@ -405,6 +406,32 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 	LuaState.new_usertype<AEnemySpawnerActor>("AEnemySpawnerActor",
 		sol::base_classes, sol::bases<AActor>(),
 		"RequestSpawn", &AEnemySpawnerActor::RequestSpawn
+	);
+
+	// --- APlayer ---
+	LuaState.new_usertype<APlayer>("APlayer",
+		sol::base_classes, sol::bases<AActor>(),
+
+		"OnPlayerTracking", sol::writeonly_property(
+			[](APlayer* Self, const sol::function& LuaFunc) {
+				if (!Self || !LuaFunc.valid()) return;
+				TWeakObjectPtr<APlayer> WeakPlayer(Self);
+				Self->OnPlayerTracking.Add([WeakPlayer, LuaFunc](float LightLevel, FVector PlayerLocation)
+				{
+					if (WeakPlayer.IsValid())
+					{
+						auto Result = LuaFunc(LightLevel, PlayerLocation);
+						if (!Result.valid())
+						{
+							sol::error Err = Result;
+							UE_LOG_ERROR("[Lua Error] OnPlayerTracking: %s", Err.what());
+						}
+					}
+				});
+			}
+		),
+
+		"BroadcastTracking", &APlayer::BroadcastTracking
 	);
 
 	// --- WeakObjectPtr Bindings ---

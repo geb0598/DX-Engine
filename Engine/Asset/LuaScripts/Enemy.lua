@@ -6,6 +6,7 @@
 
 local moveSpeed = 0.0  -- BeginPlay에서 랜덤 설정
 local targetPlayer = nil
+local bInitialized = false  -- 첫 Tick 체크용
 
 -- Jump settings
 local initialZ = 0.0
@@ -13,25 +14,39 @@ local jumpTime = 0.0
 local jumpFrequency = 2.0  -- 점프 주기 (초)
 local jumpHeight = 30.0    -- 점프 높이
 
+-- Light-based tracking settings
+local currentLightLevel = 0.0      -- 플레이어가 받는 현재 빛 세기
+local targetPlayerLocation = nil   -- 플레이어의 현재 위치
+local lightThreshold = 1.0         -- 이 값 이상일 때만 추적 시작
+
 ---
--- Enemy가 생성될 때 호출됩니다.
+-- Player의 OnPlayerTracking delegate에서 호출되는 콜백
+-- @param lightLevel 플레이어가 받는 현재 빛 세기
+-- @param playerLocation 플레이어의 현재 위치 (FVector)
 ---
-function BeginPlay()
-    -- 각 Enemy마다 다른 속도 설정 (15~25 사이)
-    moveSpeed = 15.0 + math.random() * 10.0
+function Follow(lightLevel, playerLocation)
+    currentLightLevel = lightLevel
+    -- FVector 복사 (참조 문제 방지)
+    targetPlayerLocation = FVector(playerLocation.X, playerLocation.Y, playerLocation.Z)
+end
 
-    Log("[Enemy] Spawned at: " .. tostring(Owner.Location.X) .. ", " .. tostring(Owner.Location.Y) .. " with speed: " .. tostring(moveSpeed))
-
-    -- 초기 Z 위치 저장
-    initialZ = Owner.Location.Z
-
-    -- Player 찾기
+---
+-- 첫 번째 Tick에서 Player를 찾고 delegate 바인딩
+---
+local function InitializeTracking()
     local world = GetWorld()
-    local level = world and world:GetLevel() or nil
+    local level = world and world:GetLevel()
     if level then
-        targetPlayer = level:FindActorsOfClass("APlayer")[1]
-        if targetPlayer then
-            Log("[Enemy] Target player found")
+        local players = level:FindActorsOfClass("APlayer")
+        if players and #players > 0 then
+            local playerActor = players[1]
+            targetPlayer = playerActor:ToAPlayer()  -- AActor*를 APlayer*로 캐스팅
+            if targetPlayer then
+                targetPlayer.OnPlayerTracking = Follow
+                Log("[Enemy] Bound to Player's tracking delegate")
+            else
+                Log("[Enemy] WARNING: Player cast failed")
+            end
         else
             Log("[Enemy] WARNING: Player not found")
         end
@@ -39,42 +54,59 @@ function BeginPlay()
 end
 
 ---
+-- Enemy가 생성될 때 호출됩니다.
+---
+function BeginPlay()
+    -- 각 Enemy마다 다른 속도 설정 (15~25 사이)
+    moveSpeed = 80.0 + math.random() * 40.0
+
+    Log("[Enemy] Spawned at: " .. tostring(Owner.Location.X) .. ", " .. tostring(Owner.Location.Y) .. " with speed: " .. tostring(moveSpeed))
+
+    -- 초기 Z 위치 저장
+    -- initialZ = Owner.Location.Z
+
+    -- Player는 첫 Tick에서 찾기 (BeginPlay 순서 보장 안됨)
+end
+
+---
 -- 매 프레임 호출됩니다.
 ---
 function Tick(dt)
-    -- 간단한 추적 AI
-    if targetPlayer then
-        -- X/Y 평면에서만 방향 계산 (Z축 무시)
-        local enemyPos = Owner.Location
-        local playerPos = targetPlayer.Location
+    -- 첫 번째 Tick: Player 찾고 delegate 바인딩
+    if not bInitialized then
+        InitializeTracking()
+        bInitialized = true
+    end
 
+    local enemyPos = Owner.Location
+    local newLocation = FVector(enemyPos.X, enemyPos.Y, enemyPos.Z)
+
+    -- 점프는 항상 수행 (Sin 곡선)
+    jumpTime = jumpTime + dt
+    local jumpOffset = math.abs(math.sin(jumpTime * math.pi * jumpFrequency)) * jumpHeight
+    newLocation.Z = initialZ + jumpOffset
+
+    -- 추적은 light level이 threshold 이상일 때만 수행
+    if targetPlayerLocation and currentLightLevel >= lightThreshold then
+        -- X/Y 평면에서만 방향 계산 (Z축 무시)
         local direction = FVector(
-            playerPos.X - enemyPos.X,
-            playerPos.Y - enemyPos.Y,
+            targetPlayerLocation.X - enemyPos.X,
+            targetPlayerLocation.Y - enemyPos.Y,
             0.0  -- Z축은 항상 0으로 설정
         )
 
-        if direction:Length() >= 0.0 then
-            direction:Normalize()
+        direction:Normalize()  -- Normalize가 이미 0 나누기 처리함
 
-            -- X/Y 평면에서만 이동
-            local newLocation = FVector(
-                enemyPos.X + direction.X * moveSpeed * dt,
-                enemyPos.Y + direction.Y * moveSpeed * dt,
-                enemyPos.Z  -- Z는 유지
-            )
+        -- X/Y 평면에서만 이동
+        newLocation.X = enemyPos.X + direction.X * moveSpeed * dt
+        newLocation.Y = enemyPos.Y + direction.Y * moveSpeed * dt
 
-            -- 점프 효과 (Sin 곡선)
-            jumpTime = jumpTime + dt
-            local jumpOffset = math.abs(math.sin(jumpTime * math.pi * jumpFrequency)) * jumpHeight
-            newLocation.Z = initialZ + jumpOffset
-
-            Owner.Location = newLocation
-
-            -- Player 방향을 바라보도록 회전 (X/Y 평면 기준)
-            Owner.Rotation = FQuaternion.MakeFromDirection(direction)
-        end
+        -- Player 방향을 바라보도록 회전 (X/Y 평면 기준)
+        Owner.Rotation = FQuaternion.MakeFromDirection(direction)
     end
+    -- else: 어두울 때는 제자리에서 점프만
+
+    Owner.Location = newLocation
 end
 
 ---

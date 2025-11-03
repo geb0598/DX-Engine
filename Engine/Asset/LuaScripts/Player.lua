@@ -10,6 +10,7 @@ local bGameEnded = false
 local cachedWorld = nil
 local cachedLevel = nil
 local cachedEnemySpawner = nil
+local scriptComponent = nil  -- Player의 ScriptComponent (Delegate 등록용)
 
 -- [Movement]
 local moveSpeed = 100.0
@@ -82,7 +83,13 @@ end
 
 function OnLightIntensityChanged(current, previous)
     CurrentLightLevel = current
-    
+
+    -- Enemy에게 추적 정보 브로드캐스트
+    local player = Owner:ToAPlayer()
+    if player then
+        player:BroadcastTracking(current, Owner.Location)
+    end
+
     local delta = current - previous
     if delta > 0 then
         Log(string.format("Light Changed: %.3f -> %.3f (Delta: %.3f)", previous, current, delta))
