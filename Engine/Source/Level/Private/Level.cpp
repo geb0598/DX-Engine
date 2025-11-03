@@ -928,3 +928,112 @@ bool ULevel::SweepComponentMulti(
 
 	return OutOverlappingComponents.Num() > 0;
 }
+
+bool ULevel::SweepActorSingle(
+	AActor* Actor,
+	const FVector& TargetLocation,
+	FHitResult& OutHit,
+	ECollisionTag FilterTag)
+{
+	if (!Actor)
+		return false;
+
+	// Actor의 모든 PrimitiveComponent를 가져옴
+	TArray<UActorComponent*>& Components = Actor->GetOwnedComponents();
+
+	float ClosestDistance = FLT_MAX;
+	bool bFoundHit = false;
+	FHitResult ClosestHit;
+
+	// 각 PrimitiveComponent에 대해 sweep 테스트
+	for (UActorComponent* Comp : Components)
+	{
+		UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Comp);
+		if (!PrimComp)
+			continue;
+
+		// 이 컴포넌트에 대해 sweep 테스트
+		FHitResult TempHit;
+		if (SweepComponentSingle(PrimComp, TargetLocation, TempHit))
+		{
+			// CollisionTag 필터링
+			if (FilterTag != ECollisionTag::None && TempHit.Actor)
+			{
+				if (TempHit.Actor->GetCollisionTag() != FilterTag)
+					continue;  // 태그가 일치하지 않으면 스킵
+			}
+
+			// 거리 계산 (Actor 중심에서 충돌 지점까지)
+			FVector ActorLocation = Actor->GetActorLocation();
+			float Distance = (TempHit.Location - ActorLocation).Length();
+
+			if (Distance < ClosestDistance)
+			{
+				ClosestDistance = Distance;
+				ClosestHit = TempHit;
+				bFoundHit = true;
+			}
+		}
+	}
+
+	if (bFoundHit)
+	{
+		OutHit = ClosestHit;
+		return true;
+	}
+
+	return false;
+}
+
+bool ULevel::SweepActorMulti(
+	AActor* Actor,
+	const FVector& TargetLocation,
+	TArray<UPrimitiveComponent*>& OutOverlappingComponents,
+	ECollisionTag FilterTag)
+{
+	if (!Actor)
+		return false;
+
+	OutOverlappingComponents.Empty();
+
+	// Actor의 모든 PrimitiveComponent를 가져옴
+	TArray<UActorComponent*>& Components = Actor->GetOwnedComponents();
+
+	// 중복 제거용 (여러 컴포넌트가 같은 대상과 충돌할 수 있음)
+	TSet<UPrimitiveComponent*> UniqueCollisions;
+
+	// 각 PrimitiveComponent에 대해 sweep 테스트
+	for (UActorComponent* Comp : Components)
+	{
+		UPrimitiveComponent* PrimComp = Cast<UPrimitiveComponent>(Comp);
+		if (!PrimComp)
+			continue;
+
+		// 이 컴포넌트에 대해 sweep 테스트
+		TArray<UPrimitiveComponent*> TempOverlaps;
+		if (SweepComponentMulti(PrimComp, TargetLocation, TempOverlaps))
+		{
+			// 결과를 UniqueCollisions에 추가 (필터링 적용)
+			for (UPrimitiveComponent* OverlapComp : TempOverlaps)
+			{
+				// CollisionTag 필터링
+				if (FilterTag != ECollisionTag::None)
+				{
+					AActor* OverlapActor = OverlapComp->GetOwner();
+					if (OverlapActor && OverlapActor->GetCollisionTag() != FilterTag)
+						continue;  // 태그가 일치하지 않으면 스킵
+				}
+
+				UniqueCollisions.Add(OverlapComp);
+			}
+		}
+	}
+
+	// TSet을 TArray로 변환
+	for (UPrimitiveComponent* Comp : UniqueCollisions)
+	{
+		OutOverlappingComponents.Add(Comp);
+	}
+
+	return OutOverlappingComponents.Num() > 0;
+}

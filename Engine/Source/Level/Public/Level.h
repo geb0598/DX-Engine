@@ -200,6 +200,38 @@ public:
 		TArray<UPrimitiveComponent*>& OutOverlappingComponents
 	);
 
+	/**
+	 * @brief 액터가 특정 위치로 이동했을 때 첫 번째로 충돌하는 컴포넌트 반환 (실제 이동 없이 테스트만)
+	 * @param Actor 테스트할 액터 (모든 PrimitiveComponent 검사)
+	 * @param TargetLocation 이동할 목표 위치 (world space)
+	 * @param OutHit 충돌 정보 (충돌한 컴포넌트, 액터 등)
+	 * @param FilterTag 필터링할 CollisionTag (None이면 모든 태그 허용)
+	 * @return 충돌이 감지되면 true
+	 * @note Actor의 모든 PrimitiveComponent를 기준으로 sweep 테스트 수행 (가장 가까운 충돌 반환)
+	 */
+	bool SweepActorSingle(
+		AActor* Actor,
+		const FVector& TargetLocation,
+		struct FHitResult& OutHit,
+		ECollisionTag FilterTag = ECollisionTag::None
+	);
+
+	/**
+	 * @brief 액터가 특정 위치로 이동했을 때 충돌하는 모든 컴포넌트 반환 (실제 이동 없이 테스트만)
+	 * @param Actor 테스트할 액터 (모든 PrimitiveComponent 검사)
+	 * @param TargetLocation 이동할 목표 위치 (world space)
+	 * @param OutOverlappingComponents 충돌이 감지된 모든 컴포넌트 배열 (출력)
+	 * @param FilterTag 필터링할 CollisionTag (None이면 모든 태그 허용)
+	 * @return 하나 이상의 충돌이 감지되면 true
+	 * @note Actor의 모든 PrimitiveComponent를 기준으로 sweep 테스트 수행
+	 */
+	bool SweepActorMulti(
+		AActor* Actor,
+		const FVector& TargetLocation,
+		TArray<UPrimitiveComponent*>& OutOverlappingComponents,
+		ECollisionTag FilterTag = ECollisionTag::None
+	);
+
 private:
 	/**
 	 * @brief 이전 프레임의 overlap 상태 추적 (변화 감지용)
