@@ -8,6 +8,7 @@
 #include "Level/Public/Level.h"
 #include "Physics/Public/HitResult.h"
 #include "Global/Enum.h"
+#include "Render/UI/Overlay/Public/D2DOverlayManager.h"
 
 void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 {
@@ -21,7 +22,8 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
         "DestroyActor", &UWorld::DestroyActor,
         "GetGameMode", &UWorld::GetGameMode,
         "GetLevel", &UWorld::GetLevel,
-        "FindTemplateActorOfName", &UWorld::FindTemplateActorOfName
+        "FindTemplateActorOfName", &UWorld::FindTemplateActorOfName,
+        "GetSourceEditorWorld", &UWorld::GetSourceEditorWorld
     );
 
     // --- GWorld 인스턴스 접근자 (전역 함수) ---
@@ -31,6 +33,91 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 
 	// --- ULevel ---
 	LuaState.new_usertype<ULevel>("ULevel",
+		// Get all actors in the level (returns Lua table)
+		"GetLevelActors", [](ULevel* Level, sol::this_state ts) -> sol::table {
+			sol::state_view lua(ts);
+			sol::table result = lua.create_table();
+
+			if (!Level)
+				return result;
+
+			const TArray<AActor*>& Actors = Level->GetLevelActors();
+			for (int i = 0; i < Actors.Num(); ++i)
+			{
+				result[i + 1] = Actors[i];  // Lua는 1부터 시작
+			}
+			return result;
+		},
+
+		// Get all template actors in the level (returns Lua table)
+		"GetTemplateActors", [](ULevel* Level, sol::this_state ts) -> sol::table {
+			sol::state_view lua(ts);
+			sol::table result = lua.create_table();
+
+			if (!Level)
+				return result;
+
+			const TArray<AActor*>& Actors = Level->GetTemplateActors();
+			for (int i = 0; i < Actors.Num(); ++i)
+			{
+				result[i + 1] = Actors[i];
+			}
+			return result;
+		},
+
+		// Find template actor by name
+		"FindTemplateActorByName", [](ULevel* Level, const std::string& InName) -> sol::optional<AActor*> {
+			if (!Level)
+				return sol::nullopt;
+			AActor* FoundActor = Level->FindTemplateActorByName(FName(InName));
+			if (FoundActor)
+				return FoundActor;
+			return sol::nullopt;
+		},
+
+		// Find all template actors by class (returns Lua table)
+		"FindTemplateActorsOfClass", [](ULevel* Level, UClass* InClass, sol::this_state ts) -> sol::table {
+			sol::state_view lua(ts);
+			sol::table result = lua.create_table();
+
+			if (!Level || !InClass)
+				return result;
+
+			TArray<AActor*> Actors = Level->FindTemplateActorsOfClass(InClass);
+			for (int i = 0; i < Actors.Num(); ++i)
+			{
+				result[i + 1] = Actors[i];
+			}
+			return result;
+		},
+
+		// Find regular actor by name (template actors excluded)
+		"FindActorByName", [](ULevel* Level, const std::string& InName) -> sol::optional<AActor*> {
+			if (!Level)
+				return sol::nullopt;
+			AActor* FoundActor = Level->FindActorByName(FName(InName));
+			if (FoundActor)
+				return FoundActor;
+			return sol::nullopt;
+		},
+
+		// Find all regular actors by class (returns Lua table, template actors excluded)
+		// 클래스명 문자열로 찾기
+		"FindActorsOfClass", [](ULevel* Level, const std::string& ClassName, sol::this_state ts) -> sol::table {
+			sol::state_view lua(ts);
+			sol::table result = lua.create_table();
+
+			if (!Level)
+				return result;
+
+			TArray<AActor*> Actors = Level->FindActorsOfClassByName(FString(ClassName));
+			for (int i = 0; i < Actors.Num(); ++i)
+			{
+				result[i + 1] = Actors[i];
+			}
+			return result;
+		},
+
 		// Sweep single collision test for Actor (returns first hit)
 		// Tests all PrimitiveComponents of the Actor
 		// Optional FilterTag parameter: only returns hits with matching CollisionTag
@@ -396,4 +483,75 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 		}
 		return InputMgr.GetMouseDelta();
 	});
+
+	// -- D2D Overlay Manager -- //
+    sol::table DebugDraw = LuaState.create_table("DebugDraw");
+
+	// --- Line ---
+	// Lua: DebugDraw.Line(startX, startY, endX, endY, r, g, b, a, thickness)
+	DebugDraw.set_function("Line",
+	    [](float startX, float startY, float endX, float endY,
+	       float cR, float cG, float cB, float cA,
+	       float Thickness)
+	    {
+	        D2D1_POINT_2F Start = D2D1::Point2F(startX, startY);
+	        D2D1_POINT_2F End = D2D1::Point2F(endX, endY);
+	        D2D1_COLOR_F color = D2D1::ColorF(cR, cG, cB, cA);
+
+	        FD2DOverlayManager::GetInstance().AddLine(Start, End, color, Thickness);
+	    }
+	);
+
+	// --- Ellipse ---
+	// Lua: DebugDraw.Ellipse(cX, cY, rX, rY, r, g, b, a, bFilled)
+	DebugDraw.set_function("Ellipse",
+	    [](float cX, float cY, float RadiusX, float RadiusY,
+	       float cR, float cG, float cB, float cA,
+	       bool bFilled)
+	    {
+	        D2D1_POINT_2F Center = D2D1::Point2F(cX, cY);
+	        D2D1_COLOR_F Color = D2D1::ColorF(cR, cG, cB, cA);
+
+	        FD2DOverlayManager::GetInstance().AddEllipse(Center, RadiusX, RadiusY, Color, bFilled);
+	    }
+	);
+
+	// --- Rectangle ---
+	// Lua: DebugDraw.Rectangle(l, t, r, b, r, g, b, a, bFilled)
+	DebugDraw.set_function("Rectangle",
+	    [](float rL, float rT, float rR, float rB,
+	       float cR, float cG, float cB, float cA,
+	       bool bFilled)
+	    {
+	        D2D1_RECT_F Rect = D2D1::RectF(rL, rT, rR, rB);
+	        D2D1_COLOR_F Color = D2D1::ColorF(cR, cG, cB, cA);
+
+	        FD2DOverlayManager::GetInstance().AddRectangle(Rect, Color, bFilled);
+	    }
+	);
+
+	// --- Text ---
+	// Lua: DebugDraw.Text(text, l, t, r, b, r, g, b, a, fontSize, bBold, bCentered, fontName)
+	DebugDraw.set_function("Text",
+	    [](const std::string& Text,
+	       float rL, float rT, float rR, float rB,
+	       float cR, float cG, float cB, float cA,
+	       float FontSize, bool bBold, bool bCentered, const std::string& FontName)
+	    {
+	        // 1. C++ 람다 *내부*에서 구조체를 직접 조립
+	        D2D1_RECT_F Rect = D2D1::RectF(rL, rT, rR, rB);
+	        D2D1_COLOR_F Color = D2D1::ColorF(cR, cG, cB, cA);
+
+	        // 2. wstring 변환
+	        std::wstring w_text = StringToWideString(Text);
+	        std::wstring w_fontName = StringToWideString(FontName);
+
+	        // 3. AddText 호출 (std::wstring 버전 사용)
+	        FD2DOverlayManager::GetInstance().AddText(
+	            w_text, Rect, Color, FontSize, bBold, bCentered, w_fontName
+	        );
+	    }
+	);
+	// -- Math -- //
+	LuaState.set_function("Clamp", &Clamp<float>);
 }

@@ -45,7 +45,12 @@ public:
 
 	// Template Actor 검색 함수
 	AActor* FindTemplateActorByName(const FName& InName) const;
-	TArray<AActor*> FindTemplateActorsByClass(UClass* InClass) const;
+	TArray<AActor*> FindTemplateActorsOfClass(UClass* InClass) const;
+
+	// Regular Actor 검색 함수 (Template Actor 제외)
+	AActor* FindActorByName(const FName& InName) const;
+	TArray<AActor*> FindActorsOfClass(UClass* InClass) const;
+	TArray<AActor*> FindActorsOfClassByName(const FString& ClassName) const;
 
 	void AddLevelComponent(AActor* Actor);
 
