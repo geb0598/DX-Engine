@@ -7,10 +7,11 @@ void FD2DOverlayManager::BeginCollect(UCamera* InCamera, const D3D11_VIEWPORT& I
 	CurrentCamera = InCamera;
 	CurrentViewport = InViewport;
 
-	LineCommands.clear();
-	EllipseCommands.clear();
-	RectangleCommands.clear();
-	TextCommands.clear();
+	// 이미 Flush 시 Clear
+	// LineCommands.clear();
+	// EllipseCommands.clear();
+	// RectangleCommands.clear();
+	// TextCommands.clear();
 }
 
 void FD2DOverlayManager::AddLine(const D2D1_POINT_2F& Start, const D2D1_POINT_2F& End, const D2D1_COLOR_F& Color, float Thickness)
@@ -44,6 +45,19 @@ void FD2DOverlayManager::AddRectangle(const D2D1_RECT_F& Rect, const D2D1_COLOR_
 }
 
 void FD2DOverlayManager::AddText(const wchar_t* Text, const D2D1_RECT_F& Rect, const D2D1_COLOR_F& Color, float FontSize, bool bBold, bool bCentered, const wchar_t* FontName)
+{
+	FTextCommand Cmd;
+	Cmd.Text = Text;
+	Cmd.Rect = Rect;
+	Cmd.Color = Color;
+	Cmd.FontSize = FontSize;
+	Cmd.bBold = bBold;
+	Cmd.bCentered = bCentered;
+	Cmd.FontName = FontName;
+	TextCommands.push_back(Cmd);
+}
+
+void FD2DOverlayManager::AddText(const std::wstring& Text, const D2D1_RECT_F& Rect, const D2D1_COLOR_F& Color, float FontSize, bool bBold, bool bCentered, const std::wstring& FontName)
 {
 	FTextCommand Cmd;
 	Cmd.Text = Text;

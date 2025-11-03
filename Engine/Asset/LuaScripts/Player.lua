@@ -3,6 +3,8 @@
 -- Owner: 이 스크립트 컴포넌트를 소유한 C++ Actor (AActor) 객체입니다.
 ------------------------------------------------------------------
 
+local bStarted = false
+
 -- [Movement]
 local moveSpeed = 10.0
 local rotationSpeed = 80.0
@@ -30,10 +32,10 @@ end
 ---
 local function TakeDamage(damage)
     if currentHP <= 0 then return end
-    
+
     currentHP = currentHP - damage
     Log(string.format("PlayerHealth: Took %d damage. HP remaining: %d", damage, currentHP))
-    
+
     CheckForDeath()
 end
 
@@ -45,19 +47,15 @@ end
 -- 게임이 시작되거나 액터가 스폰될 때 1회 호출됩니다.
 ---
 function BeginPlay()
-    -- [Health] HP 및 GameMode 초기화
-    currentHP = MaxHP
+	bStarted = false
     local world = GetWorld()
     if world then
         gameMode = world:GetGameMode()
-        gameMode:StartGame()
+        gameMode.OnGameStarted = StartGame
         gameMode.OnGameEnded = EndedTest
+        gameMode:StartGame()
     end
-    
-    -- [Movement] 회전값 초기화
-    currentRotation = Owner.Rotation:ToEuler()
-    
-    Log(string.format("Player.lua BeginPlay. Owner: %s, HP: %d", Owner.UUID, currentHP))
+    StartGame()
 end
 
 ---
@@ -65,12 +63,21 @@ end
 -- @param dt (float): 이전 프레임으로부터 경과한 시간 (Delta Time)
 ---
 function Tick(dt)
+	if bStarted == false then
+		return
+	end
+
+	Movement(dt)
+	DrawUI()
+end
+
+function Movement(dt)
     --- [Movement] 이동 ---
     local ForwardScale = 0.0
     local RightScale = 0.0
     local Forward = Owner:GetActorForwardVector()
     local Right = Owner:GetActorRightVector()
-    
+
     if IsKeyDown(Keys.W) then
         ForwardScale = ForwardScale + 1.0
     end
@@ -83,30 +90,87 @@ function Tick(dt)
     if IsKeyDown(Keys.D) then
         RightScale = RightScale + 1.0
     end
-
     MoveDirection = Forward * ForwardScale + Right * RightScale
     MoveDirection.Z = 0 -- (Z축 이동 방지)
-    
+
     if MoveDirection:Length() > 0.0 then
         MoveDirection:Normalize()
-        -- [중요] 이동 적용 (이 직후 C++에서 Overlap 이벤트가 발생할 수 있음)
-        Owner.Location = Owner.Location + (MoveDirection * moveSpeed * dt)
+        -- 1. 이번 프레임에 이동할 목표 위치를 계산합니다.
+        local targetLocation = Owner.Location + (MoveDirection * moveSpeed * dt)
+
+        -- 2. 월드와 레벨을 가져옵니다.
+        local world = GetWorld()
+        local level = nil
+        if world then
+            level = world:GetLevel()
+        end
+
+        -- 3. 레벨의 Sweep 함수를 호출하여 'Wall' 태그와 충돌하는지 확인합니다.
+        local hitResult = nil
+        if level then
+            hitResult = level:SweepActorSingle(Owner, targetLocation, CollisionTag.Wall)
+        end
+
+        -- 4. hitResult가 nil일 때 (즉, 아무것도 부딪히지 않았을 때)만 이동을 적용합니다.
+        if hitResult == nil then
+            Owner.Location = targetLocation
+        else
+            Log("Movement blocked by wall.")
+        end
+        -------------------------------------------------
     end
     
     --- [Movement] 회전 ---
     local mouseDelta = GetMouseDelta()
     
     currentRotation.X = 0
-    currentRotation.Y = currentRotation.Y - (mouseDelta.Y * rotationSpeed * dt) -- Pitch
+    local newPitch = currentRotation.Y - (mouseDelta.Y * rotationSpeed * dt)
+    currentRotation.Y = Clamp(newPitch, -89.0, 89.0)
     currentRotation.Z = currentRotation.Z + (mouseDelta.X * rotationSpeed * dt) -- Yaw
     
     Owner.Rotation = FQuaternion.FromEuler(currentRotation)
+end
+
+function DrawUI()
+    local hp_text = string.format("HP: %d", currentHP)
+
+    local text_pos_x = 100.0
+    local text_pos_y = 100.0
+    local text_width = 300.0
+    local text_height = 50.0
+
+    local r_left = text_pos_x
+    local r_top = text_pos_y
+    local r_right = text_pos_x + text_width
+    local r_bottom = text_pos_y + text_height
+
+    local c_r = 0.1
+    local c_g = 1.0
+    local c_b = 0.1
+    local c_a = 1.0
+
+    -- 텍스트 그리기 호출
+    DebugDraw.Text(
+        hp_text, 
+        r_left, r_top, r_right, r_bottom,  -- Rect(l, t, r, b)
+        c_r, c_g, c_b, c_a,               -- Color(r, g, b, a)
+        20.0, false, false, "Consolas"
+    )
+end
+
+function StartGame()
+	bStarted = true
+    currentHP = MaxHP
+    currentRotation = Owner.Rotation:ToEuler()
+
+    Log(string.format("Player.lua BeginPlay. Owner: %s, HP: %d", Owner.UUID, currentHP))
 end
 
 ---
 -- 게임이 종료되거나 액터가 파괴될 때 1회 호출됩니다.
 ---
 function EndPlay()
+	bStarted = false
     Log("Player.lua EndPlay.")
 end
 
@@ -115,12 +179,12 @@ end
 ---
 function OnActorBeginOverlap(overlappedActor, otherActor)
     Log("Player: Overlap started with: " .. otherActor.Name)
-    
+
     -- [Health] 적 태그 확인
     if otherActor.Tag == CollisionTag.Enemy then
         TakeDamage(1)
     end
-    
+
     -- [Collision] 벽 태그 확인
     if otherActor.Tag == CollisionTag.Wall then
         Log("Hit a wall! Reverting location.")
