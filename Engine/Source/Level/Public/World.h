@@ -62,26 +62,6 @@ public:
 	// Actor Spawn & Destroy
 	AActor* SpawnActor(UClass* InActorClass, JSON* ActorJsonData = nullptr);
 	AActor* SpawnActor(const std::string& ClassName); // Helper for Lua binding (string overload)
-
-	// Location과 Rotation을 지정하여 Actor 생성
-	AActor* SpawnActor(UClass* InActorClass, const FVector& InLocation, const FQuaternion& InRotation = FQuaternion::Identity());
-
-	// Location과 Rotation 지정 템플릿 함수 버전
-	template<typename T>
-	T* SpawnActor(const FVector& InLocation, const FQuaternion& InRotation = FQuaternion::Identity())
-	{
-		static_assert(std::is_base_of_v<AActor, T>, "T must derive from AActor");
-		return Cast<T>(SpawnActor(T::StaticClass(), InLocation, InRotation));
-	}
-
-	// 기본 위치 / 회전 템플릿 함수 버전
-	template<typename T>
-	T* SpawnActor()
-	{
-		static_assert(std::is_base_of_v<AActor, T>, "T must derive from AActor");
-		return Cast<T>(SpawnActor(T::StaticClass()));
-	}
-
 	bool DestroyActor(AActor* InActor); // Level의 void MarkActorForDeletion(AActor * InActor) 기능을 DestroyActor가 가짐
 
 	// Template Actor 검색 (Lua binding용 wrapper)

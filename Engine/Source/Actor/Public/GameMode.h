@@ -5,9 +5,6 @@ DECLARE_DELEGATE(FOnGameInit);
 DECLARE_DELEGATE(FOnGameStart);
 DECLARE_DELEGATE(FOnGameEnd);
 
-class APawn;
-class APlayerController;
-
 class AGameMode : public AActor
 {
 	DECLARE_CLASS(AGameMode, AActor)
@@ -18,6 +15,7 @@ public:
 	FOnGameStart OnGameStarted;
 	FOnGameEnd OnGameEnded;
 
+public:
 	AGameMode() = default;
 	void BeginPlay() override;
 	void EndPlay() override;
@@ -29,15 +27,11 @@ public:
 	bool IsGameRunning() const { return bGameRunning; }
 	bool IsGameEnded() const { return bGameEnded; }
 
-	APawn* GetPlayerPawn() const { return PlayerPawn; }
-	APlayerController* GetPlayerController() const { return PlayerController; }
-
 protected:
-	APawn* PlayerPawn = nullptr;
-	APlayerController* PlayerController = nullptr;
+	AActor* Player = nullptr;
 
 private:
-	UCamera* MainCamera = nullptr;
+	class UCamera* MainCamera = nullptr;
 	bool bGameRunning = false;
 	bool bGameEnded = false;
 };
