@@ -9,15 +9,15 @@ class UPointLightComponent;
 class ULightComponent;
 class FOctree;
 
-// Custom hash function for pair of pointers (used in overlap tracking)
+// Custom hash function for pair of WeakObjectPtr (used in overlap tracking)
 struct PairHash
 {
-	template <typename T1, typename T2>
-	std::size_t operator()(const std::pair<T1, T2>& Pair) const
+	template <typename T>
+	std::size_t operator()(const std::pair<TWeakObjectPtr<T>, TWeakObjectPtr<T>>& Pair) const
 	{
-		// Combine hashes of both pointers
-		std::size_t H1 = std::hash<T1>{}(Pair.first);
-		std::size_t H2 = std::hash<T2>{}(Pair.second);
+		// WeakObjectPtr.Get()으로 raw pointer를 가져와서 해시
+		std::size_t H1 = std::hash<T*>{}(Pair.first.Get());
+		std::size_t H2 = std::hash<T*>{}(Pair.second.Get());
 		return H1 ^ (H2 << 1); // Simple hash combination
 	}
 };
@@ -241,8 +241,8 @@ public:
 private:
 	/**
 	 * @brief 이전 프레임의 overlap 상태 추적 (변화 감지용)
-	 * @note Key: 정렬된 component pair (A < B 기준)
+	 * @note Key: 정렬된 component pair (A < B 기준, WeakObjectPtr로 댕글링 포인터 방지)
 	 *       Value: overlap 상태 (true = overlapping, false = not overlapping)
 	 */
-	TMap<TPair<UPrimitiveComponent*, UPrimitiveComponent*>, bool, PairHash> PreviousOverlapState;
+	TMap<TPair<TWeakObjectPtr<UPrimitiveComponent>, TWeakObjectPtr<UPrimitiveComponent>>, bool, PairHash> PreviousOverlapState;
 };

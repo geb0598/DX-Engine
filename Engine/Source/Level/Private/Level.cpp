@@ -609,7 +609,7 @@ void ULevel::UpdateAllOverlaps()
 	}
 
 	// 중복 pair 방지용
-	TSet<TPair<UPrimitiveComponent*, UPrimitiveComponent*>, PairHash> ProcessedPairs;
+	TSet<TPair<TWeakObjectPtr<UPrimitiveComponent>, TWeakObjectPtr<UPrimitiveComponent>>, PairHash> ProcessedPairs;
 
 	// 이번 프레임에 검사된 컴포넌트 추적 (cleanup 로직에서 사용)
 	TSet<UPrimitiveComponent*> CheckedComponents;
@@ -673,9 +673,10 @@ void ULevel::UpdateAllOverlaps()
 			// B는 Octree/DynamicPrims에서 온 것 (Static 또는 다른 Movable)
 			// Static-Static는 자동 제외됨 (Static은 bNeedsOverlapUpdate가 false)
 
-			// 중복 pair 방지 (정렬된 pair 생성)
-			TPair<UPrimitiveComponent*, UPrimitiveComponent*> Pair =
-				(A < B) ? TPair(A, B) : TPair(B, A);
+			// 중복 pair 방지 (정렬된 pair 생성, WeakObjectPtr 사용)
+			TPair<TWeakObjectPtr<UPrimitiveComponent>, TWeakObjectPtr<UPrimitiveComponent>> Pair =
+				(A < B) ? TPair(TWeakObjectPtr<UPrimitiveComponent>(A), TWeakObjectPtr<UPrimitiveComponent>(B))
+				        : TPair(TWeakObjectPtr<UPrimitiveComponent>(B), TWeakObjectPtr<UPrimitiveComponent>(A));
 
 			if (ProcessedPairs.Contains(Pair))
 				continue;
@@ -769,17 +770,18 @@ void ULevel::UpdateAllOverlaps()
 	//    중요: "체크되지 않음"의 의미를 구분해야 함!
 	//    1. 실제로 멀어져서 검사 안 됨 → EndOverlap 발생 ✅
 	//    2. 양쪽 다 안 움직여서 검사 안 함 → overlap 상태 유지 ✅
-	TArray<TPair<UPrimitiveComponent*, UPrimitiveComponent*>> PairsToRemove;
+	TArray<TPair<TWeakObjectPtr<UPrimitiveComponent>, TWeakObjectPtr<UPrimitiveComponent>>> PairsToRemove;
 
 	for (auto& [Pair, bWasOverlapping] : PreviousOverlapState)
 	{
 		// 이번 프레임에 체크되지 않았지만 이전에는 overlap이었던 pair
 		if (bWasOverlapping && !ProcessedPairs.Contains(Pair))
 		{
-			UPrimitiveComponent* A = Pair.first;
-			UPrimitiveComponent* B = Pair.second;
+			// WeakObjectPtr에서 raw pointer 가져오기 (삭제된 객체는 nullptr 반환)
+			UPrimitiveComponent* A = Pair.first.Get();
+			UPrimitiveComponent* B = Pair.second.Get();
 
-			// 컴포넌트가 여전히 유효한지 확인
+			// 컴포넌트가 여전히 유효한지 확인 (WeakObjectPtr이 자동으로 nullptr 체크)
 			if (A && B)
 			{
 				// ✅ 핵심: CheckedComponents로 이번 프레임에 검사되었는지 확인
@@ -830,6 +832,11 @@ void ULevel::UpdateAllOverlaps()
 					// 제거할 pair 목록에 추가
 					PairsToRemove.Add(Pair);
 				}
+			}
+			else
+			{
+				// 컴포넌트가 삭제되었으면 맵에서 제거 (댕글링 포인터 방지)
+				PairsToRemove.Add(Pair);
 			}
 		}
 	}
