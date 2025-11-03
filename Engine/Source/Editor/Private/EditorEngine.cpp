@@ -167,6 +167,9 @@ void UEditorEngine::StartPIE()
 
         GWorld = PIEWorld;
         PIEWorld->BeginPlay();
+
+        // PIE 시작 시 커서 숨김
+        while (ShowCursor(FALSE) >= 0);
     }
 }
 
@@ -199,6 +202,9 @@ void UEditorEngine::EndPIE()
 
     // GWorld를 다시 Editor World로 복원
     GWorld = GetEditorWorldContext().World();
+
+    // PIE 종료 시 커서 복원
+    while (ShowCursor(TRUE) < 0);
 }
 
 /**
@@ -388,9 +394,13 @@ void UEditorEngine::TogglePIEMouseDetach()
     if (bPIEMouseDetached)
     {
         UE_LOG_INFO("PIE: Mouse Input Detached (Shift+F1)");
+        // 커서 표시
+        while (ShowCursor(TRUE) < 0);
     }
     else
     {
         UE_LOG_INFO("PIE: Mouse Input Reattached (Shift+F1)");
+        // 커서 숨김
+        while (ShowCursor(FALSE) >= 0);
     }
 }

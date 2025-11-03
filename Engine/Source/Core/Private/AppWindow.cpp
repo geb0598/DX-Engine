@@ -5,7 +5,9 @@
 #include "ImGui/imgui.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Manager/Input/Public/InputManager.h"
+#include "Manager/UI/Public/ViewportManager.h"
 #include "Render/Renderer/Public/Renderer.h"
+#include "Render/UI/Viewport/Public/Viewport.h"
 
 FAppWindow::FAppWindow(FClientApp* InOwner)
 	: Owner(InOwner), InstanceHandle(nullptr), MainWindowHandle(nullptr)
@@ -187,7 +189,18 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 			return 0;
 		}
 		break;
-
+	case WM_SETCURSOR:
+		// PIE 세션 활성 상태에서 Shift + F1로 Detach하지 않은 경우 커서 강제 숨김
+		if (LOWORD(InLParam) == HTCLIENT)
+		{
+			if (GEditor->IsPIESessionActive() && !GEditor->IsPIEMouseDetached())
+			{
+				// 커서 완전히 숨김
+				SetCursor(nullptr);
+				return TRUE;
+			}
+		}
+		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
