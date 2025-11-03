@@ -57,19 +57,6 @@ void FD2DOverlayManager::AddText(const wchar_t* Text, const D2D1_RECT_F& Rect, c
 	TextCommands.push_back(Cmd);
 }
 
-void FD2DOverlayManager::AddText(const std::wstring& Text, const D2D1_RECT_F& Rect, const D2D1_COLOR_F& Color, float FontSize, bool bBold, bool bCentered, const std::wstring& FontName)
-{
-	FTextCommand Cmd;
-	Cmd.Text = Text;
-	Cmd.Rect = Rect;
-	Cmd.Color = Color;
-	Cmd.FontSize = FontSize;
-	Cmd.bBold = bBold;
-	Cmd.bCentered = bCentered;
-	Cmd.FontName = FontName;
-	TextCommands.push_back(Cmd);
-}
-
 void FD2DOverlayManager::FlushAndRender()
 {
 	ID2D1RenderTarget* D2DRT = URenderer::GetInstance().GetDeviceResources()->GetD2DRenderTarget();
@@ -82,6 +69,12 @@ void FD2DOverlayManager::FlushAndRender()
 
 	// D2D 렌더링 시작
 	D2DRT->BeginDraw();
+
+	D2D1::Matrix3x2F ViewportTransform = D2D1::Matrix3x2F::Translation(
+		CurrentViewport.TopLeftX,
+		CurrentViewport.TopLeftY
+	);
+	D2DRT->SetTransform(ViewportTransform);
 
 	// 모든 라인 그리기
 	for (const FLineCommand& Cmd : LineCommands)
@@ -176,6 +169,8 @@ void FD2DOverlayManager::FlushAndRender()
 			}
 		}
 	}
+
+	D2DRT->SetTransform(D2D1::Matrix3x2F::Identity());
 
 	// D2D 렌더링 종료
 	D2DRT->EndDraw();

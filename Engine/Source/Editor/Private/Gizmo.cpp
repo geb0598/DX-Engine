@@ -256,13 +256,13 @@ void UGizmo::CollectRotationAngleOverlay(FD2DOverlayManager& OverlayManager, UCa
 
 	// NDC -> 스크린 좌표
 	const FVector2 GizmoScreenPos(
-		(GizmoScreenPos4.X * 0.5f + 0.5f) * InViewport.Width + InViewport.TopLeftX,
-		((-GizmoScreenPos4.Y) * 0.5f + 0.5f) * InViewport.Height + InViewport.TopLeftY
-	);
+		   (GizmoScreenPos4.X * 0.5f + 0.5f) * InViewport.Width,
+		   ((-GizmoScreenPos4.Y) * 0.5f + 0.5f) * InViewport.Height
+		);
 
 	const FVector2 PointScreenPos(
-		(PointScreenPos4.X * 0.5f + 0.5f) * InViewport.Width + InViewport.TopLeftX,
-		((-PointScreenPos4.Y) * 0.5f + 0.5f) * InViewport.Height + InViewport.TopLeftY
+	   (PointScreenPos4.X * 0.5f + 0.5f) * InViewport.Width,
+	   ((-PointScreenPos4.Y) * 0.5f + 0.5f) * InViewport.Height
 	);
 
 	// 기즈모 중심에서 점으로 향하는 방향

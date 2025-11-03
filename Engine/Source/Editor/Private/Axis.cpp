@@ -17,11 +17,10 @@ void FAxis::CollectDrawCommands(FD2DOverlayManager& Manager, UCamera* InCamera, 
 	    return;
     }
 
-    // 뷰포트 기준 2D 렌더링 원점 계산
-    // 뷰포트 하단 왼쪽 모서리로부터 (OffsetFromLeft, OffsetFromBottom) 픽셀 떨어진 위치
-    const float OriginX = InViewport.TopLeftX + OffsetFromLeft;
-    const float OriginY = InViewport.TopLeftY + InViewport.Height - OffsetFromBottom;
-    D2D1_POINT_2F AxisCenter = D2D1::Point2F(OriginX, OriginY);
+	// 뷰포트 기준 2D 렌더링 원점 계산
+	const float OriginX = OffsetFromLeft;
+	const float OriginY = InViewport.Height - OffsetFromBottom;
+	D2D1_POINT_2F AxisCenter = D2D1::Point2F(OriginX, OriginY);
 
 	// 메인 카메라의 회전(View) 행렬
 	const FMatrix ViewOnly = InCamera->GetFViewProjConstants().View;

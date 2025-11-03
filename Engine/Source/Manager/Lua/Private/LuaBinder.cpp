@@ -538,17 +538,14 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 	       float cR, float cG, float cB, float cA,
 	       float FontSize, bool bBold, bool bCentered, const std::string& FontName)
 	    {
-	        // 1. C++ 람다 *내부*에서 구조체를 직접 조립
 	        D2D1_RECT_F Rect = D2D1::RectF(rL, rT, rR, rB);
 	        D2D1_COLOR_F Color = D2D1::ColorF(cR, cG, cB, cA);
 
-	        // 2. wstring 변환
 	        std::wstring w_text = StringToWideString(Text);
 	        std::wstring w_fontName = StringToWideString(FontName);
 
-	        // 3. AddText 호출 (std::wstring 버전 사용)
 	        FD2DOverlayManager::GetInstance().AddText(
-	            w_text, Rect, Color, FontSize, bBold, bCentered, w_fontName
+	            w_text.c_str(), Rect, Color, FontSize, bBold, bCentered, w_fontName.c_str()
 	        );
 	    }
 	);

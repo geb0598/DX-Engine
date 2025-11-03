@@ -6,8 +6,8 @@
 local bStarted = false
 
 -- [Movement]
-local moveSpeed = 10.0
-local rotationSpeed = 80.0
+local moveSpeed = 50.0
+local rotationSpeed = 30.0
 local currentRotation = FVector(0, 0, 0)
 
 -- [Health]
@@ -16,6 +16,14 @@ local currentHP = 0
 local gameMode = nil
 local LightIntensity = 0
 local LightThreshold = 3.0   -- 누적 밝기 임계치 (원하는 값으로 조정)
+-- [Light Exposure]
+local LightIntensity = 0.0
+local LightCriticalPoint = 1.0
+local MaxLightExposureTime = 5.0
+local CurrentLightExposureTime = 5.0
+local bLightWarningShown = false
+local CurrentLightLevel = 0.0  -- 현재 빛 강도 저장
+
 ---
 -- [Health] HP가 0 이하가 되었는지 확인하고 GameMode의 EndGame을 호출
 ---
@@ -68,11 +76,22 @@ local function EndedTest()
     Log("GameEnded Delegate!")
 end
 
+function OnLightIntensityChanged(current, previous)
+    -- 현재 빛 강도만 저장
+    CurrentLightLevel = current
+    
+    -- 로그 출력
+    local delta = current - previous
+    if delta > 0 then
+        Log(string.format("Light Changed: %.3f -> %.3f (Delta: %.3f)", previous, current, delta))
+    end
+end
+
 ---
 -- 게임이 시작되거나 액터가 스폰될 때 1회 호출됩니다.
 ---
 function BeginPlay()
-	bStarted = false
+    bStarted = false
     local world = GetWorld()
     if world then
         gameMode = world:GetGameMode()
@@ -133,29 +152,24 @@ function Movement(dt)
 
     if MoveDirection:Length() > 0.0 then
         MoveDirection:Normalize()
-        -- 1. 이번 프레임에 이동할 목표 위치를 계산합니다.
         local targetLocation = Owner.Location + (MoveDirection * moveSpeed * dt)
 
-        -- 2. 월드와 레벨을 가져옵니다.
         local world = GetWorld()
         local level = nil
         if world then
             level = world:GetLevel()
         end
 
-        -- 3. 레벨의 Sweep 함수를 호출하여 'Wall' 태그와 충돌하는지 확인합니다.
         local hitResult = nil
         if level then
             hitResult = level:SweepActorSingle(Owner, targetLocation, CollisionTag.Wall)
         end
 
-        -- 4. hitResult가 nil일 때 (즉, 아무것도 부딪히지 않았을 때)만 이동을 적용합니다.
         if hitResult == nil then
             Owner.Location = targetLocation
         else
             Log("Movement blocked by wall.")
         end
-        -------------------------------------------------
     end
     
     --- [Movement] 회전 ---
@@ -164,41 +178,156 @@ function Movement(dt)
     currentRotation.X = 0
     local newPitch = currentRotation.Y - (mouseDelta.Y * rotationSpeed * dt)
     currentRotation.Y = Clamp(newPitch, -89.0, 89.0)
-    currentRotation.Z = currentRotation.Z + (mouseDelta.X * rotationSpeed * dt) -- Yaw
+    currentRotation.Z = currentRotation.Z + (mouseDelta.X * rotationSpeed * dt)
     
     Owner.Rotation = FQuaternion.FromEuler(currentRotation)
 end
 
+---
+-- [Light Exposure] 매 프레임 빛 노출 시간 업데이트
+---
+function UpdateLightExposure(dt)
+    -- LightCriticalPoint 기준으로 노출 시간 조정
+    if CurrentLightLevel >= LightCriticalPoint then
+        -- 밝은 곳: 노출 시간 감소
+        CurrentLightExposureTime = CurrentLightExposureTime - dt
+        
+        if CurrentLightExposureTime < 0 then
+            CurrentLightExposureTime = 0
+        end
+        
+        -- 0초가 되면 경고 로그 (한 번만)
+        if CurrentLightExposureTime <= 0 and not bLightWarningShown then
+            Log("WARNING: Light Exposure Time has reached 0! Player is critically exposed!")
+            bLightWarningShown = true
+        end
+    else
+        -- 어두운 곳: 노출 시간 회복
+        CurrentLightExposureTime = CurrentLightExposureTime + dt
+        
+        if CurrentLightExposureTime > MaxLightExposureTime then
+            CurrentLightExposureTime = MaxLightExposureTime
+        end
+        
+        -- 회복되면 경고 플래그 리셋
+        if CurrentLightExposureTime > 0 then
+            bLightWarningShown = false
+        end
+    end
+end
+
+---
+-- [UI] HP 바 및 Light Exposure 바를 그립니다.
+---
 function DrawUI()
-    local hp_text = string.format("HP: %d", currentHP)
-
-    local text_pos_x = 100.0
-    local text_pos_y = 100.0
-    local text_width = 300.0
-    local text_height = 50.0
-
-    local r_left = text_pos_x
-    local r_top = text_pos_y
-    local r_right = text_pos_x + text_width
-    local r_bottom = text_pos_y + text_height
-
-    local c_r = 0.1
-    local c_g = 1.0
-    local c_b = 0.1
-    local c_a = 1.0
-
-    -- 텍스트 그리기 호출
-    DebugDraw.Text(
-        hp_text, 
-        r_left, r_top, r_right, r_bottom,  -- Rect(l, t, r, b)
-        c_r, c_g, c_b, c_a,               -- Color(r, g, b, a)
-        20.0, false, false, "Consolas"
+    local ui_x = 80.0
+    local ui_y = 60.0
+    local bar_width = 200.0
+    local bar_height = 20.0
+    local bar_spacing = 10.0
+    
+    -- ============ HP BAR ============
+    local hp_ratio = currentHP / MaxHP
+    
+    -- HP 색상 결정
+    local hp_c_r, hp_c_g, hp_c_b = 0.1, 1.0, 0.1
+    if hp_ratio <= 0.3 then
+        hp_c_r, hp_c_g, hp_c_b = 1.0, 0.1, 0.1
+    elseif hp_ratio <= 0.6 then
+        hp_c_r, hp_c_g, hp_c_b = 1.0, 1.0, 0.1
+    end
+    
+    -- HP 바 배경
+    DebugDraw.Rectangle(
+        ui_x, ui_y, ui_x + bar_width, ui_y + bar_height,
+        0.1, 0.1, 0.1, 0.8,
+        true
     )
+    
+    -- HP 바 채우기
+    local hp_fill_width = bar_width * hp_ratio
+    DebugDraw.Rectangle(
+        ui_x, ui_y, ui_x + hp_fill_width, ui_y + bar_height,
+        hp_c_r, hp_c_g, hp_c_b, 1.0,
+        true
+    )
+    
+    -- HP 바 테두리
+    local bar_end_x = ui_x + bar_width
+    local bar_end_y = ui_y + bar_height
+    DebugDraw.Line(ui_x, ui_y, bar_end_x, ui_y, 0.8, 0.8, 0.8, 1.0, 2.0)
+    DebugDraw.Line(ui_x, bar_end_y, bar_end_x, bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
+    DebugDraw.Line(ui_x, ui_y, ui_x, bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
+    DebugDraw.Line(bar_end_x, ui_y, bar_end_x, bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
+    
+    -- HP 텍스트
+    local hp_text = string.format("HP: %d / %d", currentHP, MaxHP)
+    DebugDraw.Text(
+        hp_text,
+        ui_x, ui_y, bar_end_x, bar_end_y,
+        1.0, 1.0, 1.0, 1.0,
+        14.0, true, true, "Consolas"
+    )
+    
+    -- ============ LIGHT EXPOSURE BAR ============
+    local light_bar_y = ui_y + bar_height + bar_spacing
+    local exposure_ratio = CurrentLightExposureTime / MaxLightExposureTime
+    
+    -- Light 색상 결정 (시간이 적을수록 빨갛게)
+    local light_c_r, light_c_g, light_c_b = 0.1, 0.5, 1.0  -- 기본: 파란색
+    if exposure_ratio <= 0.2 then
+        light_c_r, light_c_g, light_c_b = 1.0, 0.0, 0.0  -- 위험: 빨간색
+    elseif exposure_ratio <= 0.5 then
+        light_c_r, light_c_g, light_c_b = 1.0, 0.5, 0.0  -- 경고: 주황색
+    end
+    
+    -- Light 바 배경
+    DebugDraw.Rectangle(
+        ui_x, light_bar_y, ui_x + bar_width, light_bar_y + bar_height,
+        0.1, 0.1, 0.1, 0.8,
+        true
+    )
+    
+    -- Light 바 채우기
+    local light_fill_width = bar_width * exposure_ratio
+    DebugDraw.Rectangle(
+        ui_x, light_bar_y, ui_x + light_fill_width, light_bar_y + bar_height,
+        light_c_r, light_c_g, light_c_b, 1.0,
+        true
+    )
+    
+    -- Light 바 테두리
+    local light_bar_end_y = light_bar_y + bar_height
+    DebugDraw.Line(ui_x, light_bar_y, bar_end_x, light_bar_y, 0.8, 0.8, 0.8, 1.0, 2.0)
+    DebugDraw.Line(ui_x, light_bar_end_y, bar_end_x, light_bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
+    DebugDraw.Line(ui_x, light_bar_y, ui_x, light_bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
+    DebugDraw.Line(bar_end_x, light_bar_y, bar_end_x, light_bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
+    
+    -- Light 텍스트
+    local light_text = string.format("EXPOSURE: %.1fs", CurrentLightExposureTime)
+    DebugDraw.Text(
+        light_text,
+        ui_x, light_bar_y, bar_end_x, light_bar_end_y,
+        1.0, 1.0, 1.0, 1.0,
+        12.0, true, true, "Consolas"
+    )
+    
+    -- 경고 표시 (노출 시간 < 1초)
+    if CurrentLightExposureTime < 1.0 then
+        local pulse = math.abs(math.sin(totalTime * 5.0))
+        DebugDraw.Text(
+            "! DANGER !",
+            ui_x + bar_width + 15.0, light_bar_y, ui_x + bar_width + 150.0, light_bar_end_y,
+            1.0, 0.0, 0.0, 0.5 + pulse * 0.5,
+            14.0, true, false, "Arial"
+        )
+    end
 end
 
 function StartGame()
-	bStarted = true
+    bStarted = true
     currentHP = MaxHP
+    CurrentLightExposureTime = MaxLightExposureTime
     currentRotation = Owner.Rotation:ToEuler()
 
     Log(string.format("Player.lua BeginPlay. Owner: %s, HP: %d", Owner.UUID, currentHP))
@@ -208,7 +337,7 @@ end
 -- 게임이 종료되거나 액터가 파괴될 때 1회 호출됩니다.
 ---
 function EndPlay()
-	bStarted = false
+    bStarted = false
     Log("Player.lua EndPlay.")
 end
 
@@ -221,11 +350,6 @@ function OnActorBeginOverlap(overlappedActor, otherActor)
     -- [Health] 적 태그 확인
     if otherActor.Tag == CollisionTag.Enemy then
         TakeDamage(1)
-    end
-
-    -- [Collision] 벽 태그 확인
-    if otherActor.Tag == CollisionTag.Wall then
-        Log("Hit a wall! Reverting location.")
     end
 end
 
