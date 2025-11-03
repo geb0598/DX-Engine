@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Demo/Public/Player.h"
 
+#include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Component/Public/BoxComponent.h"
 #include "Component/Public/LightSensorComponent.h"
 #include "Component/Public/ScriptComponent.h"
@@ -26,4 +27,10 @@ void APlayer::InitializeComponents()
 
 	ULightSensorComponent* LightSensor = CreateDefaultSubobject<ULightSensorComponent>();
 	LightSensor->AttachToComponent(GetRootComponent());
+
+	UStaticMeshComponent* StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>();
+	StaticMesh->AttachToComponent(GetRootComponent());
+	StaticMesh->SetStaticMesh("Data/Capsule.obj");
+	StaticMesh->SetRelativeLocation(FVector{0, 0, -7});
+	StaticMesh->SetRelativeScale3D(FVector{4, 4, 7});
 }

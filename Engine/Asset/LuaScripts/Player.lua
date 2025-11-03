@@ -133,6 +133,7 @@ function Tick(dt)
     
     Movement(dt)
     UpdateLightExposure(dt)
+    DrawDangerOverlay()  -- 위험 오버레이 (먼저 그리기)
     DrawUI()
 end
 
@@ -189,6 +190,39 @@ function Movement(dt)
     currentRotation.Z = currentRotation.Z + (mouseDelta.X * rotationSpeed * dt)
     
     Owner.Rotation = FQuaternion.FromEuler(currentRotation)
+end
+
+---
+-- [UI] 위험 상황 전체 화면 오버레이
+---
+function DrawDangerOverlay()
+    -- Light Critical Point를 넘어섰을 때만 표시
+    if CurrentLightLevel < LightCriticalPoint then
+        return
+    end
+    
+    -- 빠르게 깜빡이는 효과
+    local pulse = math.abs(math.sin(remainingTime * 8.0))
+    
+    -- 노출 시간이 적을수록 더 강하게 깜빡임
+    local intensity = 0.0
+    if CurrentLightExposureTime < MaxLightExposureTime then
+        local danger_ratio = 1.0 - (CurrentLightExposureTime / MaxLightExposureTime)
+        intensity = danger_ratio * 0.4  -- 최대 40% 불투명도
+    end
+    
+    -- 화면 전체를 덮는 빨간 오버레이
+    if intensity > 0.05 then
+        local alpha = intensity * pulse
+        local screen_w = 1920.0
+        local screen_h = 1080.0
+        
+        DebugDraw.Rectangle(
+            0, 0, screen_w, screen_h,
+            1.0, 0.0, 0.0, alpha,  -- 빨간색, 가변 투명도
+            true
+        )
+    end
 end
 
 ---
