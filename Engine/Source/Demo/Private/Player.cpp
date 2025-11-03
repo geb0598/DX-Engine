@@ -2,6 +2,7 @@
 #include "Demo/Public/Player.h"
 
 #include "Component/Public/BoxComponent.h"
+#include "Component/Public/LightSensorComponent.h"
 #include "Component/Public/ScriptComponent.h"
 
 IMPLEMENT_CLASS(APlayer, AActor)
@@ -21,5 +22,8 @@ UClass* APlayer::GetDefaultRootComponent()
 void APlayer::InitializeComponents()
 {
 	Super::InitializeComponents();
-	Cast<UBoxComponent>(GetRootComponent())->SetBoxExtent({1.0f, 1.0f, 1.0f});
+	Cast<UBoxComponent>(GetRootComponent())->SetBoxExtent({0.5f, 0.5f, 0.5f});
+
+	ULightSensorComponent* LightSensor = CreateDefaultSubobject<ULightSensorComponent>();
+	LightSensor->AttachToComponent(GetRootComponent());
 }
