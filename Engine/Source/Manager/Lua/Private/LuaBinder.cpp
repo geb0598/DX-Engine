@@ -21,7 +21,8 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
         "DestroyActor", &UWorld::DestroyActor,
         "GetGameMode", &UWorld::GetGameMode,
         "GetLevel", &UWorld::GetLevel,
-        "FindTemplateActorOfName", &UWorld::FindTemplateActorOfName
+        "FindTemplateActorOfName", &UWorld::FindTemplateActorOfName,
+        "GetSourceEditorWorld", &UWorld::GetSourceEditorWorld
     );
 
     // --- GWorld 인스턴스 접근자 (전역 함수) ---
@@ -31,6 +32,91 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 
 	// --- ULevel ---
 	LuaState.new_usertype<ULevel>("ULevel",
+		// Get all actors in the level (returns Lua table)
+		"GetLevelActors", [](ULevel* Level, sol::this_state ts) -> sol::table {
+			sol::state_view lua(ts);
+			sol::table result = lua.create_table();
+
+			if (!Level)
+				return result;
+
+			const TArray<AActor*>& Actors = Level->GetLevelActors();
+			for (int i = 0; i < Actors.Num(); ++i)
+			{
+				result[i + 1] = Actors[i];  // Lua는 1부터 시작
+			}
+			return result;
+		},
+
+		// Get all template actors in the level (returns Lua table)
+		"GetTemplateActors", [](ULevel* Level, sol::this_state ts) -> sol::table {
+			sol::state_view lua(ts);
+			sol::table result = lua.create_table();
+
+			if (!Level)
+				return result;
+
+			const TArray<AActor*>& Actors = Level->GetTemplateActors();
+			for (int i = 0; i < Actors.Num(); ++i)
+			{
+				result[i + 1] = Actors[i];
+			}
+			return result;
+		},
+
+		// Find template actor by name
+		"FindTemplateActorByName", [](ULevel* Level, const std::string& InName) -> sol::optional<AActor*> {
+			if (!Level)
+				return sol::nullopt;
+			AActor* FoundActor = Level->FindTemplateActorByName(FName(InName));
+			if (FoundActor)
+				return FoundActor;
+			return sol::nullopt;
+		},
+
+		// Find all template actors by class (returns Lua table)
+		"FindTemplateActorsOfClass", [](ULevel* Level, UClass* InClass, sol::this_state ts) -> sol::table {
+			sol::state_view lua(ts);
+			sol::table result = lua.create_table();
+
+			if (!Level || !InClass)
+				return result;
+
+			TArray<AActor*> Actors = Level->FindTemplateActorsOfClass(InClass);
+			for (int i = 0; i < Actors.Num(); ++i)
+			{
+				result[i + 1] = Actors[i];
+			}
+			return result;
+		},
+
+		// Find regular actor by name (template actors excluded)
+		"FindActorByName", [](ULevel* Level, const std::string& InName) -> sol::optional<AActor*> {
+			if (!Level)
+				return sol::nullopt;
+			AActor* FoundActor = Level->FindActorByName(FName(InName));
+			if (FoundActor)
+				return FoundActor;
+			return sol::nullopt;
+		},
+
+		// Find all regular actors by class (returns Lua table, template actors excluded)
+		// 클래스명 문자열로 찾기
+		"FindActorsOfClass", [](ULevel* Level, const std::string& ClassName, sol::this_state ts) -> sol::table {
+			sol::state_view lua(ts);
+			sol::table result = lua.create_table();
+
+			if (!Level)
+				return result;
+
+			TArray<AActor*> Actors = Level->FindActorsOfClassByName(FString(ClassName));
+			for (int i = 0; i < Actors.Num(); ++i)
+			{
+				result[i + 1] = Actors[i];
+			}
+			return result;
+		},
+
 		// Sweep single collision test for Actor (returns first hit)
 		// Tests all PrimitiveComponents of the Actor
 		// Optional FilterTag parameter: only returns hits with matching CollisionTag

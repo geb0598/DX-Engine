@@ -523,7 +523,7 @@ AActor* ULevel::FindTemplateActorByName(const FName& InName) const
 	return nullptr;
 }
 
-TArray<AActor*> ULevel::FindTemplateActorsByClass(UClass* InClass) const
+TArray<AActor*> ULevel::FindTemplateActorsOfClass(UClass* InClass) const
 {
 	TArray<AActor*> Result;
 	if (!InClass)
@@ -539,6 +539,49 @@ TArray<AActor*> ULevel::FindTemplateActorsByClass(UClass* InClass) const
 		}
 	}
 	return Result;
+}
+
+AActor* ULevel::FindActorByName(const FName& InName) const
+{
+	for (AActor* Actor : LevelActors)
+	{
+		if (Actor && !Actor->IsTemplate() && Actor->GetName() == InName)
+		{
+			return Actor;
+		}
+	}
+	return nullptr;
+}
+
+TArray<AActor*> ULevel::FindActorsOfClass(UClass* InClass) const
+{
+	TArray<AActor*> Result;
+	if (!InClass)
+	{
+		return Result;
+	}
+
+	for (AActor* Actor : LevelActors)
+	{
+		if (Actor && !Actor->IsTemplate() && Actor->GetClass() == InClass)
+		{
+			Result.Add(Actor);
+		}
+	}
+	return Result;
+}
+
+TArray<AActor*> ULevel::FindActorsOfClassByName(const FString& ClassName) const
+{
+	TArray<AActor*> Result;
+
+	UClass* InClass = UClass::FindClass(ClassName);
+	if (!InClass)
+	{
+		return Result;
+	}
+
+	return FindActorsOfClass(InClass);
 }
 
 /*-----------------------------------------------------------------------------
