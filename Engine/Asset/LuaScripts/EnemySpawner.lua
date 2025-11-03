@@ -10,6 +10,30 @@ local templateEnemy = nil
 local spawnOffsetRange = 50            -- 스폰 오프셋 범위 (±값)
 local spawnDelay = 2.0                 -- 스폰 간격 (초)
 local spawnTimer = 0.0                 -- 스폰 타이머
+local maxEnemies = 10                  -- 최대 Enemy 개수
+
+-- 생성된 Enemy 추적 (WeakAActor 사용)
+local spawnedEnemies = {}              -- WeakAActor 배열
+
+-- 무효한 Enemy들을 배열에서 제거
+local function CleanupInvalidEnemies()
+    local validEnemies = {}
+    local removedCount = 0
+
+    for i, weakEnemy in ipairs(spawnedEnemies) do
+        if weakEnemy:IsValid() then
+            table.insert(validEnemies, weakEnemy)
+        else
+            removedCount = removedCount + 1
+        end
+    end
+
+    spawnedEnemies = validEnemies
+
+    if removedCount > 0 then
+        Log("[EnemySpawner] Cleaned up " .. tostring(removedCount) .. " invalid enemies")
+    end
+end
 
 function BeginPlay()
     -- 템플릿 액터 캐시
@@ -46,10 +70,27 @@ function OnEnemySpawnRequested()
         return  -- 아직 스폰 가능 시간이 아님
     end
 
-    Log("[EnemySpawner] Spawn request received - spawning enemy")
+    -- 무효한 Enemy 정리
+    CleanupInvalidEnemies()
+
+    -- 현재 살아있는 Enemy 개수 확인
+    local currentEnemyCount = #spawnedEnemies
+
+    if currentEnemyCount >= maxEnemies then
+        Log("[EnemySpawner] Max enemy limit reached (" .. tostring(currentEnemyCount) .. "/" .. tostring(maxEnemies) .. "), spawn skipped")
+        return
+    end
+
+    Log("[EnemySpawner] Spawn request received - spawning enemy (" .. tostring(currentEnemyCount + 1) .. "/" .. tostring(maxEnemies) .. ")")
 
     -- Spawner 자신의 위치 기준으로 랜덤 스폰
-    SpawnInternal(nil)
+    local newEnemy = SpawnInternal(nil)
+
+    -- WeakAActor로 래핑하여 배열에 추가 (안전한 추적)
+    if newEnemy ~= nil then
+        local weakEnemy = MakeWeakAActor(newEnemy)
+        table.insert(spawnedEnemies, weakEnemy)
+    end
 
     -- 타이머 리셋
     spawnTimer = spawnDelay
@@ -90,6 +131,9 @@ function Tick(dt)
             spawnTimer = 0
         end
     end
+
+    -- 주기적으로 무효한 Enemy 정리 (매 프레임 체크는 비효율적이므로 타이머와 함께)
+    -- spawnTimer가 0이 될 때마다 정리 (즉, 스폰 간격마다)
 end
 
 function EndPlay()

@@ -276,17 +276,6 @@ void FLuaBinder::BindMathTypes(sol::state& LuaState)
 	);
 }
 
-// Helper macro for adding type-safe cast functions to AActor
-// Usage: Add new types easily by adding a single line with this macro
-#define BIND_ACTOR_CAST(ClassName) \
-	"To" #ClassName, [](AActor* Self) -> ClassName* { \
-		if (!Self) return nullptr; \
-		if (Self->GetClass()->IsChildOf(ClassName::StaticClass())) { \
-			return static_cast<ClassName*>(Self); \
-		} \
-		return nullptr; \
-	}
-
 void FLuaBinder::BindActorTypes(sol::state& LuaState)
 {
 	// -- Actor -- //
@@ -416,6 +405,11 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		sol::base_classes, sol::bases<AActor>(),
 		"RequestSpawn", &AEnemySpawnerActor::RequestSpawn
 	);
+
+	// --- WeakObjectPtr Bindings ---
+	// Add TWeakObjectPtr support for safe object tracking from Lua
+	BIND_WEAK_PTR(AActor);
+	// BIND_WEAK_PTR(AEnemySpawnerActor);  // Example: add more types as needed
 }
 
 void FLuaBinder::BindComponentTypes(sol::state& LuaState)

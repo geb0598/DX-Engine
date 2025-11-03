@@ -62,6 +62,10 @@ public:
 	virtual UObject* Duplicate();
 	virtual UObject* DuplicateForEditor();
 
+	// Comparison operators (for sol3 Lua binding)
+	bool operator==(const UObject& Other) const { return this == &Other; }
+	bool operator!=(const UObject& Other) const { return this != &Other; }
+
 protected:
 	virtual void DuplicateSubObjects(UObject* DuplicatedObject);
 

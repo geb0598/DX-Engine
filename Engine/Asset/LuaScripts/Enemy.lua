@@ -4,7 +4,7 @@
 -- 사용: Enemy 템플릿 Actor에 ScriptComponent를 추가하고 이 스크립트 할당
 ------------------------------------------------------------------
 
-local moveSpeed = 20.0
+local moveSpeed = 0.0  -- BeginPlay에서 랜덤 설정
 local targetPlayer = nil
 
 -- Jump settings
@@ -17,7 +17,10 @@ local jumpHeight = 30.0    -- 점프 높이
 -- Enemy가 생성될 때 호출됩니다.
 ---
 function BeginPlay()
-    Log("[Enemy] Spawned at: " .. tostring(Owner.Location.X) .. ", " .. tostring(Owner.Location.Y))
+    -- 각 Enemy마다 다른 속도 설정 (15~25 사이)
+    moveSpeed = 15.0 + math.random() * 10.0
+
+    Log("[Enemy] Spawned at: " .. tostring(Owner.Location.X) .. ", " .. tostring(Owner.Location.Y) .. " with speed: " .. tostring(moveSpeed))
 
     -- 초기 Z 위치 저장
     initialZ = Owner.Location.Z
