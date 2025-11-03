@@ -4,7 +4,6 @@
 #include "Editor/Public/Editor.h"
 #include "Level/Public/Level.h"
 #include "Manager/Config/Public/ConfigManager.h"
-#include "Manager/LocalPlayer/Public/LocalPlayerManager.h"
 #include "Manager/Lua/Public/LuaManager.h"
 #include "Manager/Path/Public/PathManager.h"
 #include "Manager/UI/Public/ViewportManager.h"
@@ -184,9 +183,6 @@ void UEditorEngine::EndPIE()
 
     // PIE Mouse Detach 상태 초기화
     bPIEMouseDetached = false;
-
-    // LocalPlayerManager 입력 상태 복원
-    ULocalPlayerManager::GetInstance().SetInputEnabled(true);
 
     // PIE 전용 뷰포트 인덱스 리셋
     UViewportManager::GetInstance().SetPIEActiveViewportIndex(-1);
@@ -382,8 +378,12 @@ void UEditorEngine::TogglePIEMouseDetach()
 
     bPIEMouseDetached = !bPIEMouseDetached;
 
-    // LocalPlayerManager를 통해 입력 활성화/비활성화 설정
-    ULocalPlayerManager::GetInstance().SetInputEnabled(!bPIEMouseDetached);
+    // PIE World의 입력 차단 플래그 설정
+    FWorldContext* PIEContext = GetPIEWorldContext();
+    if (PIEContext && PIEContext->World())
+    {
+        PIEContext->World()->SetIgnoreInput(bPIEMouseDetached);
+    }
 
     if (bPIEMouseDetached)
     {

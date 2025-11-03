@@ -16,7 +16,6 @@
 #include "Render/UI/Overlay/Public/StatOverlay.h"
 #include "Utility/Public/ScopeCycleCounter.h"
 #include "Manager/UI/Public/ViewportManager.h"
-#include "Manager/LocalPlayer/Public/LocalPlayerManager.h"
 
 #ifdef IS_OBJ_VIEWER
 #include "Utility/Public/FileDialog.h"
@@ -101,11 +100,8 @@ int FClientApp::InitializeSystem() const
 	auto& ViewportManager = UViewportManager::GetInstance();
 	ViewportManager.Initialize(Window);  // 중요: Viewports/Clients 벡터 초기화
 
-	// LocalPlayerManager Initialize
-	ULocalPlayerManager::GetInstance().Initialize();
-
 	GEditor = NewObject<UEditorEngine>();  // UEditor 생성자가 ViewportManager::GetClients()를 사용
-
+	
 	// UIManager Initialize
 	auto& UIManager = UUIManager::GetInstance();
 	UIManager.Initialize(Window->GetWindowHandle());
@@ -202,12 +198,9 @@ void FClientApp::MainLoop()
  */
 void FClientApp::ShutdownSystem() const
 {
-	// LocalPlayerManager Shutdown (GEditor 삭제 전에 참조 해제)
-	ULocalPlayerManager::GetInstance().Shutdown();
-
 	delete GEditor;
 	delete Window;
-
+	
 	UStatOverlay::GetInstance().Release();
 	UUIManager::GetInstance().Shutdown();
 	UAssetManager::GetInstance().Release();
