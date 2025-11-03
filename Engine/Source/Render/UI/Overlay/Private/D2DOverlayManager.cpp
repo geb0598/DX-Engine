@@ -83,6 +83,12 @@ void FD2DOverlayManager::FlushAndRender()
 	// D2D 렌더링 시작
 	D2DRT->BeginDraw();
 
+	D2D1::Matrix3x2F ViewportTransform = D2D1::Matrix3x2F::Translation(
+		CurrentViewport.TopLeftX,
+		CurrentViewport.TopLeftY
+	);
+	D2DRT->SetTransform(ViewportTransform);
+
 	// 모든 라인 그리기
 	for (const FLineCommand& Cmd : LineCommands)
 	{
@@ -176,6 +182,8 @@ void FD2DOverlayManager::FlushAndRender()
 			}
 		}
 	}
+
+	D2DRT->SetTransform(D2D1::Matrix3x2F::Identity());
 
 	// D2D 렌더링 종료
 	D2DRT->EndDraw();
