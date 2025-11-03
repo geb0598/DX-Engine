@@ -12,10 +12,31 @@ local currentRotation = FVector(0, 0, 0)
 local MaxHP = 5
 local currentHP = 0
 local gameMode = nils
-
+local LightIntensity = 0
 ---
 -- [Health] HP가 0 이하가 되었는지 확인하고 GameMode의 EndGame을 호출
 ---
+
+function OnLightIntensityChanged(current, previous)
+    local delta = current - previous
+
+    -- 조명 변화 로그
+    Log(string.format("Light Changed: %.3f -> %.3f (Delta: %.3f)",
+        previous, current, delta))
+
+    -- 밝기 상태 출력
+    if current < 0.2 then
+        Log("  Status: DARK - Hidden in shadows")
+    elseif current < 0.5 then
+        Log("  Status: DIM - Partially visible")
+    elseif current < 0.8 then
+        Log("  Status: BRIGHT - Clearly visible")
+    else
+        Log("  Status: VERY BRIGHT - Fully exposed!")
+    end
+end
+
+
 local function CheckForDeath()
     if currentHP <= 0 then
         if gameMode and gameMode.IsGameRunning then
@@ -56,7 +77,6 @@ function BeginPlay()
     
     -- [Movement] 회전값 초기화
     currentRotation = Owner.Rotation:ToEuler()
-    
     Log(string.format("Player.lua BeginPlay. Owner: %s, HP: %d", Owner.UUID, currentHP))
 end
 

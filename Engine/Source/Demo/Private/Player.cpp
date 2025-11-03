@@ -1,15 +1,15 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Demo/Public/Player.h"
 
 #include "Component/Public/BoxComponent.h"
 #include "Component/Public/ScriptComponent.h"
+#include "Component/Public/LightSensorComponent.h"
 
 IMPLEMENT_CLASS(APlayer, AActor)
 APlayer::APlayer()
 {
 	bCanEverTick = true;
 	CreateDefaultSubobject<UScriptComponent>()->SetScriptName("Player");
-
 	SetCollisionTag(ECollisionTag::Player);
 }
 
@@ -22,4 +22,9 @@ void APlayer::InitializeComponents()
 {
 	Super::InitializeComponents();
 	Cast<UBoxComponent>(GetRootComponent())->SetBoxExtent({1.0f, 1.0f, 1.0f});
+
+	// LightSensorComponent
+	ULightSensorComponent* LightSensorComp = CreateDefaultSubobject<ULightSensorComponent>();
+	LightSensorComp->AttachToComponent(GetRootComponent());
+
 }
