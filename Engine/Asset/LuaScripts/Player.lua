@@ -24,8 +24,8 @@ local gameMode = nil
 
 -- [Light Exposure]
 local LightCriticalPoint = 1.0
-local MaxLightExposureTime = 5.0
-local CurrentLightExposureTime = 5.0
+local MaxLightExposureTime = 3.0
+local CurrentLightExposureTime = 3.0
 local bLightWarningShown = false
 local CurrentLightLevel = 0.0
 
@@ -297,7 +297,7 @@ function DrawUI()
     -- 남은 시간을 분:초 형식으로 변환
     local minutes = math.floor(remainingTime / 60)
     local seconds = math.floor(remainingTime % 60)
-    local time_text = string.format("TIME: %d:%02d", minutes, seconds)
+    local time_text = string.format("남은 시간: %d:%02d", minutes, seconds)
     
     -- 시간이 30초 미만이면 빨간색으로 경고
     local time_r, time_g, time_b = 1.0, 1.0, 0.3
@@ -343,7 +343,7 @@ function DrawUI()
     DebugDraw.Line(ui_x, ui_y, ui_x, bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(bar_end_x, ui_y, bar_end_x, bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     
-    local hp_text = string.format("HP: %d / %d", currentHP, MaxHP)
+    local hp_text = string.format("체력: %d / %d", currentHP, MaxHP)
     DebugDraw.Text(
         hp_text,
         ui_x, ui_y, bar_end_x, bar_end_y,
@@ -381,7 +381,7 @@ function DrawUI()
     DebugDraw.Line(ui_x, light_bar_y, ui_x, light_bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(bar_end_x, light_bar_y, bar_end_x, light_bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     
-    local light_text = string.format("EXPOSURE: %.1fs", CurrentLightExposureTime)
+    local light_text = string.format("빛 노출 가능 시간: %.1fs", CurrentLightExposureTime)
     DebugDraw.Text(
         light_text,
         ui_x, light_bar_y, bar_end_x, light_bar_end_y,
@@ -433,16 +433,18 @@ function DrawGameOverUI()
     DebugDraw.Line(panel_x, panel_y, panel_x, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
     DebugDraw.Line(panel_x + panel_w, panel_y, panel_x + panel_w, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
     
-    -- "GAME CLEAR!" 또는 "GAME OVER" 또는 "TIME OVER" 텍스트
-    local title_text = "GAME OVER"
+    -- Title Text
+    local title_text = "코치님께 발각되고 말았다..."
     local title_color_r, title_color_g, title_color_b = 1.0, 0.2, 0.2
+
+    local sub_text = "??? : 다음 발제가 왜 궁금해요?"
+    local sub_color_r, sub_color_g, sub_color_b = 1.0, 0.0, 0.0
     
     if currentHP > 0 and remainingTime > 0 then
-        title_text = "GAME CLEAR!"
+        title_text = "꿈에서 깼다..."
         title_color_r, title_color_g, title_color_b = 0.2, 1.0, 0.2
-    elseif remainingTime <= 0 then
-        title_text = "TIME OVER!"
-        title_color_r, title_color_g, title_color_b = 1.0, 0.5, 0.0
+        sub_text = "일어나보니 발표 시간을 놓쳤다..."
+        sub_color_r, sub_color_g, sub_color_b = 0.2, 1.0, 0.2
     end
     
     DebugDraw.Text(
@@ -451,26 +453,35 @@ function DrawGameOverUI()
         title_color_r, title_color_g, title_color_b, 1.0,
         48.0, true, true, "Arial"
     )
+
+    DebugDraw.Text(
+        sub_text,
+        panel_x, panel_y + 140.0, panel_x + panel_w, panel_y + 140.0,
+        sub_color_r, sub_color_g, sub_color_b, 1.0,
+        24.0, true, true, "Arial"
+    )
     
     -- 시간 표시
     local minutes = math.floor(remainingTime / 60)
     local seconds = math.floor(remainingTime % 60)
-    local time_text = string.format("Remaining Time: %d:%02d", minutes, seconds)
+    local time_text = string.format("남은 시간: %d:%02d", minutes, seconds)
     DebugDraw.Text(
         time_text,
-        panel_x, panel_y + 140.0, panel_x + panel_w, panel_y + 180.0,
+        panel_x, panel_y + 140.0, panel_x + panel_w, panel_y + 200.0,
         1.0, 1.0, 1.0, 1.0,
         24.0, false, true, "Consolas"
     )
     
-    -- 점수 표시
-    local score_text = string.format("SCORE: %d", finalScore)
-    DebugDraw.Text(
-        score_text,
-        panel_x, panel_y + 200.0, panel_x + panel_w, panel_y + 260.0,
-        1.0, 0.84, 0.0, 1.0,  -- 금색
-        36.0, true, true, "Arial"
-    )
+    if currentHP > 0 and remainingTime > 0 then
+        -- 점수 표시
+        local score_text = string.format("점수: %d", finalScore)
+        DebugDraw.Text(
+            score_text,
+            panel_x, panel_y + 200.0, panel_x + panel_w, panel_y + 260.0,
+            1.0, 0.84, 0.0, 1.0,  -- 금색
+            36.0, true, true, "Arial"
+        )
+    end
     
     -- 재시작 안내
     local restart_pulse = 0.6 + 0.4 * math.abs(math.sin(remainingTime * 3.0))
