@@ -1,6 +1,6 @@
 {
   "Actors" : {
-    "262" : {
+    "271" : {
       "ActorName" : "AmbientLight",
       "Components" : [{
           "Intensity" : 0.550000,
@@ -52,7 +52,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "270" : {
+    "275" : {
       "ActorName" : "DirectionalLight",
       "Components" : [{
           "Intensity" : 3.000000,
@@ -108,7 +108,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "274" : {
+    "279" : {
       "ActorName" : "TestMap",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -139,7 +139,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "277" : {
+    "282" : {
       "ActorName" : "Managers",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -198,61 +198,6 @@
       "Type" : "AActor",
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
-    },
-    "308" : {
-      "ActorName" : "APlayer_0",
-      "Components" : [{
-          "IsEditorOnly" : "false",
-          "IsVisualizationComponent" : "false",
-          "Name" : "UScriptComponent",
-          "ScriptPath" : "Player.lua",
-          "Type" : "UScriptComponent"
-        }, {
-          "IsEditorOnly" : "false",
-          "IsVisualizationComponent" : "false",
-          "Location" : [0.000000, 0.000000, 0.000000],
-          "Name" : "USphereComponent",
-          "ParentName" : "UStaticMeshComponent",
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "ShapeColor" : {
-            "A" : 255.000000,
-            "B" : 255.000000,
-            "G" : 0.000000,
-            "R" : 200.000000
-          },
-          "SphereRadius" : 20.000000,
-          "Type" : "USphereComponent",
-          "bDrawOnlyIfSelected" : "false",
-          "bVisible" : "true"
-        }, {
-          "IsEditorOnly" : "false",
-          "IsVisualizationComponent" : "false",
-          "Location" : [0.000000, 6.636385, 0.000000],
-          "Name" : "UStaticMeshComponent",
-          "ObjStaticMeshAsset" : "Data/Dice.obj",
-          "ParentName" : "",
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Type" : "UStaticMeshComponent",
-          "bVisible" : "true"
-        }, {
-          "IsEditorOnly" : "true",
-          "IsVisualizationComponent" : "true",
-          "Location" : [0.000000, 0.000000, 0.000000],
-          "Name" : "UUUIDTextComponent",
-          "ParentName" : "UStaticMeshComponent",
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Type" : "UUUIDTextComponent",
-          "bVisible" : "true"
-        }],
-      "Location" : [0.000000, 6.636385, 0.000000],
-      "Rotation" : [-0.000000, 0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "APlayer",
-      "bCanEverTick" : "true",
-      "bTickInEditor" : "false"
     }
   },
   "NextUUID" : 0,
@@ -262,7 +207,7 @@
       "FarClip" : 5000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [0.000000, 0.000000, 100.000000],
+      "Location" : [0.000000, 6.636385, 100.000000],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, 0.000000, 0.000000]
@@ -272,7 +217,7 @@
       "FarClip" : 5000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [-100.000000, 0.000000, 0.000000],
+      "Location" : [-100.000000, 6.636385, 0.000000],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, 0.000000, 0.000000]
