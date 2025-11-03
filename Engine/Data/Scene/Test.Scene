@@ -1,6 +1,7 @@
 {
   "Actors" : {
     "262" : {
+      "ActorName" : "AmbientLight",
       "Components" : [{
           "Intensity" : 0.550000,
           "IsEditorOnly" : "false",
@@ -52,6 +53,7 @@
       "bTickInEditor" : "false"
     },
     "266" : {
+      "ActorName" : "Player",
       "Components" : [{
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
@@ -88,6 +90,7 @@
       "bTickInEditor" : "false"
     },
     "270" : {
+      "ActorName" : "DirectionalLight",
       "Components" : [{
           "Intensity" : 3.000000,
           "IsEditorOnly" : "false",
@@ -143,6 +146,7 @@
       "bTickInEditor" : "false"
     },
     "274" : {
+      "ActorName" : "TestMap",
       "Components" : [{
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
@@ -173,6 +177,7 @@
       "bTickInEditor" : "false"
     },
     "277" : {
+      "ActorName" : "Enemy",
       "Components" : [{
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
@@ -209,6 +214,7 @@
       "bTickInEditor" : "false"
     },
     "281" : {
+      "ActorName" : "Managers",
       "Components" : [{
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
@@ -253,6 +259,12 @@
           "Name" : "UScriptComponent_3",
           "ScriptPath" : "GameManager.lua",
           "Type" : "UScriptComponent"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_5",
+          "ScriptPath" : "EnemySpawner.lua",
+          "Type" : "UScriptComponent"
         }],
       "Location" : [0.000000, 0.000000, 0.000000],
       "Rotation" : [-0.000000, 0.000000, 0.000000],
@@ -269,7 +281,7 @@
       "FarClip" : 5000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [0.000000, 3.553125, 100.000000],
+      "Location" : [0.000000, 0.000000, 100.000000],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, 0.000000, 0.000000]
@@ -279,7 +291,7 @@
       "FarClip" : 5000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [-100.000000, 3.553125, 3.913781],
+      "Location" : [-100.000000, 0.000000, 0.000000],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, 0.000000, 0.000000]
@@ -289,7 +301,7 @@
       "FarClip" : 1000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [-12.570356, -3.039684, 13.913781],
+      "Location" : [-13.312094, 3.134174, 13.913781],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, -70.000000, 0.000000]
@@ -299,7 +311,7 @@
       "FarClip" : 5000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [0.000000, -100.000000, 3.913781],
+      "Location" : [0.000000, -100.000000, 0.000000],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, 0.000000, 0.000000]
