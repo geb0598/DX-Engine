@@ -53,4 +53,18 @@ void UBoxComponentWidget::RenderWidget()
 	}
 
 	ImGui::PopStyleColor(3);
+
+	// Collision Settings
+	ImGui::Separator();
+	ImGui::Text("Collision");
+
+	bool bGenerateOverlap = BoxComponent->GetGenerateOverlapEvents();
+	if (ImGui::Checkbox("Generate Overlap Events", &bGenerateOverlap))
+	{
+		BoxComponent->SetGenerateOverlapEvents(bGenerateOverlap);
+	}
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::SetTooltip("If enabled, this component will generate overlap events (BeginOverlap/EndOverlap)");
+	}
 }

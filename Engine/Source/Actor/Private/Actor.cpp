@@ -33,7 +33,6 @@ TArray<FDelegateInfoBase*> AActor::GetDelegates() const
 
 	Result.Add(MakeDelegateInfo("OnActorBeginOverlap", &MutableThis->OnActorBeginOverlap));
 	Result.Add(MakeDelegateInfo("OnActorEndOverlap", &MutableThis->OnActorEndOverlap));
-	Result.Add(MakeDelegateInfo("OnActorHit", &MutableThis->OnActorHit));
 
 	return Result;
 }

@@ -75,6 +75,7 @@ bool UWorld::EndPlay()
 void UWorld::Tick(float DeltaTimes)
 {
 	WorldTimeSeconds += DeltaTimes;
+	FrameNumber++;
 	if (!Level || !bBegunPlay)
 	{
 		return;
@@ -106,6 +107,11 @@ void UWorld::Tick(float DeltaTimes)
 
 	if (WorldType == EWorldType::Game || WorldType == EWorldType::PIE)
 	{
+		// 중앙집중식 overlap 업데이트 (Unreal Engine 방식)
+		// PIE/Game 모드에서만 실행 (Editor 모드에서는 실행 안 함)
+		// Component tick 여부와 무관하게 모든 overlap을 한번에 체크
+		Level->UpdateAllOverlaps();
+
 		// 액터 배열 복사본으로 순회 (Tick 도중 액터가 추가/삭제될 수 있음)
 		TArray<AActor*> ActorsToTick = Level->GetLevelActors();
 		for (AActor* Actor : ActorsToTick)
@@ -232,7 +238,8 @@ AActor* UWorld::SpawnActor(UClass* InActorClass, JSON* ActorJsonData)
 	// - Level->SpawnActorToLevel()로 위임하여 중복 코드 제거
 	// - Level의 private 멤버(LevelActors) 직접 접근 문제
 	// - bBegunPlay 체크를 파라미터로 전달하는 방식 검토
-	AActor* NewActor = Cast<AActor>(NewObject(InActorClass, this));
+	// FIX: Actor's Outer should be Level, not World (for GetOuter() to work correctly)
+	AActor* NewActor = Cast<AActor>(NewObject(InActorClass, Level));
 	if (NewActor)
 	{
 		Level->LevelActors.Add(NewActor);
