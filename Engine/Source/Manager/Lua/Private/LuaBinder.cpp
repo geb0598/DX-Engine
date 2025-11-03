@@ -2,6 +2,7 @@
 #include "Manager/Lua/Public/LuaBinder.h"
 #include "Actor/Public/Actor.h"
 #include "Actor/Public/GameMode.h"
+#include "Actor/Public/EnemySpawnerActor.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Input/Public/InputManager.h"
@@ -66,13 +67,11 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 		},
 
 		// Find template actor by name
-		"FindTemplateActorByName", [](ULevel* Level, const std::string& InName) -> sol::optional<AActor*> {
+		// Returns AActor* (can be nullptr) - supports polymorphism via sol2 RTTI
+		"FindTemplateActorByName", [](ULevel* Level, const std::string& InName) -> AActor* {
 			if (!Level)
-				return sol::nullopt;
-			AActor* FoundActor = Level->FindTemplateActorByName(FName(InName));
-			if (FoundActor)
-				return FoundActor;
-			return sol::nullopt;
+				return nullptr;
+			return Level->FindTemplateActorByName(FName(InName));
 		},
 
 		// Find all template actors by class (returns Lua table)
@@ -92,13 +91,11 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 		},
 
 		// Find regular actor by name (template actors excluded)
-		"FindActorByName", [](ULevel* Level, const std::string& InName) -> sol::optional<AActor*> {
+		// Returns AActor* (can be nullptr) - supports polymorphism via sol2 RTTI
+		"FindActorByName", [](ULevel* Level, const std::string& InName) -> AActor* {
 			if (!Level)
-				return sol::nullopt;
-			AActor* FoundActor = Level->FindActorByName(FName(InName));
-			if (FoundActor)
-				return FoundActor;
-			return sol::nullopt;
+				return nullptr;
+			return Level->FindActorByName(FName(InName));
 		},
 
 		// Find all regular actors by class (returns Lua table, template actors excluded)
@@ -279,6 +276,17 @@ void FLuaBinder::BindMathTypes(sol::state& LuaState)
 	);
 }
 
+// Helper macro for adding type-safe cast functions to AActor
+// Usage: Add new types easily by adding a single line with this macro
+#define BIND_ACTOR_CAST(ClassName) \
+	"To" #ClassName, [](AActor* Self) -> ClassName* { \
+		if (!Self) return nullptr; \
+		if (Self->GetClass()->IsChildOf(ClassName::StaticClass())) { \
+			return static_cast<ClassName*>(Self); \
+		} \
+		return nullptr; \
+	}
+
 void FLuaBinder::BindActorTypes(sol::state& LuaState)
 {
 	// -- Actor -- //
@@ -329,7 +337,11 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		),
 		"GetActorForwardVector", sol::resolve<FVector() const>(&AActor::GetActorForwardVector),
 		"GetActorUpVector", sol::resolve<FVector() const>(&AActor::GetActorUpVector),
-		"GetActorRightVector", sol::resolve<FVector() const>(&AActor::GetActorRightVector)
+		"GetActorRightVector", sol::resolve<FVector() const>(&AActor::GetActorRightVector),
+
+		// Type-safe casting functions - add new actor types here using the macro
+		BIND_ACTOR_CAST(AEnemySpawnerActor)
+		// BIND_ACTOR_CAST(AnotherActorType),  // Example for future additions
 	);
 
 	// --- AGameMode ---
@@ -398,6 +410,12 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
             }
         )
     );
+
+	// --- AEnemySpawnerActor ---
+	LuaState.new_usertype<AEnemySpawnerActor>("AEnemySpawnerActor",
+		sol::base_classes, sol::bases<AActor>(),
+		"RequestSpawn", &AEnemySpawnerActor::RequestSpawn
+	);
 }
 
 void FLuaBinder::BindComponentTypes(sol::state& LuaState)

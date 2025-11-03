@@ -82,6 +82,18 @@ public:
         }
     }
 
+    /**
+     * @brief Lua 콜백 함수 호출 (const char* 오버로드)
+     * @tparam Args 전달할 인자 타입들
+     * @param FunctionName 호출할 Lua 함수 이름
+     * @param args 전달할 인자들
+     */
+    template<typename... Args>
+    void CallLuaCallback(const char* FunctionName, Args&&... args)
+    {
+        CallLuaCallback(FString(FunctionName), std::forward<Args>(args)...);
+    }
+
 private:
     void BeginLuaEnv();
 

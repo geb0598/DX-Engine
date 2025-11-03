@@ -34,7 +34,7 @@ void UScriptComponent::TickComponent(float DeltaTime)
     Super::TickComponent(DeltaTime);
     if (LuaEnv.valid())
     {
-        LuaEnv["Tick"](DeltaTime);
+        CallLuaCallback("Tick", DeltaTime);
     	UpdateCoroutines(DeltaTime);
     }
 }
@@ -98,7 +98,7 @@ void UScriptComponent::ClearScript()
 
     if (LuaEnv.valid())
     {
-        LuaEnv["EndPlay"]();
+        CallLuaCallback("EndPlay");
     }
 
     if (!ScriptName.IsNone())
@@ -117,7 +117,7 @@ void UScriptComponent::HotReload(sol::environment NewEnv)
 
     if (LuaEnv.valid())
     {
-        LuaEnv["EndPlay"]();
+        CallLuaCallback("EndPlay");
     }
 
     if (NewEnv.valid())
@@ -137,7 +137,7 @@ void UScriptComponent::BeginLuaEnv()
     LuaEnv["Self"] = this;
     BindOwnerDelegates();
 
-    LuaEnv["BeginPlay"]();
+    CallLuaCallback("BeginPlay");
 }
 
 UClass* UScriptComponent::GetSpecificWidgetClass() const
