@@ -1,6 +1,6 @@
 {
   "Actors" : {
-    "16443" : {
+    "269" : {
       "ActorName" : "AmbientLight",
       "Components" : [{
           "Intensity" : 0.550000,
@@ -30,7 +30,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_0",
           "ParentName" : "UAmbientLightComponent_0",
-          "Rotation" : [0.103188, 45.900303, 0.143689],
+          "Rotation" : [-1.571797, 65.990456, -1.720588],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -52,7 +52,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "16447" : {
+    "273" : {
       "ActorName" : "DirectionalLight",
       "Components" : [{
           "Intensity" : 3.000000,
@@ -86,7 +86,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_4",
           "ParentName" : "UDirectionalLightComponent_0",
-          "Rotation" : [-23.227055, -22.259485, -55.995014],
+          "Rotation" : [-40.519451, -10.815907, -51.468319],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -108,7 +108,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "16451" : {
+    "277" : {
       "ActorName" : "TestMap",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -145,7 +145,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "16454" : {
+    "281" : {
       "ActorName" : "Managers",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -165,7 +165,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_17",
           "ParentName" : "USceneComponent_0",
-          "Rotation" : [0.103188, 45.900303, 0.143689],
+          "Rotation" : [-1.571797, 65.990456, -1.720588],
           "Scale" : [2.000000, 2.000000, 2.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -205,62 +205,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "16461" : {
-      "ActorName" : "APlayer_0",
-      "Components" : [{
-          "IsEditorOnly" : "false",
-          "IsVisualizationComponent" : "false",
-          "Name" : "UScriptComponent",
-          "ScriptPath" : "Player.lua",
-          "Type" : "UScriptComponent"
-        }, {
-          "IsEditorOnly" : "false",
-          "IsVisualizationComponent" : "false",
-          "Location" : [0.000000, 0.000000, 0.000000],
-          "Name" : "USphereComponent",
-          "ParentName" : "UStaticMeshComponent",
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "ShapeColor" : {
-            "A" : 255.000000,
-            "B" : 255.000000,
-            "G" : 0.000000,
-            "R" : 200.000000
-          },
-          "SphereRadius" : 20.000000,
-          "Type" : "USphereComponent",
-          "bDrawOnlyIfSelected" : "false",
-          "bVisible" : "true"
-        }, {
-          "IsEditorOnly" : "false",
-          "IsVisualizationComponent" : "false",
-          "Location" : [0.000000, 6.636385, 0.000000],
-          "Name" : "UStaticMeshComponent",
-          "ObjStaticMeshAsset" : "Data/Dice.obj",
-          "ParentName" : "",
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Type" : "UStaticMeshComponent",
-          "bVisible" : "true"
-        }, {
-          "IsEditorOnly" : "true",
-          "IsVisualizationComponent" : "true",
-          "Location" : [0.000000, 0.000000, 0.000000],
-          "Name" : "UUUIDTextComponent",
-          "ParentName" : "UStaticMeshComponent",
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Type" : "UUUIDTextComponent",
-          "bVisible" : "true"
-        }],
-      "Location" : [0.000000, 6.636385, 0.000000],
-      "Rotation" : [-0.000000, 0.000000, 0.000000],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "APlayer",
-      "bCanEverTick" : "true",
-      "bTickInEditor" : "false"
-    },
-    "60143" : {
+    "295" : {
       "ActorName" : "AStaticMeshActor_2",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -297,7 +242,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "69666" : {
+    "299" : {
       "ActorName" : "AStaticMeshActor_3",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -334,7 +279,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "71931" : {
+    "303" : {
       "ActorName" : "AStaticMeshActor_4",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -399,10 +344,10 @@
       "FarClip" : 1000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [-39.005577, 1.700186, 16.051798],
+      "Location" : [-32.446049, 6.133961, 30.069471],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
-      "Rotation" : [0.000000, -45.900391, -0.099995]
+      "Rotation" : [0.000000, -66.000061, 0.700000]
     },
     "3" : {
       "CameraType" : 0,
