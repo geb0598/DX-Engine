@@ -39,6 +39,9 @@ void AGameMode::EndPlay()
 	{
 		MainCamera->SetViewTarget(nullptr);
 	}
+
+	// Player 포인터 정리 (게임 재시작 시 dangling pointer 방지)
+	Player = nullptr;
 }
 
 void AGameMode::InitGame()

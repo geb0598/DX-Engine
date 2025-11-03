@@ -6,8 +6,13 @@
 local bStarted = false
 local bGameEnded = false
 
+-- [Cached References] - BeginPlay에서 초기화
+local cachedWorld = nil
+local cachedLevel = nil
+local cachedEnemySpawner = nil
+
 -- [Movement]
-local moveSpeed = 500.0
+local moveSpeed = 100.0
 local rotationSpeed = 30.0
 local currentRotation = FVector(0, 0, 0)
 local InitLocation = FVector(0, 0, 0)
@@ -90,9 +95,28 @@ end
 function BeginPlay()
     bStarted = false
     bGameEnded = false
-    local world = GetWorld()
-    if world then
-        gameMode = world:GetGameMode()
+
+    -- [Cached References] 초기화
+    cachedWorld = GetWorld()
+    if cachedWorld then
+        cachedLevel = cachedWorld:GetLevel()
+        gameMode = cachedWorld:GetGameMode()
+
+        -- EnemySpawner 캐싱
+        if cachedLevel then
+            local spawnerActor = cachedLevel:FindActorByName("EnemySpawner")
+            if spawnerActor then
+                cachedEnemySpawner = spawnerActor:ToAEnemySpawnerActor()
+                if cachedEnemySpawner then
+                    Log("[Player] Cached EnemySpawner")
+                else
+                    Log("[Player] WARNING: EnemySpawner cast failed")
+                end
+            else
+                Log("[Player] WARNING: EnemySpawner not found")
+            end
+        end
+
         gameMode.OnGameStarted = StartGame
         gameMode.OnGameEnded = EndedTest
         gameMode:StartGame()
@@ -522,18 +546,12 @@ end
 ---
 -- [Enemy Spawning] EnemySpawner에게 스폰 요청
 ---
+-- [Enemy Spawn] 캐시된 EnemySpawner를 사용하여 Enemy 스폰 요청
+---
 function RequestSpawnEnemy()
-    local world = GetWorld()
-    if world then
-        local level = world:GetLevel()
-        if level then
-            local actor = level:FindActorByName("EnemySpawner")
-            if actor then
-                local spawner = actor:ToAEnemySpawnerActor()
-                if spawner then
-                    spawner:RequestSpawn()
-                end
-            end
-        end
+    if cachedEnemySpawner then
+        cachedEnemySpawner:RequestSpawn()
+    else
+        Log("[Player] WARNING: EnemySpawner not available")
     end
 end

@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "Actor/Public/Actor.h"
 
 DECLARE_DELEGATE(FOnGameInit);
@@ -26,6 +26,7 @@ public:
 
 	bool IsGameRunning() const { return bGameRunning; }
 	bool IsGameEnded() const { return bGameEnded; }
+	AActor* GetPlayer() const { return Player; }
 
 protected:
 	AActor* Player = nullptr;

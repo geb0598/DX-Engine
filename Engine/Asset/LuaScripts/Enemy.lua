@@ -44,14 +44,25 @@ end
 function Tick(dt)
     -- 간단한 추적 AI
     if targetPlayer then
-        local direction = targetPlayer.Location - Owner.Location
-        direction.Z = 0  -- 수평 방향 계산
+        -- X/Y 평면에서만 방향 계산 (Z축 무시)
+        local enemyPos = Owner.Location
+        local playerPos = targetPlayer.Location
 
-        if direction:Length() > 1.0 then
+        local direction = FVector(
+            playerPos.X - enemyPos.X,
+            playerPos.Y - enemyPos.Y,
+            0.0  -- Z축은 항상 0으로 설정
+        )
+
+        if direction:Length() >= 0.0 then
             direction:Normalize()
 
-            -- 이동
-            local newLocation = Owner.Location + (direction * moveSpeed * dt)
+            -- X/Y 평면에서만 이동
+            local newLocation = FVector(
+                enemyPos.X + direction.X * moveSpeed * dt,
+                enemyPos.Y + direction.Y * moveSpeed * dt,
+                enemyPos.Z  -- Z는 유지
+            )
 
             -- 점프 효과 (Sin 곡선)
             jumpTime = jumpTime + dt
@@ -60,7 +71,7 @@ function Tick(dt)
 
             Owner.Location = newLocation
 
-            -- Player 방향을 바라보도록 회전
+            -- Player 방향을 바라보도록 회전 (X/Y 평면 기준)
             Owner.Rotation = FQuaternion.MakeFromDirection(direction)
         end
     end

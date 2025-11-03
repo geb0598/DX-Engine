@@ -397,7 +397,8 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
                     }
                 });
             }
-        )
+        ),
+		"GetPlayer", &AGameMode::GetPlayer
     );
 
 	// --- AEnemySpawnerActor ---

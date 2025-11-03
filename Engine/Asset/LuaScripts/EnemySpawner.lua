@@ -4,16 +4,23 @@
 -- 사용: AEnemySpawnerActor에 ScriptComponent를 추가하고 이 스크립트 할당
 ------------------------------------------------------------------
 
-local templateEnemy = nil
+-- Enemy 템플릿 배열 (여러 종류)
+local enemyTemplates = {}
+local enemyTemplateNames = {"Enemy1", "Enemy2"}  -- 사용할 템플릿 이름들
 
 -- 설정
-local spawnOffsetRange = 50            -- 스폰 오프셋 범위 (±값)
-local spawnDelay = 2.0                 -- 스폰 간격 (초)
+local spawnRadiusMin = 80.0           -- Player로부터 최소 거리
+local spawnRadiusMax = 200.0           -- Player로부터 최대 거리
+local spawnDelay = 3.0                 -- 스폰 간격 (초)
 local spawnTimer = 0.0                 -- 스폰 타이머
 local maxEnemies = 10                  -- 최대 Enemy 개수
 
 -- 생성된 Enemy 추적 (WeakAActor 사용)
 local spawnedEnemies = {}              -- WeakAActor 배열
+
+-- Player 참조
+local world = nil
+local GameMode = nil
 
 -- 무효한 Enemy들을 배열에서 제거
 local function CleanupInvalidEnemies()
@@ -36,31 +43,42 @@ local function CleanupInvalidEnemies()
 end
 
 function BeginPlay()
-    -- 템플릿 액터 캐시
-    local world = GetWorld()
-    if world then
-        -- Template Actor는 Editor World에만 존재하므로
-        local editorWorld = world:GetSourceEditorWorld()
-        if not editorWorld then
-            -- Editor World인 경우 그대로 사용
-            editorWorld = world
-        end
-
-        local level = editorWorld:GetLevel()
-        if level then
-            local found = level:FindTemplateActorByName("Enemy")
-            if found ~= nil then
-                templateEnemy = found
-                Log("[EnemySpawner] Cached template 'Enemy'")
-            else
-                Log("[EnemySpawner] ERROR: Could not find template actor named 'Enemy'")
-            end
-        end
-        -- Owner의 Delegate는 ScriptComponent에서 자동으로 바인딩됨
-        -- OnEnemySpawnRequested 함수가 있으면 자동으로 연결됨
-        Log("[EnemySpawner] Ready for spawn requests")
+    world = GetWorld()
+    if not world then
+        return
     end
 
+    GameMode = world:GetGameMode()
+    if not GameMode then
+        return
+    end
+
+    -- Template Actor는 Editor World에만 존재하므로
+    local editorWorld = world:GetSourceEditorWorld()
+    if not editorWorld then
+        -- Editor World인 경우 그대로 사용
+        editorWorld = world
+    end
+
+    local level = editorWorld:GetLevel()
+    if level then
+        -- 여러 Enemy 템플릿 로드
+        for i, templateName in ipairs(enemyTemplateNames) do
+            local found = level:FindTemplateActorByName(templateName)
+            if found ~= nil then
+                table.insert(enemyTemplates, found)
+                Log("[EnemySpawner] Cached template '" .. templateName .. "'")
+            else
+                Log("[EnemySpawner] WARNING: Could not find template actor named '" .. templateName .. "'")
+            end
+        end
+
+        if #enemyTemplates == 0 then
+            Log("[EnemySpawner] ERROR: No enemy templates found!")
+        end
+    end
+
+    Log("[EnemySpawner] Ready for spawn requests with " .. tostring(#enemyTemplates) .. " templates")
 end
 
 -- Owner의 OnEnemySpawnRequested Delegate가 호출할 콜백
@@ -83,8 +101,8 @@ function OnEnemySpawnRequested()
 
     Log("[EnemySpawner] Spawn request received - spawning enemy (" .. tostring(currentEnemyCount + 1) .. "/" .. tostring(maxEnemies) .. ")")
 
-    -- Spawner 자신의 위치 기준으로 랜덤 스폰
-    local newEnemy = SpawnInternal(nil)
+    -- Player 위치 기준으로 랜덤 스폰
+    local newEnemy = SpawnInternal()
 
     -- WeakAActor로 래핑하여 배열에 추가 (안전한 추적)
     if newEnemy ~= nil then
@@ -96,10 +114,22 @@ function OnEnemySpawnRequested()
     spawnTimer = spawnDelay
 end
 
--- 내부 스폰 함수 (targetLocation이 없으면 Spawner 자신의 위치 기준)
-function SpawnInternal(targetLocation)
-    if templateEnemy == nil then
-        Log("[EnemySpawner] Template not ready; spawn skipped")
+-- 내부 스폰 함수 (Player 위치 기준 반경 내 랜덤 스폰)
+function SpawnInternal()
+    if not GameMode then
+        return nil
+    end
+
+    -- 템플릿 체크
+    if #enemyTemplates == 0 then
+        Log("[EnemySpawner] No templates available; spawn skipped")
+        return nil
+    end
+
+    -- Player 체크 (nil이거나 삭제된 경우)
+    local targetPlayer = GameMode:GetPlayer()
+    if not targetPlayer then
+        Log("[EnemySpawner] Player not found; spawn skipped")
         return nil
     end
 
@@ -110,13 +140,23 @@ function SpawnInternal(targetLocation)
         return nil
     end
 
-    local baseLocation = targetLocation or Owner.Location
-    local spawnOffset = FVector(math.random(-spawnOffsetRange, spawnOffsetRange), math.random(-spawnOffsetRange, spawnOffsetRange), 0)
-    local spawnLocation = baseLocation + spawnOffset
+    -- 랜덤 템플릿 선택
+    local randomIndex = math.random(1, #enemyTemplates)
+    local selectedTemplate = enemyTemplates[randomIndex]
 
-    local newEnemy = templateEnemy:DuplicateFromTemplate(level, spawnLocation)
+    -- Player 위치 기준으로 반경 내 랜덤 위치 계산
+    local playerLocation = targetPlayer.Location
+    local angle = math.random() * 2 * math.pi  -- 0 ~ 2π 랜덤 각도
+    local radius = spawnRadiusMin + math.random() * (spawnRadiusMax - spawnRadiusMin)  -- Min~Max 사이 랜덤 거리
+
+    local offsetX = math.cos(angle) * radius
+    local offsetY = math.sin(angle) * radius
+    local spawnLocation = FVector(playerLocation.X + offsetX, playerLocation.Y + offsetY, playerLocation.Z)
+
+    -- Enemy 스폰
+    local newEnemy = selectedTemplate:DuplicateFromTemplate(level, spawnLocation)
     if newEnemy ~= nil then
-        Log("[EnemySpawner] Spawned enemy at: " .. tostring(spawnLocation.X) .. ", " .. tostring(spawnLocation.Y))
+        Log("[EnemySpawner] Spawned enemy '" .. enemyTemplateNames[randomIndex] .. "' at: " .. tostring(spawnLocation.X) .. ", " .. tostring(spawnLocation.Y))
     else
         Log("[EnemySpawner] DuplicateFromTemplate failed")
     end
