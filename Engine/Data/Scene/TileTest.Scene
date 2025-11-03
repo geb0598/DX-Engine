@@ -1,6 +1,6 @@
 {
   "Actors" : {
-    "269" : {
+    "271" : {
       "ActorName" : "AmbientLight",
       "Components" : [{
           "Intensity" : 0.050000,
@@ -52,7 +52,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "277" : {
+    "275" : {
       "ActorName" : "TestMap",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -89,7 +89,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "281" : {
+    "279" : {
       "ActorName" : "Managers",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -149,7 +149,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "288" : {
+    "286" : {
       "ActorName" : "AStaticMeshActor_2",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -186,7 +186,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "292" : {
+    "290" : {
       "ActorName" : "AStaticMeshActor_3",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -223,7 +223,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "296" : {
+    "294" : {
       "ActorName" : "AStaticMeshActor_4",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -260,14 +260,14 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "891" : {
+    "298" : {
       "ActorName" : "AHeightFogActor_0",
       "Components" : [{
           "FogCutoffDistance" : 1000.000000,
-          "FogDensity" : 0.089000,
+          "FogDensity" : 0.011000,
           "FogHeightFalloff" : 0.151000,
           "FogInScatteringColor" : [0.541176, 0.415686, 0.827451],
-          "FogMaxOpacity" : 0.900000,
+          "FogMaxOpacity" : 0.750000,
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
           "Location" : [0.000000, 0.000000, 0.000000],
@@ -336,7 +336,7 @@
       "FarClip" : 50.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [-32.931435, -1.680732, 14.000000],
+      "Location" : [-4.158891, -13.040089, 26.000000],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
       "Rotation" : [0.000000, -70.000000, 0.000000]
