@@ -18,8 +18,12 @@ struct FSensorParamsData
 FLightSensorPass::FLightSensorPass(UPipeline* InPipeline, ID3D11Buffer* InCameraConstantBuffer)
 	: FRenderPass(InPipeline, InCameraConstantBuffer, nullptr)
 {
-	// Compute Shader 생성
-	FRenderResourceFactory::CreateComputeShader(L"Asset/Shader/LightIntensitySensor.hlsl", &LightSensorCS);
+	// Compute Shader 생성 - BLINN_PHONG 매크로로 컴파일하여 섀도우 계산 활성화
+	D3D_SHADER_MACRO macros[] = {
+		{ "LIGHTING_MODEL_BLINNPHONG", "1" },
+		{ nullptr, nullptr }
+	};
+	FRenderResourceFactory::CreateComputeShader(L"Asset/Shader/LightIntensitySensor.hlsl", &LightSensorCS, "main", macros);
 	if (!LightSensorCS)
 	{
 		UE_LOG("[LightSensorPass] ERROR: Failed to create Compute Shader!");
