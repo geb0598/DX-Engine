@@ -3,7 +3,7 @@
     "269" : {
       "ActorName" : "AmbientLight",
       "Components" : [{
-          "Intensity" : 0.550000,
+          "Intensity" : 0.050000,
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
           "LightColor" : [1.000000, 1.000000, 1.000000],
@@ -30,7 +30,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_0",
           "ParentName" : "UAmbientLightComponent_0",
-          "Rotation" : [-1.571797, 65.990456, -1.720588],
+          "Rotation" : [-0.000000, 70.000008, -0.000000],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -49,62 +49,6 @@
       "Rotation" : [-0.000000, 0.000000, 0.000000],
       "Scale" : [1.000000, 1.000000, 1.000000],
       "Type" : "AAmbientLight",
-      "bCanEverTick" : "false",
-      "bTickInEditor" : "false"
-    },
-    "273" : {
-      "ActorName" : "DirectionalLight",
-      "Components" : [{
-          "Intensity" : 3.000000,
-          "IsEditorOnly" : "false",
-          "IsVisualizationComponent" : "false",
-          "LightColor" : [1.000000, 1.000000, 1.000000],
-          "Location" : [0.000000, 0.000000, 7.023633],
-          "Name" : "UDirectionalLightComponent_0",
-          "PSMMinInfinityZ" : 1.500000,
-          "PSMSlideBackEnabled" : true,
-          "PSMUnitCubeClip" : true,
-          "ParentName" : "",
-          "Rotation" : [36.597687, 31.186226, 84.174965],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "ShadowBias" : 0.005000,
-          "ShadowModeIndex" : 0,
-          "ShadowProjectionMode" : 0,
-          "ShadowResolutionScale" : 1024.000000,
-          "ShadowSharpen" : 0.500000,
-          "ShadowSlopeBias" : 1.000000,
-          "Type" : "UDirectionalLightComponent",
-          "bCastShadows" : "true",
-          "bLightEnabled" : "true",
-          "bVisible" : "true"
-        }, {
-          "EditorIconScreenSize" : "0.100000",
-          "EditorIconScreenSizeScaled" : "true",
-          "EditorIconSprite" : "Data\\Icons\\S_LightDirectional.PNG",
-          "IsEditorOnly" : "true",
-          "IsVisualizationComponent" : "true",
-          "Location" : [0.000000, 0.000000, 0.000000],
-          "Name" : "UEditorIconComponent_4",
-          "ParentName" : "UDirectionalLightComponent_0",
-          "Rotation" : [-40.519451, -10.815907, -51.468319],
-          "Scale" : [5.000000, 5.000000, 5.000000],
-          "Type" : "UEditorIconComponent",
-          "bVisible" : "true"
-        }, {
-          "IsEditorOnly" : "true",
-          "IsVisualizationComponent" : "true",
-          "Location" : [0.000000, 0.000000, 0.000000],
-          "Name" : "UUUIDTextComponent_2",
-          "ParentName" : "UDirectionalLightComponent_0",
-          "Rotation" : [27.206163, -39.442577, -83.544495],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Type" : "UUUIDTextComponent",
-          "bVisible" : "true"
-        }],
-      "Location" : [0.000000, 0.000000, 7.023633],
-      "Rotation" : [36.597687, 31.186226, 84.174965],
-      "Scale" : [1.000000, 1.000000, 1.000000],
-      "Type" : "ADirectionalLight",
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
@@ -165,7 +109,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_17",
           "ParentName" : "USceneComponent_0",
-          "Rotation" : [-1.571797, 65.990456, -1.720588],
+          "Rotation" : [-0.000000, 70.000008, -0.000000],
           "Scale" : [2.000000, 2.000000, 2.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -205,7 +149,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "295" : {
+    "288" : {
       "ActorName" : "AStaticMeshActor_2",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -242,7 +186,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "299" : {
+    "292" : {
       "ActorName" : "AStaticMeshActor_3",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -279,7 +223,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "303" : {
+    "296" : {
       "ActorName" : "AStaticMeshActor_4",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -315,6 +259,54 @@
       "Type" : "AStaticMeshActor",
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
+    },
+    "891" : {
+      "ActorName" : "AHeightFogActor_0",
+      "Components" : [{
+          "FogCutoffDistance" : 1000.000000,
+          "FogDensity" : 0.089000,
+          "FogHeightFalloff" : 0.151000,
+          "FogInScatteringColor" : [0.541176, 0.415686, 0.827451],
+          "FogMaxOpacity" : 0.900000,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UHeightFogComponent",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "StartDistance" : 13.500000,
+          "Type" : "UHeightFogComponent"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent",
+          "ParentName" : "UHeightFogComponent",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }, {
+          "BillBoardScreenSize" : "0.100000",
+          "BillBoardScreenSizeScaled" : "true",
+          "BillBoardSprite" : "Data\\Icons\\ExponentialHeightFog_64x.png",
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UBillBoardComponent",
+          "ParentName" : "UHeightFogComponent",
+          "Rotation" : [-0.000000, 70.000008, -0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UBillBoardComponent",
+          "bVisible" : "true"
+        }],
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AHeightFogActor",
+      "bCanEverTick" : "false",
+      "bTickInEditor" : "false"
     }
   },
   "NextUUID" : 0,
@@ -341,13 +333,13 @@
     },
     "2" : {
       "CameraType" : 0,
-      "FarClip" : 1000.000000,
+      "FarClip" : 50.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [-32.446049, 6.133961, 30.069471],
+      "Location" : [-32.931435, -1.680732, 14.000000],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
-      "Rotation" : [0.000000, -66.000061, 0.700000]
+      "Rotation" : [0.000000, -70.000000, 0.000000]
     },
     "3" : {
       "CameraType" : 0,
