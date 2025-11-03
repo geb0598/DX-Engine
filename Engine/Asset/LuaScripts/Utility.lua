@@ -77,3 +77,10 @@ Keys = {
 
     End = 41
 }
+
+CollisionTag = {
+    None = 0,
+    Player = 1,
+    Enemy = 2,
+    Wall = 3,
+}

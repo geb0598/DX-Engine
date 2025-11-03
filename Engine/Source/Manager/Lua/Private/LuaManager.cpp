@@ -75,11 +75,11 @@ void ULuaManager::LoadAllLuaScripts()
             }
             LuaScriptCaches[FileName] = FLuaScriptInfo(FullPath, LastModifiedTime);
 
-            if (FileName == "template")
+            if (FileName == "Template" || FileName == "template")
             {
                 LuaTemplatePath = FullPath;
             }
-            else if (FileName == "utility")
+            else if (FileName == "Utility" || FileName == "utility")
             {
             	MasterLuaState.script_file(FullPath);
             }
