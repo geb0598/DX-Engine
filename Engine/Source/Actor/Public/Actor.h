@@ -164,7 +164,7 @@ public:
 	 * @return 복제된 액터 (템플릿이 아닌 일반 액터, Level에 추가된 상태)
 	 */
 	AActor* DuplicateFromTemplate(
-		ULevel* TargetLevel = nullptr,
+		class ULevel* TargetLevel = nullptr,
 		const FVector& InLocation = FVector::Zero(),
 		const FQuaternion& InRotation = FQuaternion::Identity()
 	);

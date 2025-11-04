@@ -65,13 +65,13 @@ end
 function EndGameSequence()
     bGameEnded = true
     bStarted = false
-    
+
     -- 점수 계산: 남은 시간이 많을수록 높은 점수
     -- 남은 시간 1초당 100점
     finalScore = math.floor(remainingTime * 100)
-    
+
     Log(string.format("Game Ended! Remaining Time: %.2fs, Score: %d", remainingTime, finalScore))
-    
+
     if gameMode then
         gameMode:EndGame()
     end
@@ -138,14 +138,14 @@ function Tick(dt)
     -- 게임 종료 화면
     if bGameEnded then
         DrawGameOverUI()
-        
+
         -- Space 키로 재시작
         if IsKeyDown(Keys.Space) then
             RestartGame()
         end
         return
     end
-    
+
     -- 게임 진행 중
     if bStarted == false then
         return
@@ -153,7 +153,7 @@ function Tick(dt)
 
     -- 제한 시간 감소
     remainingTime = remainingTime - dt
-    
+
     -- 시간 초과 체크
     if remainingTime <= 0 then
         remainingTime = 0
@@ -161,7 +161,7 @@ function Tick(dt)
         EndGameSequence()
         return
     end
-    
+
     Movement(dt)
     UpdateLightExposure(dt)
     DrawDangerOverlay()  -- 위험 오버레이 (먼저 그리기)
@@ -211,15 +211,15 @@ function Movement(dt)
             Log("Movement blocked by wall.")
         end
     end
-    
+
     --- [Movement] 회전 ---
     local mouseDelta = GetMouseDelta()
-    
+
     currentRotation.X = 0
     local newPitch = currentRotation.Y - (mouseDelta.Y * rotationSpeed * dt)
     currentRotation.Y = Clamp(newPitch, -89.0, 89.0)
     currentRotation.Z = currentRotation.Z + (mouseDelta.X * rotationSpeed * dt)
-    
+
     Owner.Rotation = FQuaternion.FromEuler(currentRotation)
 end
 
@@ -231,23 +231,23 @@ function DrawDangerOverlay()
     if CurrentLightLevel < LightCriticalPoint then
         return
     end
-    
+
     -- 빠르게 깜빡이는 효과
     local pulse = math.abs(math.sin(remainingTime * 8.0))
-    
+
     -- 노출 시간이 적을수록 더 강하게 깜빡임
     local intensity = 0.0
     if CurrentLightExposureTime < MaxLightExposureTime then
         local danger_ratio = 1.0 - (CurrentLightExposureTime / MaxLightExposureTime)
         intensity = danger_ratio * 0.4  -- 최대 40% 불투명도
     end
-    
+
     -- 화면 전체를 덮는 빨간 오버레이
     if intensity > 0.05 then
         local alpha = intensity * pulse
         local screen_w = 1920.0
         local screen_h = 1080.0
-        
+
         DebugDraw.Rectangle(
             0, 0, screen_w, screen_h,
             1.0, 0.0, 0.0, alpha,  -- 빨간색, 가변 투명도
@@ -297,59 +297,59 @@ function DrawUI()
     local bar_width = 200.0
     local bar_height = 20.0
     local bar_spacing = 10.0
-    
+
     -- ============ TIME DISPLAY ============
     local time_y = ui_y - 30.0
-    
+
     -- 남은 시간을 분:초 형식으로 변환
     local minutes = math.floor(remainingTime / 60)
     local seconds = math.floor(remainingTime % 60)
     local time_text = string.format("남은 시간: %d:%02d", minutes, seconds)
-    
+
     -- 시간이 30초 미만이면 빨간색으로 경고
     local time_r, time_g, time_b = 1.0, 1.0, 0.3
     if remainingTime < 30.0 then
         local time_pulse = 0.5 + 0.5 * math.abs(math.sin(remainingTime * 5.0))
         time_r, time_g, time_b = 1.0, time_pulse * 0.3, 0.0
     end
-    
+
     DebugDraw.Text(
         time_text,
         ui_x, time_y, ui_x + bar_width, time_y + 25.0,
         time_r, time_g, time_b, 1.0,
         16.0, true, false, "Consolas"
     )
-    
+
     -- ============ HP BAR ============
     local hp_ratio = currentHP / MaxHP
-    
+
     local hp_c_r, hp_c_g, hp_c_b = 0.1, 1.0, 0.1
     if hp_ratio <= 0.3 then
         hp_c_r, hp_c_g, hp_c_b = 1.0, 0.1, 0.1
     elseif hp_ratio <= 0.6 then
         hp_c_r, hp_c_g, hp_c_b = 1.0, 1.0, 0.1
     end
-    
+
     DebugDraw.Rectangle(
         ui_x, ui_y, ui_x + bar_width, ui_y + bar_height,
         0.1, 0.1, 0.1, 0.8,
         true
     )
-    
+
     local hp_fill_width = bar_width * hp_ratio
     DebugDraw.Rectangle(
         ui_x, ui_y, ui_x + hp_fill_width, ui_y + bar_height,
         hp_c_r, hp_c_g, hp_c_b, 1.0,
         true
     )
-    
+
     local bar_end_x = ui_x + bar_width
     local bar_end_y = ui_y + bar_height
     DebugDraw.Line(ui_x, ui_y, bar_end_x, ui_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(ui_x, bar_end_y, bar_end_x, bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(ui_x, ui_y, ui_x, bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(bar_end_x, ui_y, bar_end_x, bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
-    
+
     local hp_text = string.format("체력: %d / %d", currentHP, MaxHP)
     DebugDraw.Text(
         hp_text,
@@ -357,37 +357,37 @@ function DrawUI()
         1.0, 1.0, 1.0, 1.0,
         14.0, true, true, "Consolas"
     )
-    
+
     -- ============ LIGHT EXPOSURE BAR ============
     local light_bar_y = ui_y + bar_height + bar_spacing
     local exposure_ratio = CurrentLightExposureTime / MaxLightExposureTime
-    
+
     local light_c_r, light_c_g, light_c_b = 0.1, 0.5, 1.0
     if exposure_ratio <= 0.2 then
         light_c_r, light_c_g, light_c_b = 1.0, 0.0, 0.0
     elseif exposure_ratio <= 0.5 then
         light_c_r, light_c_g, light_c_b = 1.0, 0.5, 0.0
     end
-    
+
     DebugDraw.Rectangle(
         ui_x, light_bar_y, ui_x + bar_width, light_bar_y + bar_height,
         0.1, 0.1, 0.1, 0.8,
         true
     )
-    
+
     local light_fill_width = bar_width * exposure_ratio
     DebugDraw.Rectangle(
         ui_x, light_bar_y, ui_x + light_fill_width, light_bar_y + bar_height,
         light_c_r, light_c_g, light_c_b, 1.0,
         true
     )
-    
+
     local light_bar_end_y = light_bar_y + bar_height
     DebugDraw.Line(ui_x, light_bar_y, bar_end_x, light_bar_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(ui_x, light_bar_end_y, bar_end_x, light_bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(ui_x, light_bar_y, ui_x, light_bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
     DebugDraw.Line(bar_end_x, light_bar_y, bar_end_x, light_bar_end_y, 0.8, 0.8, 0.8, 1.0, 2.0)
-    
+
     local light_text = string.format("빛 노출 가능 시간: %.1fs", CurrentLightExposureTime)
     DebugDraw.Text(
         light_text,
@@ -395,7 +395,7 @@ function DrawUI()
         1.0, 1.0, 1.0, 1.0,
         12.0, true, true, "Consolas"
     )
-    
+
     if CurrentLightExposureTime < 1.0 then
         local pulse = math.abs(math.sin(remainingTime * 5.0))
         DebugDraw.Text(
@@ -414,46 +414,46 @@ function DrawGameOverUI()
     -- 화면 전체를 덮는 반투명 배경
     local screen_w = 1920.0
     local screen_h = 1080.0
-    
+
     DebugDraw.Rectangle(
         0, 0, screen_w, screen_h,
         0.0, 0.0, 0.0, 0.7,  -- 어두운 배경
         true
     )
-    
+
     -- 중앙 패널
-    local panel_w = 600.0
+    local panel_w = 700.0
     local panel_h = 400.0
     local panel_x = (screen_w - panel_w) / 2.0
     local panel_y = (screen_h - panel_h) / 2.0
-    
+
     DebugDraw.Rectangle(
         panel_x, panel_y, panel_x + panel_w, panel_y + panel_h,
         0.1, 0.1, 0.15, 0.95,
         true
     )
-    
+
     -- 패널 테두리 (빛나는 효과)
     local pulse = 0.5 + 0.5 * math.abs(math.sin(remainingTime * 2.0))
     DebugDraw.Line(panel_x, panel_y, panel_x + panel_w, panel_y, 0.2, 0.8, 1.0, pulse, 4.0)
     DebugDraw.Line(panel_x, panel_y + panel_h, panel_x + panel_w, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
     DebugDraw.Line(panel_x, panel_y, panel_x, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
     DebugDraw.Line(panel_x + panel_w, panel_y, panel_x + panel_w, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
-    
+
     -- Title Text
     local title_text = "코치님께 발각되고 말았다..."
     local title_color_r, title_color_g, title_color_b = 1.0, 0.2, 0.2
 
     local sub_text = "??? : 다음 발제가 왜 궁금해요?"
     local sub_color_r, sub_color_g, sub_color_b = 1.0, 0.0, 0.0
-    
+
     if currentHP > 0 and remainingTime > 0 then
         title_text = "꿈에서 깼다..."
         title_color_r, title_color_g, title_color_b = 0.2, 1.0, 0.2
         sub_text = "일어나보니 발표 시간을 놓쳤다..."
         sub_color_r, sub_color_g, sub_color_b = 0.2, 1.0, 0.2
     end
-    
+
     DebugDraw.Text(
         title_text,
         panel_x, panel_y + 40.0, panel_x + panel_w, panel_y + 100.0,
@@ -467,7 +467,7 @@ function DrawGameOverUI()
         sub_color_r, sub_color_g, sub_color_b, 1.0,
         24.0, true, true, "Arial"
     )
-    
+
     -- 시간 표시
     local minutes = math.floor(remainingTime / 60)
     local seconds = math.floor(remainingTime % 60)
@@ -478,7 +478,7 @@ function DrawGameOverUI()
         1.0, 1.0, 1.0, 1.0,
         24.0, false, true, "Consolas"
     )
-    
+
     if currentHP > 0 and remainingTime > 0 then
         -- 점수 표시
         local score_text = string.format("점수: %d", finalScore)
@@ -489,7 +489,7 @@ function DrawGameOverUI()
             36.0, true, true, "Arial"
         )
     end
-    
+
     -- 재시작 안내
     local restart_pulse = 0.6 + 0.4 * math.abs(math.sin(remainingTime * 3.0))
     DebugDraw.Text(
@@ -505,24 +505,24 @@ end
 ---
 function RestartGame()
     Log("Restarting game...")
-    
+
     -- 게임 상태 초기화
     bGameEnded = false
     bStarted = true
     remainingTime = MaxTime
     finalScore = 0
-    
+
     -- 플레이어 상태 초기화
     currentHP = MaxHP
     CurrentLightExposureTime = MaxLightExposureTime
     bLightWarningShown = false
-    
+
     Owner.Location = InitLocation
-    
+
     if gameMode then
         gameMode:StartGame()
     end
-    
+
     Log("Game restarted successfully!")
 end
 
