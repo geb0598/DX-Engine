@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include "Core/Public/Object.h"
+#include "Demo/Public/Player.h"
 #include "Global/Types.h"
 
 class UEditor;
@@ -13,7 +14,7 @@ using JSON = json::JSON;
 
 struct FWorldSettings
 {
-	UClass* DefaultPlayerClass = nullptr;
+	UClass* DefaultPlayerClass = APlayer::StaticClass(); // For Demo 원래는 nullptr
 };
 
 // It represents the context in which the world is being used.
