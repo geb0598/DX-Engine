@@ -664,7 +664,10 @@ void AActor::BeginPlay()
 {
 	if (bBegunPlay) return;
 	bBegunPlay = true;
-	for (auto& Component : OwnedComponents)
+
+	// BeginPlay 중 AddComponent 호출로 인한 배열 수정 방지를 위해 복사본 사용
+	TArray<UActorComponent*> ComponentsCopy = OwnedComponents;
+	for (auto& Component : ComponentsCopy)
 	{
 		if (Component)
 		{
