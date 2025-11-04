@@ -597,6 +597,24 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 	        );
 	    }
 	);
+
+	// --- GetViewportWidth ---
+	// Lua: DebugDraw.GetViewportWidth()
+	DebugDraw.set_function("GetViewportWidth",
+	    []()
+	    {
+	        return FD2DOverlayManager::GetInstance().GetViewportWidth();
+	    }
+	);
+
+	// --- GetViewportHeight ---
+	// Lua: DebugDraw.GetViewportHeight()
+	DebugDraw.set_function("GetViewportHeight",
+	    []()
+	    {
+	        return FD2DOverlayManager::GetInstance().GetViewportHeight();
+	    }
+	);
 	// -- Math -- //
 	LuaState.set_function("Clamp", &Clamp<float>);
 }

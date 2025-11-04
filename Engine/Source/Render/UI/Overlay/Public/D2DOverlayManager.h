@@ -45,6 +45,16 @@ public:
 	 */
 	void FlushAndRender();
 
+	/**
+	 * @brief 현재 뷰포트의 Width 반환
+	 */
+	float GetViewportWidth() const { return CurrentViewport.Width; }
+
+	/**
+	 * @brief 현재 뷰포트의 Height 반환
+	 */
+	float GetViewportHeight() const { return CurrentViewport.Height; }
+
 private:
 	FD2DOverlayManager() = default;
 	~FD2DOverlayManager() = default;

@@ -245,8 +245,8 @@ function DrawDangerOverlay()
     -- 화면 전체를 덮는 빨간 오버레이
     if intensity > 0.05 then
         local alpha = intensity * pulse
-        local screen_w = 1920.0
-        local screen_h = 1080.0
+        local screen_w = DebugDraw.GetViewportWidth()
+        local screen_h = DebugDraw.GetViewportHeight()
 
         DebugDraw.Rectangle(
             0, 0, screen_w, screen_h,
@@ -411,9 +411,9 @@ end
 -- [UI] 게임 오버 화면
 ---
 function DrawGameOverUI()
-    -- 화면 전체를 덮는 반투명 배경
-    local screen_w = 1920.0
-    local screen_h = 1080.0
+    -- 화면 전체를 덮는 반투명 배경 (뷰포트 크기 동적 가져오기)
+    local screen_w = DebugDraw.GetViewportWidth()
+    local screen_h = DebugDraw.GetViewportHeight()
 
     DebugDraw.Rectangle(
         0, 0, screen_w, screen_h,
@@ -422,10 +422,11 @@ function DrawGameOverUI()
     )
 
     -- 중앙 패널
-    local panel_w = 700.0
-    local panel_h = 400.0
+    local panel_w = 800.0
+    local panel_h = 500.0
     local panel_x = (screen_w - panel_w) / 2.0
     local panel_y = (screen_h - panel_h) / 2.0
+    local padding = 40.0  -- 내부 여백
 
     DebugDraw.Rectangle(
         panel_x, panel_y, panel_x + panel_w, panel_y + panel_h,
@@ -441,6 +442,10 @@ function DrawGameOverUI()
     DebugDraw.Line(panel_x + panel_w, panel_y, panel_x + panel_w, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
 
     -- Title Text
+    local content_x = panel_x + padding
+    local content_w = panel_w - (padding * 2)
+    local content_y = panel_y + padding
+
     local title_text = "코치님께 발각되고 말았다..."
     local title_color_r, title_color_g, title_color_b = 1.0, 0.2, 0.2
 
@@ -456,14 +461,14 @@ function DrawGameOverUI()
 
     DebugDraw.Text(
         title_text,
-        panel_x, panel_y + 40.0, panel_x + panel_w, panel_y + 100.0,
+        content_x, content_y + 20.0, content_x + content_w, content_y + 80.0,
         title_color_r, title_color_g, title_color_b, 1.0,
         48.0, true, true, "Arial"
     )
 
     DebugDraw.Text(
         sub_text,
-        panel_x, panel_y + 140.0, panel_x + panel_w, panel_y + 140.0,
+        content_x, content_y + 100.0, content_x + content_w, content_y + 140.0,
         sub_color_r, sub_color_g, sub_color_b, 1.0,
         24.0, true, true, "Arial"
     )
@@ -474,7 +479,7 @@ function DrawGameOverUI()
     local time_text = string.format("남은 시간: %d:%02d", minutes, seconds)
     DebugDraw.Text(
         time_text,
-        panel_x, panel_y + 140.0, panel_x + panel_w, panel_y + 200.0,
+        content_x, content_y + 170.0, content_x + content_w, content_y + 210.0,
         1.0, 1.0, 1.0, 1.0,
         24.0, false, true, "Consolas"
     )
@@ -482,21 +487,24 @@ function DrawGameOverUI()
     if currentHP > 0 and remainingTime > 0 then
         -- 점수 표시
         local score_text = string.format("점수: %d", finalScore)
+        local score_y_start = content_y + 230.0
+
         DebugDraw.Text(
             score_text,
-            panel_x, panel_y + 200.0, panel_x + panel_w, panel_y + 260.0,
+            content_x, score_y_start, content_x + content_w, score_y_start + 80.0,
             1.0, 0.84, 0.0, 1.0,  -- 금색
-            36.0, true, true, "Arial"
+            44.0, true, true, "Arial"  -- 폰트 크기 44, 중앙 정렬
         )
     end
 
     -- 재시작 안내
     local restart_pulse = 0.6 + 0.4 * math.abs(math.sin(remainingTime * 3.0))
+    local restart_y = panel_y + panel_h - padding - 50.0
     DebugDraw.Text(
         "Press SPACE to Restart",
-        panel_x, panel_y + 320.0, panel_x + panel_w, panel_y + 360.0,
+        content_x, restart_y, content_x + content_w, restart_y + 40.0,
         1.0, 1.0, 1.0, restart_pulse,
-        20.0, false, true, "Arial"
+        22.0, false, true, "Arial"
     )
 end
 
