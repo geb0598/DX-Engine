@@ -521,6 +521,14 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 		{
 			return FVector(0, 0, 0);
 		}
+
+		// PIE 모드에서는 ConsumeMouseDelta 사용
+		// 에디터 모드에서는 일반 GetMouseDelta
+		if (GEditor && GEditor->IsPIESessionActive() && !GEditor->IsPIEMouseDetached())
+		{
+			return InputMgr.ConsumeMouseDelta();
+		}
+
 		return InputMgr.GetMouseDelta();
 	});
 

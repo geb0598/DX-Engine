@@ -14,6 +14,7 @@ public:
 	void Update(const FAppWindow* InWindow);
 	void UpdateMousePosition(const FAppWindow* InWindow);
 	void ProcessKeyMessage(uint32 InMessage, WPARAM WParam, LPARAM LParam);
+	void ProcessRawMouseDelta(int DeltaX, int DeltaY);
 
 	bool IsKeyDown(EKeyInput InKey) const;
 	bool IsKeyPressed(EKeyInput InKey) const;
@@ -44,6 +45,14 @@ public:
 	const FVector& GetMouseNDCPosition() const { return NDCMousePosition; }
 	const FVector& GetMousePosition() const { return CurrentMousePosition; }
 	const FVector& GetMouseDelta() const { return MouseDelta; }
+
+	// Consume Mouse Delta
+	FVector ConsumeMouseDelta()
+	{
+		FVector Delta = MouseDelta;
+		MouseDelta = FVector(0.0f, 0.0f, 0.0f);
+		return Delta;
+	}
 
 	void ClearMouseWheelDelta()
 	{

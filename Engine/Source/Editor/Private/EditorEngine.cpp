@@ -141,7 +141,7 @@ void UEditorEngine::StartPIE()
     int32 LastClickedViewport = ViewportMgr.GetLastClickedViewportIndex();
     ViewportMgr.SetPIEActiveViewportIndex(LastClickedViewport);
 
-    // PIE 뷰포트 중앙으로 마우스 이동
+    // PIE 뷰포트 중앙으로 마우스 이동 및 영역 제한
     if (LastClickedViewport >= 0 && LastClickedViewport < ViewportMgr.GetViewports().Num())
     {
         FViewport* PIEViewport = ViewportMgr.GetViewports()[LastClickedViewport];
@@ -153,6 +153,14 @@ void UEditorEngine::StartPIE()
 
             // Windows API로 마우스 커서 이동
             SetCursorPos(CenterX, CenterY);
+
+            // 마우스를 뷰포트 영역에 제한
+            RECT ClipRect;
+            ClipRect.left = static_cast<LONG>(ViewportRect.Left);
+            ClipRect.top = static_cast<LONG>(ViewportRect.Top);
+            ClipRect.right = static_cast<LONG>(ViewportRect.Left + ViewportRect.Width);
+            ClipRect.bottom = static_cast<LONG>(ViewportRect.Top + ViewportRect.Height);
+            ClipCursor(&ClipRect);
         }
     }
 
@@ -202,6 +210,9 @@ void UEditorEngine::EndPIE()
 
     // GWorld를 다시 Editor World로 복원
     GWorld = GetEditorWorldContext().World();
+
+    // 마우스 영역 제한 해제
+    ClipCursor(nullptr);
 
     // PIE 종료 시 커서 복원
     while (ShowCursor(TRUE) < 0);
@@ -394,12 +405,31 @@ void UEditorEngine::TogglePIEMouseDetach()
     if (bPIEMouseDetached)
     {
         UE_LOG_INFO("PIE: Mouse Input Detached (Shift+F1)");
+        // 마우스 영역 제한 해제
+        ClipCursor(nullptr);
         // 커서 표시
         while (ShowCursor(TRUE) < 0);
     }
     else
     {
         UE_LOG_INFO("PIE: Mouse Input Reattached (Shift+F1)");
+        // 마우스를 뷰포트 영역에 다시 제한
+        UViewportManager& ViewportMgr = UViewportManager::GetInstance();
+        int32 PIEActiveViewport = ViewportMgr.GetPIEActiveViewportIndex();
+        if (PIEActiveViewport >= 0 && PIEActiveViewport < ViewportMgr.GetViewports().Num())
+        {
+            FViewport* PIEViewport = ViewportMgr.GetViewports()[PIEActiveViewport];
+            if (PIEViewport)
+            {
+                FRect ViewportRect = PIEViewport->GetRect();
+                RECT ClipRect;
+                ClipRect.left = static_cast<LONG>(ViewportRect.Left);
+                ClipRect.top = static_cast<LONG>(ViewportRect.Top);
+                ClipRect.right = static_cast<LONG>(ViewportRect.Left + ViewportRect.Width);
+                ClipRect.bottom = static_cast<LONG>(ViewportRect.Top + ViewportRect.Height);
+                ClipCursor(&ClipRect);
+            }
+        }
         // 커서 숨김
         while (ShowCursor(FALSE) >= 0);
     }
