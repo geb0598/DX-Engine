@@ -43,7 +43,7 @@ void FRenderResourceFactory::CreateVertexShaderAndInputLayout(const wstring& InF
 	URenderer::GetInstance().GetDevice()->CreateVertexShader(VertexShaderBlob->GetBufferPointer(), VertexShaderBlob->GetBufferSize(), nullptr, OutVertexShader);
 	if (InInputLayoutDescs.Num() > 0)
 		URenderer::GetInstance().GetDevice()->CreateInputLayout(InInputLayoutDescs.GetData(), static_cast<uint32>(InInputLayoutDescs.Num()), VertexShaderBlob->GetBufferPointer(), VertexShaderBlob->GetBufferSize(), OutInputLayout);
-	
+
 	SafeRelease(VertexShaderBlob);
 	SafeRelease(ErrorBlob);
 }
@@ -71,7 +71,7 @@ void FRenderResourceFactory::CreateVertexShaderAndInputLayout(const wstring& InF
 	{
 		URenderer::GetInstance().GetDevice()->CreateInputLayout(InInputLayoutDescs.GetData(), static_cast<uint32>(InInputLayoutDescs.Num()), VertexShaderBlob->GetBufferPointer(), VertexShaderBlob->GetBufferSize(), OutInputLayout);
 	}
-	
+
 	SafeRelease(VertexShaderBlob);
 	SafeRelease(ErrorBlob);
 }
@@ -116,7 +116,7 @@ void FRenderResourceFactory::CreatePixelShader(const wstring& InFilePath, ID3D11
 #ifdef _DEBUG
 	Flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
-	
+
 	HRESULT Result = D3DCompileFromFile(InFilePath.data(), nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", Flag, 0, &PixelShaderBlob, &ErrorBlob);
 	if (FAILED(Result))
 	{
@@ -158,7 +158,7 @@ void FRenderResourceFactory::CreateComputeShader(const wstring& InFilePath, ID3D
 {
 	ID3DBlob* ShaderBlob = nullptr;
 	ID3DBlob* ErrorBlob = nullptr;
-	UINT Flag = 0;
+	UINT Flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #ifdef _DEBUG
 	Flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
