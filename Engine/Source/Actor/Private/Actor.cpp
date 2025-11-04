@@ -2,6 +2,7 @@
 #include "Actor/Public/Actor.h"
 
 #include "Component/Public/BillBoardComponent.h"
+#include "Component/Public/DecalComponent.h"
 #include "Component/Public/EditorIconComponent.h"
 #include "Component/Public/LightComponent.h"
 #include "Component/Public/SceneComponent.h"
@@ -155,6 +156,10 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
         		if (ULightComponent* LightComponent = Cast<ULightComponent>(Component))
         		{
         			LightComponent->RefreshVisualizationIconBinding();
+        		}
+        		if (UDecalComponent* DecalComponent = Cast<UDecalComponent>(Component))
+        		{
+        			DecalComponent->RefreshVisualizationIconBinding();
         		}
         	}
 
@@ -389,7 +394,7 @@ bool AActor::RemoveComponent(UActorComponent* InComponentToDelete, bool bShouldD
 
 	if (ULightComponent* LightComponent = Cast<ULightComponent>(InComponentToDelete))
 	{
-		// 1) 라이트에 연결된 시각화 아이콘이 있으면, 자식 분리 옵션과 무관하게 먼저 삭제
+		// 라이트에 연결된 시각화 아이콘이 있으면, 자식 분리 옵션과 무관하게 먼저 삭제
 		if (UEditorIconComponent* Icon = LightComponent->GetEditorIconComponent())
 		{
 			// 아이콘은 반드시 파괴되도록 자식 분리 옵션을 false로 호출
@@ -397,9 +402,19 @@ bool AActor::RemoveComponent(UActorComponent* InComponentToDelete, bool bShouldD
 			LightComponent->SetEditorIconComponent(nullptr);
 		}
 
-		// 2) 라이트 컴포넌트 자체를 등록 해제
+		// 라이트 컴포넌트 자체를 등록 해제
 		GWorld->GetLevel()->UnregisterComponent(LightComponent);
+	}
 
+	if (UDecalComponent* DecalComponent = Cast<UDecalComponent>(InComponentToDelete))
+	{
+		// 데칼에 연결된 시각화 아이콘이 있으면, 자식 분리 옵션과 무관하게 먼저 삭제
+		if (UEditorIconComponent* Icon = DecalComponent->GetEditorIconComponent())
+		{
+			// 아이콘은 반드시 파괴되도록 자식 분리 옵션을 false로 호출
+			RemoveComponent(Icon, false);
+			DecalComponent->SetEditorIconComponent(nullptr);
+		}
 	}
     if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(InComponentToDelete))
     {

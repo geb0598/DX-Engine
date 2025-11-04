@@ -13,5 +13,4 @@ public:
     ADecalActor();
 
     virtual UClass* GetDefaultRootComponent() override;
-    virtual void InitializeComponents() override;
 };

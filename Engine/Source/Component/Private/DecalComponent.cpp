@@ -1,8 +1,7 @@
 #include "pch.h"
-
-#include <algorithm>
-
 #include "Component/Public/DecalComponent.h"
+
+#include "Component/Public/EditorIconComponent.h"
 #include "Level/Public/Level.h"
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Physics/Public/OBB.h"
@@ -23,16 +22,22 @@ UDecalComponent::UDecalComponent()
 		SetTexture(TextureCache.begin()->second);
 	}
 	SetFadeTexture(UAssetManager::GetInstance().LoadTexture(FName("Data/Texture/FadeTexture/PerlinNoiseFadeTexture.png")));
-	
+
     SetPerspective(false);
 	bReceivesDecals = false;
 }
 
 UDecalComponent::~UDecalComponent()
-	{
-    SafeDelete(BoundingBox);
-    // DecalTexture is managed by AssetManager, no need to delete here
-	}
+{
+	SafeDelete(BoundingBox);
+	// DecalTexture is managed by AssetManager, no need to delete here
+}
+
+void UDecalComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	EnsureVisualizationIcon();
+}
 
 void UDecalComponent::TickComponent(float DeltaTime)
 {
@@ -57,7 +62,7 @@ void UDecalComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		{
 			SetTexture(UAssetManager::GetInstance().GetTextureCache().begin()->second);
 		}
-		
+
 		FString FadeTexturePath;
 		FJsonSerializer::ReadString(InOutHandle, "FadeTexture", FadeTexturePath, "Data/Texture/PerlinNoiseFadeTexture.png");
 		SetFadeTexture(UAssetManager::GetInstance().LoadTexture(FName(FadeTexturePath)));
@@ -158,8 +163,22 @@ UObject* UDecalComponent::Duplicate()
 	DuplicatedComponent->bIsFading = bIsFading;
 	DuplicatedComponent->bIsFadingIn = bIsFadingIn;
 	DuplicatedComponent->bIsFadePaused = bIsFadePaused;
-	
+
 	return DuplicatedComponent;
+}
+
+void UDecalComponent::DuplicateSubObjects(UObject* DuplicatedObject)
+{
+	Super::DuplicateSubObjects(DuplicatedObject);
+
+	UDecalComponent* DuplicatedDecal = Cast<UDecalComponent>(DuplicatedObject);
+	if (!DuplicatedDecal)
+	{
+		return;
+	}
+
+	// Icon 포인터 초기화 (DuplicateActor에서 EnsureVisualizationIcon으로 생성)
+	DuplicatedDecal->VisualizationIcon = nullptr;
 }
 
 void UDecalComponent::SetPerspective(bool bEnable)
@@ -196,15 +215,15 @@ void UDecalComponent::BeginFade()
 
 	if (bIsFading || bIsFadingIn)
 	{
-		FadeElapsedTime = (FadeProgress * FadeDuration) + FadeStartDelay;	
+		FadeElapsedTime = (FadeProgress * FadeDuration) + FadeStartDelay;
 	}
 	else
 	{
 		FadeElapsedTime = 0.0f;;
 	}
-	
+
 	bIsFading = true;
-	
+
 	bIsFadingIn = false;
 
 	bIsFadePaused = false;
@@ -213,7 +232,7 @@ void UDecalComponent::BeginFade()
 void UDecalComponent::BeginFadeIn()
 {
 	UE_LOG("--- 페이드 인 시작 ---");
-	
+
 	if (bIsFading || bIsFadingIn)
 	{
 		FadeElapsedTime = ((1.0f - FadeProgress) * FadeInDuration) + FadeInStartDelay;
@@ -223,22 +242,22 @@ void UDecalComponent::BeginFadeIn()
 		FadeElapsedTime = 0.0f;
 		FadeProgress = 1.0f;
 	}
-	
+
 	bIsFadingIn = true;
-	
+
 	bIsFading = false;
-	
+
 	bIsFadePaused = false;
 }
 
 void UDecalComponent::StopFade()
 {
 	bIsFading = false;
-	
+
 	bIsFadingIn = false;
-	
+
 	FadeProgress = 0.f;
-	
+
 	FadeElapsedTime = 0.f;
 }
 
@@ -276,7 +295,7 @@ void UDecalComponent::UpdateFade(float DeltaTime)
 				bIsFading = false;
 				if (bDestroyOwnerAfterFade)
 				{
-					GetOwner()->SetIsPendingDestroy(true);			
+					GetOwner()->SetIsPendingDestroy(true);
 				}
 			}
 		}
@@ -296,4 +315,82 @@ void UDecalComponent::UpdateFade(float DeltaTime)
 			}
 		}
 	}
+}
+
+void UDecalComponent::EnsureVisualizationIcon()
+{
+	if (VisualizationIcon)
+	{
+		return;
+	}
+
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor)
+	{
+		return;
+	}
+
+	if (GWorld)
+	{
+		EWorldType WorldType = GWorld->GetWorldType();
+		if (WorldType != EWorldType::Editor && WorldType != EWorldType::EditorPreview)
+		{
+			return;
+		}
+	}
+
+	UEditorIconComponent* Icon = OwnerActor->AddComponent<UEditorIconComponent>();
+	if (!Icon)
+	{
+		return;
+	}
+	Icon->AttachToComponent(this);
+	Icon->SetIsVisualizationComponent(true);
+	Icon->SetSprite(UAssetManager::GetInstance().LoadTexture("Data/Icons/DecalActor_64x.png"));
+	Icon->SetScreenSizeScaled(true);
+
+	VisualizationIcon = Icon;
+}
+
+void UDecalComponent::RefreshVisualizationIconBinding()
+{
+	AActor* OwnerActor = GetOwner();
+	if (!OwnerActor)
+	{
+		return;
+	}
+
+	UEditorIconComponent* BoundIcon = VisualizationIcon;
+	const bool bNeedsLookup = !BoundIcon || !BoundIcon->IsVisualizationComponent() || BoundIcon->GetAttachParent() != this;
+
+	if (bNeedsLookup)
+	{
+		BoundIcon = nullptr;
+		for (UActorComponent* Component : OwnerActor->GetOwnedComponents())
+		{
+			if (UEditorIconComponent* Candidate = Cast<UEditorIconComponent>(Component))
+			{
+				if (!Candidate->IsVisualizationComponent())
+				{
+					continue;
+				}
+
+				if (Candidate->GetAttachParent() != this)
+				{
+					continue;
+				}
+
+				BoundIcon = Candidate;
+				break;
+			}
+		}
+	}
+
+	if (!BoundIcon)
+	{
+		EnsureVisualizationIcon();
+		return;
+	}
+
+	VisualizationIcon = BoundIcon;
 }

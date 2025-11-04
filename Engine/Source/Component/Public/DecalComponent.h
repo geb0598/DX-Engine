@@ -11,6 +11,7 @@ public:
     UDecalComponent();
     virtual ~UDecalComponent() override;
 
+    virtual void BeginPlay() override;
     virtual void TickComponent(float DeltaTime) override;
     virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
@@ -25,6 +26,12 @@ public:
     const TPair<FName, ID3D11ShaderResourceView*>& GetSprite() const;
     UClass* GetSpecificWidgetClass() const override;
 
+    // --- EditorIconComponent ---
+    class UEditorIconComponent* GetEditorIconComponent() const { return VisualizationIcon; }
+    void SetEditorIconComponent(UEditorIconComponent* InEditorIconComponent) { VisualizationIcon = InEditorIconComponent; }
+    void EnsureVisualizationIcon();
+    void RefreshVisualizationIconBinding();
+
     // --- Perspective Projection ---
     void SetPerspective(bool bEnable);
     //void SetFOV(float InFOV) { FOV = InFOV; UpdateProjectionMatrix(); UpdateOBB(); }
@@ -38,12 +45,17 @@ public:
 
 protected:
     UTexture* DecalTexture = nullptr;
-    
+
     UTexture* FadeTexture = nullptr;
 
     FMatrix ProjectionMatrix;
+
+    // --- EditorIconComponent ---
+    UEditorIconComponent* VisualizationIcon = nullptr;
+
 public:
 	virtual UObject* Duplicate() override;
+	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
 
 private:
     // --- Projection Properties ---

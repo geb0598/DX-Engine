@@ -13,6 +13,7 @@
 #include "Global/Quaternion.h"
 #include "Utility/Public/ScopeCycleCounter.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
+#include "Component/Public/DecalComponent.h"
 #include "Component/Public/DecalSpotLightComponent.h"
 #include "Component/Public/PointLightComponent.h"
 #include "Physics/Public/BoundingSphere.h"
@@ -1684,20 +1685,30 @@ AActor* UEditor::DuplicateActor(AActor* InSourceActor)
 	// BeginPlay 호출 (에디터에서 생성된 Actor는 즉시 활성화)
 	NewActor->BeginPlay();
 
-	// LightComponent Visualization Icon 생성
+	// LightComponent & DecalComponent Visualization Icon 생성
 	// 순회 중 OwnedComponents 수정 방지를 위해 먼저 수집 후 생성
 	TArray<ULightComponent*> LightComponents;
+	TArray<UDecalComponent*> DecalComponents;
 	for (UActorComponent* Component : NewActor->GetOwnedComponents())
 	{
 		if (ULightComponent* LightComp = Cast<ULightComponent>(Component))
 		{
 			LightComponents.Add(LightComp);
 		}
+		if (UDecalComponent* DecalComp = Cast<UDecalComponent>(Component))
+		{
+			DecalComponents.Add(DecalComp);
+		}
 	}
 
 	for (ULightComponent* LightComp : LightComponents)
 	{
 		LightComp->EnsureVisualizationIcon();
+	}
+
+	for (UDecalComponent* DecalComp : DecalComponents)
+	{
+		DecalComp->EnsureVisualizationIcon();
 	}
 
 	return NewActor;
