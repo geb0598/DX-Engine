@@ -220,13 +220,6 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 				const int DeltaX = raw->data.mouse.lLastX;
 				const int DeltaY = raw->data.mouse.lLastY;
 
-				// Debug: Raw Input 동작 확인
-				static int FrameCount = 0;
-				if (++FrameCount % 100 == 0 && (DeltaX != 0 || DeltaY != 0))
-				{
-					UE_LOG("WM_INPUT: DeltaX=%d, DeltaY=%d", DeltaX, DeltaY);
-				}
-
 				UInputManager::GetInstance().ProcessRawMouseDelta(DeltaX, DeltaY);
 			}
 		}

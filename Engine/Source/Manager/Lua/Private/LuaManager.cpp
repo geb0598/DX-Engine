@@ -156,15 +156,15 @@ void ULuaManager::OpenScriptInEditor(const FName& LuaScriptName)
         return;
     }
 
-    FString FullPathFString = Info->FullPath.string();
-    HINSTANCE hInst = ShellExecute(NULL, L"open", StringToWideString(FullPathFString).c_str(),
-        NULL, LuaScriptPath.c_str(), SW_SHOWNORMAL
+    wstring FullPathWStr = Info->FullPath.wstring();
+    HINSTANCE InstanceHandle = ShellExecute(nullptr, L"open", FullPathWStr.data(),
+        nullptr, LuaScriptPath.c_str(), SW_SHOWNORMAL
     );
 
     // 오류
-    if ((INT_PTR)hInst <= 32)
+    if (reinterpret_cast<INT_PTR>(InstanceHandle) <= 32)
     {
-        MessageBox(NULL, L"파일 열기에 실패했습니다.", L"Error", MB_OK | MB_ICONERROR);
+        MessageBox(nullptr, L"파일 열기에 실패했습니다.", L"Error", MB_OK | MB_ICONERROR);
     }
 }
 
