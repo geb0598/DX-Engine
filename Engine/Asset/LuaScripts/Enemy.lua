@@ -63,7 +63,7 @@ function BeginPlay()
     Log("[Enemy] Spawned at: " .. tostring(Owner.Location.X) .. ", " .. tostring(Owner.Location.Y) .. " with speed: " .. tostring(moveSpeed))
 
     -- 초기 Z 위치 저장
-    -- initialZ = Owner.Location.Z
+    initialZ = 10.0
 
     -- Player는 첫 Tick에서 찾기 (BeginPlay 순서 보장 안됨)
 end
