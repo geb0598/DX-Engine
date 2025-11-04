@@ -151,16 +151,31 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
                 }
             }
 
+        	// Icon 바인딩을 위한 컴포넌트 수집 (순회 중 배열 수정 방지)
+        	TArray<ULightComponent*> LightComponents;
+        	TArray<UDecalComponent*> DecalComponents;
+
         	for (UActorComponent* Component : OwnedComponents)
         	{
         		if (ULightComponent* LightComponent = Cast<ULightComponent>(Component))
         		{
-        			LightComponent->RefreshVisualizationIconBinding();
+        			LightComponents.Add(LightComponent);
         		}
-        		if (UDecalComponent* DecalComponent = Cast<UDecalComponent>(Component))
+        		else if (UDecalComponent* DecalComponent = Cast<UDecalComponent>(Component))
         		{
-        			DecalComponent->RefreshVisualizationIconBinding();
+        			DecalComponents.Add(DecalComponent);
         		}
+        	}
+
+        	// Icon 바인딩 수행 (AddComponent 호출로 인한 OwnedComponents 수정 가능)
+        	for (ULightComponent* LightComponent : LightComponents)
+        	{
+        		LightComponent->RefreshVisualizationIconBinding();
+        	}
+
+        	for (UDecalComponent* DecalComponent : DecalComponents)
+        	{
+        		DecalComponent->RefreshVisualizationIconBinding();
         	}
 
         	if (RootComponent)
@@ -210,6 +225,15 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
         for (UActorComponent* Component : OwnedComponents)
         {
+        	// Visualization Icon 컴포넌트는 저장하지 않음
+        	if (UEditorIconComponent* IconComp = Cast<UEditorIconComponent>(Component))
+        	{
+        		if (IconComp->IsVisualizationComponent())
+        		{
+        			continue; // Visualization Icon은 스킵
+        		}
+        	}
+
         	JSON ComponentJson;
         	ComponentJson["Type"] = Component->GetClass()->GetName().ToString();
         	ComponentJson["Name"] = Component->GetName().ToString();
@@ -222,6 +246,13 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
         	}
 
         	Component->Serialize(bInIsLoading, ComponentJson);
+
+        	// RootComponent의 경우 Location은 Actor에 저장되므로 ZeroVector로 오버라이드
+        	if (Component == RootComponent)
+        	{
+        		ComponentJson["Location"] = FJsonSerializer::VectorToJson(FVector::ZeroVector());
+        	}
+
             ComponentsJson.append(ComponentJson);
         }
         InOutHandle["Components"] = ComponentsJson;
