@@ -38,7 +38,7 @@ void UBoundingBoxLines::MergeVerticesAt(TArray<FVector>& DestVertices, size_t In
 	InsertStartIndex = std::min(static_cast<int32>(InsertStartIndex), DestVertices.Num());
 
 	// 미리 메모리 확보
-	DestVertices.Reserve(DestVertices.Num() + std::distance(Vertices.begin(), Vertices.end()));
+	DestVertices.Reserve(static_cast<int32>(DestVertices.Num() + std::distance(Vertices.begin(), Vertices.end())));
 
 	// 덮어쓸 수 있는 개수 계산
 	size_t OverwriteCount = std::min(
@@ -128,7 +128,7 @@ void UBoundingBoxLines::UpdateVertices(const IBoundingVolume* NewBoundingVolume)
 
 		for (int32 i = 0; i < 60;++i)
 		{
-			LocalSpotLight[i + 1] = FVector(Extents.X, cosf((6.0f * i) * (PI / 180.0f)) * 0.5f, sinf((6.0f * i) * (PI / 180.0f)) * 0.5f); 
+			LocalSpotLight[i + 1] = FVector(Extents.X, cosf((6.0f * i) * (PI / 180.0f)) * 0.5f, sinf((6.0f * i) * (PI / 180.0f)) * 0.5f);
 		}
 
 		CurrentType = EBoundingVolumeType::SpotLight;
@@ -476,14 +476,14 @@ void UBoundingBoxLines::UpdateSpotLightVertices(const TArray<FVector>& InVertice
 		SpotLightLineIdx.Emplace(Segment + NumSegments + 1);
 		SpotLightLineIdx.Emplace(Segment + NumSegments + 2);
 	}
-	
+
 	// Apex에서 outer cone 밑면 각 점까지의 선분
 	for (uint32 Segment = 0; Segment < OuterCount; ++Segment)
 	{
 		SpotLightLineIdx.Emplace(ApexIndex);
 		SpotLightLineIdx.Emplace(static_cast<int32>(OuterStart + Segment));
 	}
-	
+
 	// outer cone 밑면 둘레 선분
 	for (uint32 Segment = 0; Segment < OuterCount; ++Segment)
 	{

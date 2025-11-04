@@ -92,33 +92,33 @@ bool FOctree::Remove(UPrimitiveComponent* InPrimitive)
 	}
 
 	// 경계 검사를 수행하지 않고 바로 탐색 시작
-    
+
 	// 1-A. 리프 노드인 경우 (현재 노드만 검사하면 됨)
 	if (IsLeaf())
 	{
 		// O(N) 탐색을 통해 프리미티브 목록에서 제거를 시도합니다.
-		if (Primitives.RemoveSwap(InPrimitive) > 0)
+		if (Primitives.RemoveSwap(InPrimitive))
 		{
 			return true;
 		}
 		return false; // 리프 노드에서 발견하지 못했으므로 탐색 종료
 	}
-    
+
 	// 1-B. 자식 노드가 있는 경우 (내부 노드)
 	else
 	{
 		// 2. 현재 노드의 Primitives 목록에서 제거 시도 (선택 사항: 일부 트리는 내부 노드에도 프리미티브를 저장함)
-		if (Primitives.RemoveSwap(InPrimitive) > 0)
+		if (Primitives.RemoveSwap(InPrimitive))
 		{
 			return true;
 		}
-       
+
 		// 3. 자식 노드 순회 (원래 등록되었을 위치를 재귀적으로 탐색)
 		bool bIsRemoved = false;
 
 		for (int Index = 0; Index < 8; ++Index)
 		{
-			// 💡 Children[Index]->Remove(InPrimitive) 호출 시, 
+			// 💡 Children[Index]->Remove(InPrimitive) 호출 시,
 			//    자식 노드 내부에서 다시 경계 검사가 수행되지 않도록 보장해야 합니다.
 			if (Children[Index] && Children[Index]->Remove(InPrimitive))
 			{
@@ -168,7 +168,7 @@ TArray<UPrimitiveComponent*> FOctree::FindNearestPrimitives(const FVector& FindP
 	float RootDistance = this->GetBoundingBox().GetCenterDistanceSquared(FindPos);
 	NodeQueue.push({ RootDistance, this });
 
-	while (!NodeQueue.empty() && Candidates.Num() < MaxPrimitiveCount)
+	while (!NodeQueue.empty() && Candidates.Num() < static_cast<int32>(MaxPrimitiveCount))
 	{
 		FOctree* CurrentNode = NodeQueue.top().second;
 		NodeQueue.pop();

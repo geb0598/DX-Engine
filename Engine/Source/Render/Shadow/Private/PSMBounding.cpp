@@ -114,7 +114,7 @@ FPSMBoundingSphere::FPSMBoundingSphere(const TArray<FVector>& Points)
 	Center = Points[0];
 	Radius = 0.0f;
 
-	for (size_t i = 1; i < Points.Num(); i++)
+	for (int32 i = 1; i < Points.Num(); i++)
 	{
 		FVector CenterToPoint = Points[i] - Center;
 		float DistSq = CenterToPoint.LengthSquared();

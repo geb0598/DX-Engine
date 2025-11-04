@@ -356,12 +356,12 @@ void UUIManager::PrintDebugInfo() const
 
     UE_LOG("UIManager: All ImGui windows hidden due to minimization.");
     UE_LOG("--- Window List ---");
-    for (size_t i = 0; i < UIWindows.Num(); ++i)
+    for (int32 i = 0; i < UIWindows.Num(); ++i)
     {
         auto* Window = UIWindows[i];
         if (Window)
         {
-            UE_LOG("[%zu] %u (%s)", i, Window->GetWindowID(),
+            UE_LOG("[%d] %u (%s)", i, Window->GetWindowID(),
                    Window->GetWindowTitle().ToString().data());
             UE_LOG("    State: %s", (Window->IsVisible() ? "Visible" : "Hidden"));
             UE_LOG("    Priority: %d", Window->GetPriority());

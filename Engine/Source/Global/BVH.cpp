@@ -8,13 +8,13 @@ FBVH::FBVH(FStaticMesh* InMesh)
 	Build(InMesh);
 }
 
-const FNode& FBVH::GetNode(uint32 Index) const
+const FNode& FBVH::GetNode(int32 Index) const
 {
 	assert(Index < Nodes.Num());
 	return Nodes[Index];
 }
 
-FNode& FBVH::GetNode(uint32 Index)
+FNode& FBVH::GetNode(int32 Index)
 {
 	assert(Index < Nodes.Num());
 	return Nodes[Index];
@@ -229,7 +229,7 @@ float FBVH::CalculateCostIncrease(int32 CandidateIndex, const FAABB& NewLeafAABB
 			CostIncrease += NewAncestorAABB.GetSurfaceArea() - AncestorNode.Box.GetSurfaceArea();
 			CurrentAABB = NewAncestorAABB;
 		}
-		
+
 		CurrentChildIndex = AncestorIndex;
 		AncestorIndex = AncestorNode.ParentIndex;
 	}
@@ -401,30 +401,30 @@ FAABB GetTriangleAABB(const FNormalVertex& V0, const FNormalVertex& V1, const FN
 bool FBVH::TraverseRay(const FRay& Ray, TArray<int32>& OutTriangleIndices) const
 {
 	OutTriangleIndices.Empty();
-	
+
 	// 빈 트리이거나 루트가 유효하지 않은 경우
 	if (RootIndex < 0 || RootIndex >= Nodes.Num())
 	{
 		return false; // Traverse failed
 	}
-	
+
 	// 스택을 사용한 반복적 순회로 구현 (재귀보다 성능상 유리)
 	TArray<int32> NodeStack;
 	NodeStack.Add(RootIndex);
-	
+
 	while (!NodeStack.IsEmpty())
 	{
 		int32 CurrentNodeIndex = NodeStack.Last();
 		NodeStack.Pop();
-		
+
 		const FNode& CurrentNode = Nodes[CurrentNodeIndex];
-		
+
 		// Ray와 현재 노드의 AABB 교차 검사
 		if (!CheckIntersectionRayBox(Ray, CurrentNode.Box))
 		{
 			continue; // AABB와 교차하지 않으면 이 노드의 자식들도 건너뜀
 		}
-		
+
 		if (CurrentNode.bIsLeaf)
 		{
 			// 리프 노드인 경우 삼각형 인덱스 추가
@@ -449,7 +449,7 @@ bool FBVH::TraverseRay(const FRay& Ray, TArray<int32>& OutTriangleIndices) const
 			}
 		}
 	}
-	
+
 	return true; // Traverse successful
 }
 

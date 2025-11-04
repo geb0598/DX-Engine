@@ -198,7 +198,7 @@ bool FObjImporter::LoadObj(const std::filesystem::path& FilePath, FObjInfo* OutO
 			}
 
 			/** @todo: 오목 다각형에 대한 지원 필요, 현재는 볼록 다각형만 지원 */
-			for (size_t i = 1; i + 1 < FaceBuffers.Num(); ++i)
+			for (int32 i = 1; i + 1 < FaceBuffers.Num(); ++i)
 			{
 				if (Config.bFlipWindingOrder)
 				{

@@ -116,7 +116,7 @@ void UConsoleWidget::RenderWidget()
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-	
+
 	// 제어 버튼들
 	if (ImGui::Button("Clear"))
 	{
@@ -130,7 +130,7 @@ void UConsoleWidget::RenderWidget()
 	{
 		ImGui::LogToClipboard();
 	}
-	
+
 	ImGui::PopStyleColor(3);
 
 	// ImGui::SameLine();
@@ -372,12 +372,12 @@ void UConsoleWidget::RenderWidget()
 	bool ReclaimFocus = false;
 	ImGuiInputTextFlags InputFlags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_EscapeClearsAll |
 		ImGuiInputTextFlags_CallbackHistory;
-	
+
 	// 입력 필드 색상을 검은색으로 설정
 	ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-	
+
 	if (ImGui::InputText("Input", InputBuf, sizeof(InputBuf), InputFlags,
 	                     [](ImGuiInputTextCallbackData* data) -> int
 	                     {
@@ -393,7 +393,7 @@ void UConsoleWidget::RenderWidget()
 			HistoryPosition = -1;
 		}
 	}
-	
+
 	ImGui::PopStyleColor(3);
 
 	// 입력 포커스 설정
@@ -1111,7 +1111,7 @@ void UConsoleWidget::ExecuteTerminalCommand(const char* InCommand)
 
 		// lpCommandLine Param Setting
 		TArray<char> CommandLine;
-		CommandLine.Append(FullCommand.data(), FullCommand.size());
+		CommandLine.Append(FullCommand.data(), static_cast<int32>(FullCommand.size()));
 		CommandLine.Add('\0');
 
 		// Create Process

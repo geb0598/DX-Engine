@@ -20,14 +20,14 @@ UBatchLines::UBatchLines() : Grid(), BoundingBoxLines()
 	BoundingBoxLines.MergeVerticesAt(Vertices, Grid.GetNumVertices());
 
 	SetIndices();
-	
+
 	ID3D11VertexShader* VertexShader;
 	ID3D11InputLayout* InputLayout;
 	TArray<D3D11_INPUT_ELEMENT_DESC> Layout = { {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0} };
 	FRenderResourceFactory::CreateVertexShaderAndInputLayout(L"Asset/Shader/BatchLineShader.hlsl", Layout, &VertexShader, &InputLayout);
 	ID3D11PixelShader* PixelShader;
 	FRenderResourceFactory::CreatePixelShader(L"Asset/Shader/BatchLineShader.hlsl", &PixelShader);
-	
+
 	Primitive.VertexShader = VertexShader;
 	Primitive.InputLayout = InputLayout;
 	Primitive.PixelShader = PixelShader;
@@ -90,7 +90,7 @@ void UBatchLines::UpdateDecalSpotLightVertices(UDecalSpotLightComponent* SpotLig
 		bRenderSpotLight = false;
 		return;
 	}
-	
+
 	SpotLightLines.UpdateVertices(SpotLightBounding);
 	bRenderSpotLight = true;
 	bChangedVertices = true;
@@ -140,7 +140,7 @@ void UBatchLines::UpdateConeVertices(const FVector& InCenter, float InGenerating
 	}
 
 	LocalVertices.Emplace(0.0f, 0.0f, 0.0f); // Apex
-	
+
 	// 외곽 원 버텍스
 	for (uint32 Segment = 0; Segment < NumSegments; ++Segment)
 	{
@@ -150,7 +150,7 @@ void UBatchLines::UpdateConeVertices(const FVector& InCenter, float InGenerating
 
 		LocalVertices.Emplace(CosOuter, SinOuter * CosValue, SinOuter * SinValue);
 	}
-	
+
 	// 내곽 원 버텍스 (있을 경우)
 	if (bHasInnerCone)
 	{
@@ -163,13 +163,13 @@ void UBatchLines::UpdateConeVertices(const FVector& InCenter, float InGenerating
 			LocalVertices.Emplace(CosInner, SinInner * CosValue, SinInner * SinValue);
 		}
 	}
-	
+
 	FMatrix WorldMatrix = ScaleMat;
 	WorldMatrix *= RotationMat;
 	WorldMatrix *= TranslationMat;
 
 	TArray<FVector> WorldVertices(LocalVertices.Num());
-	for (size_t Index = 0; Index < LocalVertices.Num(); ++Index)
+	for (int32 Index = 0; Index < LocalVertices.Num(); ++Index)
 	{
 		WorldVertices[Index] = WorldMatrix.TransformPosition(LocalVertices[Index]);
 	}

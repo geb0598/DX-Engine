@@ -333,7 +333,7 @@ void UViewportManager::RenderOverlay() const
  */
 void UViewportManager::Release()
 {
-	for (size_t Index = 0; Index < Viewports.Num(); ++Index)
+	for (int32 Index = 0; Index < Viewports.Num(); ++Index)
 	{
 		FViewport*& Viewport = Viewports[Index];
 		if (!Viewport)

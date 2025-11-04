@@ -540,8 +540,8 @@ private:
         // 직접 문자열 조작을 통해 결과를 생성
         try
         {
-            string Result = FormatString;
-            size_t ArgIndex = 0;
+            FString Result = FormatString;
+            int32 ArgIndex = 0;
             size_t Pos = 0;
 
             while ((Pos = Result.find('%', Pos)) != string::npos)
@@ -563,11 +563,11 @@ private:
                     }
 
                     // 인자를 문자열로 변환
-                    string ArgString = FormatArgumentFromVariant(Args[ArgIndex], FormatSpec);
+                    FString ArgString = FormatArgumentFromVariant(Args[ArgIndex], FormatSpec);
 
                     // %x를 실제 값으로 교체
                     Result.replace(Pos, 2, ArgString);
-                    Pos += ArgString.length();
+                    Pos += static_cast<int32>(ArgString.length());
                     ++ArgIndex;
                 }
                 else

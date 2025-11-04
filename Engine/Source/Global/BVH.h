@@ -13,7 +13,7 @@ struct FNode
 	int32 Child2;
 	bool bIsLeaf;
 	FAABB Box;
-	int32 TriangleBaseIndex; // �ε��� ���ۿ��� �ﰢ���� ���� �ε���
+	int32 TriangleBaseIndex; // 인덱스 버퍼에서 삼각형의 시작 인덱스
 };
 
 //  Phase Picking에 사용되는 BVH (Bounding Volume Hierarchy)
@@ -26,8 +26,8 @@ public:
 	void Build(FStaticMesh* InMesh);
 	int32 GetRootIndex() const { return RootIndex; }
 	int32 GetNodeCount() const { return Nodes.Num(); }
-	const FNode& GetNode(uint32 Index) const;
-	FNode& GetNode(uint32 Index);
+	const FNode& GetNode(int32 Index) const;
+	FNode& GetNode(int32 Index);
 	void Clear();
 
 	/**

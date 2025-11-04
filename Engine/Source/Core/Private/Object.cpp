@@ -49,9 +49,9 @@ UObject::UObject()
 
 UObject::~UObject()
 {
-	if (InternalIndex < GetUObjectArray().Num())
+	if (static_cast<int32>(InternalIndex) < GetUObjectArray().Num())
 	{
-		FUObjectItem& Item = GetUObjectArray()[InternalIndex];
+		FUObjectItem& Item = GetUObjectArray()[static_cast<int32>(InternalIndex)];
 		Item.Object = nullptr;
 		Item.SerialNumber++;  // 슬롯 재사용 감지를 위해 세대 번호 증가
 
@@ -62,9 +62,9 @@ UObject::~UObject()
 
 uint32 UObject::GetSerialNumber() const
 {
-	if (InternalIndex < GetUObjectArray().Num())
+	if (static_cast<int32>(InternalIndex) < GetUObjectArray().Num())
 	{
-		return GetUObjectArray()[InternalIndex].SerialNumber;
+		return GetUObjectArray()[static_cast<int32>(InternalIndex)].SerialNumber;
 	}
 	return 0;
 }

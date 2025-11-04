@@ -17,30 +17,31 @@ static FORCEINLINE FVector MakeFallbackTangent(const FVector& N)
 	T.Normalize();
 	return T;
 }
+
 static void ComputeTangents(TArray<FNormalVertex>& Vertices, const TArray<uint32>& Indices)
 {
 	TArray<FVector> AccumulatedBitangent;
 	AccumulatedBitangent.SetNum(Vertices.Num());
-	for (size_t I = 0; I < AccumulatedBitangent.Num(); ++I)
+	for (int32 i = 0; i < AccumulatedBitangent.Num(); ++i)
 	{
-		AccumulatedBitangent[I] = FVector(0.0f, 0.0f, 0.0f);
-		Vertices[I].Tangent = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
+		AccumulatedBitangent[i] = FVector(0.0f, 0.0f, 0.0f);
+		Vertices[i].Tangent = FVector4(0.0f, 0.0f, 0.0f, 1.0f);
 	}
 
-	size_t IndexCount = Indices.Num();
-	for (size_t I = 0; I + 2 < IndexCount; I += 3)
+	int32 IndexCount = Indices.Num();
+	for (int32 i = 0; i + 2 < IndexCount; i += 3)
 	{
-		uint32 I0 = Indices[I + 0];
-		uint32 I1 = Indices[I + 1];
-		uint32 I2 = Indices[I + 2];
+		const uint32 I0 = Indices[i + 0];
+		const uint32 I1 = Indices[i + 1];
+		const uint32 I2 = Indices[i + 2];
 
-		const FVector& P0 = Vertices[I0].Position;
-		const FVector& P1 = Vertices[I1].Position;
-		const FVector& P2 = Vertices[I2].Position;
+		const FVector& P0 = Vertices[static_cast<uint32>(I0)].Position;
+		const FVector& P1 = Vertices[static_cast<uint32>(I1)].Position;
+		const FVector& P2 = Vertices[static_cast<uint32>(I2)].Position;
 
-		const FVector2& Uv0 = Vertices[I0].TexCoord;
-		const FVector2& Uv1 = Vertices[I1].TexCoord;
-		const FVector2& Uv2 = Vertices[I2].TexCoord;
+		const FVector2& Uv0 = Vertices[static_cast<uint32>(I0)].TexCoord;
+		const FVector2& Uv1 = Vertices[static_cast<uint32>(I1)].TexCoord;
+		const FVector2& Uv2 = Vertices[static_cast<uint32>(I2)].TexCoord;
 
 		FVector Edge1 = P1 - P0;
 		FVector Edge2 = P2 - P0;
@@ -76,7 +77,7 @@ static void ComputeTangents(TArray<FNormalVertex>& Vertices, const TArray<uint32
 		AccumulatedBitangent[I2] = AccumulatedBitangent[I2] + FaceBitangent;
 	}
 
-	for (size_t V = 0; V < Vertices.Num(); ++V)
+	for (int32 V = 0; V < Vertices.Num(); ++V)
 	{
 		FVector Normal = Vertices[V].Normal;
 		FVector Tangent = FVector(Vertices[V].Tangent.X, Vertices[V].Tangent.Y, Vertices[V].Tangent.Z);
@@ -156,7 +157,7 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FName& PathFileName, cons
 	FObjectInfo& ObjectInfo = ObjInfo.ObjectInfoList[0];
 
 	TMap<VertexKey, size_t, VertexKeyHash> VertexMap;
-	for (size_t i = 0; i < ObjectInfo.VertexIndexList.Num(); ++i)
+	for (int32 i = 0; i < ObjectInfo.VertexIndexList.Num(); ++i)
 	{
 		size_t VertexIndex = ObjectInfo.VertexIndexList[i];
 
@@ -177,18 +178,18 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FName& PathFileName, cons
 		if (FoundIndexPtr == nullptr)
 		{
 			FNormalVertex Vertex = {};
-			Vertex.Position = ObjInfo.VertexList[VertexIndex];
+			Vertex.Position = ObjInfo.VertexList[static_cast<int32>(VertexIndex)];
 
 			if (NormalIndex != INVALID_INDEX)
 			{
 				assert("Vertex normal index out of range" && NormalIndex < ObjInfo.NormalList.Num());
-				Vertex.Normal = ObjInfo.NormalList[NormalIndex];
+				Vertex.Normal = ObjInfo.NormalList[static_cast<int32>(NormalIndex)];
 			}
 
 			if (TexCoordIndex != INVALID_INDEX)
 			{
 				assert("Texture coordinate index out of range" && TexCoordIndex < ObjInfo.TexCoordList.Num());
-				Vertex.TexCoord = ObjInfo.TexCoordList[TexCoordIndex];
+				Vertex.TexCoord = ObjInfo.TexCoordList[static_cast<int32>(TexCoordIndex)];
 			}
 
 			uint32 Index = static_cast<uint32>(StaticMesh->Vertices.Num());
@@ -198,7 +199,7 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FName& PathFileName, cons
 		}
 		else
 		{
-			StaticMesh->Indices.Add(*FoundIndexPtr);
+			StaticMesh->Indices.Add(static_cast<int32>(*FoundIndexPtr));
 		}
 	}
 	ComputeTangents(StaticMesh->Vertices, StaticMesh->Indices);
@@ -215,7 +216,7 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FName& PathFileName, cons
 
 	for (const auto& MaterialName : UniqueMaterialNames)
 	{
-		for (size_t j = 0; j < ObjInfo.ObjectMaterialInfoList.Num(); ++j)
+		for (int32 j = 0; j < ObjInfo.ObjectMaterialInfoList.Num(); ++j)
 		{
 			if (MaterialName == ObjInfo.ObjectMaterialInfoList[j].Name)
 			{
@@ -252,7 +253,7 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FName& PathFileName, cons
 		StaticMesh->MaterialInfo[0].Ns = 32.0f;
 		StaticMesh->MaterialInfo[0].D = 1.0f;
 	}
-	
+
 	/** #4. 오브젝트의 서브메쉬 정보를 저장 */
 	if (ObjectInfo.MaterialNameList.IsEmpty())
 	{
@@ -264,7 +265,7 @@ FStaticMesh* FObjManager::LoadObjStaticMeshAsset(const FName& PathFileName, cons
 	else
 	{
 		StaticMesh->Sections.SetNum(ObjectInfo.MaterialIndexList.Num());
-		for (size_t i = 0; i < ObjectInfo.MaterialIndexList.Num(); ++i)
+		for (int32 i = 0; i < ObjectInfo.MaterialIndexList.Num(); ++i)
 		{
 			StaticMesh->Sections[i].StartIndex = static_cast<uint32>(ObjectInfo.MaterialIndexList[i]) * 3;
 			if (i < ObjectInfo.MaterialIndexList.Num() - 1)
@@ -309,12 +310,12 @@ void FObjManager::CreateMaterialsFromMTL(UStaticMesh* StaticMesh, FStaticMesh* S
 	std::filesystem::path ObjDirectory = std::filesystem::path(ObjFilePath.ToString()).parent_path();
 
 	UAssetManager& AssetManager = UAssetManager::GetInstance();
-	
-	size_t MaterialCount = StaticMeshAsset->MaterialInfo.Num();
-	for (size_t i = 0; i < MaterialCount; ++i)
+
+	int32 MaterialCount = StaticMeshAsset->MaterialInfo.Num();
+	for (int32 i = 0; i < MaterialCount; ++i)
 	{
 		const FMaterial& MaterialInfo = StaticMeshAsset->MaterialInfo[i];
-		
+
 		// Reuse cached DefaultMaterial to prevent duplicates
 		UMaterial* Material = nullptr;
 		if (MaterialInfo.Name == "DefaultMaterial")

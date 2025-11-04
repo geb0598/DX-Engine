@@ -6,7 +6,7 @@
 #include "Global/Octree.h"
 
 COcclusionCuller::COcclusionCuller()
-{ 
+{
     CPU_ZBuffer.SetNum(Z_BUFFER_SIZE);
 }
 
@@ -17,7 +17,7 @@ void COcclusionCuller::InitializeCuller(const FMatrix& ViewMatrix, const FMatrix
 }
 
 TArray<UPrimitiveComponent*> COcclusionCuller::PerformCulling(const TArray<UPrimitiveComponent*>& AllPrimitives, const FVector& CameraPos)
-{    
+{
     Frame++;
     // 0. Primitive AABB 데이터 채우기
     CachedAABBs.Empty();
@@ -96,7 +96,7 @@ void COcclusionCuller::RasterizeOccluders(const TArray<UPrimitiveComponent*>& Se
         TArray<FVector> BoxTriangles = ConvertAABBToTriangles(OccluderComp);
 
         // 2. CPU 래스터라이징
-        for (uint32 Idx = 0; Idx < BoxTriangles.Num(); Idx += 3)
+        for (int32 Idx = 0; Idx < BoxTriangles.Num(); Idx += 3)
         {
             // 삼각형의 세 정점 (월드 좌표)
             const FVector& P1_World = BoxTriangles[Idx];
@@ -240,7 +240,7 @@ bool COcclusionCuller::IsMeshVisible(const FWorldAABBData& AABBData)
 }
 
 BatchProjectionResult COcclusionCuller::BatchProject4(const BatchProjectionInput& Input) const
-{    
+{
     // 1. 4개 월드 좌표를 동질 좌표로 변환 (W = 1.0f)
     __m128 Ones = _mm_set1_ps(1.0f);
 
@@ -320,7 +320,7 @@ BatchProjectionResult COcclusionCuller::BatchProject4(const BatchProjectionInput
 }
 
 void COcclusionCuller::RasterizeTriangle(const FVector& P1, const FVector& P2, const FVector& P3, TArray<float>& ZBuffer)
-{        
+{
     // 1. 바운딩 박스 계산
     int32 MinX = max(0, (int32)min({ P1.X, P2.X, P3.X }));
     int32 MaxX = min(Z_BUFFER_WIDTH - 1, (int32)max({ P1.X, P2.X, P3.X }));

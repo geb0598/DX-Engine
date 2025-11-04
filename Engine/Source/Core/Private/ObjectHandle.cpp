@@ -26,7 +26,7 @@ UObject* FObjectHandle::Get() const
 
 	// 배열 범위 체크
 	TArray<FUObjectItem>& ObjectArray = GetUObjectArray();
-	if (ObjectIndex >= ObjectArray.Num())
+	if (static_cast<int32>(ObjectIndex) >= ObjectArray.Num())
 	{
 		return nullptr;
 	}
