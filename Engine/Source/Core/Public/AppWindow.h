@@ -19,6 +19,9 @@ public:
 	HINSTANCE GetInstanceHandle() const { return InstanceHandle; }
 	void SetNewTitle(const wstring& InNewTitle) const;
 
+	// Raw Input
+	void InitializeRawInput() const;
+
 	// Special Member Function
 	FAppWindow(FClientApp* InOwner);
 	~FAppWindow();

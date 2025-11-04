@@ -66,6 +66,9 @@ bool FAppWindow::Init(HINSTANCE InInstance, int InCmdShow)
 	UpdateWindow(MainWindowHandle);
 	SetNewTitle(L"Future Engine");
 
+	// Raw Input 등록 (PIE 무한 마우스용)
+	InitializeRawInput();
+
 	return true;
 }
 
@@ -201,6 +204,33 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 			}
 		}
 		break;
+	case WM_INPUT:
+		{
+			// Raw Input 처리 (PIE 무한 마우스 델타)
+			UINT dwSize = sizeof(RAWINPUT);
+			static BYTE lpb[sizeof(RAWINPUT)];
+
+			GetRawInputData(reinterpret_cast<HRAWINPUT>(InLParam), RID_INPUT, lpb, &dwSize, sizeof(RAWINPUTHEADER));
+
+			RAWINPUT* raw = reinterpret_cast<RAWINPUT*>(lpb);
+
+			if (raw->header.dwType == RIM_TYPEMOUSE)
+			{
+				// Raw Input 델타를 InputManager에 전달
+				const int DeltaX = raw->data.mouse.lLastX;
+				const int DeltaY = raw->data.mouse.lLastY;
+
+				// Debug: Raw Input 동작 확인
+				static int FrameCount = 0;
+				if (++FrameCount % 100 == 0 && (DeltaX != 0 || DeltaY != 0))
+				{
+					UE_LOG("WM_INPUT: DeltaX=%d, DeltaY=%d", DeltaX, DeltaY);
+				}
+
+				UInputManager::GetInstance().ProcessRawMouseDelta(DeltaX, DeltaY);
+			}
+		}
+		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
@@ -291,4 +321,24 @@ void FAppWindow::GetClientSize(int32& OutWidth, int32& OutHeight) const
 	GetClientRect(MainWindowHandle, &ClientRectangle);
 	OutWidth = ClientRectangle.right - ClientRectangle.left;
 	OutHeight = ClientRectangle.bottom - ClientRectangle.top;
+}
+
+/**
+ * @brief WM_INPUT을 통해 무한 마우스 델타 획득
+ * Raw Input Device 등록 함수
+ */
+void FAppWindow::InitializeRawInput() const
+{
+	RAWINPUTDEVICE RawInputDevice[1];
+
+	// 마우스 디바이스
+	RawInputDevice[0].usUsagePage = 0x01;  // HID_USAGE_PAGE_GENERIC
+	RawInputDevice[0].usUsage = 0x02;      // HID_USAGE_GENERIC_MOUSE
+	RawInputDevice[0].dwFlags = 0;         // 기본 플래그 (백그라운드 입력 받지 않음)
+	RawInputDevice[0].hwndTarget = MainWindowHandle;
+
+	if (::RegisterRawInputDevices(RawInputDevice, 1, sizeof(RawInputDevice[0])) == FALSE)
+	{
+		UE_LOG_ERROR("Failed to register Raw Input devices");
+	}
 }
