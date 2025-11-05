@@ -30,7 +30,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_0",
           "ParentName" : "UAmbientLightComponent",
-          "Rotation" : [23.864985, 3.460199, 82.231415],
+          "Rotation" : [22.079432, 0.977902, 87.590767],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -79,11 +79,11 @@
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
           "Location" : [0.000000, 0.000000, 0.000000],
-          "LocationLagSpeed" : 0.001000,
+          "LocationLagSpeed" : 0.010000,
           "Name" : "USpringArmComponent_0",
           "ParentName" : "UStaticMeshComponent",
           "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "RotationLagSpeed" : 5.000000,
+          "RotationLagSpeed" : 0.010000,
           "Scale" : [1.000000, 1.000000, 1.000000],
           "SocketOffset" : [-2.000000, 0.000000, 0.000000],
           "TargetArmLength" : 3.000000,
@@ -142,10 +142,10 @@
       "FarClip" : 1000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [0.399122, 11.588212, 5.861219],
+      "Location" : [0.223885, 15.201755, 7.328991],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
-      "Rotation" : [0.000000, -24.099997, -81.499985]
+      "Rotation" : [0.000000, -22.099995, -87.399979]
     },
     "3" : {
       "CameraType" : 0,
