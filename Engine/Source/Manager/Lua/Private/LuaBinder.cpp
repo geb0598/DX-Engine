@@ -12,6 +12,8 @@
 #include "Physics/Public/HitResult.h"
 #include "Global/Enum.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
+// Sound
+#include "Manager/Sound/Public/SoundManager.h"
 
 void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 {
@@ -627,4 +629,52 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 	);
 	// -- Math -- //
 	LuaState.set_function("Clamp", &Clamp<float>);
+
+    // -- Sound (BGM only for now) -- //
+    // Initialize (idempotent)
+    LuaState.set_function("Sound_Initialize", []()
+    {
+        USoundManager::GetInstance().InitializeAudio();
+    });
+
+    // Play BGM with overloads
+    LuaState.set_function("Sound_PlayBGM",
+        sol::overload(
+            // path only (loop=true, fade=0.5)
+            [](const std::string& Path)
+            {
+                auto& Manager = USoundManager::GetInstance();
+                Manager.InitializeAudio();
+                Manager.PlayBGM(FString(Path), true, 0.5f);
+            },
+            // path + loop
+            [](const std::string& Path, bool bLoop)
+            {
+                auto& Manager = USoundManager::GetInstance();
+                Manager.InitializeAudio();
+                Manager.PlayBGM(FString(Path), bLoop, 0.5f);
+            },
+            // path + loop + fadeSeconds
+            [](const std::string& Path, bool bLoop, float FadeSeconds)
+            {
+                auto& Manager = USoundManager::GetInstance();
+                Manager.InitializeAudio();
+                Manager.PlayBGM(FString(Path), bLoop, FadeSeconds);
+            }
+        )
+    );
+
+    // Stop BGM with optional fade
+    LuaState.set_function("Sound_StopBGM",
+        sol::overload(
+            []()
+            {
+                USoundManager::GetInstance().StopBGM(0.3f);
+            },
+            [](float FadeSeconds)
+            {
+                USoundManager::GetInstance().StopBGM(FadeSeconds);
+            }
+        )
+    );
 }

@@ -489,6 +489,7 @@
     <ClCompile Include="Source\Manager\Asset\Private\TextureManager.cpp" />
     <ClCompile Include="Source\Manager\Lua\Private\LuaBinder.cpp" />
     <ClCompile Include="Source\Manager\Lua\Private\LuaManager.cpp" />
+    <ClCompile Include="Source\Manager\Sound\Private\SoundManager.cpp" />
     <ClCompile Include="Source\Manager\Render\Private\CascadeManager.cpp" />
     <ClCompile Include="Source\Manager\UI\Private\ViewportManager.cpp" />
     <ClCompile Include="Source\Optimization\Private\OcclusionCuller.cpp" />

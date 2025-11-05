@@ -2,6 +2,15 @@
 #include "Core/Public/Object.h"
 #include "Global/Vector.h"
 
+// FMOD forward declarations at global scope
+namespace FMOD
+{
+    class System;
+    class Sound;
+    class Channel;
+    class ChannelGroup;
+}
+
 UCLASS()
 class USoundManager :public UObject
 {
@@ -33,15 +42,6 @@ public:
     bool PlaySFXAt(const FName& SoundName, const FVector& Position, const FVector& Velocity, float Volume = 1.0f, float Pitch = 1.0f);
 
 private:
-    // FMOD 전방 선언으로 헤더 의존성 최소화
-    namespace FMOD
-    {
-        class System;
-        class Sound;
-        class Channel;
-        class ChannelGroup;
-    }
-
     // 내부 상태와 자원
     FMOD::System* AudioSystem = nullptr;
     FMOD::ChannelGroup* MasterChannelGroup = nullptr;

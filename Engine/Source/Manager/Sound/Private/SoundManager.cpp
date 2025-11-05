@@ -50,6 +50,7 @@ void USoundManager::InitializeAudio()
     }
 
     BGMChannelGroup->setVolume(BGMVolume);
+    UE_LOG("[Sound] InitializeAudio OK. BGMVolume=%.2f", BGMVolume);
 }
 
 void USoundManager::ShutdownAudio()
@@ -75,7 +76,7 @@ void USoundManager::ShutdownAudio()
             Pair.second->release();
         }
     }
-    SFXCache.Clear();
+    SFXCache.Empty();
 
     if (AudioSystem)
     {
@@ -109,8 +110,9 @@ void USoundManager::SetListener(const FVector& Position, const FVector& Forward,
 bool USoundManager::PlayBGM(const FString& FilePath, bool bLoop, float FadeSeconds)
 {
     if (!AudioSystem) return false;
+    UE_LOG("[Sound] PlayBGM: %s (loop=%d, fade=%.2f)", FilePath.c_str(), bLoop ? 1 : 0, FadeSeconds);
 
-    if (CurrentBGMPath.ToString() == FilePath.ToString() && CurrentBGMChannel)
+    if (CurrentBGMPath == FilePath && CurrentBGMChannel)
     {
         bool IsPaused = false;
         CurrentBGMChannel->getPaused(&IsPaused);
@@ -129,15 +131,16 @@ bool USoundManager::PlayBGM(const FString& FilePath, bool bLoop, float FadeSecon
         CurrentBGMSound = nullptr;
     }
 
-    FMOD_MODE Mode = FMOD_DEFAULT | FMOD_CREATESTREAM;
+    // BGM should be 2D stream so it is not spatialized/attenuated
+    FMOD_MODE Mode = FMOD_CREATESTREAM | FMOD_2D;
     if (bLoop) Mode |= FMOD_LOOP_NORMAL;
 
-    FMOD_RESULT Result = AudioSystem->createSound(FilePath.ToString().c_str(), Mode, nullptr, &CurrentBGMSound);
-    if (!CheckFMODResult(Result, "CreateSound(BGM)")) return false;
+    FMOD_RESULT Result = AudioSystem->createSound(FilePath.c_str(), Mode, nullptr, &CurrentBGMSound);
+    if (!CheckFMODResult(Result, "CreateSound(BGM)")) { UE_LOG_ERROR("[Sound] CreateSound failed: %s", FilePath.c_str()); return false; }
 
     FMOD::Channel* NewChannel = nullptr;
     Result = AudioSystem->playSound(CurrentBGMSound, BGMChannelGroup, false, &NewChannel);
-    if (!CheckFMODResult(Result, "PlaySound(BGM)")) return false;
+    if (!CheckFMODResult(Result, "PlaySound(BGM)")) { UE_LOG_ERROR("[Sound] playSound failed"); return false; }
 
     CurrentBGMChannel = NewChannel;
     CurrentBGMPath = FilePath;
@@ -150,6 +153,8 @@ bool USoundManager::PlayBGM(const FString& FilePath, bool bLoop, float FadeSecon
     {
         CurrentBGMChannel->setVolume(BGMVolume);
     }
+    bool Paused=false; if (CurrentBGMChannel) CurrentBGMChannel->getPaused(&Paused);
+    UE_LOG("[Sound] BGM started. paused=%d", Paused ? 1:0);
     return true;
 }
 
@@ -190,7 +195,7 @@ bool USoundManager::PreloadSFX(const FName& SoundName, const FString& FilePath, 
 
     FMOD_MODE Mode = FMOD_DEFAULT | FMOD_CREATESAMPLE | (bIsThreeDimensional ? FMOD_3D : FMOD_2D);
     FMOD::Sound* NewSound = nullptr;
-    FMOD_RESULT Result = AudioSystem->createSound(FilePath.ToString().c_str(), Mode, nullptr, &NewSound);
+    FMOD_RESULT Result = AudioSystem->createSound(FilePath.c_str(), Mode, nullptr, &NewSound);
     if (!CheckFMODResult(Result, "CreateSound(SFX)")) return false;
 
     if (bIsThreeDimensional && NewSound)

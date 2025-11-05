@@ -5,6 +5,7 @@
 #include "Level/Public/Level.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Manager/Lua/Public/LuaManager.h"
+#include "Manager/Sound/Public/SoundManager.h"
 #include "Manager/Path/Public/PathManager.h"
 #include "Manager/UI/Public/ViewportManager.h"
 #include "Render/UI/Viewport/Public/Viewport.h"
@@ -90,6 +91,9 @@ void UEditorEngine::Tick(float DeltaSeconds)
     }
 
     ULuaManager::GetInstance().Update(DeltaSeconds);
+
+    // Update audio system each frame
+    USoundManager::GetInstance().Update(DeltaSeconds);
 }
 
 class UCamera* UEditorEngine::GetMainCamera() const

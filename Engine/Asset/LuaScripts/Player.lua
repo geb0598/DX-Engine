@@ -72,6 +72,11 @@ function EndGameSequence()
 
     Log(string.format("Game Ended! Remaining Time: %.2fs, Score: %d", remainingTime, finalScore))
 
+    -- Stop BGM on game end
+    if Sound_StopBGM ~= nil then
+        Sound_StopBGM(0.3)
+    end
+
     if gameMode then
         gameMode:EndGame()
     end
@@ -542,6 +547,11 @@ function StartGame()
     CurrentLightExposureTime = MaxLightExposureTime
     currentRotation = Owner.Rotation:ToEuler()
     InitLocation = Owner.Location
+
+    -- Start BGM on game start (looped)
+    if Sound_PlayBGM ~= nil then
+        Sound_PlayBGM("Asset/Sound/BGM/BGM_InGame.wav", true, 0.5)
+    end
 
     Log(string.format("Player.lua BeginPlay. Owner: %s, HP: %d", Owner.UUID, currentHP))
 end
