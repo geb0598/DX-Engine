@@ -344,6 +344,9 @@
     <ClInclude Include="Source\Runtime\Core\Public\Templates\TemplateUtilities.h" />
     <ClInclude Include="Source\Runtime\Core\Public\Templates\UniquePtr.h" />
     <ClInclude Include="Source\Runtime\Core\Public\Templates\WeakPtr.h" />
+    <ClInclude Include="Source\Subsystem\Public\EngineSubsystem.h" />
+    <ClInclude Include="Source\Subsystem\Public\Subsystem.h" />
+    <ClInclude Include="Source\Subsystem\Public\SubsystemCollection.h" />
     <ClInclude Include="Source\Texture\Public\ShadowMapResources.h" />
     <ClInclude Include="Source\Render\UI\Factory\Public\UIWindowFactory.h" />
     <ClInclude Include="Source\Render\UI\ImGui\Public\ImGuiHelper.h" />
@@ -548,6 +551,8 @@
     <ClCompile Include="Source\Render\UI\Overlay\Private\D2DOverlayManager.cpp" />
     <ClCompile Include="Source\Render\UI\Overlay\Private\StatOverlay.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\ScriptComponentWidget.cpp" />
+    <ClCompile Include="Source\Subsystem\Private\EngineSubsystem.cpp" />
+    <ClCompile Include="Source\Subsystem\Private\Subsystem.cpp" />
     <ClCompile Include="Source\Texture\Private\ShadowMapResources.cpp" />
     <ClCompile Include="Source\Render\UI\Factory\Private\UIWindowFactory.cpp" />
     <ClCompile Include="Source\Render\UI\ImGui\Private\ImGuiHelper.cpp" />
