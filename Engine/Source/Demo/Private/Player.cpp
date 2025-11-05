@@ -6,8 +6,10 @@
 #include "Component/Public/LightSensorComponent.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/CameraComponent.h"
+#include "Component/Public/SpringArmComponent.h"
 
 IMPLEMENT_CLASS(APlayer, AActor)
+
 APlayer::APlayer()
 {
 	bCanEverTick = true;
@@ -25,8 +27,14 @@ void APlayer::InitializeComponents()
 	Super::InitializeComponents();
 	Cast<UBoxComponent>(GetRootComponent())->SetBoxExtent({0.5f, 0.5f, 0.5f});
 
+	USpringArmComponent* SpringArm = CreateDefaultSubobject<USpringArmComponent>();
+	SpringArm->AttachToComponent(GetRootComponent());
+	SpringArm->SetTargetArmLength(10.0f);
+	SpringArm->SetEnableCameraLag(true);
+	SpringArm->SetCameraLagSpeed(5.0f);
+
 	UCameraComponent* Camera = CreateDefaultSubobject<UCameraComponent>();
-	Camera->AttachToComponent(GetRootComponent());
+	Camera->AttachToComponent(SpringArm);
 
 	ULightSensorComponent* LightSensor = CreateDefaultSubobject<ULightSensorComponent>();
 	LightSensor->AttachToComponent(GetRootComponent());
