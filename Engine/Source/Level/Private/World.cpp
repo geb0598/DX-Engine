@@ -51,6 +51,7 @@ void UWorld::BeginPlay()
 		if (AuthorityGameMode == nullptr)
 		{
 			AuthorityGameMode = Cast<AGameMode>(SpawnActor(AGameMode::StaticClass()));
+			AuthorityGameMode->BeginPlay();
 		}
 	}
 

@@ -15,6 +15,8 @@ APlayerCameraManager::~APlayerCameraManager() = default;
 
 void APlayerCameraManager::BeginPlay()
 {
+	if (bBegunPlay) return;
+
 	Super::BeginPlay();
 }
 
