@@ -1620,6 +1620,9 @@ void URenderer::RenderLevelForGameInstance(UWorld* InWorld, const FSceneView* In
 		RenderPass->Execute(RenderingContext);
 	}
 
+	CameraPostProcessPass->SetRenderTargets(DeviceResources);
+	CameraPostProcessPass->Execute(RenderingContext);
+
 	// FXAA Pass (ShowFlags에 따라)
 	if ((CurrentLevel->GetShowFlags() & EEngineShowFlags::SF_FXAA) != 0)
 	{
