@@ -15,9 +15,9 @@ FBillboardPass::FBillboardPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBu
 
 void FBillboardPass::SetRenderTargets(class UDeviceResources* DeviceResources)
 {
-	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV() };
+	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV(), DeviceResources->GetNormalBufferRTV() };
 	ID3D11DepthStencilView* DSV = DeviceResources->GetDepthBufferDSV();
-	Pipeline->SetRenderTargets(1, RTVs, DSV);
+	Pipeline->SetRenderTargets(2, RTVs, DSV);
 }
 
 void FBillboardPass::Execute(FRenderingContext& Context)
