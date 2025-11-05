@@ -889,7 +889,6 @@ void URenderer::Update()
 		}
     }
 
-    // FXAA는 SceneColor → 백버퍼로 복사
     if ((GWorld->GetLevel()->GetShowFlags() & EEngineShowFlags::SF_FXAA) != 0)
     {
         FRenderingContext RenderingContext;
