@@ -1,0 +1,81 @@
+{
+        "Presets" : [{
+            "DecayCurve" : {
+              "P0" : {
+                "x" : 0.000000,
+                "y" : 0.000000
+              },
+              "P1" : {
+                "x" : 0.000000,
+                "y" : 0.000000
+              },
+              "P2" : {
+                "x" : 0.580000,
+                "y" : 1.000000
+              },
+              "P3" : {
+                "x" : 1.000000,
+                "y" : 1.000000
+              }
+            },
+            "Duration" : 2.000000,
+            "Frequency" : 10.000000,
+            "LocationAmplitude" : 30.000000,
+            "Pattern" : "Perlin",
+            "PresetName" : "Explosion",
+            "RotationAmplitude" : 8.000000,
+            "UseDecayCurve" : true
+          }, {
+            "DecayCurve" : {
+              "P0" : {
+                "x" : 0.000000,
+                "y" : 0.000000
+              },
+              "P1" : {
+                "x" : 0.236000,
+                "y" : 0.668000
+              },
+              "P2" : {
+                "x" : 0.872000,
+                "y" : 0.216000
+              },
+              "P3" : {
+                "x" : 1.000000,
+                "y" : 1.000000
+              }
+            },
+            "Duration" : 0.500000,
+            "Frequency" : 10.000000,
+            "LocationAmplitude" : 10.000000,
+            "Pattern" : "Random",
+            "PresetName" : "Collision",
+            "RotationAmplitude" : 3.000000,
+            "UseDecayCurve" : true
+          }, {
+            "DecayCurve" : {
+              "P0" : {
+                "x" : 0.000000,
+                "y" : 0.000000
+              },
+              "P1" : {
+                "x" : 0.420000,
+                "y" : 0.000000
+              },
+              "P2" : {
+                "x" : 0.580000,
+                "y" : 1.000000
+              },
+              "P3" : {
+                "x" : 1.000000,
+                "y" : 1.000000
+              }
+            },
+            "Duration" : 5.000000,
+            "Frequency" : 5.000000,
+            "LocationAmplitude" : 50.000000,
+            "Pattern" : "Sine",
+            "PresetName" : "Earthquake",
+            "RotationAmplitude" : 5.000000,
+            "UseDecayCurve" : true
+          }]
+      }
