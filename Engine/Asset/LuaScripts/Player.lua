@@ -22,6 +22,8 @@ local InitLocation = FVector(0, 0, 0)
 local MaxHP = 5
 local currentHP = 0
 local gameMode = nil
+local PlayerCameraManager = nil
+local lastHitTime = -1.0
 
 -- [Light Exposure]
 local LightCriticalPoint = 1.0
@@ -33,6 +35,7 @@ local CurrentLightLevel = 0.0
 -- [Time & Score]
 local MaxTime = 180.0  -- 제한 시간 (3분)
 local remainingTime = 180.0
+local elapsedTime = 0.0
 local finalScore = 0
 
 ---
@@ -52,8 +55,21 @@ end
 ---
 local function TakeDamage(damage)
     if currentHP <= 0 then return end
+    if elapsedTime - lastHitTime < 1.0 then return end
+
+    lastHitTime = elapsedTime
 
     currentHP = currentHP - damage
+
+    local shake = UCameraModifier_CameraShake()
+    shake:SetDuration(0.3)
+    shake:SetIntensity(0.2)
+    shake:SetBlendInTime(0.1)
+    shake:SetBlendOutTime(0.1)
+    shake:SetAlphaInCurve(Curve("EaseIn"))
+    shake:SetAlphaOutCurve(Curve("EaseOut"))
+    CurrentShake = PlayerCameraManager:AddCameraModifier(shake)
+
     Log(string.format("PlayerHealth: Took %d damage. HP remaining: %d", damage, currentHP))
 
     -- If dead now: stop warning loop and play fail SFX once
@@ -124,6 +140,10 @@ function BeginPlay()
     if cachedWorld then
         cachedLevel = cachedWorld:GetLevel()
         gameMode = cachedWorld:GetGameMode()
+        local PlayerCameraManagers = cachedLevel:FindActorsOfClass("APlayerCameraManager")
+        if PlayerCameraManagers and #PlayerCameraManagers > 0  then
+            PlayerCameraManager = PlayerCameraManagers[1]:ToAPlayerCameraManager()
+        end
 
         -- EnemySpawner 캐싱
         if cachedLevel then
@@ -174,6 +194,7 @@ function Tick(dt)
 
     -- 제한 시간 감소
     remainingTime = remainingTime - dt
+    elapsedTime = elapsedTime + dt
 
     -- 시간 초과 체크
     if remainingTime <= 0 then
