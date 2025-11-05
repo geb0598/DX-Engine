@@ -15,6 +15,8 @@ APlayerCameraManager::~APlayerCameraManager() = default;
 
 void APlayerCameraManager::BeginPlay()
 {
+	if (bBegunPlay) return;
+
 	Super::BeginPlay();
 }
 
@@ -22,6 +24,7 @@ void APlayerCameraManager::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	UpdateCamera(DeltaTime);
+	UpdatePostProcessAnimations(DeltaTime);
 }
 
 void APlayerCameraManager::SetViewTarget(AActor* NewViewTarget)
@@ -81,6 +84,7 @@ void APlayerCameraManager::GetViewTargetPOV(FViewTarget& OutVT)
 		{
 			// Get camera view from active component
 			OutVT.POV = ActiveCameraComp->GetCameraView();
+			OutVT.POV.AspectRatio = DefaultAspectRatio;
 		}
 		else
 		{
@@ -105,4 +109,33 @@ void APlayerCameraManager::ApplyCameraModifiers(float DeltaTime, FMinimalViewInf
 	// For now, just apply fade amount if set
 	InOutPOV.FadeAmount = FadeAmount;
 	InOutPOV.FadeColor = FadeColor;
+}
+
+void APlayerCameraManager::EnableLetterBox(float InTargetAspectRatio, float InTransitionTime)
+{
+	CurrentPostProcessSettings.TargetAspectRatio = InTargetAspectRatio;
+	TargetLetterBoxAmount = 1.0f; // 목표 강도를 1.0으로 설정
+
+	// 속도 계산: 1.0의 거리를 InTransitionTime초 만에 가야 함
+	LetterBoxTransitionSpeed = (InTransitionTime > 0.001f) ? (1.0f / InTransitionTime) : 1000.0f;
+}
+
+void APlayerCameraManager::DisableLetterBox(float InTransitionTime)
+{
+	TargetLetterBoxAmount = 0.0f;
+	LetterBoxTransitionSpeed = (InTransitionTime > 0.001f) ? (1.0f / InTransitionTime) : 1000.0f;
+}
+
+
+void APlayerCameraManager::SetVignetteIntensity(float InIntensity)
+{
+	CurrentPostProcessSettings.bEnableVignette = true;
+	CurrentPostProcessSettings.VignetteIntensity = InIntensity;
+}
+
+void APlayerCameraManager::UpdatePostProcessAnimations(float DeltaTime)
+{
+	// LetterBox
+	CurrentPostProcessSettings.LetterBoxAmount = InterpTo(CurrentPostProcessSettings.LetterBoxAmount,
+			TargetLetterBoxAmount, DeltaTime, LetterBoxTransitionSpeed * 2.0f);
 }

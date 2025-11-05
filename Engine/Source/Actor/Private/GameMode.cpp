@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Actor/Public/GameMode.h"
 #include "Actor/Public/PlayerStart.h"
 #include "Actor/Public/PlayerCameraManager.h"
@@ -10,6 +10,8 @@ IMPLEMENT_CLASS(AGameMode, AActor)
 
 void AGameMode::BeginPlay()
 {
+	if (bBegunPlay) return;
+
 	Super::BeginPlay();
 
 	UWorld* World = GetWorld();
@@ -22,6 +24,7 @@ void AGameMode::BeginPlay()
 	// TODO: Move to APlayerController::SpawnPlayerCameraManager() when PlayerController is implemented
 	// Create PlayerCameraManager
 	PlayerCameraManager = Cast<APlayerCameraManager>(World->SpawnActor(APlayerCameraManager::StaticClass()));
+	PlayerCameraManager->BeginPlay();
 
 	const FWorldSettings& WorldSettings = World->GetWorldSettings();
 	if (WorldSettings.DefaultPlayerClass)

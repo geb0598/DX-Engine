@@ -126,9 +126,8 @@ function BeginPlay()
 
         gameMode.OnGameStarted = StartGame
         gameMode.OnGameEnded = EndedTest
-        gameMode:StartGame()
+        -- gameMode:StartGame()
     end
-    StartGame()
 end
 
 ---

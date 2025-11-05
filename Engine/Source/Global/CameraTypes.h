@@ -72,10 +72,10 @@ struct FMinimalViewInfo
 	float AspectRatio = 1.777f;
 
 	/** Near clipping plane */
-	float NearClipPlane = 10.0f;
+	float NearClipPlane = 0.1f;
 
 	/** Far clipping plane */
-	float FarClipPlane = 10000.0f;
+	float FarClipPlane = 1000.0f;
 
 	/** Projection mode */
 	ECameraProjectionMode ProjectionMode = ECameraProjectionMode::Perspective;
@@ -106,4 +106,24 @@ struct FMinimalViewInfo
 		float Alpha,
 		EViewTargetBlendFunction BlendFunc = EViewTargetBlendFunction::VTBlend_Linear
 	);
+};
+
+struct FPostProcessSettings
+{
+	// --- LetterBox ---
+	float LetterBoxAmount = 0.0f;
+	float TargetAspectRatio = 1.777f; // (기본 16:9)
+
+	// --- Vignette ---
+	bool  bEnableVignette = true;
+	float VignetteIntensity = 0.8f;
+
+	// --- Gamma ---
+	float Gamma = 2.2f;
+
+	// 기본값으로 리셋하는 함수
+	void Reset()
+	{
+		*this = FPostProcessSettings(); // C++ 기본 생성자로 덮어쓰기
+	}
 };

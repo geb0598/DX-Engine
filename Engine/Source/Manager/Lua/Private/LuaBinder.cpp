@@ -3,6 +3,7 @@
 #include "Actor/Public/Actor.h"
 #include "Actor/Public/GameMode.h"
 #include "Actor/Public/EnemySpawnerActor.h"
+#include "Actor/Public/PlayerCameraManager.h"
 #include "Demo/Public/Player.h"
 #include "Component/Public/ScriptComponent.h"
 #include "Component/Public/PrimitiveComponent.h"
@@ -340,6 +341,8 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
         "InitGame", &AGameMode::InitGame,
         "StartGame", &AGameMode::StartGame,
         "EndGame", &AGameMode::EndGame,
+        "GetPlayerCameraManager", &AGameMode::GetPlayerCameraManager,
+
 
         "IsGameRunning", sol::property(&AGameMode::IsGameRunning),
         "IsGameEnded", sol::property(&AGameMode::IsGameEnded),
@@ -438,6 +441,13 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 	// Add TWeakObjectPtr support for safe object tracking from Lua
 	BIND_WEAK_PTR(AActor);
 	// BIND_WEAK_PTR(AEnemySpawnerActor);  // Example: add more types as needed
+
+	LuaState.new_usertype<APlayerCameraManager>("APlayerCameraManager",
+		sol::base_classes, sol::bases<AActor>(),
+		"EnableLetterBox", &APlayerCameraManager::EnableLetterBox,
+		"DisableLetterBox", &APlayerCameraManager::DisableLetterBox,
+		"SetVignetteIntensity", &APlayerCameraManager::SetVignetteIntensity
+	);
 }
 
 void FLuaBinder::BindComponentTypes(sol::state& LuaState)
