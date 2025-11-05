@@ -44,4 +44,5 @@ private:
 	FVector LaggedWorldLocation;
 	FVector PreviousChildRelativeLocation;
 	float CurrentArmLength;
+	bool bDoCollisionTest = true;
 };

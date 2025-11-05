@@ -1,5 +1,8 @@
 ﻿#include "pch.h"
 #include "Component/Public/SpringArmComponent.h"
+
+#include "Level/Public/Level.h"
+#include "Physics/Public/BoundingSphere.h"
 #include "Utility/Public/JsonSerializer.h"
 IMPLEMENT_CLASS(USpringArmComponent, USceneComponent)
 
@@ -44,6 +47,7 @@ UObject* USpringArmComponent::Duplicate()
 	NewSpringArm->bEnableArmLengthLag = bEnableArmLengthLag;
 	NewSpringArm->ArmLengthLagSpeed = ArmLengthLagSpeed;
 	NewSpringArm->CurrentArmLength = CurrentArmLength;
+	NewSpringArm->bDoCollisionTest = bDoCollisionTest;
 
 	return NewSpringArm;
 }
@@ -59,6 +63,7 @@ void USpringArmComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		FJsonSerializer::ReadBool(InOutHandle, "bEnableCameraLag", bEnableCameraLag, false);
 		FJsonSerializer::ReadFloat(InOutHandle, "CameraLagSpeed", CameraLagSpeed, 10);
 		FJsonSerializer::ReadBool(InOutHandle, "bEnableArmLengthLag", bEnableArmLengthLag, false);
+		FJsonSerializer::ReadBool(InOutHandle, "bDoCollisionTest", bDoCollisionTest, true);
 		FJsonSerializer::ReadFloat(InOutHandle, "ArmLengthLagSpeed", ArmLengthLagSpeed, 100);
 	}
 	// 저장
@@ -70,11 +75,15 @@ void USpringArmComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 
 		InOutHandle["bEnableCameraLag"] = bEnableCameraLag ? "true" : "false";
 		InOutHandle["bEnableArmLengthLag"] = bEnableArmLengthLag ? "true" : "false";
+		InOutHandle["bDoCollisionTest"] = bDoCollisionTest ? "true" : "false";
 	}
 }
 
 void USpringArmComponent::UpdateCamera(float DeltaTime)
 {
+	ULevel* Level = GWorld ? GWorld->GetLevel() : nullptr;
+	if (!Level) { return; }
+
 	if (bEnableArmLengthLag && !bIsFirstUpdate)
 	{
 		float Alpha = Clamp(ArmLengthLagSpeed * DeltaTime, 0.0f, 1.0f);
@@ -85,13 +94,26 @@ void USpringArmComponent::UpdateCamera(float DeltaTime)
 		CurrentArmLength = TargetArmLength;
 	}
 
-	FVector TargetLocation = GetWorldLocation() - GetForwardVector() * CurrentArmLength;
-	FVector FinalLocation = TargetLocation;
+	FVector Start = GetWorldLocation();
+	FVector IdealEnd = Start - GetForwardVector() * CurrentArmLength;
+	FVector FinalLocation = IdealEnd;
+
+	FHitResult Hit;
+	if (Level->LineTraceSingle(Start, IdealEnd, Hit, GetOwner()))
+	{
+		constexpr float SafeDistance = -10.0f;
+		FVector Dir = (IdealEnd - Start).GetNormalized();
+		FinalLocation = Hit.Location + Dir * SafeDistance;
+
+		// ArmLength를 실제 충돌 지점까지로 갱신
+		float NewLength = (FinalLocation - Start).Length();
+		CurrentArmLength = min(CurrentArmLength, NewLength);
+	}
 
 	if (bEnableCameraLag && !bIsFirstUpdate)
 	{
 		float Alpha = Clamp(CameraLagSpeed * DeltaTime, 0.0f, 1.0f);
-		FinalLocation = FVector::Lerp(PreviousLocation, TargetLocation, Alpha);
+		FinalLocation = FVector::Lerp(PreviousLocation, FinalLocation, Alpha);
 	}
 
 	const TArray<USceneComponent*>& Children = GetChildren();
@@ -104,4 +126,5 @@ void USpringArmComponent::UpdateCamera(float DeltaTime)
 	}
 
 	PreviousLocation = FinalLocation;
+
 }

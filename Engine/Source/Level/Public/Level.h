@@ -206,6 +206,8 @@ public:
 		TArray<UPrimitiveComponent*>& OutOverlappingComponents
 	);
 
+	bool LineTraceSingle(const FVector& Start, const FVector& End, FHitResult& OutHit, AActor* IgnoredActor);
+
 	/**
 	 * @brief 액터가 특정 위치로 이동했을 때 첫 번째로 충돌하는 컴포넌트 반환 (실제 이동 없이 테스트만)
 	 * @param Actor 테스트할 액터 (모든 PrimitiveComponent 검사)

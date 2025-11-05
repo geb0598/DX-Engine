@@ -901,10 +901,7 @@ void ULevel::UpdateAllOverlaps()
 	}
 }
 
-bool ULevel::SweepComponentSingle(
-	UPrimitiveComponent* Component,
-	const FVector& TargetLocation,
-	FHitResult& OutHit)
+bool ULevel::SweepComponentSingle(UPrimitiveComponent* Component, const FVector& TargetLocation, FHitResult& OutHit)
 {
 	if (!Component || !StaticOctree)
 		return false;
@@ -1077,6 +1074,61 @@ bool ULevel::SweepComponentMulti(
 	}
 
 	return OutOverlappingComponents.Num() > 0;
+}
+
+bool ULevel::LineTraceSingle(const FVector& Start, const FVector& End, FHitResult& OutHit, AActor* IgnoredActor)
+{
+	if (!StaticOctree)
+		return false;
+
+	FVector Min(min(Start.X, End.X), min(Start.Y, End.Y), min(Start.Z, End.Z));
+	FVector Max(max(Start.X, End.X), max(Start.Y, End.Y), max(Start.Z, End.Z));
+	FAABB TraceAABB(Min, Max);
+
+	// 후보 가져오기
+	TArray<UPrimitiveComponent*> Candidates;
+	StaticOctree->QueryAABB(TraceAABB, Candidates);
+
+	// Dynamic primitives도 포함
+	TArray<UPrimitiveComponent*> DynamicPrims = GetDynamicPrimitives();
+	Candidates.Append(DynamicPrims);
+
+	bool bFoundHit = false;
+	float ClosestDistance = FLT_MAX;
+
+	for (UPrimitiveComponent* Candidate : Candidates)
+	{
+		if (!Candidate || Candidate->GetOwner() == IgnoredActor)
+			continue;
+
+		const IBoundingVolume* Shape = Candidate->GetCollisionShape();
+		if (!Shape)
+			continue;
+
+		// 단순 AABB 필터
+		FBounds CandidateBounds = Candidate->CalcBounds();
+		FAABB CandidateAABB(CandidateBounds.Min, CandidateBounds.Max);
+
+		if (!TraceAABB.IsIntersected(CandidateAABB))
+			continue;
+
+		FHitResult LocalHit;
+		if (FCollisionHelper::LineIntersectVolume(Start, End, Shape, LocalHit.Location))
+		{
+			float Dist = (LocalHit.Location - Start).Length();
+
+			if (Dist < ClosestDistance)
+			{
+				ClosestDistance = Dist;
+				OutHit = LocalHit;
+				OutHit.Component = Candidate;
+				OutHit.Actor = Candidate->GetOwner();
+				bFoundHit = true;
+			}
+		}
+	}
+
+	return bFoundHit;
 }
 
 bool ULevel::SweepActorSingle(

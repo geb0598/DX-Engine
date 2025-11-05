@@ -39,6 +39,8 @@ public:
 	static bool IsPointInBox(const FVector& Point, const FOBB& Box);
 	static bool IsPointInCapsule(const FVector& Point, const FCapsule& Capsule);
 
+	static bool LineIntersectVolume(const FVector& Start, const FVector& End, const IBoundingVolume* Volume, FVector& OutHitLocation);
+
 private:
 	// === Helper Functions ===
 

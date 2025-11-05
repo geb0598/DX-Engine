@@ -211,6 +211,110 @@ bool FCollisionHelper::IsPointInCapsule(const FVector& Point, const FCapsule& Ca
 	return DistSq <= (Capsule.Radius * Capsule.Radius);
 }
 
+bool FCollisionHelper::LineIntersectVolume(const FVector& Start, const FVector& End, const IBoundingVolume* Volume,
+	FVector& OutHitLocation)
+{
+	if (!Volume)
+		return false;
+
+	switch (Volume->GetType())
+	{
+	case EBoundingVolumeType::Sphere:
+		{
+			const FBoundingSphere* Sphere = static_cast<const FBoundingSphere*>(Volume);
+			FVector Dir = (End - Start).GetNormalized();
+			FVector m = Start - Sphere->Center;
+			float b = Dot(m, Dir);
+			float c = Dot(m, m) - Sphere->Radius * Sphere->Radius;
+
+			// 시작점이 구 안이면 바로 Hit
+			if (c <= 0.0f) { OutHitLocation = Start; return true; }
+
+			// 선분이 구를 향하지 않음
+			if (b > 0.0f) return false;
+
+			float discr = b * b - c;
+			if (discr < 0.0f) return false;
+
+			float t = -b - sqrtf(discr);
+			if (t < 0.0f || t > (End - Start).Length())
+				return false;
+
+			OutHitLocation = Start + Dir * t;
+			return true;
+		}
+
+	case EBoundingVolumeType::OBB:
+		{
+			const FOBB* Box = static_cast<const FOBB*>(Volume);
+			FVector RayStart = Start;
+			FVector RayDir = End - Start;
+
+			// Transform ray to OBB's local space
+			FMatrix InvTransform = Box->ScaleRotation.Inverse();
+			FVector LocalStart = InvTransform.TransformPosition(RayStart - Box->Center);
+			FVector LocalDir = InvTransform.TransformVector(RayDir);
+
+			// Check if start point is inside
+			if (abs(LocalStart.X) <= Box->Extents.X &&
+				abs(LocalStart.Y) <= Box->Extents.Y &&
+				abs(LocalStart.Z) <= Box->Extents.Z)
+			{
+				OutHitLocation = Start;
+				return true;
+			}
+
+			// Kay/Kajiya slab test in local space
+			float tNear = -std::numeric_limits<float>::infinity();
+			float tFar = std::numeric_limits<float>::infinity();
+
+			for (int i = 0; i < 3; ++i)
+			{
+				float axis_start = (&LocalStart.X)[i];
+				float axis_dir = (&LocalDir.X)[i];
+				float extent = (&Box->Extents.X)[i];
+
+				if (abs(axis_dir) < 1e-6f)
+				{
+					// Ray is parallel to slab. No hit if origin is not within slab
+					if (axis_start < -extent || axis_start > extent)
+					{
+						return false; // Miss
+					}
+				}
+				else
+				{
+					float t1 = (-extent - axis_start) / axis_dir;
+					float t2 = (extent - axis_start) / axis_dir;
+
+					if (t1 > t2) std::swap(t1, t2);
+
+					tNear = std::max(tNear, t1);
+					tFar = std::min(tFar, t2);
+
+					if (tNear > tFar)
+					{
+						return false; // Miss
+					}
+				}
+			}
+
+			if (tNear > 1.0f || tFar < 0.0f)
+			{
+				return false;
+			}
+
+			float t = tNear < 0.0f ? 0.0f : tNear;
+
+			OutHitLocation = Start + RayDir * t;
+			return true;
+		}
+
+	default:
+		return false;
+	}
+}
+
 // === Helper Functions ===
 
 FVector FCollisionHelper::ClosestPointOnSegment(const FVector& Point, const FVector& SegmentStart, const FVector& SegmentEnd)
