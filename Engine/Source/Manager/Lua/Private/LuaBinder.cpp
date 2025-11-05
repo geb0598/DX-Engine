@@ -9,8 +9,10 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Level/Public/Level.h"
+#include "Level/Public/CurveLibrary.h"
 #include "Physics/Public/HitResult.h"
 #include "Global/Enum.h"
+#include "Global/CurveTypes.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
 #include "Render/Camera/Public/CameraModifier.h"
 #include "Render/Camera/Public/CameraModifier_CameraShake.h"
@@ -173,7 +175,80 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 					return OverlappingComponents;
 				return sol::nullopt;
 			}
-		)
+		),
+
+		// Get CurveLibrary from level
+		"GetCurveLibrary", &ULevel::GetCurveLibrary
+	);
+
+	// --- FCurve ---
+	LuaState.new_usertype<FCurve>("FCurve",
+		sol::call_constructor, sol::factories(
+			[]() { return FCurve(); },
+			[](float CP1_X, float CP1_Y, float CP2_X, float CP2_Y) {
+				return FCurve(CP1_X, CP1_Y, CP2_X, CP2_Y);
+			}
+		),
+		// Members
+		"ControlPoint1X", &FCurve::ControlPoint1X,
+		"ControlPoint1Y", &FCurve::ControlPoint1Y,
+		"ControlPoint2X", &FCurve::ControlPoint2X,
+		"ControlPoint2Y", &FCurve::ControlPoint2Y,
+
+		// Evaluate method
+		"Evaluate", &FCurve::Evaluate,
+
+		// Static factory methods
+		"Linear", &FCurve::Linear,
+		"EaseIn", &FCurve::EaseIn,
+		"EaseOut", &FCurve::EaseOut,
+		"EaseInOut", &FCurve::EaseInOut,
+		"EaseInBack", &FCurve::EaseInBack,
+		"EaseOutBack", &FCurve::EaseOutBack
+	);
+
+	// --- UCurveLibrary ---
+	LuaState.new_usertype<UCurveLibrary>("UCurveLibrary",
+		// Get curve by name (returns nil if not found)
+		"GetCurve", [](UCurveLibrary* Library, const std::string& Name) -> sol::optional<FCurve> {
+			if (!Library)
+				return sol::nullopt;
+
+			FCurve* Curve = Library->GetCurve(FString(Name));
+			if (Curve)
+				return *Curve;
+			return sol::nullopt;
+		},
+
+		// Check if curve exists
+		"HasCurve", [](UCurveLibrary* Library, const std::string& Name) -> bool {
+			if (!Library)
+				return false;
+			return Library->HasCurve(FString(Name));
+		},
+
+		// Get all curve names (returns Lua table)
+		"GetCurveNames", [](UCurveLibrary* Library, sol::this_state ts) -> sol::table {
+			sol::state_view lua(ts);
+			sol::table result = lua.create_table();
+
+			if (!Library)
+				return result;
+
+			TArray<FString> Names = Library->GetCurveNames();
+			for (int i = 0; i < Names.Num(); ++i)
+			{
+				result[i + 1] = std::string(Names[i]);  // Convert FString to std::string for Lua
+			}
+			return result;
+		},
+
+		// Get curve count
+		"GetCurveCount", [](UCurveLibrary* Library) -> int {
+			if (!Library)
+				return 0;
+			return Library->GetCurveCount();
+		}
 	);
 }
 

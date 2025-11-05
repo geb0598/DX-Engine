@@ -11,6 +11,7 @@
 #include "Global/Octree.h"
 #include "Global/OverlapInfo.h"
 #include "Level/Public/Level.h"
+#include "Level/Public/CurveLibrary.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Utility/Public/JsonSerializer.h"
@@ -26,6 +27,8 @@ IMPLEMENT_CLASS(ULevel, UObject)
 ULevel::ULevel()
 {
 	StaticOctree = new FOctree(FVector(0, 0, 0), 1000, 0);
+	CurveLibrary = NewObject<UCurveLibrary>(this);
+	CurveLibrary->InitializeDefaults();
 }
 
 ULevel::~ULevel()
@@ -40,6 +43,7 @@ ULevel::~ULevel()
 
 	// 모든 액터 객체가 삭제되었으므로, 포인터를 담고 있던 컨테이너들을 비웁니다.
 	SafeDelete(StaticOctree);
+	SafeDelete(CurveLibrary);
 }
 
 void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
@@ -68,6 +72,12 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 			}
 		}
 
+		// Curve 라이브러리 로드
+		if (CurveLibrary)
+		{
+			CurveLibrary->Serialize(bInIsLoading, InOutHandle);
+		}
+
 		// 뷰포트 카메라 정보 로드
 		UViewportManager::GetInstance().SerializeViewports(bInIsLoading, InOutHandle);
 	}
@@ -87,6 +97,12 @@ void ULevel::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 			ActorsJson[std::to_string(Actor->GetUUID())] = ActorJson;
 		}
 		InOutHandle["Actors"] = ActorsJson;
+
+		// Curve 라이브러리 저장
+		if (CurveLibrary)
+		{
+			CurveLibrary->Serialize(bInIsLoading, InOutHandle);
+		}
 
 		// 뷰포트 카메라 정보 저장
 		UViewportManager::GetInstance().SerializeViewports(bInIsLoading, InOutHandle);

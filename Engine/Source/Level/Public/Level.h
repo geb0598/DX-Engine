@@ -8,6 +8,7 @@ class UPrimitiveComponent;
 class UPointLightComponent;
 class ULightComponent;
 class FOctree;
+class UCurveLibrary;
 
 // Custom hash function for pair of WeakObjectPtr (used in overlap tracking)
 struct PairHash
@@ -93,6 +94,9 @@ public:
 	// Owning World
 	UWorld* GetOwningWorld() const { return OwningWorld; }
 
+	// Curve Library
+	UCurveLibrary* GetCurveLibrary() const { return CurveLibrary; }
+
 public:
 	virtual UObject* Duplicate() override;
 
@@ -103,6 +107,7 @@ private:
 	AActor* SpawnActorToLevel(UClass* InActorClass, JSON* ActorJsonData = nullptr);
 
 	UWorld* OwningWorld = nullptr; // 이 레벨을 소유한 World
+	UCurveLibrary* CurveLibrary = nullptr; // Curve repository
 	TArray<AActor*> LevelActors;	// 레벨이 보유하고 있는 모든 Actor를 배열로 저장합니다.
 	TArray<AActor*> TemplateActors;	// bIsTemplate이 true인 Actor들의 캐시 (빠른 조회용)
 
