@@ -126,7 +126,11 @@ void AGameMode::StartGame()
 
 void AGameMode::EndGame()
 {
-	bGameRunning = false;
-	bGameEnded = true;
-	OnGameEnded.Broadcast();
+    // Prevent duplicate end-game broadcasts
+    if (bGameEnded) {
+        return;
+    }
+    bGameRunning = false;
+    bGameEnded = true;
+    OnGameEnded.Broadcast();
 }

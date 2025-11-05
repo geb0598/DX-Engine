@@ -36,7 +36,7 @@ void FSceneDepthPass::Execute(FRenderingContext& Context)
 
     FSceneDepthConstants SceneDepthConstants;
     SceneDepthConstants.RenderTarget = FVector2(Context.RenderTargetSize.X, Context.RenderTargetSize.Y);
-    SceneDepthConstants.IsOrthographic = Context.CurrentCamera->GetCameraType() == ECameraType::ECT_Orthographic;
+    SceneDepthConstants.IsOrthographic = (Context.ViewInfo.ProjectionMode == ECameraProjectionMode::Orthographic);
     FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferPerFrame, SceneDepthConstants);
     Pipeline->SetConstantBuffer(0, EShaderType::PS, ConstantBufferPerFrame);
     Pipeline->SetConstantBuffer(1, EShaderType::PS, ConstantBufferCamera);

@@ -1,7 +1,9 @@
 #include "pch.h"
 #include "Global/CameraTypes.h"
+#include "Global/CurveTypes.h"
 #include "Global/Vector.h"
 #include "Global/Matrix.h"
+#include <algorithm>
 
 void FMinimalViewInfo::UpdateCameraConstants()
 {
@@ -54,76 +56,63 @@ FMinimalViewInfo FMinimalViewInfo::Blend(
 	const FMinimalViewInfo& A,
 	const FMinimalViewInfo& B,
 	float Alpha,
-	EViewTargetBlendFunction BlendFunc)
+	const FCurve* Curve)
 {
-	// Clamp alpha
-	Alpha = (Alpha < 0.0f) ? 0.0f : (Alpha > 1.0f) ? 1.0f : Alpha;
+	// Clamp input alpha to 0~1
+	Alpha = std::clamp(Alpha, 0.0f, 1.0f);
 
-	// Apply blend function
-	float BlendedAlpha = Alpha;
-	switch (BlendFunc)
+	// Evaluate curve (can return overshoot values outside 0~1)
+	float BlendedAlpha = Alpha; // Default: linear
+	if (Curve)
 	{
-	case EViewTargetBlendFunction::VTBlend_Linear:
-		// Already linear
-		break;
-
-	case EViewTargetBlendFunction::VTBlend_Cubic:
-		BlendedAlpha = Alpha * Alpha * (3.0f - 2.0f * Alpha);
-		break;
-
-	case EViewTargetBlendFunction::VTBlend_EaseIn:
-		BlendedAlpha = Alpha * Alpha;
-		break;
-
-	case EViewTargetBlendFunction::VTBlend_EaseOut:
-		BlendedAlpha = 1.0f - (1.0f - Alpha) * (1.0f - Alpha);
-		break;
-
-	case EViewTargetBlendFunction::VTBlend_EaseInOut:
-		BlendedAlpha = (Alpha < 0.5f)
-			? 2.0f * Alpha * Alpha
-			: 1.0f - 2.0f * (1.0f - Alpha) * (1.0f - Alpha);
-		break;
+		BlendedAlpha = Curve->Evaluate(Alpha);
 	}
 
 	// Blend the view info
 	FMinimalViewInfo Result;
 
-	// Lerp location
+	// Lerp location (overshoot is SAFE and desirable for spring effects)
 	Result.Location = FVector(
 		A.Location.X + (B.Location.X - A.Location.X) * BlendedAlpha,
 		A.Location.Y + (B.Location.Y - A.Location.Y) * BlendedAlpha,
 		A.Location.Z + (B.Location.Z - A.Location.Z) * BlendedAlpha
 	);
 
-	// Slerp rotation (shortest path)
-	Result.Rotation = FQuaternion::SlerpShortestPath(A.Rotation, B.Rotation, BlendedAlpha);
+	// Slerp rotation (MUST clamp - Slerp doesn't support overshoot)
+	float RotationAlpha = std::clamp(BlendedAlpha, 0.0f, 1.0f);
+	Result.Rotation = FQuaternion::SlerpShortestPath(A.Rotation, B.Rotation, RotationAlpha);
 
-	// Lerp FOV
+	// Lerp FOV (safe, but clamp to reasonable range)
 	Result.FOV = A.FOV + (B.FOV - A.FOV) * BlendedAlpha;
+	Result.FOV = std::clamp(Result.FOV, 1.0f, 179.0f); // Safety clamp
 
-	// Lerp aspect ratio
+	// Lerp aspect ratio (overshoot generally safe)
 	Result.AspectRatio = A.AspectRatio + (B.AspectRatio - A.AspectRatio) * BlendedAlpha;
 
-	// Lerp clipping planes
+	// Lerp clipping planes (MUST clamp - negative values cause rendering crashes)
 	Result.NearClipPlane = A.NearClipPlane + (B.NearClipPlane - A.NearClipPlane) * BlendedAlpha;
+	Result.NearClipPlane = std::max(Result.NearClipPlane, 0.001f); // Must be positive
+
 	Result.FarClipPlane = A.FarClipPlane + (B.FarClipPlane - A.FarClipPlane) * BlendedAlpha;
+	Result.FarClipPlane = std::max(Result.FarClipPlane, Result.NearClipPlane + 0.1f); // Must be > near
 
 	// Use projection mode from B when blending is > 0.5
-	Result.ProjectionMode = (BlendedAlpha < 0.5f) ? A.ProjectionMode : B.ProjectionMode;
+	float ProjectionModeThreshold = std::clamp(BlendedAlpha, 0.0f, 1.0f);
+	Result.ProjectionMode = (ProjectionModeThreshold < 0.5f) ? A.ProjectionMode : B.ProjectionMode;
 
-	// Lerp ortho width
+	// Lerp ortho width (overshoot generally safe)
 	Result.OrthoWidth = A.OrthoWidth + (B.OrthoWidth - A.OrthoWidth) * BlendedAlpha;
 
-	// Lerp fade amount
+	// Lerp fade amount (clamp to 0~1 for safety)
 	Result.FadeAmount = A.FadeAmount + (B.FadeAmount - A.FadeAmount) * BlendedAlpha;
+	Result.FadeAmount = std::clamp(Result.FadeAmount, 0.0f, 1.0f);
 
-	// Lerp fade color
+	// Lerp fade color (clamp each component to 0~1)
 	Result.FadeColor = FVector4(
-		A.FadeColor.X + (B.FadeColor.X - A.FadeColor.X) * BlendedAlpha,
-		A.FadeColor.Y + (B.FadeColor.Y - A.FadeColor.Y) * BlendedAlpha,
-		A.FadeColor.Z + (B.FadeColor.Z - A.FadeColor.Z) * BlendedAlpha,
-		A.FadeColor.W + (B.FadeColor.W - A.FadeColor.W) * BlendedAlpha
+		std::clamp(A.FadeColor.X + (B.FadeColor.X - A.FadeColor.X) * BlendedAlpha, 0.0f, 1.0f),
+		std::clamp(A.FadeColor.Y + (B.FadeColor.Y - A.FadeColor.Y) * BlendedAlpha, 0.0f, 1.0f),
+		std::clamp(A.FadeColor.Z + (B.FadeColor.Z - A.FadeColor.Z) * BlendedAlpha, 0.0f, 1.0f),
+		std::clamp(A.FadeColor.W + (B.FadeColor.W - A.FadeColor.W) * BlendedAlpha, 0.0f, 1.0f)
 	);
 
 	return Result;

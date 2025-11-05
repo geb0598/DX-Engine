@@ -2,6 +2,8 @@
 #include "Render/Camera/Public/CameraModifier.h"
 #include "Actor/Public/PlayerCameraManager.h"
 #include "Actor/Public/Actor.h"
+#include "Global/CurveTypes.h"
+#include <algorithm>
 
 IMPLEMENT_CLASS(UCameraModifier, UObject)
 
@@ -81,38 +83,110 @@ void UCameraModifier::ModifyPostProcess(float DeltaTime, float& PostProcessBlend
 
 void UCameraModifier::UpdateAlpha(float DeltaTime)
 {
-	float TargetAlpha = GetTargetAlpha();
-
-	if (Alpha < TargetAlpha)
+	if (bDisabled)
 	{
-		// Blend in
-		if (AlphaInTime > 0.0f)
+		return;
+	}
+
+	// State transitions
+	bool bShouldBeActive = !bPendingDisable;
+
+	if (BlendState == EAlphaBlendState::Idle)
+	{
+		if (bShouldBeActive && Alpha < 1.0f)
 		{
-			Alpha += DeltaTime / AlphaInTime;
-			Alpha = std::min(Alpha, TargetAlpha);
+			BlendState = EAlphaBlendState::BlendingIn;
+			StateElapsedTime = 0.0f;
 		}
-		else
+		else if (!bShouldBeActive && Alpha > 0.0f)
 		{
-			Alpha = TargetAlpha;
+			BlendState = EAlphaBlendState::BlendingOut;
+			StateElapsedTime = 0.0f;
 		}
 	}
-	else if (Alpha > TargetAlpha)
+	else if (BlendState == EAlphaBlendState::BlendingIn)
 	{
-		// Blend out
-		if (AlphaOutTime > 0.0f)
+		if (!bShouldBeActive)
 		{
-			Alpha -= DeltaTime / AlphaOutTime;
-			Alpha = std::max(Alpha, TargetAlpha);
+			BlendState = EAlphaBlendState::BlendingOut;
+			StateElapsedTime = 0.0f;
+		}
+	}
+	else if (BlendState == EAlphaBlendState::BlendingOut)
+	{
+		if (bShouldBeActive)
+		{
+			BlendState = EAlphaBlendState::BlendingIn;
+			StateElapsedTime = 0.0f;
+		}
+	}
+
+	// Update state elapsed time (for curve evaluation)
+	if (BlendState != EAlphaBlendState::Idle)
+	{
+		StateElapsedTime += DeltaTime;
+	}
+
+	// Update alpha based on current state
+	if (BlendState == EAlphaBlendState::BlendingIn)
+	{
+		if (AlphaInTime > 0.0f)
+		{
+			if (StateElapsedTime >= AlphaInTime)
+			{
+				Alpha = 1.0f;
+				BlendState = EAlphaBlendState::Idle;
+			}
+			else
+			{
+				float t = StateElapsedTime / AlphaInTime;
+				Alpha = AlphaInCurve ? AlphaInCurve->Evaluate(t) : t;
+			}
 		}
 		else
 		{
-			Alpha = TargetAlpha;
+			Alpha = 1.0f;
+			BlendState = EAlphaBlendState::Idle;
 		}
-
-		// Auto-disable when fully blended out
-		if (bPendingDisable && Alpha <= 0.0f)
+	}
+	else if (BlendState == EAlphaBlendState::BlendingOut)
+	{
+		if (AlphaOutTime > 0.0f)
 		{
-			DisableModifier(true);
+			if (StateElapsedTime >= AlphaOutTime)
+			{
+				Alpha = 0.0f;
+				BlendState = EAlphaBlendState::Idle;
+
+				if (bPendingDisable)
+				{
+					DisableModifier(true);
+				}
+			}
+			else
+			{
+				float t = StateElapsedTime / AlphaOutTime;
+				float curveValue = AlphaOutCurve ? AlphaOutCurve->Evaluate(t) : t;
+				Alpha = 1.0f - curveValue;
+			}
+		}
+		else
+		{
+			Alpha = 0.0f;
+			BlendState = EAlphaBlendState::Idle;
+
+			if (bPendingDisable)
+			{
+				DisableModifier(true);
+			}
+		}
+	}
+	else // Idle
+	{
+		// Keep alpha at 1.0 during full effect
+		if (!bPendingDisable)
+		{
+			Alpha = 1.0f;
 		}
 	}
 }
@@ -142,6 +216,11 @@ void UCameraModifier::EnableModifier()
 {
 	bDisabled = false;
 	bPendingDisable = false;
+
+	// Reset state for fresh start
+	Alpha = 0.0f;
+	StateElapsedTime = 0.0f;
+	BlendState = EAlphaBlendState::Idle;
 }
 
 AActor* UCameraModifier::GetViewTarget() const
@@ -151,4 +230,14 @@ AActor* UCameraModifier::GetViewTarget() const
 		return CameraOwner->GetViewTarget();
 	}
 	return nullptr;
+}
+
+void UCameraModifier::SetAlphaInCurve(const FCurve* Curve)
+{
+	AlphaInCurve = Curve;
+}
+
+void UCameraModifier::SetAlphaOutCurve(const FCurve* Curve)
+{
+	AlphaOutCurve = Curve;
 }

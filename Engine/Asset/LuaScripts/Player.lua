@@ -56,6 +56,17 @@ local function TakeDamage(damage)
     currentHP = currentHP - damage
     Log(string.format("PlayerHealth: Took %d damage. HP remaining: %d", damage, currentHP))
 
+    -- If dead now: stop warning loop and play fail SFX once
+    if currentHP <= 0 then
+        if Sound_StopLoopingSFX ~= nil and __warningLooping then
+            Sound_StopLoopingSFX("Warning")
+            __warningLooping = false
+        end
+        if Sound_PlaySFX ~= nil then
+            Sound_PlaySFX("FailOnce", 1.0, 1.0)
+        end
+    end
+
     CheckForDeath()
 end
 
@@ -71,6 +82,19 @@ function EndGameSequence()
     finalScore = math.floor(remainingTime * 100)
 
     Log(string.format("Game Ended! Remaining Time: %.2fs, Score: %d", remainingTime, finalScore))
+
+    -- Stop BGM on game end
+    if Sound_StopBGM ~= nil then
+        Sound_StopBGM(0.3)
+    end
+
+    -- Do NOT call gameMode:EndGame() here.
+    -- This function is registered as the OnGameEnded callback.
+    -- Calling EndGame again would re-broadcast OnGameEnded and recurse.
+end
+
+local function EndedTest()
+    Log("GameEnded Delegate!")
 end
 
 function OnLightIntensityChanged(current, previous)
@@ -120,6 +144,12 @@ function BeginPlay()
         gameMode.OnGameEnded = EndGameSequence
         -- gameMode:StartGame()
     end
+
+    -- Preload result SFX so they play instantly on end
+    if Sound_PreloadSFX ~= nil then
+        Sound_PreloadSFX("FailOnce", "Asset/Sound/SFX/Fail.wav", false, 1.0, 30.0)
+        Sound_PreloadSFX("SuccessOnce", "Asset/Sound/SFX/Success.wav", false, 1.0, 30.0)
+    end
 end
 
 ---
@@ -149,7 +179,11 @@ function Tick(dt)
     if remainingTime <= 0 then
         remainingTime = 0
         Log("Time Over! Game Failed.")
-        EndGameSequence()
+        if gameMode then
+            gameMode:EndGame()
+        else
+            EndGameSequence()
+        end
         return
     end
 
@@ -251,6 +285,43 @@ end
 -- [Light Exposure] 매 프레임 빛 노출 시간 업데이트
 ---
 function UpdateLightExposure(dt)
+    -- If dead, stop warning loop immediately and skip
+    if currentHP ~= nil and currentHP <= 0 then
+        if Sound_StopLoopingSFX ~= nil and __warningLooping then
+            Sound_StopLoopingSFX("Warning")
+            __warningLooping = false
+        end
+        return
+    end
+    -- Do nothing if game not running; ensure warning sound stops
+    local isRunning = false
+    do
+        local world = GetWorld()
+        local gm = world and world:GetGameMode() or nil
+        if gm and gm.IsGameRunning then isRunning = true end
+    end
+    if not isRunning then
+        if Sound_StopLoopingSFX ~= nil and __warningLooping then
+            Sound_StopLoopingSFX("Warning")
+            __warningLooping = false
+        end
+        return
+    end
+
+    -- Warning loop SFX toggle at threshold 1.5s (only when running)
+    local threshold = 1.5
+    if CurrentLightExposureTime < threshold then
+        if Sound_PlayLoopingSFX ~= nil and not __warningLooping then
+            Sound_PlayLoopingSFX("Warning", "Asset/Sound/SFX/Warning.wav", 1.0)
+            __warningLooping = true
+        end
+    else
+        if Sound_StopLoopingSFX ~= nil and __warningLooping then
+            Sound_StopLoopingSFX("Warning")
+            __warningLooping = false
+        end
+    end
+
     if CurrentLightLevel >= LightCriticalPoint then
         CurrentLightExposureTime = CurrentLightExposureTime - dt
 
@@ -535,6 +606,11 @@ function StartGame()
     currentRotation = Owner.Rotation:ToEuler()
     InitLocation = Owner.Location
 
+    -- Start BGM on game start (looped)
+    if Sound_PlayBGM ~= nil then
+        Sound_PlayBGM("Asset/Sound/BGM/BGM_InGame.wav", true, 0.5)
+    end
+
     Log(string.format("Player.lua BeginPlay. Owner: %s, HP: %d", Owner.UUID, currentHP))
 end
 
@@ -554,6 +630,12 @@ function OnActorBeginOverlap(overlappedActor, otherActor)
 
     if otherActor.Tag == CollisionTag.Enemy then
         TakeDamage(1)
+    elseif otherActor.Tag == CollisionTag.Clear then
+        Log("Clear!")
+        if Sound_PlaySFX ~= nil then
+            Sound_PlaySFX("SuccessOnce", 1.0, 1.0)
+        end
+        EndGameSequence()
     end
 end
 

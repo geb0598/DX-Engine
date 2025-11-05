@@ -1,6 +1,7 @@
 #pragma once
 #include <filesystem>
 #include "Core/Public/Object.h"
+#include "Core/Public/Delegate.h"
 #include "Demo/Public/Player.h"
 #include "Global/Types.h"
 
@@ -8,6 +9,9 @@ class UEditor;
 class ULevel;
 class AActor;
 class UClass;
+
+// Delegate for level change events
+DECLARE_DELEGATE(FOnLevelChanged);
 
 namespace json { class JSON; }
 using JSON = json::JSON;
@@ -108,6 +112,9 @@ public:
 	// Input Ignore
 	void SetIgnoreInput(bool bInIgnore) { bIgnoreInput = bInIgnore; }
 	bool IsIgnoringInput() const { return bIgnoreInput; }
+
+	// Level change notification
+	FOnLevelChanged OnLevelChanged;
 
 private:
 	EWorldType WorldType;

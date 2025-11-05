@@ -4,9 +4,9 @@
 #include "Global/Vector.h"
 #include "Global/Matrix.h"
 #include "Global/Types.h"
+#include "Global/CameraTypes.h"
 #include <vector>
 
-class UCamera;
 class UStaticMeshComponent;
 
 /**
@@ -73,7 +73,7 @@ public:
 		FMatrix& OutViewMatrix,
 		FMatrix& OutProjectionMatrix,
 		const FVector& LightDirection,
-		UCamera* Camera,
+		const FMinimalViewInfo& ViewInfo,
 		const TArray<UStaticMeshComponent*>& Meshes,
 		FPSMParameters& InOutParams
 	);
@@ -85,7 +85,7 @@ private:
 	 */
 	static void ComputeVirtualCameraParameters(
 		const FVector& LightDirection,
-		UCamera* Camera,
+		const FMinimalViewInfo& ViewInfo,
 		const TArray<UStaticMeshComponent*>& Meshes,
 		TArray<FPSMBoundingBox>& OutShadowCasters,
 		TArray<FPSMBoundingBox>& OutShadowReceivers,
@@ -99,7 +99,7 @@ private:
 		FMatrix& OutView,
 		FMatrix& OutProj,
 		const FVector& LightDirection,
-		UCamera* Camera,
+		const FMinimalViewInfo& ViewInfo,
 		const TArray<FPSMBoundingBox>& ShadowCasters,
 		const TArray<FPSMBoundingBox>& ShadowReceivers,
 		FPSMParameters& Params
@@ -112,7 +112,7 @@ private:
 		FMatrix& OutView,
 		FMatrix& OutProj,
 		const FVector& LightDirection,
-		UCamera* Camera,
+		const FMinimalViewInfo& ViewInfo,
 		const TArray<FPSMBoundingBox>& ShadowCasters,
 		const TArray<FPSMBoundingBox>& ShadowReceivers,
 		FPSMParameters& Params
@@ -125,7 +125,7 @@ private:
 		FMatrix& OutView,
 		FMatrix& OutProj,
 		const FVector& LightDirection,
-		UCamera* Camera,
+		const FMinimalViewInfo& ViewInfo,
 		const TArray<UStaticMeshComponent*>& Meshes,
 		FPSMParameters& Params
 	);
@@ -137,7 +137,7 @@ private:
 		FMatrix& OutView,
 		FMatrix& OutProj,
 		const FVector& LightDirection,
-		UCamera* Camera,
+		const FMinimalViewInfo& ViewInfo,
 		const TArray<FPSMBoundingBox>& ShadowCasters,
 		const TArray<FPSMBoundingBox>& ShadowReceivers,
 		FPSMParameters& Params

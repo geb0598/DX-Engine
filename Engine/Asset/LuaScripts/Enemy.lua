@@ -66,6 +66,24 @@ function BeginPlay()
     initialZ = 10.0
 
     -- Player는 첫 Tick에서 찾기 (BeginPlay 순서 보장 안됨)
+
+    -- Preload hit SFX so first playback has no delay
+    if Sound_PreloadSFX ~= nil then
+        Sound_PreloadSFX("EnemyHit", "Asset/Sound/SFX/EnemyHit.wav", false, 1.0, 30.0)
+    end
+
+    -- Preload & play spawn SFX on creation (only when game is running)
+    local world = GetWorld()
+    local gm = world and world:GetGameMode() or nil
+    local isRunning = gm and gm.IsGameRunning or false
+    if isRunning then
+        if Sound_PreloadSFX ~= nil then
+            Sound_PreloadSFX("EnemySpawn", "Asset/Sound/SFX/EnemySpawn.wav", false, 1.0, 30.0)
+        end
+        if Sound_PlaySFX ~= nil then
+            Sound_PlaySFX("EnemySpawn", 1.0, 1.0)
+        end
+    end
 end
 
 ---
@@ -137,6 +155,9 @@ function OnActorBeginOverlap(overlappedActor, otherActor)
     if otherActor.Tag == CollisionTag.Player then
         Log("[Enemy] Hit player!")
         -- 여기에 플레이어에게 데미지를 주는 로직 추가 가능
+        if Sound_PlaySFX ~= nil then
+            Sound_PlaySFX("EnemyHit", 1.0, 1.0)
+        end
     end
 end
 

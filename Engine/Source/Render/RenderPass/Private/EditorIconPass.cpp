@@ -46,11 +46,12 @@ void FEditorIconPass::Execute(FRenderingContext& Context)
 	};
 
 	std::vector<FDistanceSortedEditorIcon> SortedEditorIcons;
-	FVector CameraLocation = Context.CurrentCamera->GetLocation();
+	FVector CameraLocation = Context.ViewInfo.Location;
+	FVector CameraForward = Context.ViewInfo.Rotation.RotateVector(FVector::ForwardVector());
 
 	for (UEditorIconComponent* EditorIconComp : Context.EditorIcons)
 	{
-		EditorIconComp->FaceCamera(Context.CurrentCamera->GetForward());
+		EditorIconComp->FaceCamera(CameraForward);
 		FVector EditorIconLocation = EditorIconComp->GetWorldLocation();
 		float DistanceSq = FVector::DistSquared(CameraLocation, EditorIconLocation);
 		SortedEditorIcons.push_back({ EditorIconComp, DistanceSq });

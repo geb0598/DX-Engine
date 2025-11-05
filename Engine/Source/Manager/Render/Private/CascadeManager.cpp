@@ -60,13 +60,13 @@ float UCascadeManager::CalculateFrustumXYWithZ(float Z, float Fov)
 }
 
 FCascadeShadowMapData UCascadeManager::GetCascadeShadowMapData(
-    UCamera* InCamera,
+    const FMinimalViewInfo& InViewInfo,
     UDirectionalLightComponent* InDirectionalLight
     )
 {
-    float NearZ = InCamera->GetNearZ();
-    float FarZ = InCamera->GetFarZ();
-    float Fov = InCamera->GetFovY();
+    float NearZ = InViewInfo.NearClipPlane;
+    float FarZ = InViewInfo.FarClipPlane;
+    float Fov = InViewInfo.FOV;
 
     FCascadeShadowMapData CascadeShadowMapData;
     CascadeShadowMapData.SplitNum = SplitNum;
@@ -93,7 +93,7 @@ FCascadeShadowMapData UCascadeManager::GetCascadeShadowMapData(
 
     FCascadeSubFrustum CascadeFrustum;
 
-    FMatrix CameraViewInverse = InCamera->GetFViewProjConstantsInverse().View;
+    FMatrix CameraViewInverse = InViewInfo.CameraConstants.View.Inverse();
 
     // Directional Light의 View Matrix 계산
     // 라이트가 향하는 방향의 반대쪽에서 바라보는 View 행렬 생성

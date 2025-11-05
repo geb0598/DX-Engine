@@ -82,7 +82,8 @@ void FTextPass::Execute(FRenderingContext& Context)
         {
             continue;
         }
-        UUID->UpdateRotationMatrix(Context.CurrentCamera->GetForward());
+        FVector CameraForward = Context.ViewInfo.Rotation.RotateVector(FVector::ForwardVector());
+        UUID->UpdateRotationMatrix(CameraForward);
         FString UUIDString = "UUID: " + std::to_string(UUID->GetUUID());
         RenderTextInternal(UUIDString, UUID->GetRTMatrix());
     }

@@ -45,11 +45,12 @@ void FBillboardPass::Execute(FRenderingContext& Context)
     };
 
     std::vector<FDistanceSortedBillboard> SortedBillboards;
-    FVector CameraLocation = Context.CurrentCamera->GetLocation();
+    FVector CameraLocation = Context.ViewInfo.Location;
+    FVector CameraForward = Context.ViewInfo.Rotation.RotateVector(FVector::ForwardVector());
 
     for (UBillBoardComponent* BillBoardComp : Context.BillBoards)
     {
-        BillBoardComp->FaceCamera(Context.CurrentCamera->GetForward());
+        BillBoardComp->FaceCamera(CameraForward);
         FVector BillboardLocation = BillBoardComp->GetWorldLocation();
         float DistanceSq = FVector::DistSquared(CameraLocation, BillboardLocation);
         SortedBillboards.push_back({ BillBoardComp, DistanceSq });

@@ -66,9 +66,8 @@ void FFogPass::Execute(FRenderingContext& Context)
 
         // Update CameraInverse Constant Buffer (Slot 1)
         FCameraInverseConstants CameraInverseConstants;
-        FCameraConstants ViewProjConstants = Context.CurrentCamera->GetFViewProjConstantsInverse();
-        CameraInverseConstants.ProjectionInverse =  ViewProjConstants.Projection;
-        CameraInverseConstants.ViewInverse =  ViewProjConstants.View;
+        CameraInverseConstants.ProjectionInverse = Context.ViewInfo.CameraConstants.Projection.Inverse();
+        CameraInverseConstants.ViewInverse = Context.ViewInfo.CameraConstants.View.Inverse();
         FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferCameraInverse, CameraInverseConstants);
         Pipeline->SetConstantBuffer(1, EShaderType::PS, ConstantBufferCameraInverse);
 

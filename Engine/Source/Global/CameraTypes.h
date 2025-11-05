@@ -3,6 +3,9 @@
 #include "Global/Matrix.h"
 #include "Global/Quaternion.h"
 
+// Forward declarations
+struct FCurve;
+
 /**
  * Camera Constants for Rendering
  * View and Projection matrices with clip planes
@@ -31,17 +34,7 @@ enum class ECameraProjectionMode : uint8
 	Orthographic
 };
 
-/**
- * View Target Blend Function
- */
-enum class EViewTargetBlendFunction : uint8
-{
-	VTBlend_Linear,
-	VTBlend_Cubic,
-	VTBlend_EaseIn,
-	VTBlend_EaseOut,
-	VTBlend_EaseInOut
-};
+// Removed EViewTargetBlendFunction - use curve names instead (e.g., "Linear", "EaseIn", etc.)
 
 /**
  * Camera Shake Play Space
@@ -98,13 +91,20 @@ struct FMinimalViewInfo
 	void UpdateCameraConstants();
 
 	/**
-	 * Blend between two POVs
+	 * Blend between two POVs using curve
+	 * @param A Starting view
+	 * @param B Target view
+	 * @param Alpha Blend alpha (0.0 ~ 1.0, input is clamped)
+	 * @param Curve Resolved curve pointer (if null, uses linear blend)
+	 * @return Blended view
+	 * @note Alpha input is clamped to 0~1, but curve evaluation can return overshoot values.
+	 *       Overshoot is safe for Location, but Rotation/ClipPlanes will be clamped.
 	 */
 	static FMinimalViewInfo Blend(
 		const FMinimalViewInfo& A,
 		const FMinimalViewInfo& B,
 		float Alpha,
-		EViewTargetBlendFunction BlendFunc = EViewTargetBlendFunction::VTBlend_Linear
+		const FCurve* Curve = nullptr
 	);
 };
 

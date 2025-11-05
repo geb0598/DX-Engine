@@ -181,7 +181,7 @@ void FShadowMapPass::Execute(FRenderingContext& Context)
 		if (DirLight->GetCastShadows() && DirLight->GetLightEnabled())
 		{
 			// 유효한 첫번째 Dir Light만 사용
-			RenderDirectionalShadowMap(DirLight, Context.StaticMeshes, Context.CurrentCamera);
+			RenderDirectionalShadowMap(DirLight, Context.StaticMeshes, Context.ViewInfo);
 			ActiveDirectionalLightCount = 1;
 			ActiveDirectionalCascadeCount = UCascadeManager::GetInstance().GetSplitNum();
 			break;
@@ -233,7 +233,7 @@ void FShadowMapPass::Execute(FRenderingContext& Context)
 void FShadowMapPass::RenderDirectionalShadowMap(
 	UDirectionalLightComponent* Light,
 	const TArray<UStaticMeshComponent*>& Meshes,
-	UCamera* InCamera
+	const FMinimalViewInfo& InViewInfo
 	)
 {
 	// FShadowMapResource* ShadowMap = GetOrCreateShadowMap(Light);
@@ -300,7 +300,7 @@ void FShadowMapPass::RenderDirectionalShadowMap(
 	if (ProjectionMode == 4)
 	{
 		// 모드 4: Cascaded Shadow Maps (다중 캐스케이드)
-		CascadeShadowMapData = CascadeManager.GetCascadeShadowMapData(InCamera, Light);
+		CascadeShadowMapData = CascadeManager.GetCascadeShadowMapData(InViewInfo, Light);
 		NumCascades = OriginalSplitNum;
 	}
 	else if (ProjectionMode >= 1 && ProjectionMode <= 3)
@@ -310,11 +310,11 @@ void FShadowMapPass::RenderDirectionalShadowMap(
 		CascadeShadowMapData.SplitNum = 1;
 
 		FMatrix LightView, LightProj;
-		CalculateDirectionalLightViewProj(Light, Meshes, InCamera, LightView, LightProj);
+		CalculateDirectionalLightViewProj(Light, Meshes, InViewInfo, LightView, LightProj);
 
 		CascadeShadowMapData.View = LightView;
 		CascadeShadowMapData.Proj[0] = LightProj;
-		CascadeShadowMapData.SplitDistance[0] = FVector4(InCamera->GetFarZ(), 0, 0, 0);
+		CascadeShadowMapData.SplitDistance[0] = FVector4(InViewInfo.FarClipPlane, 0, 0, 0);
 		NumCascades = 1;
 	}
 	else  // ProjectionMode == 0
@@ -328,7 +328,7 @@ void FShadowMapPass::RenderDirectionalShadowMap(
 
 		CascadeShadowMapData.View = LightView;
 		CascadeShadowMapData.Proj[0] = LightProj;
-		CascadeShadowMapData.SplitDistance[0] = FVector4(InCamera->GetFarZ(), 0, 0, 0);
+		CascadeShadowMapData.SplitDistance[0] = FVector4(InViewInfo.FarClipPlane, 0, 0, 0);
 		NumCascades = 1;
 	}
 
@@ -647,17 +647,8 @@ void FShadowMapPass::SetShadowAtlasTilePositionStructuredBuffer()
 }
 
 void FShadowMapPass::CalculateDirectionalLightViewProj(UDirectionalLightComponent* Light,
-	const TArray<UStaticMeshComponent*>& Meshes, UCamera* InCamera, FMatrix& OutView, FMatrix& OutProj)
+	const TArray<UStaticMeshComponent*>& Meshes, const FMinimalViewInfo& InViewInfo, FMatrix& OutView, FMatrix& OutProj)
 {
-	// PSM (Perspective Shadow Map) 구현
-	if (!InCamera)
-	{
-		// 카메라가 없으면 단위 행렬로 폴백
-		OutView = FMatrix::Identity();
-		OutProj = FMatrix::Identity();
-		return;
-	}
-
 	// 빛 방향 가져오기 (빛이 비추는 방향)
 	FVector LightDir = Light->GetForwardVector();
 	if (LightDir.Length() < 1e-6f)
@@ -680,7 +671,7 @@ void FShadowMapPass::CalculateDirectionalLightViewProj(UDirectionalLightComponen
 		OutView,
 		OutProj,
 		LightDir,
-		InCamera,
+		InViewInfo,
 		Meshes,
 		Params
 	);

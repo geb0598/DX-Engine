@@ -191,6 +191,9 @@ bool UWorld::LoadLevel(path InLevelFilePath)
 
 		// 레벨 로드 완료 후 Octree 전체 구축
 		NewLevel->UpdateOctreeImmediate();
+
+		// Notify listeners that level has changed
+		OnLevelChanged.Broadcast();
 	}
 	catch (const exception& Exception)
 	{
@@ -461,6 +464,9 @@ void UWorld::CreateNewLevel(const FName& InLevelName)
 
 	// 새 레벨 생성 후 Octree 전체 구축
 	NewLevel->UpdateOctreeImmediate();
+
+	// Notify listeners that level has changed
+	OnLevelChanged.Broadcast();
 }
 
 AActor* UWorld::FindTemplateActorOfName(const std::string& InName)

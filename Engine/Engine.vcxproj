@@ -150,13 +150,15 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
         IF EXIST "$(ProjectDir)Asset" xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y
         IF EXIST "$(ProjectDir)Data" xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y
         IF EXIST "$(SolutionDir)External\Bin\Debug\*" xcopy "$(SolutionDir)External\Bin\Debug\*" "$(OutDir)" /E /I /Y
+        IF EXIST "$(SolutionDir)External\Library\fmod\*.dll" xcopy "$(SolutionDir)External\Library\fmod\*.dll" "$(OutDir)" /E /I /Y
         :VCEnd
       </Command>
     </PostBuildEvent>
@@ -205,13 +207,16 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
         IF EXIST "$(ProjectDir)Asset" xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y
         IF EXIST "$(ProjectDir)Data" xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y
         IF EXIST "$(SolutionDir)External\bin\Debug\*" xcopy "$(SolutionDir)External\bin\Debug\*" "$(OutDir)" /E /I /Y
+        IF EXIST "$(SolutionDir)External\Bin\Release\*" xcopy "$(SolutionDir)External\Bin\Release\*" "$(OutDir)" /E /I /Y
+        IF EXIST "$(SolutionDir)External\Library\fmod\*.dll" xcopy "$(SolutionDir)External\Library\fmod\*.dll" "$(OutDir)" /E /I /Y
         :VCEnd
       </Command>
     </PostBuildEvent>
@@ -234,13 +239,16 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>
         IF EXIST "$(ProjectDir)Asset" xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y
         IF EXIST "$(ProjectDir)Data" xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y
         IF EXIST "$(SolutionDir)External\bin\Debug\*" xcopy "$(SolutionDir)External\bin\Debug\*" "$(OutDir)" /E /I /Y
+        IF EXIST "$(SolutionDir)External\Bin\Release\*" xcopy "$(SolutionDir)External\Bin\Release\*" "$(OutDir)" /E /I /Y
+        IF EXIST "$(SolutionDir)External\Library\fmod\*.dll" xcopy "$(SolutionDir)External\Library\fmod\*.dll" "$(OutDir)" /E /I /Y
         :VCEnd
       </Command>
     </PostBuildEvent>
@@ -276,6 +284,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="Source\Component\Public\SpringArmComponent.h" />
+    <ClInclude Include="Source\Global\CurveTypes.h" />
+    <ClInclude Include="Source\Level\Public\CurveLibrary.h" />
     <ClInclude Include="Source\Render\Camera\Public\CameraModifier.h" />
     <ClInclude Include="Source\Render\Camera\Public\CameraModifier_CameraShake.h" />
     <ClInclude Include="pch.h" />
@@ -446,6 +456,7 @@
     <ClInclude Include="Source\Render\UI\Overlay\Public\D2DOverlayManager.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\ShadowMapFilterPass.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\ScriptComponentWidget.h" />
+    <ClInclude Include="Source\Render\UI\Window\Public\CurveEditorWindow.h" />
     <ClInclude Include="Source\Runtime\Core\Public\Containers\TArray.h" />
     <ClInclude Include="Source\Runtime\Core\Public\Containers\TMap.h" />
     <ClInclude Include="Source\Runtime\Core\Public\Containers\TSet.h" />
@@ -519,6 +530,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Component\Private\SpringArmComponent.cpp" />
+    <ClCompile Include="Source\Level\Private\CurveLibrary.cpp" />
     <ClCompile Include="Source\Render\Camera\Private\CameraModifier.cpp" />
     <ClCompile Include="Source\Render\Camera\Private\CameraModifier_CameraShake.cpp" />
     <ClCompile Include="pch.cpp">
@@ -600,6 +612,7 @@
     <ClCompile Include="Source\Manager\Asset\Private\TextureManager.cpp" />
     <ClCompile Include="Source\Manager\Lua\Private\LuaBinder.cpp" />
     <ClCompile Include="Source\Manager\Lua\Private\LuaManager.cpp" />
+    <ClCompile Include="Source\Manager\Sound\Private\SoundManager.cpp" />
     <ClCompile Include="Source\Manager\Render\Private\CascadeManager.cpp" />
     <ClCompile Include="Source\Manager\UI\Private\ViewportManager.cpp" />
     <ClCompile Include="Source\Optimization\Private\OcclusionCuller.cpp" />
@@ -674,6 +687,7 @@
     <ClCompile Include="Source\Render\UI\Widget\Private\ScriptComponentWidget.cpp" />
     <ClCompile Include="Source\Subsystem\Private\EngineSubsystem.cpp" />
     <ClCompile Include="Source\Subsystem\Private\Subsystem.cpp" />
+    <ClCompile Include="Source\Render\UI\Window\Private\CurveEditorWindow.cpp" />
     <ClCompile Include="Source\Texture\Private\ShadowMapResources.cpp" />
     <ClCompile Include="Source\Render\UI\Factory\Private\UIWindowFactory.cpp" />
     <ClCompile Include="Source\Render\UI\ImGui\Private\ImGuiHelper.cpp" />

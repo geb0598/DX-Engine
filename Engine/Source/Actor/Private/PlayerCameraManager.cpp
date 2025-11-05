@@ -3,6 +3,7 @@
 #include "Component/Public/CameraComponent.h"
 #include "Actor/Public/Actor.h"
 #include "Render/Camera/Public/CameraModifier.h"
+#include "Global/CurveTypes.h"
 
 IMPLEMENT_CLASS(APlayerCameraManager, AActor)
 
@@ -130,7 +131,7 @@ void APlayerCameraManager::UpdateCameraBlending(float DeltaTime, const FMinimalV
 		else
 		{
 			float BlendAlpha = (TotalBlendTime - CurrentBlendTime) / TotalBlendTime;
-			CameraCachePOV = FMinimalViewInfo::Blend(BlendStartPOV, GoalPOV, BlendAlpha, CurrentBlendFunction);
+			CameraCachePOV = FMinimalViewInfo::Blend(BlendStartPOV, GoalPOV, BlendAlpha, CurrentBlendCurve);
 		}
 	}
 	else
@@ -185,13 +186,14 @@ void APlayerCameraManager::SetVignetteIntensity(float InIntensity)
 	CurrentPostProcessSettings.VignetteIntensity = InIntensity;
 }
 
-void APlayerCameraManager::StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color, bool bHoldWhenFinished)
+void APlayerCameraManager::StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color, bool bHoldWhenFinished, const FCurve* FadeCurve)
 {
 	FadeStartAlpha = FromAlpha;
 	FadeEndAlpha = ToAlpha;
 	FadeDuration = Duration;
 	FadeTimeRemaining = Duration;
 	bHoldFadeWhenFinished = bHoldWhenFinished;
+	CurrentFadeCurve = FadeCurve;
 
 	FadeColor.X = Color.X;
 	FadeColor.Y = Color.Y;
@@ -262,23 +264,31 @@ void APlayerCameraManager::UpdateCameraFade(float DeltaTime)
 			if (!bHoldFadeWhenFinished)
 			{
 				// 현재 값(FadeEndAlpha)에서 0.0으로, 동일한 시간 동안 페이드 아웃
-				StartCameraFade(FadeEndAlpha, 0.0f, FadeDuration, FVector(FadeColor.X, FadeColor.Y, FadeColor.Z), true);
+				StartCameraFade(FadeEndAlpha, 0.0f, FadeDuration, FVector(FadeColor.X, FadeColor.Y, FadeColor.Z), true, CurrentFadeCurve);
 			}
 		}
 	else
 	{
 		// --- 페이드 진행 중 ---
 		// (총 시간 - 남은 시간) / 총 시간 = 진행률 (0.0 -> 1.0)
-		// (1.0 - (남은 시간 / 총 시간))
-
-		float LerpAlpha = 0.0f;
+		float NormalizedTime = 0.0f;
 		if (FadeDuration > 0.0f)
 		{
-			LerpAlpha = 1.0f - (FadeTimeRemaining / FadeDuration);
+			NormalizedTime = 1.0f - (FadeTimeRemaining / FadeDuration);
 		}
 
+		// Evaluate curve (linear if curve is null)
+		float BlendedAlpha = NormalizedTime;
+		if (CurrentFadeCurve)
+		{
+			BlendedAlpha = CurrentFadeCurve->Evaluate(NormalizedTime);
+		}
+
+		// Clamp to 0~1 (fade alpha should not overshoot)
+		BlendedAlpha = std::clamp(BlendedAlpha, 0.0f, 1.0f);
+
 		// 시작 알파와 끝 알파 사이를 보간합니다.
-		FadeAmount = Lerp(FadeStartAlpha, FadeEndAlpha, LerpAlpha);
+		FadeAmount = Lerp(FadeStartAlpha, FadeEndAlpha, BlendedAlpha);
 	}
 }
 }
@@ -303,6 +313,10 @@ UCameraModifier* APlayerCameraManager::AddCameraModifier(UCameraModifier* NewMod
 
 	// Initialize the modifier
 	NewModifier->AddedToCamera(this);
+
+	// Reset alpha to 0 for fresh blend-in
+	// This ensures modifiers always start from 0 alpha regardless of AlphaInTime
+	NewModifier->EnableModifier();  // Ensure it's enabled and reset state
 
 	// Sort by priority (lower number = higher priority)
 	ModifierList.Sort([](const UCameraModifier* A, const UCameraModifier* B)
@@ -330,7 +344,7 @@ void APlayerCameraManager::ClearCameraModifiers()
 	ModifierList.Empty();
 }
 
-void APlayerCameraManager::SetViewTargetWithBlend(AActor* NewViewTarget, float BlendTime, EViewTargetBlendFunction BlendFunc)
+void APlayerCameraManager::SetViewTargetWithBlend(AActor* NewViewTarget, float BlendTime, const FCurve* BlendCurve)
 {
 	if (BlendTime <= 0.0f || !NewViewTarget)
 	{
@@ -344,5 +358,5 @@ void APlayerCameraManager::SetViewTargetWithBlend(AActor* NewViewTarget, float B
 	bIsBlending = true;
 	TotalBlendTime = BlendTime;
 	CurrentBlendTime = BlendTime;
-	CurrentBlendFunction = BlendFunc;
+	CurrentBlendCurve = BlendCurve;
 }
