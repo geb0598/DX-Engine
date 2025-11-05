@@ -50,16 +50,51 @@ void UGameInstance::InitializeWorld(FAppWindow* InWindow, const char* InScenePat
 
 	// Scene 로드 또는 새 레벨 생성
 	bool bLevelLoaded = false;
+	FString ScenePathToLoad;
+
 	if (InScenePath && strlen(InScenePath) > 0)
 	{
-		if (!World->LoadLevel(InScenePath))
+		ScenePathToLoad = InScenePath;
+	}
+	else
+	{
+		// InScenePath가 없으면 Asset/Scene 폴더의 첫 번째 .Scene 파일 찾기
+		const FString SceneFolder = "Asset/Scene";
+		WIN32_FIND_DATAA FindData;
+		HANDLE hFind = FindFirstFileA((SceneFolder + "/*.Scene").c_str(), &FindData);
+
+		if (hFind != INVALID_HANDLE_VALUE)
 		{
-			UE_LOG_ERROR("GameInstance: Failed to load scene '%s', creating new level instead", InScenePath);
+			do
+			{
+				if (!(FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
+				{
+					ScenePathToLoad = SceneFolder + "/" + FindData.cFileName;
+					UE_LOG_INFO("GameInstance: Found scene file '%s'", ScenePathToLoad.c_str());
+					break;
+				}
+			} while (FindNextFileA(hFind, &FindData));
+
+			FindClose(hFind);
+		}
+
+		if (ScenePathToLoad.empty())
+		{
+			UE_LOG_WARNING("GameInstance: No scene files found in '%s', creating new level", SceneFolder.c_str());
+		}
+	}
+
+	// Scene 파일이 있으면 로드
+	if (!ScenePathToLoad.empty())
+	{
+		if (!World->LoadLevel(ScenePathToLoad.c_str()))
+		{
+			UE_LOG_ERROR("GameInstance: Failed to load scene '%s', creating new level instead", ScenePathToLoad.c_str());
 			World->CreateNewLevel();
 		}
 		else
 		{
-			UE_LOG_SUCCESS("GameInstance: Loaded scene '%s'", InScenePath);
+			UE_LOG_SUCCESS("GameInstance: Loaded scene '%s'", ScenePathToLoad.c_str());
 			bLevelLoaded = true; // LoadLevel 내부에서 이미 BeginPlay 호출됨
 		}
 	}

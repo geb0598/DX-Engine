@@ -1,6 +1,6 @@
 {
   "Actors" : {
-    "296" : {
+    "300" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -55,7 +55,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "300" : {
+    "304" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -110,7 +110,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "304" : {
+    "308" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -165,7 +165,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "308" : {
+    "312" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -220,7 +220,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "312" : {
+    "316" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -275,7 +275,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "316" : {
+    "320" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -328,7 +328,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "319" : {
+    "323" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -387,7 +387,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "323" : {
+    "327" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -439,7 +439,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "327" : {
+    "331" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -498,7 +498,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "331" : {
+    "335" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -557,7 +557,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "335" : {
+    "339" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -616,7 +616,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "339" : {
+    "343" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -675,7 +675,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "343" : {
+    "347" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -734,7 +734,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "347" : {
+    "351" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -793,7 +793,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "351" : {
+    "355" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -852,7 +852,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "355" : {
+    "359" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -911,7 +911,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "359" : {
+    "363" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -970,7 +970,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "363" : {
+    "367" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1029,7 +1029,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "367" : {
+    "371" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1088,7 +1088,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "371" : {
+    "375" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1147,7 +1147,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "375" : {
+    "379" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1206,7 +1206,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "379" : {
+    "383" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1265,7 +1265,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "383" : {
+    "387" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1324,7 +1324,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "387" : {
+    "391" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1383,7 +1383,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "391" : {
+    "395" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1442,7 +1442,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "395" : {
+    "399" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1501,7 +1501,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "399" : {
+    "403" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1560,7 +1560,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "403" : {
+    "407" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1635,7 +1635,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "408" : {
+    "412" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1694,7 +1694,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "412" : {
+    "416" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1753,7 +1753,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "416" : {
+    "420" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1812,7 +1812,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "420" : {
+    "424" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1871,7 +1871,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "424" : {
+    "428" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1930,7 +1930,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "428" : {
+    "432" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -1989,7 +1989,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "432" : {
+    "436" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2048,7 +2048,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "436" : {
+    "440" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2107,7 +2107,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "440" : {
+    "444" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2166,7 +2166,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "444" : {
+    "448" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2225,7 +2225,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "448" : {
+    "452" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2284,7 +2284,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "452" : {
+    "456" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2343,7 +2343,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "456" : {
+    "460" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2402,7 +2402,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "460" : {
+    "464" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2461,7 +2461,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "464" : {
+    "468" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2520,7 +2520,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "468" : {
+    "472" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2579,7 +2579,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "472" : {
+    "476" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2638,7 +2638,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "476" : {
+    "480" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2697,7 +2697,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "480" : {
+    "484" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2756,7 +2756,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "484" : {
+    "488" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2815,7 +2815,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "488" : {
+    "492" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2860,7 +2860,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "491" : {
+    "495" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2919,7 +2919,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "495" : {
+    "499" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -2978,7 +2978,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "499" : {
+    "503" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3037,7 +3037,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "503" : {
+    "507" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3096,7 +3096,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "507" : {
+    "511" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3155,7 +3155,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "511" : {
+    "515" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3214,7 +3214,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "515" : {
+    "519" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3273,7 +3273,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "519" : {
+    "523" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3332,7 +3332,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "523" : {
+    "527" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3391,7 +3391,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "527" : {
+    "531" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3450,7 +3450,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "531" : {
+    "535" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3509,7 +3509,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "535" : {
+    "539" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3568,7 +3568,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "539" : {
+    "543" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3627,7 +3627,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "543" : {
+    "547" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3686,7 +3686,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "547" : {
+    "551" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3745,7 +3745,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "551" : {
+    "555" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3804,7 +3804,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "555" : {
+    "559" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3863,7 +3863,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "559" : {
+    "563" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3922,7 +3922,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "563" : {
+    "567" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -3981,7 +3981,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "567" : {
+    "571" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4040,7 +4040,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "571" : {
+    "575" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4099,7 +4099,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "575" : {
+    "579" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4158,7 +4158,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "579" : {
+    "583" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4217,7 +4217,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "583" : {
+    "587" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4276,7 +4276,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "587" : {
+    "591" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4335,7 +4335,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "591" : {
+    "595" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4394,7 +4394,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "595" : {
+    "599" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4446,7 +4446,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "599" : {
+    "603" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4498,7 +4498,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "603" : {
+    "607" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4541,7 +4541,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "606" : {
+    "610" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4592,7 +4592,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "609" : {
+    "613" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4641,7 +4641,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "612" : {
+    "616" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4684,7 +4684,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "615" : {
+    "619" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4743,7 +4743,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "619" : {
+    "623" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4802,7 +4802,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "623" : {
+    "627" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4861,7 +4861,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "627" : {
+    "631" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4920,7 +4920,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "631" : {
+    "635" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -4979,7 +4979,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "635" : {
+    "639" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5038,7 +5038,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "639" : {
+    "643" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5097,7 +5097,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "643" : {
+    "647" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5140,7 +5140,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "646" : {
+    "650" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5199,7 +5199,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "650" : {
+    "654" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5258,7 +5258,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "654" : {
+    "658" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5353,7 +5353,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "659" : {
+    "663" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5392,7 +5392,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "662" : {
+    "666" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5447,7 +5447,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "666" : {
+    "670" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5502,7 +5502,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "670" : {
+    "674" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5557,7 +5557,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "674" : {
+    "678" : {
       "CollisionTag" : 5,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5604,7 +5604,7 @@
           "AbsoluteRotation" : false,
           "AbsoluteScale" : false,
           "DecalIsPerspective" : "false",
-          "DecalTexture" : "Data\\Texture\\Jungle\\Jungle_TechLabLogo.png",
+          "DecalTexture" : "Data\\Texture\\Jungle\\Jungle_Compass.png",
           "FadeDuration" : 3.000000,
           "FadeElapsedTime" : 0.000000,
           "FadeInDuration" : 3.000000,
@@ -5614,12 +5614,12 @@
           "FadeTexture" : "Data\\Texture\\FadeTexture\\PerlinNoiseFadeTexture.png",
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
-          "Location" : [0.000000, 0.000000, 0.000000],
+          "Location" : [0.000000, 0.000000, 0.222039],
           "Mobility" : "Movable",
-          "Name" : "UDecalComponent_12",
+          "Name" : "UDecalComponent_123",
           "ParentName" : "UStaticMeshComponent_85",
           "Rotation" : [-0.000000, 0.000000, 89.999992],
-          "Scale" : [0.001000, 0.250000, 0.100000],
+          "Scale" : [0.200000, 0.200000, 0.200000],
           "Type" : "UDecalComponent",
           "bDestroyOwnerAfterFade" : "false",
           "bGenerateOverlapEvents" : "false",
@@ -5632,7 +5632,7 @@
           "AbsoluteRotation" : false,
           "AbsoluteScale" : false,
           "DecalIsPerspective" : "false",
-          "DecalTexture" : "Data\\Texture\\Jungle\\Jungle_Compass.png",
+          "DecalTexture" : "Data\\Texture\\Jungle\\Jungle_TechLabLogo.png",
           "FadeDuration" : 3.000000,
           "FadeElapsedTime" : 0.000000,
           "FadeInDuration" : 3.000000,
@@ -5642,34 +5642,18 @@
           "FadeTexture" : "Data\\Texture\\FadeTexture\\PerlinNoiseFadeTexture.png",
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
-          "Location" : [0.000000, 0.000000, 0.000000],
+          "Location" : [-0.256470, 0.000000, -0.820888],
           "Mobility" : "Movable",
-          "Name" : "UDecalComponent_13",
-          "ParentName" : "UDecalComponent_12",
-          "Rotation" : [-89.999992, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.118739, 2.046847],
+          "Name" : "UDecalComponent_124",
+          "ParentName" : "UDecalComponent_123",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [0.300000, 1.200000, 0.400000],
           "Type" : "UDecalComponent",
           "bDestroyOwnerAfterFade" : "false",
           "bGenerateOverlapEvents" : "false",
           "bIsFadePaused" : "false",
           "bIsFading" : "false",
           "bIsFadingIn" : "false",
-          "bVisible" : "true"
-        }, {
-          "AbsoluteLocation" : false,
-          "AbsoluteRotation" : false,
-          "AbsoluteScale" : false,
-          "BoxExtent" : [0.140000, 0.140000, 0.190000],
-          "IsEditorOnly" : "false",
-          "IsVisualizationComponent" : "false",
-          "Location" : [0.000000, 0.000000, 0.173482],
-          "Mobility" : "Static",
-          "Name" : "UBoxComponent_235",
-          "ParentName" : "UStaticMeshComponent_85",
-          "Rotation" : [-0.000000, 0.000000, 0.000000],
-          "Scale" : [1.000000, 1.000000, 1.000000],
-          "Type" : "UBoxComponent",
-          "bGenerateOverlapEvents" : "true",
           "bVisible" : "true"
         }],
       "Location" : [-296.316742, 469.893127, 16.743689],
@@ -5681,7 +5665,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "683" : {
+    "686" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5736,7 +5720,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "687" : {
+    "690" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5791,7 +5775,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "691" : {
+    "694" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5860,7 +5844,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "695" : {
+    "698" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5929,7 +5913,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "699" : {
+    "702" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -5988,7 +5972,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "703" : {
+    "706" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -6041,7 +6025,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "706" : {
+    "709" : {
       "CollisionTag" : 2,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -6134,7 +6118,7 @@
       "bIsTemplate" : "true",
       "bTickInEditor" : "false"
     },
-    "713" : {
+    "716" : {
       "CollisionTag" : 2,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -6227,7 +6211,7 @@
       "bIsTemplate" : "true",
       "bTickInEditor" : "false"
     },
-    "720" : {
+    "723" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -6272,7 +6256,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "724" : {
+    "727" : {
       "CollisionTag" : 3,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -6359,7 +6343,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "730" : {
+    "733" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -6414,7 +6398,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "734" : {
+    "737" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -6469,7 +6453,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "738" : {
+    "741" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -6524,7 +6508,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "742" : {
+    "745" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -6579,7 +6563,7 @@
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
     },
-    "746" : {
+    "749" : {
       "CollisionTag" : 0,
       "Components" : [{
           "AbsoluteLocation" : false,
@@ -6614,6 +6598,27 @@
           "Name" : "UScriptComponent_3",
           "ScriptName" : "CinematicManager",
           "Type" : "UScriptComponent"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "AspectRatio" : 1.777000,
+          "FarClipPlane" : 10000.000000,
+          "FieldOfView" : 90.000000,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 89.851730],
+          "Name" : "UCameraComponent_2",
+          "NearClipPlane" : 0.100000,
+          "OrthoWidth" : 512.000000,
+          "ParentName" : "USceneComponent_2",
+          "ProjectionMode" : 0,
+          "Rotation" : [-0.000000, 0.000000, 89.999992],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UCameraComponent",
+          "bConstrainAspectRatio" : false,
+          "bIsActive" : true,
+          "bUsePawnControlRotation" : false
         }],
       "Location" : [0.000000, 0.000000, 0.000000],
       "Name" : "CinematicManager",
@@ -6623,6 +6628,214 @@
       "bCanEverTick" : "true",
       "bIsTemplate" : "false",
       "bTickInEditor" : "false"
+    },
+    "753" : {
+      "CollisionTag" : 4,
+      "Components" : [{
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "USceneComponent_34",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Movable",
+          "Name" : "UUUIDTextComponent_241",
+          "ParentName" : "USceneComponent_34",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bGenerateOverlapEvents" : "false",
+          "bVisible" : "true"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "BoxExtent" : [40.000000, 40.000000, 40.000000],
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Static",
+          "Name" : "UBoxComponent_574",
+          "ParentName" : "USceneComponent_34",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UBoxComponent",
+          "bGenerateOverlapEvents" : "true",
+          "bVisible" : "true"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "AspectRatio" : 1.777000,
+          "FarClipPlane" : 10000.000000,
+          "FieldOfView" : 90.000000,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 40.508606],
+          "Name" : "UCameraComponent_10",
+          "NearClipPlane" : 0.100000,
+          "OrthoWidth" : 512.000000,
+          "ParentName" : "USceneComponent_34",
+          "ProjectionMode" : 0,
+          "Rotation" : [-0.000000, 0.000000, -149.999954],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UCameraComponent",
+          "bConstrainAspectRatio" : false,
+          "bIsActive" : true,
+          "bUsePawnControlRotation" : false
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_38",
+          "ScriptName" : "CameraBlendVolume",
+          "Type" : "UScriptComponent"
+        }],
+      "Location" : [329.513214, 154.583633, 20.000000],
+      "Name" : "TransitionVolume",
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AActor",
+      "bCanEverTick" : "true",
+      "bIsTemplate" : "false",
+      "bTickInEditor" : "false"
+    },
+    "759" : {
+      "CollisionTag" : 4,
+      "Components" : [{
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "USceneComponent_38",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Movable",
+          "Name" : "UUUIDTextComponent_242",
+          "ParentName" : "USceneComponent_38",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bGenerateOverlapEvents" : "false",
+          "bVisible" : "true"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "BoxExtent" : [40.000000, 40.000000, 40.000000],
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Mobility" : "Static",
+          "Name" : "UBoxComponent_576",
+          "ParentName" : "USceneComponent_38",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UBoxComponent",
+          "bGenerateOverlapEvents" : "true",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Name" : "UScriptComponent_25",
+          "ScriptName" : "EndCinematicVolume",
+          "Type" : "UScriptComponent"
+        }, {
+          "AbsoluteLocation" : false,
+          "AbsoluteRotation" : false,
+          "AbsoluteScale" : false,
+          "AspectRatio" : 1.777000,
+          "FarClipPlane" : 10000.000000,
+          "FieldOfView" : 90.000000,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 30.504395, 19.901424],
+          "Name" : "UCameraComponent_14",
+          "NearClipPlane" : 0.100000,
+          "OrthoWidth" : 512.000000,
+          "ParentName" : "USceneComponent_38",
+          "ProjectionMode" : 0,
+          "Rotation" : [-0.000000, -29.999989, -89.999962],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UCameraComponent",
+          "bConstrainAspectRatio" : false,
+          "bIsActive" : true,
+          "bUsePawnControlRotation" : false
+        }],
+      "Location" : [-295.099609, 469.259338, 26.015610],
+      "Name" : "EndVolume",
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AActor",
+      "bCanEverTick" : "true",
+      "bIsTemplate" : "false",
+      "bTickInEditor" : "false"
+    }
+  },
+  "Curves" : {
+    "EaseIn" : {
+      "CP1_X" : 0.420000,
+      "CP1_Y" : 0.000000,
+      "CP2_X" : 1.000000,
+      "CP2_Y" : 1.000000,
+      "Name" : "Untitled"
+    },
+    "EaseInBack" : {
+      "CP1_X" : 0.600000,
+      "CP1_Y" : -0.280000,
+      "CP2_X" : 0.735000,
+      "CP2_Y" : 0.045000,
+      "Name" : "Untitled"
+    },
+    "EaseInOut" : {
+      "CP1_X" : 0.420000,
+      "CP1_Y" : 0.000000,
+      "CP2_X" : 0.580000,
+      "CP2_Y" : 1.000000,
+      "Name" : "Untitled"
+    },
+    "EaseOut" : {
+      "CP1_X" : 0.000000,
+      "CP1_Y" : 0.000000,
+      "CP2_X" : 0.580000,
+      "CP2_Y" : 1.000000,
+      "Name" : "Untitled"
+    },
+    "EaseOutBack" : {
+      "CP1_X" : 0.175000,
+      "CP1_Y" : 0.885000,
+      "CP2_X" : 0.320000,
+      "CP2_Y" : 1.275000,
+      "Name" : "Untitled"
+    },
+    "Linear" : {
+      "CP1_X" : 0.333000,
+      "CP1_Y" : 0.333000,
+      "CP2_X" : 0.666000,
+      "CP2_Y" : 0.666000,
+      "Name" : "Untitled"
     }
   },
   "NextUUID" : 0,
@@ -6652,10 +6865,10 @@
       "FarClip" : 1000.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [289.182892, 288.761719, 22.769957],
+      "Location" : [0.348272, -102.621368, 127.291092],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
-      "Rotation" : [0.000000, -24.263704, -416.532715]
+      "Rotation" : [0.000000, -19.963457, -1044.523682]
     },
     "3" : {
       "CameraType" : 0,
