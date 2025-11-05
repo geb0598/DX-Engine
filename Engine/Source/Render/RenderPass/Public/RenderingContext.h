@@ -14,6 +14,7 @@ struct FRenderingContext
     EViewModeIndex ViewMode;
     uint64 ShowFlags;
     D3D11_VIEWPORT Viewport;
+    D3D11_VIEWPORT LocalViewport;
     FVector2 RenderTargetSize;
 
     TArray<class UPrimitiveComponent*> AllPrimitives;

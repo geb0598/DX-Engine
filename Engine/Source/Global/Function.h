@@ -21,6 +21,25 @@ T Lerp(const T& A, const T& B, float Alpha)
 	return A * (1.0f - Alpha) + B * Alpha;
 }
 
+/** @brief FMath::FInterpTo (언리얼 엔진의 함수와 유사하게 구현)
+ * Current 값을 Target 값으로 DeltaTime 동안 InterpSpeed의 속도로 부드럽게 이동
+ */
+template <typename T>
+T InterpTo(const T& Current, const T& Target, float DeltaTime, float InterpSpeed)
+{
+	// 속도가 0 이하면 즉시 목표값 반환
+	if (InterpSpeed <= 0.0f) { return Target; }
+
+	// 목표까지의 거리
+	const T Dist = Target - Current;
+
+	// 프레임 속도와 관계없이 일정한 감속(ease-out)을 보장하는 계산
+	const float Alpha = 1.0f - std::exp(-InterpSpeed * DeltaTime);
+
+	// Current에서 Target 방향으로 Alpha * Dist 만큼 이동
+	return Lerp(Current, Target, Alpha);
+}
+
 /**
  * @brief 값을 min과 max 사이로 제한
  * @tparam T 제한할 타입

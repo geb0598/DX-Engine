@@ -115,6 +115,7 @@ void URenderer::Init(HWND InWindowHandle)
 	RenderPasses.Add(SceneDepthPass);
 
 	FXAAPass = new FFXAAPass(Pipeline, DeviceResources, FXAAVertexShader, FXAAPixelShader, FXAAInputLayout, FXAASamplerState);
+	CameraPrePass = new FCameraPrePass(Pipeline);
 
 	ColorCopyPass = new FColorCopyPass(Pipeline, GetDisabledDepthStencilState());
 
@@ -850,11 +851,24 @@ void URenderer::Update()
     	FRect SingleWindowRect = Viewport->GetRect();
     	const int32 ViewportToolBarHeight = 32;
     	D3D11_VIEWPORT LocalViewport = { (float)SingleWindowRect.Left,(float)SingleWindowRect.Top + ViewportToolBarHeight, (float)SingleWindowRect.Width, (float)SingleWindowRect.Height - ViewportToolBarHeight, 0.0f, 1.0f };
-    	GetDeviceContext()->RSSetViewports(1, &LocalViewport);
-		Viewport->SetRenderRect(LocalViewport);
 
-        FViewportClient* ViewportClient = Viewport->GetViewportClient();
-        ViewportClient->PrepareCamera(LocalViewport);
+    	bool bIsPIEViewport = GEditor->IsPIESessionActive() &&
+		  ViewportIndex == UViewportManager::GetInstance().GetPIEActiveViewportIndex();
+
+    	FRenderingContext RenderingContext; // Context 객체 생성
+    	RenderingContext.LocalViewport = LocalViewport;
+
+    	if (bIsPIEViewport)
+    	{
+    		CameraPrePass->SetRenderTargets(DeviceResources);
+    		CameraPrePass->Execute(RenderingContext);
+    	}
+    	D3D11_VIEWPORT FinalViewportToSet = RenderingContext.LocalViewport;
+    	GetDeviceContext()->RSSetViewports(1, &FinalViewportToSet);
+    	Viewport->SetRenderRect(FinalViewportToSet); // Viewport 객체에도 갱신
+
+    	FViewportClient* ViewportClient = Viewport->GetViewportClient();
+    	ViewportClient->PrepareCamera(FinalViewportToSet);
 
         const FCameraConstants& CameraConstants = ViewportClient->GetCameraConstants();
         FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, CameraConstants);
@@ -865,8 +879,6 @@ void URenderer::Update()
         }
 
 		// PIE가 활성화된 뷰포트가 아닌 경우에만 에디터 도구 렌더링
-		bool bIsPIEViewport = GEditor->IsPIESessionActive() &&
-			ViewportIndex == UViewportManager::GetInstance().GetPIEActiveViewportIndex();
 		if (!bIsPIEViewport)
 		{
 			// Grid, Gizmo 렌더링 (3D, FXAA 적용 대상)

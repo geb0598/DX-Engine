@@ -6,6 +6,7 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Editor/Public/EditorPrimitive.h"
 #include "Render/Renderer/Public/Pipeline.h"
+#include "Render/RenderPass/Public/CameraPrePass.h"
 #include "Render/RenderPass/Public/ColorCopyPass.h"
 #include "Render/RenderPass/Public/FXAAPass.h"
 
@@ -237,6 +238,7 @@ private:
 	TArray<class FRenderPass*> RenderPasses;
 
 	FFXAAPass* FXAAPass = nullptr;
+	FCameraPrePass* CameraPrePass = nullptr;
 	FColorCopyPass* ColorCopyPass = nullptr;
 	FLightPass* LightPass = nullptr;
 	FLightSensorPass* LightSensorPass = nullptr;

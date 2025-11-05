@@ -122,4 +122,24 @@ public:
 private:
 	/** Whether camera needs update */
 	mutable bool bCameraDirty = true;
+
+// Post Process
+
+public:
+	void EnableLetterBox(float InTargetAspectRatio, float InTransitionTime);
+	void DisableLetterBox(float InTransitionTime);
+
+	void SetVignetteIntensity(float InIntensity);
+
+	const FPostProcessSettings& GetPostProcessSettings() const { return CurrentPostProcessSettings; }
+
+private:
+	void UpdatePostProcessAnimations(float DeltaTime);
+
+	FPostProcessSettings CurrentPostProcessSettings;
+
+	// --- LetterBox 애니메이션 상태 변수 ---
+	float TargetLetterBoxAmount = 0.0f; // 목표 강도
+	float LetterBoxTransitionSpeed = 1.0f; // 전환 속도
+private:
 };
