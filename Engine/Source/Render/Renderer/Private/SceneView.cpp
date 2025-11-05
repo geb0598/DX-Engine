@@ -65,7 +65,7 @@ void FSceneView::InitializeWithMatrices(
 	const FMatrix& InProjectionMatrix,
 	const FVector& InViewLocation,
 	const FVector& InViewRotation,
-	UGameViewportClient* InViewport,
+	FViewport* InViewport,
 	UWorld* InWorld,
 	EViewModeIndex InViewMode,
 	float InFOV,
@@ -73,7 +73,7 @@ void FSceneView::InitializeWithMatrices(
 	float InFarClip
 )
 {
-	ViewportClient = InViewport;
+	Viewport = InViewport;
 	World = InWorld;
 	ViewModeIndex = InViewMode;
 
@@ -92,9 +92,9 @@ void FSceneView::InitializeWithMatrices(
 	FarClip = InFarClip;
 
 	// 뷰포트 정보 설정
-	if (ViewportClient)
+	if (Viewport)
 	{
-		const FRect ViewportRect = ViewportClient->GetRect();
+		const FRect ViewportRect = Viewport->GetRect();
 
 		ViewportSize = FVector2(
 			static_cast<float>(ViewportRect.Width),

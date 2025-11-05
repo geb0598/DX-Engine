@@ -534,17 +534,22 @@ bool UInputManager::IsMouseDoubleClicked(EKeyInput InMouseButton) const
 }
 
 /**
- * @brief Raw Input 마우스 델타 처리 (PIE 무한 마우스용)
+ * @brief Raw Input 마우스 델타 처리 (PIE/StandAlone 무한 마우스용)
  * @param DeltaX 마우스 X축 이동량
  * @param DeltaY 마우스 Y축 이동량
  */
 void UInputManager::ProcessRawMouseDelta(int DeltaX, int DeltaY)
 {
+#if WITH_EDITOR
 	// PIE가 활성화되어 있고, 마우스가 분리되지 않은 경우에만 Raw Input 델타 사용
 	if (GEditor && GEditor->IsPIESessionActive() && !GEditor->IsPIEMouseDetached())
 	{
-		// Raw Input 델타를 MouseDelta에 누적
 		MouseDelta.X += static_cast<float>(DeltaX);
 		MouseDelta.Y += static_cast<float>(DeltaY);
 	}
+#else
+	// StandAlone 모드: 항상 Raw Input 사용
+	MouseDelta.X += static_cast<float>(DeltaX);
+	MouseDelta.Y += static_cast<float>(DeltaY);
+#endif
 }

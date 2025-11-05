@@ -326,13 +326,18 @@ bool ULevel::DestroyActor(AActor* InActor)
 	// LevelActors 리스트에서 제거
 	LevelActors.Remove(InActor);
 
-	// Remove Actor Selection
-	UEditor* Editor = GEditor->GetEditorModule();
-	if (Editor->GetSelectedActor() == InActor)
+	// Remove Actor Selection (Editor 모드에서만)
+#if WITH_EDITOR
+	if (GEditor)
 	{
-		Editor->SelectActor(nullptr);
-		Editor->SelectComponent(nullptr);
+		UEditor* Editor = GEditor->GetEditorModule();
+		if (Editor && Editor->GetSelectedActor() == InActor)
+		{
+			Editor->SelectActor(nullptr);
+			Editor->SelectComponent(nullptr);
+		}
 	}
+#endif
 
 	// Remove
 	SafeDelete(InActor);

@@ -51,3 +51,6 @@ private:
 	FViewport* Viewport = nullptr;
 	UGameViewportClient* ViewportClient = nullptr;
 };
+
+// Global GameInstance pointer
+extern UGameInstance* GameInstance;

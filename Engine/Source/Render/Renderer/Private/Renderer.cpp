@@ -34,10 +34,15 @@
 #include "Render/RenderPass/Public/TextPass.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Render/Renderer/Public/Renderer.h"
+#include "Level/Public/GameInstance.h"
+#include "Render/Renderer/Public/SceneView.h"
 #include "Render/RenderPass/Public/ColorCopyPass.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
+#include "Render/UI/Viewport/Public/GameViewportClient.h"
 #include "Render/UI/Viewport/Public/Viewport.h"
 #include "Render/UI/Viewport/Public/ViewportClient.h"
+
+class UGameInstance;
 
 IMPLEMENT_SINGLETON_CLASS(URenderer, UObject)
 
@@ -1376,7 +1381,199 @@ void URenderer::RenderHitProxyPass(UCamera* InCamera, const D3D11_VIEWPORT& InVi
 /**
  * @brief StandAlone Mode용 Level 렌더링
  */
-void URenderer::RenderLevelForGameInstance(UWorld* InWorld, const FSceneView* InSceneView)
+void URenderer::RenderLevelForGameInstance(UWorld* InWorld, const FSceneView* InSceneView, UGameInstance* InGameInstance)
 {
-	// TBD
+	if (!InWorld || !InSceneView || !InGameInstance)
+	{
+		return;
+	}
+
+	ULevel* CurrentLevel = InWorld->GetLevel();
+	if (!CurrentLevel)
+	{
+		return;
+	}
+
+	// SceneView에서 Camera Constants 가져오기
+	FCameraConstants ViewProj;
+	ViewProj.View = InSceneView->GetViewMatrix();
+	ViewProj.Projection = InSceneView->GetProjectionMatrix();
+	ViewProj.ViewWorldLocation = InSceneView->GetViewLocation();
+	ViewProj.NearClip = InSceneView->GetNearClippingPlane();
+	ViewProj.FarClip = InSceneView->GetFarClippingPlane();
+
+	// Viewport 설정
+	FViewport* Viewport = InSceneView->GetViewport();
+	D3D11_VIEWPORT D3DViewport = {};
+	if (Viewport)
+	{
+		FRect ViewRect = Viewport->GetRect();
+		D3DViewport.TopLeftX = static_cast<float>(ViewRect.Left);
+		D3DViewport.TopLeftY = static_cast<float>(ViewRect.Top);
+		D3DViewport.Width = static_cast<float>(ViewRect.Width);
+		D3DViewport.Height = static_cast<float>(ViewRect.Height);
+		D3DViewport.MinDepth = 0.0f;
+		D3DViewport.MaxDepth = 1.0f;
+	}
+
+	// Visible primitives 수집 (컬링 없이 전체 수집)
+	TArray<UPrimitiveComponent*> FinalVisiblePrims;
+
+	// 1) Static primitives from Octree
+	if (FOctree* StaticOctree = CurrentLevel->GetStaticOctree())
+	{
+		TArray<UPrimitiveComponent*> AllStatics;
+		StaticOctree->GetAllPrimitives(AllStatics);
+
+		for (UPrimitiveComponent* Primitive : AllStatics)
+		{
+			if (Primitive && Primitive->IsVisible())
+			{
+				FinalVisiblePrims.Add(Primitive);
+			}
+		}
+	}
+
+	// 2) Dynamic primitives
+	TArray<UPrimitiveComponent*> DynamicPrimitives = CurrentLevel->GetDynamicPrimitives();
+	for (UPrimitiveComponent* Primitive : DynamicPrimitives)
+	{
+		if (Primitive && Primitive->IsVisible())
+		{
+			FinalVisiblePrims.Add(Primitive);
+		}
+	}
+
+	// Legacy Camera 가져오기 (RenderPass 호환성)
+	UCamera* CurrentCamera = nullptr;
+	UGameViewportClient* ViewportClient = InGameInstance->GetViewportClient();
+	if (ViewportClient)
+	{
+		ViewportClient->UpdateLegacyCamera();
+		CurrentCamera = ViewportClient->GetLegacyCamera();
+	}
+
+	// RenderingContext 구성
+	RenderingContext = FRenderingContext(
+		&ViewProj,
+		CurrentCamera,
+		InSceneView->GetViewModeIndex(),
+		CurrentLevel->GetShowFlags(),
+		D3DViewport,
+		{DeviceResources->GetViewportInfo().Width, DeviceResources->GetViewportInfo().Height}
+	);
+
+	// Primitives 분류 (Editor 요소 제외)
+	RenderingContext.AllPrimitives = FinalVisiblePrims;
+	for (auto& Prim : FinalVisiblePrims)
+	{
+		if (auto StaticMesh = Cast<UStaticMeshComponent>(Prim))
+		{
+			RenderingContext.StaticMeshes.Add(StaticMesh);
+		}
+		else if (auto BillBoard = Cast<UBillBoardComponent>(Prim))
+		{
+			RenderingContext.BillBoards.Add(BillBoard);
+		}
+		// EditorIcon은 StandAlone에서 제외
+		else if (auto Text = Cast<UTextComponent>(Prim))
+		{
+			if (!Text->IsExactly(UUUIDTextComponent::StaticClass()))
+			{
+				RenderingContext.Texts.Add(Text);
+			}
+			else
+			{
+				RenderingContext.UUIDs.Add(Cast<UUUIDTextComponent>(Text));
+			}
+		}
+		else if (auto Decal = Cast<UDecalComponent>(Prim))
+		{
+			RenderingContext.Decals.Add(Decal);
+		}
+	}
+
+	// Light Components 수집
+	for (const auto& LightComponent : CurrentLevel->GetLightComponents())
+	{
+		if (auto PointLightComponent = Cast<UPointLightComponent>(LightComponent))
+		{
+			auto SpotLightComponent = Cast<USpotLightComponent>(LightComponent);
+
+			if (SpotLightComponent &&
+				SpotLightComponent->GetVisible() &&
+				SpotLightComponent->GetLightEnabled())
+			{
+				RenderingContext.SpotLights.Add(SpotLightComponent);
+			}
+			else if (PointLightComponent &&
+				PointLightComponent->GetVisible() &&
+				PointLightComponent->GetLightEnabled())
+			{
+				RenderingContext.PointLights.Add(PointLightComponent);
+			}
+		}
+
+		auto DirectionalLightComponent = Cast<UDirectionalLightComponent>(LightComponent);
+		if (DirectionalLightComponent &&
+			DirectionalLightComponent->GetVisible() &&
+			DirectionalLightComponent->GetLightEnabled() &&
+			RenderingContext.DirectionalLights.IsEmpty())
+		{
+			RenderingContext.DirectionalLights.Add(DirectionalLightComponent);
+		}
+
+		auto AmbientLightComponent = Cast<UAmbientLightComponent>(LightComponent);
+		if (AmbientLightComponent &&
+			AmbientLightComponent->GetVisible() &&
+			AmbientLightComponent->GetLightEnabled() &&
+			RenderingContext.AmbientLights.IsEmpty())
+		{
+			RenderingContext.AmbientLights.Add(AmbientLightComponent);
+		}
+	}
+
+	// Fog Components 수집
+	for (const auto& Actor : CurrentLevel->GetLevelActors())
+	{
+		for (const auto& Component : Actor->GetOwnedComponents())
+		{
+			if (auto Fog = Cast<UHeightFogComponent>(Component))
+			{
+				RenderingContext.Fogs.Add(Fog);
+			}
+		}
+	}
+
+	// Viewport 설정 적용
+	GetDeviceContext()->RSSetViewports(1, &D3DViewport);
+
+	// Camera Constants 업데이트
+	FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, ViewProj);
+	Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferViewProj);
+
+	// D2D Overlay 수집 시작 (Lua DebugDraw 호출을 위한 뷰포트 정보 설정)
+	FD2DOverlayManager::GetInstance().BeginCollect(CurrentCamera, D3DViewport);
+
+	// RenderPasses 실행
+	for (auto RenderPass : RenderPasses)
+	{
+		RenderPass->SetRenderTargets(DeviceResources);
+		RenderPass->Execute(RenderingContext);
+	}
+
+	// FXAA Pass (ShowFlags에 따라)
+	if ((CurrentLevel->GetShowFlags() & EEngineShowFlags::SF_FXAA) != 0)
+	{
+		FXAAPass->SetRenderTargets(DeviceResources);
+		FXAAPass->Execute(RenderingContext);
+	}
+
+	// Color Copy Pass
+	ColorCopyPass->SetRenderTargets(DeviceResources);
+	ColorCopyPass->Execute(RenderingContext);
+
+	// D2D Overlay 렌더링 (Game UI)
+	// Note: StandAlone에서는 Game UI만 렌더링 (Editor UI 없음)
+	FD2DOverlayManager::GetInstance().FlushAndRender();
 }

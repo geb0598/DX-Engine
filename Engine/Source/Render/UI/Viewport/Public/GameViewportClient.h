@@ -57,7 +57,7 @@ public:
 
 	// 업데이트
 	void Tick();
-	void Draw(const FViewport* InViewport) const;
+	void Draw(FViewport* InViewport) const;
 
 	// 입력 처리 (Game용 - 간단한 처리)
 	static void MouseMove(FViewport* Viewport, int32 X, int32 Y) {}

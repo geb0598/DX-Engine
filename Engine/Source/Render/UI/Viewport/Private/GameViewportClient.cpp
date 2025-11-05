@@ -21,10 +21,38 @@ UGameViewportClient::UGameViewportClient()
 
 void UGameViewportClient::Tick()
 {
-	// Game 모드에서는 입력 처리나 간단한 업데이트만 수행
-	// 실제 카메라 제어는 PlayerController나 GameMode가 담당
+	// PlayerCameraManager의 POV를 ViewportClient Transform으로 동기화
+	if (!GWorld)
+	{
+		return;
+	}
 
-	// TODO: 향후 PlayerController 입력 처리 추가
+	AGameMode* GameMode = GWorld->GetGameMode();
+	if (!GameMode)
+	{
+		return;
+	}
+
+	APlayerCameraManager* CameraManager = GameMode->GetPlayerCameraManager();
+	if (!CameraManager)
+	{
+		return;
+	}
+
+	// CameraManager의 최신 POV 가져오기
+	const FMinimalViewInfo& POV = CameraManager->GetCameraCachePOV();
+
+	// ViewportClient의 Transform 업데이트
+	ViewLocation = POV.Location;
+
+	// ToEuler() returns (Roll, Pitch, Yaw) = (X, Y, Z)
+	// But we need (Pitch, Yaw, Roll) for compatibility with legacy code
+	FVector Euler = POV.Rotation.ToEuler();
+	ViewRotation = FVector(Euler.Y, Euler.Z, Euler.X);  // Convert to (Pitch, Yaw, Roll)
+
+	FOV = POV.FOV;
+	NearZ = POV.CameraConstants.NearClip;
+	FarZ = POV.CameraConstants.FarClip;
 }
 
 /**
@@ -32,7 +60,7 @@ void UGameViewportClient::Tick()
  * SceneViewFamily와 SceneView를 생성하여 월드를 렌더링
  * @param InViewport 렌더링할 Viewport
  */
-void UGameViewportClient::Draw(const FViewport* InViewport) const
+void UGameViewportClient::Draw(FViewport* InViewport) const
 {
 	if (!InViewport)
 	{
@@ -52,7 +80,7 @@ void UGameViewportClient::Draw(const FViewport* InViewport) const
 
 	// SceneViewFamily 생성
 	FSceneViewFamily ViewFamily;
-	ViewFamily.SetRenderTarget(const_cast<FViewport*>(InViewport));
+	ViewFamily.SetRenderTarget(InViewport);
 	ViewFamily.SetCurrentTime(0.0f); // TODO: World Time 연결
 	ViewFamily.SetDeltaWorldTime(0.016f); // TODO: DeltaTime 연결
 
@@ -63,16 +91,16 @@ void UGameViewportClient::Draw(const FViewport* InViewport) const
 		GetProjectionMatrix(),
 		ViewLocation,
 		ViewRotation,
-		const_cast<FViewport*>(InViewport),
+		InViewport,
 		GWorld,
-		EViewModeIndex::VMI_Gouraud,
+		EViewModeIndex::VMI_BlinnPhong,
 		FOV,
 		NearZ,
 		FarZ
 	);
 
 	// GameViewportClient 설정 (Legacy Camera 접근용)
-	View->SetGameViewportClient(const_cast<UGameViewportClient*>(this));
+	View->SetViewport(InViewport);
 
 	ViewFamily.AddView(View);
 
@@ -98,18 +126,23 @@ FMatrix UGameViewportClient::GetViewMatrix() const
 
 	// ViewRotation을 사용하여 방향 벡터 계산
 	FVector Radians = FVector::GetDegreeToRadian(ViewRotation);
-	FMatrix RotationMatrix = FMatrix::CreateFromYawPitchRoll(Radians.Y, -Radians.X, Radians.Z);
+	FMatrix RotationMatrix = FMatrix::CreateFromYawPitchRoll(Radians.Y, Radians.X, Radians.Z);
 
 	FVector Forward = FMatrix::VectorMultiply(FVector::ForwardVector(), RotationMatrix);
 	Forward.Normalize();
 
-	FVector Up = FMatrix::VectorMultiply(FVector::UpVector(), RotationMatrix);
-	Up.Normalize();
+	const FVector WorldUp = FVector(0, 0, 1);
+	FVector Right = WorldUp.Cross(Forward);
 
-	FVector Right = Forward.Cross(Up);
+	// Forward가 거의 Z축과 평행한 경우 (Pitch ±90° 근처)
+	if (Right.LengthSquared() < MATH_EPSILON)
+	{
+		// Y축을 대체 Right로 사용
+		Right = FVector(0, 1, 0);
+	}
+
 	Right.Normalize();
-
-	Up = Forward.Cross(Right);
+	FVector Up = Forward.Cross(Right);
 	Up.Normalize();
 
 	// DirectX View Matrix 구성
@@ -252,12 +285,6 @@ void UGameViewportClient::UpdateLegacyCamera()
 
 	APlayerCameraManager* PlayerCameraManager = GameMode->GetPlayerCameraManager();
 	if (!PlayerCameraManager)
-	{
-		return;
-	}
-
-	UCameraComponent* CameraComp = PlayerCameraManager->GetActiveCameraComponent();
-	if (!CameraComp)
 	{
 		return;
 	}

@@ -57,6 +57,30 @@ void UWorld::BeginPlay()
 
 	Level->Init();
 	bBegunPlay = true;
+
+	// CinematicManager가 레벨에 있는지 확인
+	bool bHasCinematicManager = false;
+	if (Level)
+	{
+		TArray<AActor*> AllActors = Level->GetLevelActors();
+		for (AActor* Actor : AllActors)
+		{
+			if (Actor && Actor->GetName().ToString() == "CinematicManager")
+			{
+				bHasCinematicManager = true;
+				UE_LOG_INFO("World: CinematicManager found, delaying StartGame()");
+				break;
+			}
+		}
+	}
+
+	// CinematicManager가 없는 경우에만 즉시 게임 시작
+	// CinematicManager가 있으면 코루틴 종료 후 StartGame() 호출
+	if (AuthorityGameMode && !bHasCinematicManager)
+	{
+		UE_LOG_INFO("World: All actors initialized, calling GameMode::StartGame()");
+		AuthorityGameMode->StartGame();
+	}
 }
 
 bool UWorld::EndPlay()

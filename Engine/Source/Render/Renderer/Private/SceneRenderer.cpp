@@ -7,6 +7,7 @@
 #include "Level/Public/Level.h"
 #include "Actor/Public/Actor.h"
 #include "Component/Public/PrimitiveComponent.h"
+#include "Level/Public/GameInstance.h"
 #include "Render/UI/Viewport/Public/Viewport.h"
 
 #if WITH_EDITOR
@@ -81,13 +82,12 @@ void FSceneRenderer::RenderView(const FSceneView* InSceneView)
 
 	URenderer& Renderer = URenderer::GetInstance();
 
-	// Viewport와 World 가져오기
-	UGameViewportClient* Viewport = InSceneView->GetGameViewportClient();
+	// World 가져오기
 	TObjectPtr<UWorld> World = InSceneView->GetWorld();
 
-	if (!Viewport || !World)
+	if (!World)
 	{
-		UE_LOG_WARNING("SceneRenderer::RenderView - Invalid Viewport or World");
+		UE_LOG_WARNING("SceneRenderer::RenderView - Invalid World");
 		return;
 	}
 
@@ -117,7 +117,7 @@ void FSceneRenderer::RenderView(const FSceneView* InSceneView)
 	// }
 
 	// StandAlone Mode: RenderLevelForGameInstance 사용 (GEditor 의존성 없음)
-	Renderer.RenderLevelForGameInstance(World, InSceneView);
+	Renderer.RenderLevelForGameInstance(World, InSceneView, GameInstance);
 }
 
 /**

@@ -6,8 +6,12 @@
 #include "Render/UI/Viewport/Public/GameViewportClient.h"
 #include "Render/Renderer/Public/SceneView.h"
 #include "Render/Renderer/Public/SceneViewFamily.h"
+#include "Manager/Lua/Public/LuaManager.h"
 
 IMPLEMENT_CLASS(UGameInstance, UEngineSubsystem)
+
+// Global GameInstance pointer
+UGameInstance* GameInstance = nullptr;
 
 UGameInstance::UGameInstance()
 {
@@ -19,6 +23,11 @@ UGameInstance::UGameInstance()
 void UGameInstance::Initialize()
 {
 	UEngineSubsystem::Initialize();
+	GameInstance = this;
+
+	// LuaManager 초기화
+	ULuaManager::GetInstance().Initialize();
+
 	UE_LOG_INFO("GameInstance: Subsystem initialized");
 }
 
@@ -66,20 +75,42 @@ void UGameInstance::InitializeWorld(FAppWindow* InWindow, const char* InScenePat
 		World->BeginPlay();
 	}
 
-	// Fullscreen Viewport 생성
-	Viewport = new FViewport();
-	ViewportClient = NewObject<UGameViewportClient>();
-
-	// 윈도우 크기로 뷰포트 설정
+	// 윈도우 크기 가져오기
 	RECT ClientRect;
 	GetClientRect(InWindow->GetWindowHandle(), &ClientRect);
 	const uint32 Width = ClientRect.right - ClientRect.left;
 	const uint32 Height = ClientRect.bottom - ClientRect.top;
 
+	// StandAlone 모드: 마우스를 윈도우 영역에 제한하고 중앙으로 이동 (PIE처럼)
+	POINT ClientTopLeft = { ClientRect.left, ClientRect.top };
+	POINT ClientBottomRight = { ClientRect.right, ClientRect.bottom };
+	ClientToScreen(InWindow->GetWindowHandle(), &ClientTopLeft);
+	ClientToScreen(InWindow->GetWindowHandle(), &ClientBottomRight);
+
+	RECT ClipRect;
+	ClipRect.left = ClientTopLeft.x;
+	ClipRect.top = ClientTopLeft.y;
+	ClipRect.right = ClientBottomRight.x;
+	ClipRect.bottom = ClientBottomRight.y;
+	ClipCursor(&ClipRect);
+
+	// 마우스 커서를 중앙으로 이동
+	int32 CenterX = (ClipRect.left + ClipRect.right) / 2;
+	int32 CenterY = (ClipRect.top + ClipRect.bottom) / 2;
+	SetCursorPos(CenterX, CenterY);
+
+	// 1. Fullscreen Viewport 생성 (캔버스)
+	Viewport = new FViewport();
 	Viewport->SetSize(Width, Height);
 	Viewport->SetInitialPosition(0, 0);
-	// Note: FViewport는 FViewportClient*를 사용하지만,
-	// StandAlone에서는 UGameViewportClient를 직접 관리
+
+	// 2. ViewportClient 생성 (화가)
+	ViewportClient = NewObject<UGameViewportClient>();
+	ViewportClient->SetViewportSize(FPoint(Width, Height));
+
+	// 3. ViewportClient에게 자신이 그릴 Viewport 참조 설정
+	// Note: Unreal 패턴에서는 상호 참조지만, FViewport는 FViewportClient*만 받으므로
+	// GameInstance가 둘 다 소유하고 ViewportClient만 Viewport 참조
 	ViewportClient->SetOwningViewport(Viewport);
 
 	UE_LOG_SUCCESS("GameInstance: Initialized world with fullscreen viewport (%dx%d)", Width, Height);
@@ -91,6 +122,9 @@ void UGameInstance::InitializeWorld(FAppWindow* InWindow, const char* InScenePat
  */
 void UGameInstance::Deinitialize()
 {
+	// StandAlone 모드: 마우스 클리핑 해제
+	ClipCursor(nullptr);
+
 	// World 정리
 	if (World)
 	{
@@ -99,13 +133,14 @@ void UGameInstance::Deinitialize()
 		World = nullptr;
 	}
 
-	// Viewport 정리
+	// ViewportClient 정리 (화가)
 	if (ViewportClient)
 	{
 		delete ViewportClient;
 		ViewportClient = nullptr;
 	}
 
+	// Viewport 정리 (캔버스)
 	if (Viewport)
 	{
 		delete Viewport;
@@ -113,6 +148,7 @@ void UGameInstance::Deinitialize()
 	}
 
 	GWorld = nullptr;
+	GameInstance = nullptr;
 
 	UEngineSubsystem::Deinitialize();
 	UE_LOG_INFO("GameInstance: Deinitialize completed");

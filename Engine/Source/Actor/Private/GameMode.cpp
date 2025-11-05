@@ -30,15 +30,29 @@ void AGameMode::BeginPlay()
 	if (WorldSettings.DefaultPlayerClass)
 	{
 		TArray<APlayerStart*> PlayerStarts = World->FindActorsOfClass<APlayerStart>();
+		UE_LOG_INFO("GameMode: Found %d PlayerStart(s) in level", PlayerStarts.Num());
 
 		Player = World->SpawnActor(WorldSettings.DefaultPlayerClass);
 
 		if (PlayerStarts.Num() > 0)
 		{
+			FVector StartLocation = PlayerStarts[0]->GetActorLocation();
+			FQuaternion StartRotation = PlayerStarts[0]->GetActorRotation();
+			UE_LOG_INFO("GameMode: Moving Player to PlayerStart location (%.1f, %.1f, %.1f)",
+				StartLocation.X, StartLocation.Y, StartLocation.Z);
+
 			// SpawnActor Location 인자 있는 버전으로 바뀌면 변경
-			Player->SetActorLocation(PlayerStarts[0]->GetActorLocation());
-			Player->SetActorRotation(PlayerStarts[0]->GetActorRotation());
+			Player->SetActorLocation(StartLocation);
+			Player->SetActorRotation(StartRotation);
 		}
+		else
+		{
+			UE_LOG_WARNING("GameMode: No PlayerStart found in level, Player spawned at origin");
+		}
+	}
+	else
+	{
+		UE_LOG_ERROR("GameMode: DefaultPlayerClass is nullptr, cannot spawn Player");
 	}
 
 	// Set ViewTarget for camera system
@@ -86,7 +100,9 @@ void AGameMode::BeginPlay()
 		}
 	}
 
+	UE_LOG_INFO("GameMode: BeginPlay completed, calling InitGame()");
 	InitGame();
+	UE_LOG_INFO("GameMode: InitGame completed");
 }
 
 void AGameMode::EndPlay()
@@ -118,9 +134,12 @@ void AGameMode::InitGame()
 
 void AGameMode::StartGame()
 {
+	UE_LOG_INFO("GameMode::StartGame() called");
 	bGameRunning = true;
 	bGameEnded = false;
+	UE_LOG_INFO("GameMode: Broadcasting OnGameStarted delegate");
 	OnGameStarted.Broadcast();
+	UE_LOG_INFO("GameMode::StartGame() completed");
 }
 
 void AGameMode::EndGame()

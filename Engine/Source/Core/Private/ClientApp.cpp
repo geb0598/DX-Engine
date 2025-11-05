@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Core/Public/ClientApp.h"
 
-#include "Editor/Public/Editor.h"
 #include "Core/Public/AppWindow.h"
 #include "Manager/Input/Public/InputManager.h"
 
@@ -9,13 +8,21 @@
 #include "Manager/Asset/Public/ObjManager.h"
 #include "Manager/Time/Public/TimeManager.h"
 
-#include "Manager/UI/Public/UIManager.h"
 #include "Render/Renderer/Public/Renderer.h"
+#include "Render/Renderer/Public/SceneView.h"
+#include "Render/UI/Viewport/Public/GameViewportClient.h"
+#include "Render/UI/Viewport/Public/Viewport.h"
+#include "Utility/Public/ScopeCycleCounter.h"
 
+#if WITH_EDITOR
+#include "Editor/Public/Editor.h"
+#include "Manager/UI/Public/UIManager.h"
+#include "Manager/UI/Public/ViewportManager.h"
 #include "Render/UI/Window/Public/ConsoleWindow.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
-#include "Utility/Public/ScopeCycleCounter.h"
-#include "Manager/UI/Public/ViewportManager.h"
+#else
+#include "Level/Public/GameInstance.h"
+#endif
 
 #ifdef IS_OBJ_VIEWER
 #include "Utility/Public/FileDialog.h"
@@ -86,12 +93,13 @@ int FClientApp::InitializeSystem() const
 	// Initialize By Get Instance
 	UTimeManager::GetInstance();
 	UInputManager::GetInstance();
-	
+
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
 
 	UAssetManager::GetInstance().Initialize();
 
+#if WITH_EDITOR
 	// StatOverlay Initialize
 	auto& StatOverlay = UStatOverlay::GetInstance();
 	StatOverlay.Initialize();
@@ -101,11 +109,29 @@ int FClientApp::InitializeSystem() const
 	ViewportManager.Initialize(Window);  // 중요: Viewports/Clients 벡터 초기화
 
 	GEditor = NewObject<UEditorEngine>();  // UEditor 생성자가 ViewportManager::GetClients()를 사용
-	
+
 	// UIManager Initialize
 	auto& UIManager = UUIManager::GetInstance();
 	UIManager.Initialize(Window->GetWindowHandle());
 	UUIWindowFactory::CreateDefaultUILayout();
+#else
+	// StandAlone Mode: Initialize GameInstance Subsystem
+	EngineSubsystems.RegisterSubsystemClass<UGameInstance>();
+	EngineSubsystems.Initialize(nullptr);
+
+	// GameInstance World 초기화
+	UGameInstance* GameInstance = EngineSubsystems.GetSubsystem<UGameInstance>();
+	if (GameInstance)
+	{
+		GameInstance->InitializeWorld(Window, ScenePath);
+	}
+	else
+	{
+		UE_LOG_ERROR("ClientApp: Failed to create GameInstance");
+		return E_FAIL;
+	}
+#endif
+
 	return S_OK;
 }
 
@@ -116,8 +142,8 @@ void FClientApp::UpdateSystem() const
 {
 	auto& TimeManager = UTimeManager::GetInstance();
 	auto& InputManager = UInputManager::GetInstance();
-	auto& UIManager = UUIManager::GetInstance();
 	auto& Renderer = URenderer::GetInstance();
+
 	{
 		TIME_PROFILE(TimeManager)
 		TimeManager.Update();
@@ -126,6 +152,8 @@ void FClientApp::UpdateSystem() const
 		TIME_PROFILE(InputManager)
 		InputManager.Update(Window);
 	}
+
+#if WITH_EDITOR
 	{
 		TIME_PROFILE(ViewportManager)
 		UViewportManager::GetInstance().Update();
@@ -136,12 +164,41 @@ void FClientApp::UpdateSystem() const
 	}
 	{
 		TIME_PROFILE(UIManager)
-		UIManager.Update();
-	}	
+		UUIManager::GetInstance().Update();
+	}
 	{
 		TIME_PROFILE(Renderer)
 		Renderer.Update();
 	}
+#else
+	// StandAlone Mode: GameInstance Tick
+	{
+		TIME_PROFILE(GameInstance)
+		UGameInstance* GameInstance = EngineSubsystems.GetSubsystem<UGameInstance>();
+		if (GameInstance)
+		{
+			GameInstance->Tick(DT);
+		}
+	}
+	{
+		TIME_PROFILE(Renderer)
+		// StandAlone 렌더링: GameViewportClient->Draw 호출
+		UGameInstance* GameInstance = EngineSubsystems.GetSubsystem<UGameInstance>();
+		if (GameInstance)
+		{
+			FViewport* Viewport = GameInstance->GetViewport();
+			UGameViewportClient* ViewportClient = GameInstance->GetViewportClient();
+
+			if (Viewport && ViewportClient)
+			{
+				Renderer.RenderBegin();
+				ViewportClient->Draw(Viewport);
+				Renderer.RenderEnd();
+			}
+		}
+	}
+#endif
+
 	UInputManager::GetInstance().ClearMouseWheelDelta();
 }
 
@@ -198,11 +255,16 @@ void FClientApp::MainLoop()
  */
 void FClientApp::ShutdownSystem() const
 {
+#if WITH_EDITOR
 	delete GEditor;
-	delete Window;
-	
 	UStatOverlay::GetInstance().Release();
 	UUIManager::GetInstance().Shutdown();
+#else
+	// StandAlone Mode: Deinitialize Subsystems
+	EngineSubsystems.Deinitialize();
+#endif
+
+	delete Window;
 	UAssetManager::GetInstance().Release();
 	FObjManager::Release();
 	URenderer::GetInstance().Release();

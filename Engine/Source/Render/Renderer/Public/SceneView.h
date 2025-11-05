@@ -38,7 +38,7 @@ public:
 		const FMatrix& InProjectionMatrix,
 		const FVector& InViewLocation,
 		const FVector& InViewRotation,
-		UGameViewportClient* InViewport,
+		FViewport* InViewport,
 		UWorld* InWorld,
 		EViewModeIndex InViewMode,
 		float InFOV = 90.0f,
@@ -57,8 +57,8 @@ public:
 	TObjectPtr<UWorld> GetWorld() const { return World; }
 
 	// GameViewportClient
-	void SetGameViewportClient(UGameViewportClient* InViewportClient) { ViewportClient = InViewportClient; }
-	UGameViewportClient* GetGameViewportClient() const { return ViewportClient; }
+	void SetViewport(FViewport* InViewport) { Viewport = InViewport; }
+	FViewport* GetViewport() const { return Viewport; }
 
 	EViewModeIndex GetViewModeIndex() const { return ViewModeIndex; }
 	void SetViewModeIndex(EViewModeIndex InViewMode) { ViewModeIndex = InViewMode; }
@@ -77,7 +77,7 @@ public:
 
 private:
 	TObjectPtr<UWorld> World = nullptr;
-	UGameViewportClient* ViewportClient = nullptr; // StandAlone 전용
+	FViewport* Viewport = nullptr; // StandAlone 전용
 
 	FMatrix ViewMatrix;
 	FMatrix ProjectionMatrix;
