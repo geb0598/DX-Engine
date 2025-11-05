@@ -4,6 +4,16 @@
 
 IMPLEMENT_CLASS(UCurveLibrary, UObject)
 
+// Define protected curve names
+const TArray<FString> UCurveLibrary::ProtectedCurveNames = {
+	"Linear",
+	"EaseIn",
+	"EaseOut",
+	"EaseInOut",
+	"EaseInBack",
+	"EaseOutBack"
+};
+
 UCurveLibrary::UCurveLibrary()
 {
 }
@@ -47,11 +57,23 @@ bool UCurveLibrary::AddOrUpdateCurve(const FString& Name, const FCurve& Curve)
 
 bool UCurveLibrary::RemoveCurve(const FString& Name)
 {
+	if (IsProtectedCurve(Name))
+	{
+		UE_LOG_ERROR("CurveLibrary: Cannot remove protected curve '%s'", Name.c_str());
+		return false;
+	}
+
 	return Curves.Remove(Name) > 0;
 }
 
 bool UCurveLibrary::RenameCurve(const FString& OldName, const FString& NewName)
 {
+	if (IsProtectedCurve(OldName))
+	{
+		UE_LOG_ERROR("CurveLibrary: Cannot rename protected curve '%s'", OldName.c_str());
+		return false;
+	}
+
 	if (!IsValidCurveName(NewName))
 	{
 		UE_LOG_ERROR("CurveLibrary: Invalid new curve name '%s'", NewName.c_str());
@@ -87,6 +109,18 @@ bool UCurveLibrary::RenameCurve(const FString& OldName, const FString& NewName)
 bool UCurveLibrary::HasCurve(const FString& Name) const
 {
 	return Curves.Find(Name) != nullptr;
+}
+
+bool UCurveLibrary::IsProtectedCurve(const FString& Name) const
+{
+	for (const FString& ProtectedName : ProtectedCurveNames)
+	{
+		if (ProtectedName == Name)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 TArray<FString> UCurveLibrary::GetCurveNames() const
@@ -189,4 +223,18 @@ bool UCurveLibrary::IsValidCurveName(const FString& Name) const
 	// Check for invalid characters (optional - can be stricter)
 	// For now, just check it's not empty
 	return true;
+}
+
+UObject* UCurveLibrary::Duplicate()
+{
+	UCurveLibrary* DuplicatedLibrary = Cast<UCurveLibrary>(Super::Duplicate());
+
+	// Deep copy all curves
+	DuplicatedLibrary->Curves.Empty();
+	for (const auto& Pair : Curves)
+	{
+		DuplicatedLibrary->Curves[Pair.first] = Pair.second; // FCurve is a struct, copied by value
+	}
+
+	return DuplicatedLibrary;
 }

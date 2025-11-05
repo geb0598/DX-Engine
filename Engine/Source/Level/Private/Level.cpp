@@ -382,6 +382,13 @@ void ULevel::DuplicateSubObjects(UObject* DuplicatedObject)
 	Super::DuplicateSubObjects(DuplicatedObject);
 	ULevel* DuplicatedLevel = Cast<ULevel>(DuplicatedObject);
 
+	// Duplicate CurveLibrary
+	if (CurveLibrary)
+	{
+		DuplicatedLevel->CurveLibrary = Cast<UCurveLibrary>(CurveLibrary->Duplicate());
+		DuplicatedLevel->CurveLibrary->SetOuter(DuplicatedLevel);
+	}
+
 	for (AActor* Actor : LevelActors)
 	{
 		// Template actor는 PIE World로 복제하지 않음 (Editor World에만 존재)
@@ -391,7 +398,7 @@ void ULevel::DuplicateSubObjects(UObject* DuplicatedObject)
 		}
 
 		AActor* DuplicatedActor = Cast<AActor>(Actor->Duplicate());
-		DuplicatedActor->SetOuter(DuplicatedLevel);  // Actor의 Outer를 Level로 설정
+		DuplicatedActor->SetOuter(DuplicatedLevel);  // Actor의 Outer를 설정
 		DuplicatedLevel->LevelActors.Add(DuplicatedActor);
 		DuplicatedLevel->AddLevelComponent(DuplicatedActor);
 	}

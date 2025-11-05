@@ -2,6 +2,8 @@
 #include "Render/Camera/Public/CameraModifier.h"
 #include "Actor/Public/PlayerCameraManager.h"
 #include "Actor/Public/Actor.h"
+#include "Global/CurveTypes.h"
+#include <algorithm>
 
 IMPLEMENT_CLASS(UCameraModifier, UObject)
 
@@ -85,10 +87,30 @@ void UCameraModifier::UpdateAlpha(float DeltaTime)
 
 	if (Alpha < TargetAlpha)
 	{
-		// Blend in
+		// Blend in (0 → 1)
+		if (!bIsBlendingIn)
+		{
+			// Started new blend in
+			bIsBlendingIn = true;
+			AlphaBlendElapsedTime = 0.0f;
+		}
+
 		if (AlphaInTime > 0.0f)
 		{
-			Alpha += DeltaTime / AlphaInTime;
+			AlphaBlendElapsedTime += DeltaTime;
+			float NormalizedTime = AlphaBlendElapsedTime / AlphaInTime;
+			NormalizedTime = std::min(NormalizedTime, 1.0f);
+
+			// Evaluate curve or use linear
+			if (AlphaInCurve)
+			{
+				Alpha = AlphaInCurve->Evaluate(NormalizedTime);
+			}
+			else
+			{
+				Alpha = NormalizedTime; // Linear
+			}
+
 			Alpha = std::min(Alpha, TargetAlpha);
 		}
 		else
@@ -98,10 +120,33 @@ void UCameraModifier::UpdateAlpha(float DeltaTime)
 	}
 	else if (Alpha > TargetAlpha)
 	{
-		// Blend out
+		// Blend out (1 → 0)
+		if (bIsBlendingIn)
+		{
+			// Started new blend out
+			bIsBlendingIn = false;
+			AlphaBlendElapsedTime = 0.0f;
+		}
+
 		if (AlphaOutTime > 0.0f)
 		{
-			Alpha -= DeltaTime / AlphaOutTime;
+			AlphaBlendElapsedTime += DeltaTime;
+			float NormalizedTime = AlphaBlendElapsedTime / AlphaOutTime;
+			NormalizedTime = std::min(NormalizedTime, 1.0f);
+
+			// Evaluate curve or use linear
+			float BlendValue;
+			if (AlphaOutCurve)
+			{
+				BlendValue = AlphaOutCurve->Evaluate(NormalizedTime);
+			}
+			else
+			{
+				BlendValue = NormalizedTime; // Linear
+			}
+
+			// Blend from 1 to 0
+			Alpha = 1.0f - BlendValue;
 			Alpha = std::max(Alpha, TargetAlpha);
 		}
 		else
@@ -114,6 +159,11 @@ void UCameraModifier::UpdateAlpha(float DeltaTime)
 		{
 			DisableModifier(true);
 		}
+	}
+	else
+	{
+		// Alpha == TargetAlpha, reset timer
+		AlphaBlendElapsedTime = 0.0f;
 	}
 }
 
@@ -142,6 +192,11 @@ void UCameraModifier::EnableModifier()
 {
 	bDisabled = false;
 	bPendingDisable = false;
+
+	// Reset alpha to 0 to start fresh blend-in
+	Alpha = 0.0f;
+	AlphaBlendElapsedTime = 0.0f;
+	bIsBlendingIn = false;
 }
 
 AActor* UCameraModifier::GetViewTarget() const
@@ -151,4 +206,14 @@ AActor* UCameraModifier::GetViewTarget() const
 		return CameraOwner->GetViewTarget();
 	}
 	return nullptr;
+}
+
+void UCameraModifier::SetAlphaInCurve(const FCurve* Curve)
+{
+	AlphaInCurve = Curve;
+}
+
+void UCameraModifier::SetAlphaOutCurve(const FCurve* Curve)
+{
+	AlphaOutCurve = Curve;
 }

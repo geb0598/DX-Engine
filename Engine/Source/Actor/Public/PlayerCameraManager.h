@@ -4,6 +4,7 @@
 
 class UCameraComponent;
 class UCameraModifier;
+struct FCurve;
 
 /**
  * View Target
@@ -174,16 +175,16 @@ public:
 	 * @brief 지정된 시간 동안 부드럽게 뷰 타겟을 변경
 	 * @param NewViewTarget 새 뷰 타겟
 	 * @param BlendTime 블렌딩에 걸리는 시간
-	 * @param BlendFunc 사용할 이징 함수
+	 * @param BlendCurve 블렌딩 커브 (nullptr = linear)
 	 */
-	void SetViewTargetWithBlend(AActor* NewViewTarget, float BlendTime, EViewTargetBlendFunction BlendFunc = EViewTargetBlendFunction::VTBlend_EaseInOut);
+	void SetViewTargetWithBlend(AActor* NewViewTarget, float BlendTime, const FCurve* BlendCurve = nullptr);
 
 protected:
 	FMinimalViewInfo BlendStartPOV;
 	float TotalBlendTime = 0.0f;
 	float CurrentBlendTime = 0.0f;
 	bool bIsBlending = false;
-	EViewTargetBlendFunction CurrentBlendFunction;
+	const FCurve* CurrentBlendCurve = nullptr;
 
 // ============================================
 // Post Process Effects
@@ -225,8 +226,9 @@ public:
 	 * @param Duration Fade duration in seconds
 	 * @param Color Fade color (RGB)
 	 * @param bHoldWhenFinished If true, holds at ToAlpha after fade completes
+	 * @param FadeCurve Fade curve (nullptr = linear)
 	 */
-	void StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color, bool bHoldWhenFinished = false);
+	void StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color, bool bHoldWhenFinished = false, const FCurve* FadeCurve = nullptr);
 
 	/**
 	 * Stop camera fade immediately
@@ -274,4 +276,5 @@ private:
 	float FadeDuration = 0.0f;
 	float FadeTimeRemaining = 0.0f;
 	bool bHoldFadeWhenFinished = false;
+	const FCurve* CurrentFadeCurve = nullptr;
 };

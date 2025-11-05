@@ -46,6 +46,7 @@ public:
 	 * Remove curve
 	 * @param Name Curve name to remove
 	 * @return True if removed successfully
+	 * @note Cannot remove protected default curves
 	 */
 	bool RemoveCurve(const FString& Name);
 
@@ -54,6 +55,7 @@ public:
 	 * @param OldName Current curve name
 	 * @param NewName New curve name
 	 * @return True if renamed successfully
+	 * @note Cannot rename protected default curves
 	 */
 	bool RenameCurve(const FString& OldName, const FString& NewName);
 
@@ -63,6 +65,13 @@ public:
 	 * @return True if curve exists
 	 */
 	bool HasCurve(const FString& Name) const;
+
+	/**
+	 * Check if curve is a protected default curve
+	 * @param Name Curve name
+	 * @return True if curve is protected (cannot be deleted/renamed)
+	 */
+	bool IsProtectedCurve(const FString& Name) const;
 
 	/**
 	 * Get all curves
@@ -98,9 +107,17 @@ public:
 	 */
 	void Serialize(bool bLoading, JSON& InOutHandle);
 
+	/**
+	 * Duplicate the curve library (for PIE mode)
+	 */
+	UObject* Duplicate() override;
+
 private:
 	/** Curve storage */
 	TMap<FString, FCurve> Curves;
+
+	/** Protected default curve names (cannot be deleted or renamed) */
+	static const TArray<FString> ProtectedCurveNames;
 
 	/**
 	 * Validate curve name
