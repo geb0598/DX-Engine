@@ -56,6 +56,17 @@ local function TakeDamage(damage)
     currentHP = currentHP - damage
     Log(string.format("PlayerHealth: Took %d damage. HP remaining: %d", damage, currentHP))
 
+    -- If dead now: stop warning loop and play fail SFX once
+    if currentHP <= 0 then
+        if Sound_StopLoopingSFX ~= nil and __warningLooping then
+            Sound_StopLoopingSFX("Warning")
+            __warningLooping = false
+        end
+        if Sound_PlaySFX ~= nil then
+            Sound_PlaySFX("FailOnce", 1.0, 1.0)
+        end
+    end
+
     CheckForDeath()
 end
 
@@ -132,6 +143,11 @@ function BeginPlay()
         gameMode.OnGameStarted = StartGame
         gameMode.OnGameEnded = EndedTest
         -- gameMode:StartGame()
+    end
+
+    -- Preload fail SFX so it plays instantly on death
+    if Sound_PreloadSFX ~= nil then
+        Sound_PreloadSFX("FailOnce", "Asset/Sound/SFX/Fail.wav", false, 1.0, 30.0)
     end
 end
 
@@ -264,6 +280,14 @@ end
 -- [Light Exposure] 매 프레임 빛 노출 시간 업데이트
 ---
 function UpdateLightExposure(dt)
+    -- If dead, stop warning loop immediately and skip
+    if currentHP ~= nil and currentHP <= 0 then
+        if Sound_StopLoopingSFX ~= nil and __warningLooping then
+            Sound_StopLoopingSFX("Warning")
+            __warningLooping = false
+        end
+        return
+    end
     -- Do nothing if game not running; ensure warning sound stops
     local isRunning = false
     do
