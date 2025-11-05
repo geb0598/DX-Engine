@@ -58,7 +58,7 @@ function PlayDialogueSequence()
     for i = 1, #dialogues do
         currentDialogue = dialogues[i]
         dialogueAlpha = 1.0
-        coroutine.yield(5.0) -- 5초 대기
+        coroutine.yield(2.0) -- 2초 대기
     end
 
     -- 대사 페이드 아웃

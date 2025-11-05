@@ -65,7 +65,6 @@ function OnActorBeginOverlap(overlappedActor, otherActor)
         return
     end
 
-
     if otherActor.Tag == CollisionTag.Player then
         Log("[CameraBlendVolume] Player entered. Blending to This Actor")
         OriginalViewTarget = otherActor 
