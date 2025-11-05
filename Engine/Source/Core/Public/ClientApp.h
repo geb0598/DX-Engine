@@ -1,7 +1,12 @@
 #pragma once
+#include "Global/BuildConfig.h"
 
-//class UEditor;
 class FAppWindow;
+
+#if !WITH_EDITOR
+#include "Subsystem/Public/SubsystemCollection.h"
+class UGameInstance;
+#endif
 
 /**
  * @brief Main Client Class
@@ -16,6 +21,10 @@ class FClientApp
 public:
     int Run(HINSTANCE InInstanceHandle, int InCmdShow);
 
+#if !WITH_EDITOR
+    void SetScenePath(const char* InScenePath) { ScenePath = InScenePath; }
+#endif
+
     // Special Member Function
     FClientApp();
     ~FClientApp();
@@ -29,5 +38,10 @@ private:
     HACCEL AcceleratorTable;
     MSG MainMessage;
     FAppWindow* Window;
-	//UEditor* Editor = nullptr;
+
+#if !WITH_EDITOR
+    // StandAlone Mode: Subsystem Collection으로 관리
+    mutable FEngineSubsystemCollection EngineSubsystems;
+    const char* ScenePath = nullptr;
+#endif
 };

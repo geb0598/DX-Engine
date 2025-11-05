@@ -12,8 +12,17 @@ extern "C" {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
 
     FClientApp Client;
+
+#if !WITH_EDITOR
+    if (lpCmdLine && strlen(lpCmdLine) > 0)
+    {
+        Client.SetScenePath(lpCmdLine);
+    }
+#else
+    UNREFERENCED_PARAMETER(lpCmdLine);
+#endif
+
     return Client.Run(hInstance, nShowCmd);
 }

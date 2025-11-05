@@ -21,7 +21,7 @@ public:
 
 	uint32       GetSizeX() const { return (uint32)max<LONG>(0, Rect.Width); }
 	uint32       GetSizeY() const { return (uint32)max<LONG>(0, Rect.Height); }
-	
+
 	FRect GetRect()  const { return Rect; }
 
 	// 보조
@@ -71,8 +71,9 @@ public:
 	}
 
 	D3D11_VIEWPORT GetRenderRect() const { return RenderRect; }
-	
+
 private:
+	FViewport* Viewport = nullptr;
 	FViewportClient* ViewportClient = nullptr;
 	FRect  Rect{ 0,0,0,0 };
 	FPoint LastMousePos{ 0,0 };
