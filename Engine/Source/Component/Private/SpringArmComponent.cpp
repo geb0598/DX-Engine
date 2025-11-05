@@ -99,7 +99,7 @@ void USpringArmComponent::UpdateCamera(float DeltaTime)
 	FVector FinalLocation = IdealEnd;
 
 	FHitResult Hit;
-	if (Level->LineTraceSingle(Start, IdealEnd, Hit, GetOwner()))
+	if (Level->LineTraceSingle(Start, IdealEnd, Hit, GetOwner(), ECollisionTag::Score))
 	{
 		constexpr float SafeDistance = -10.0f;
 		FVector Dir = (IdealEnd - Start).GetNormalized();
