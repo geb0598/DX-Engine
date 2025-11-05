@@ -17,10 +17,10 @@ if not gameMode then
     return
 end
 
--- Hook game start/end to play/stop BGM
-gameMode.OnGameStarted = function()
+-- Hook game init/end to play/stop BGM
+gameMode.OnGameInited = function()
     Sound_PlayBGM(BGM_PATH, BGM_LOOP, BGM_FADE)
-    Log("[Sound.lua] BGM start: " .. BGM_PATH)
+    Log("[Sound.lua] BGM start (OnGameInited): " .. BGM_PATH)
 end
 
 gameMode.OnGameEnded = function()

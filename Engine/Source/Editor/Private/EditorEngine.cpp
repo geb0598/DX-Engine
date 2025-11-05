@@ -137,6 +137,8 @@ void UEditorEngine::StartPIE()
     }
 
     PIEState = EPIEState::Playing;
+    // Ensure audio system is initialized as soon as PIE starts
+    USoundManager::GetInstance().InitializeAudio();
     UWorld* EditorWorld = GetEditorWorldContext().World();
     if (!EditorWorld)
     {
