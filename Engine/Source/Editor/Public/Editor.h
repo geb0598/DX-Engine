@@ -40,8 +40,8 @@ public:
 
 	// Getter & Setter
 	EViewModeIndex GetViewMode() const { return CurrentViewMode; }
-	AActor* GetSelectedActor() const { return SelectedActor; }
-	UActorComponent* GetSelectedComponent() const { return SelectedComponent; }
+	AActor* GetSelectedActor() const { return SelectedActor.Get(); }
+	UActorComponent* GetSelectedComponent() const { return SelectedComponent.Get(); }
 	bool IsPilotMode() const { return bIsPilotMode; }
 	AActor* GetPilotedActor() const { return PilotedActor; }
 	UBatchLines* GetBatchLines() { return &BatchLines; }
@@ -54,8 +54,8 @@ public:
 
 private:
 	UObjectPicker ObjectPicker;
-	AActor* SelectedActor = nullptr; // 선택된 액터
-	UActorComponent* SelectedComponent = nullptr; // 선택된 컴포넌트
+	TWeakObjectPtr<AActor> SelectedActor = nullptr; // 선택된 액터
+	TWeakObjectPtr<UActorComponent> SelectedComponent = nullptr; // 선택된 컴포넌트
 
 	// 선택 타입 (Actor vs Component)
 	bool bIsActorSelected = true; // true: Actor 선택 (Root Component), false: Component 선택

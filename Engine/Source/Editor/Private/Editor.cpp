@@ -381,7 +381,6 @@ void UEditor::UpdateBatchLines()
 	BatchLines.DisableRenderBoundingBox();
 }
 
-
 void UEditor::ProcessMouseInput()
 {
 	// KTLWeek07: 활성 카메라 사용 (ViewportManager에서 관리)
@@ -1076,7 +1075,7 @@ FVector UEditor::GetGizmoDragScale(UCamera* InActiveCamera, FRay& WorldRay)
 
 void UEditor::SelectActor(AActor* InActor)
 {
-	if (InActor == SelectedActor) return;
+	if (InActor == SelectedActor.Get()) return;
 
 	// 이전 선택 해제 (모든 컴포넌트)
 	if (SelectedActor)
@@ -1105,8 +1104,8 @@ void UEditor::SelectActor(AActor* InActor)
 
 		// Gizmo는 RootComponent에 부착
 		SelectedComponent = InActor->GetRootComponent();
-		Gizmo.SetSelectedComponent(Cast<USceneComponent>(SelectedComponent));
-		UUIManager::GetInstance().OnSelectedComponentChanged(SelectedComponent);
+		Gizmo.SetSelectedComponent(Cast<USceneComponent>(GetSelectedComponent()));
+		UUIManager::GetInstance().OnSelectedComponentChanged(GetSelectedComponent());
 	}
 	else
 	{
@@ -1147,25 +1146,25 @@ void UEditor::SelectActorAndComponent(AActor* InActor, UActorComponent* InCompon
 
 void UEditor::SelectComponent(UActorComponent* InComponent)
 {
-	if (InComponent == SelectedComponent) return;
+	if (InComponent == SelectedComponent.Get()) return;
 
 	// Component 선택 시 단일 컴포넌트만 하이라이팅
-	if (SelectedComponent)
+	if (SelectedComponent.IsValid())
 	{
 		SelectedComponent->OnDeselected();
 	}
 
 	SelectedComponent = InComponent;
-	if (SelectedComponent)
+	if (SelectedComponent.IsValid())
 	{
 		SelectedComponent->OnSelected();
-		Gizmo.SetSelectedComponent(Cast<USceneComponent>(SelectedComponent));
+		Gizmo.SetSelectedComponent(Cast<USceneComponent>(GetSelectedComponent()));
 	}
 	else
 	{
 		Gizmo.SetSelectedComponent(nullptr);
 	}
-	UUIManager::GetInstance().OnSelectedComponentChanged(SelectedComponent);
+	UUIManager::GetInstance().OnSelectedComponentChanged(GetSelectedComponent());
 }
 
 bool UEditor::GetComponentFocusTarget(UActorComponent* Component, FVector& OutCenter, float& OutRadius)
@@ -1321,7 +1320,7 @@ void UEditor::FocusOnSelectedActor()
 		if (bIsOrtho)
 		{
 			// Ortho 뷰: 로컬 원점(0,0,0) 사용
-			if (USceneComponent* SceneComp = Cast<USceneComponent>(SelectedComponent))
+			if (USceneComponent* SceneComp = Cast<USceneComponent>(GetSelectedComponent()))
 			{
 				Center = SceneComp->GetWorldLocation();
 				BoundingRadius = 50.0f;
@@ -1331,7 +1330,7 @@ void UEditor::FocusOnSelectedActor()
 		else
 		{
 			// Perspective 뷰: AABB 중심 사용
-			bSuccess = GetComponentFocusTarget(SelectedComponent, Center, BoundingRadius);
+			bSuccess = GetComponentFocusTarget(GetSelectedComponent(), Center, BoundingRadius);
 		}
 	}
 
@@ -1351,7 +1350,7 @@ void UEditor::FocusOnSelectedActor()
 		else
 		{
 			// Perspective 뷰: AABB 중심 사용
-			bSuccess = GetActorFocusTarget(SelectedActor, Center, BoundingRadius);
+			bSuccess = GetActorFocusTarget(SelectedActor.Get(), Center, BoundingRadius);
 		}
 	}
 
@@ -1407,11 +1406,11 @@ void UEditor::FocusOnSelectedActor()
 			float Distance = BoundingRadius / sinf(HalfFovRadian);
 
 			// EditorIcon이나 Billboard는 작은 스프라이트이므로 더 가까이
-			if (UEditorIconComponent* IconComp = Cast<UEditorIconComponent>(SelectedComponent))
+			if (UEditorIconComponent* IconComp = Cast<UEditorIconComponent>(GetSelectedComponent()))
 			{
 				Distance = min(Distance, 200.0f);
 			}
-			else if (UBillBoardComponent* BillboardComp = Cast<UBillBoardComponent>(SelectedComponent))
+			else if (UBillBoardComponent* BillboardComp = Cast<UBillBoardComponent>(GetSelectedComponent()))
 			{
 				Distance = min(Distance, 200.0f);
 			}
@@ -1720,7 +1719,7 @@ AActor* UEditor::DuplicateActor(AActor* InSourceActor)
 void UEditor::TogglePilotMode()
 {
 	// 진입 조건 검사
-	if (!SelectedActor)
+	if (!SelectedActor.IsValid())
 	{
 		UE_LOG_WARNING("Pilot Mode: No actor selected");
 		return;
@@ -1752,7 +1751,7 @@ void UEditor::TogglePilotMode()
 
 	// Pilot Mode 진입
 	bIsPilotMode = true;
-	PilotedActor = SelectedActor;
+	PilotedActor = SelectedActor.Get();
 	PilotModeViewportIndex = LastClickedIdx;
 
 	// 현재 카메라 위치 저장, 이후 해제 시 복원 예정

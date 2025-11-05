@@ -2,6 +2,8 @@
 #include "Actor/Public/PlayerCameraManager.h"
 #include "Component/Public/CameraComponent.h"
 #include "Actor/Public/Actor.h"
+#include "Render/Camera/Public/CameraModifier.h"
+#include "Global/CurveTypes.h"
 
 IMPLEMENT_CLASS(APlayerCameraManager, AActor)
 
@@ -32,6 +34,10 @@ void APlayerCameraManager::SetViewTarget(AActor* NewViewTarget)
 {
 	ViewTarget.Target = NewViewTarget;
 	bCameraDirty = true;
+	CachedCameraComponent = nullptr; // 캐시 무효화
+
+	bIsBlending = false;
+	CurrentBlendTime = 0.f;
 }
 
 void APlayerCameraManager::UpdateCamera(float DeltaTime)
@@ -39,8 +45,8 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
 	// Get POV from view target
 	GetViewTargetPOV(ViewTarget);
 
-	// Copy to cache
-	CameraCachePOV = ViewTarget.POV;
+	const FMinimalViewInfo& GoalPOV = ViewTarget.POV;
+	UpdateCameraBlending(DeltaTime, GoalPOV);
 
 	// Apply camera modifiers (empty for now)
 	ApplyCameraModifiers(DeltaTime, CameraCachePOV);
@@ -64,14 +70,27 @@ const FMinimalViewInfo& APlayerCameraManager::GetCameraCachePOV() const
 
 void APlayerCameraManager::GetViewTargetPOV(FViewTarget& OutVT)
 {
-	// If we have a view target, try to get camera component from it
-	if (OutVT.Target)
+	if (!OutVT.Target)
 	{
-		// Find all camera components on the view target
-		TArray<UCameraComponent*> CameraComponents = OutVT.Target->GetComponentsByClass<UCameraComponent>();
+		OutVT.POV.FOV = DefaultFOV;
+		OutVT.POV.AspectRatio = DefaultAspectRatio;
+		CachedCameraComponent = nullptr;
+		return;
+	}
 
-		// Find first active camera component
+	if (CachedCameraComponent && CachedCameraComponent->IsActive())
+	{
+		OutVT.POV = CachedCameraComponent->GetCameraView();
+		OutVT.POV.AspectRatio = DefaultAspectRatio;
+	}
+	else
+	{
+		// --- 캐시 미스 ---
+		UE_LOG_INFO("APlayerCameraManager: Cache miss. Re-searching for active camera component.");
+
+		TArray<UCameraComponent*> CameraComponents = OutVT.Target->GetComponentsByClass<UCameraComponent>();
 		UCameraComponent* ActiveCameraComp = nullptr;
+
 		for (UCameraComponent* CameraComp : CameraComponents)
 		{
 			if (CameraComp && CameraComp->IsActive())
@@ -83,31 +102,64 @@ void APlayerCameraManager::GetViewTargetPOV(FViewTarget& OutVT)
 
 		if (ActiveCameraComp)
 		{
-			// Get camera view from active component
 			OutVT.POV = ActiveCameraComp->GetCameraView();
 			OutVT.POV.AspectRatio = DefaultAspectRatio;
+			CachedCameraComponent = ActiveCameraComp;
 		}
 		else
 		{
-			// No active camera component, use actor's transform as fallback
 			OutVT.POV.Location = OutVT.Target->GetActorLocation();
 			OutVT.POV.Rotation = OutVT.Target->GetActorRotation();
 			OutVT.POV.FOV = DefaultFOV;
 			OutVT.POV.AspectRatio = DefaultAspectRatio;
+			CachedCameraComponent = nullptr;
+		}
+	}
+}
+
+void APlayerCameraManager::UpdateCameraBlending(float DeltaTime, const FMinimalViewInfo& GoalPOV)
+{
+	if (bIsBlending)
+	{
+		CurrentBlendTime -= DeltaTime;
+
+		if (CurrentBlendTime <= 0.0f)
+		{
+			bIsBlending = false;
+			CameraCachePOV = GoalPOV;
+		}
+		else
+		{
+			float BlendAlpha = (TotalBlendTime - CurrentBlendTime) / TotalBlendTime;
+			CameraCachePOV = FMinimalViewInfo::Blend(BlendStartPOV, GoalPOV, BlendAlpha, CurrentBlendCurve);
 		}
 	}
 	else
 	{
-		// No view target, use defaults
-		OutVT.POV.FOV = DefaultFOV;
-		OutVT.POV.AspectRatio = DefaultAspectRatio;
+		CameraCachePOV = GoalPOV;
 	}
 }
 
 void APlayerCameraManager::ApplyCameraModifiers(float DeltaTime, FMinimalViewInfo& InOutPOV)
 {
-	// TODO: Implement camera modifiers
-	// For now, just apply fade amount if set
+	// Apply all active camera modifiers
+	for (UCameraModifier* Modifier : ModifierList)
+	{
+		if (Modifier && !Modifier->IsDisabled())
+		{
+			// Update modifier's alpha blend
+			Modifier->UpdateAlpha(DeltaTime);
+
+			// Let modifier modify the camera
+			if (Modifier->ModifyCamera(DeltaTime, InOutPOV))
+			{
+				// Modifier returned true, stop processing chain
+				break;
+			}
+		}
+	}
+
+	// Apply fade amount if set
 	InOutPOV.FadeAmount = FadeAmount;
 	InOutPOV.FadeColor = FadeColor;
 }
@@ -134,13 +186,14 @@ void APlayerCameraManager::SetVignetteIntensity(float InIntensity)
 	CurrentPostProcessSettings.VignetteIntensity = InIntensity;
 }
 
-void APlayerCameraManager::StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color, bool bHoldWhenFinished)
+void APlayerCameraManager::StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color, bool bHoldWhenFinished, const FCurve* FadeCurve)
 {
 	FadeStartAlpha = FromAlpha;
 	FadeEndAlpha = ToAlpha;
 	FadeDuration = Duration;
 	FadeTimeRemaining = Duration;
 	bHoldFadeWhenFinished = bHoldWhenFinished;
+	CurrentFadeCurve = FadeCurve;
 
 	FadeColor.X = Color.X;
 	FadeColor.Y = Color.Y;
@@ -190,6 +243,7 @@ void APlayerCameraManager::UpdatePostProcessAnimations(float DeltaTime)
 	// LetterBox
 	CurrentPostProcessSettings.LetterBoxAmount = InterpTo(CurrentPostProcessSettings.LetterBoxAmount,
 			TargetLetterBoxAmount, DeltaTime, LetterBoxTransitionSpeed * 2.0f);
+	// Fade
 	UpdateCameraFade(DeltaTime);
 }
 
@@ -210,23 +264,99 @@ void APlayerCameraManager::UpdateCameraFade(float DeltaTime)
 			if (!bHoldFadeWhenFinished)
 			{
 				// 현재 값(FadeEndAlpha)에서 0.0으로, 동일한 시간 동안 페이드 아웃
-				StartCameraFade(FadeEndAlpha, 0.0f, FadeDuration, FVector(FadeColor.X, FadeColor.Y, FadeColor.Z), true);
+				StartCameraFade(FadeEndAlpha, 0.0f, FadeDuration, FVector(FadeColor.X, FadeColor.Y, FadeColor.Z), true, CurrentFadeCurve);
 			}
 		}
 	else
 	{
 		// --- 페이드 진행 중 ---
 		// (총 시간 - 남은 시간) / 총 시간 = 진행률 (0.0 -> 1.0)
-		// (1.0 - (남은 시간 / 총 시간))
-
-		float LerpAlpha = 0.0f;
+		float NormalizedTime = 0.0f;
 		if (FadeDuration > 0.0f)
 		{
-			LerpAlpha = 1.0f - (FadeTimeRemaining / FadeDuration);
+			NormalizedTime = 1.0f - (FadeTimeRemaining / FadeDuration);
 		}
 
+		// Evaluate curve (linear if curve is null)
+		float BlendedAlpha = NormalizedTime;
+		if (CurrentFadeCurve)
+		{
+			BlendedAlpha = CurrentFadeCurve->Evaluate(NormalizedTime);
+		}
+
+		// Clamp to 0~1 (fade alpha should not overshoot)
+		BlendedAlpha = std::clamp(BlendedAlpha, 0.0f, 1.0f);
+
 		// 시작 알파와 끝 알파 사이를 보간합니다.
-		FadeAmount = Lerp(FadeStartAlpha, FadeEndAlpha, LerpAlpha);
+		FadeAmount = Lerp(FadeStartAlpha, FadeEndAlpha, BlendedAlpha);
 	}
 }
+}
+
+// Camera Modifier Management
+
+UCameraModifier* APlayerCameraManager::AddCameraModifier(UCameraModifier* NewModifier)
+{
+	if (!NewModifier)
+	{
+		return nullptr;
+	}
+
+	// Check if this modifier is already in the list
+	if (ModifierList.Contains(NewModifier))
+	{
+		return NewModifier;
+	}
+
+	// Add to list
+	ModifierList.Add(NewModifier);
+
+	// Initialize the modifier
+	NewModifier->AddedToCamera(this);
+
+	// Reset alpha to 0 for fresh blend-in
+	// This ensures modifiers always start from 0 alpha regardless of AlphaInTime
+	NewModifier->EnableModifier();  // Ensure it's enabled and reset state
+
+	// Sort by priority (lower number = higher priority)
+	ModifierList.Sort([](const UCameraModifier* A, const UCameraModifier* B)
+	{
+		return A->GetPriority() < B->GetPriority();
+	});
+
+	return NewModifier;
+}
+
+bool APlayerCameraManager::RemoveCameraModifier(UCameraModifier* ModifierToRemove)
+{
+	if (!ModifierToRemove)
+	{
+		return false;
+	}
+
+	// Find and remove the modifier
+	int32 RemovedCount = ModifierList.Remove(ModifierToRemove);
+	return RemovedCount > 0;
+}
+
+void APlayerCameraManager::ClearCameraModifiers()
+{
+	ModifierList.Empty();
+}
+
+void APlayerCameraManager::SetViewTargetWithBlend(AActor* NewViewTarget, float BlendTime, const FCurve* BlendCurve)
+{
+	if (BlendTime <= 0.0f || !NewViewTarget)
+	{
+		SetViewTarget(NewViewTarget);
+		return;
+	}
+
+	BlendStartPOV = GetCameraCachePOV();
+	SetViewTarget(NewViewTarget);
+
+	bIsBlending = true;
+	TotalBlendTime = BlendTime;
+	CurrentBlendTime = BlendTime;
+	CurrentBlendCurve = BlendCurve;
 }

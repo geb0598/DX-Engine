@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Actor/Public/GameMode.h"
 #include "Actor/Public/PlayerStart.h"
 #include "Actor/Public/PlayerCameraManager.h"
@@ -22,9 +22,26 @@ void AGameMode::BeginPlay()
 	}
 
 	// TODO: Move to APlayerController::SpawnPlayerCameraManager() when PlayerController is implemented
-	// Create PlayerCameraManager
-	PlayerCameraManager = Cast<APlayerCameraManager>(World->SpawnActor(APlayerCameraManager::StaticClass()));
-	PlayerCameraManager->BeginPlay();
+	// Find existing PlayerCameraManager in level, or create new one
+	TArray<APlayerCameraManager*> CameraManagers = World->FindActorsOfClass<APlayerCameraManager>();
+	if (CameraManagers.Num() > 0)
+	{
+		// Use first PlayerCameraManager found in level
+		PlayerCameraManager = CameraManagers[0];
+		UE_LOG_INFO("GameMode: Using existing PlayerCameraManager '%s' from level",
+			PlayerCameraManager->GetName().ToString().c_str());
+	}
+	else
+	{
+		// Create new PlayerCameraManager
+		PlayerCameraManager = Cast<APlayerCameraManager>(World->SpawnActor(APlayerCameraManager::StaticClass()));
+		UE_LOG_INFO("GameMode: Created new PlayerCameraManager");
+	}
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->BeginPlay();
+	}
 
 	const FWorldSettings& WorldSettings = World->GetWorldSettings();
 	if (WorldSettings.DefaultPlayerClass)
@@ -44,45 +61,29 @@ void AGameMode::BeginPlay()
 	// Set ViewTarget for camera system
 	if (PlayerCameraManager)
 	{
-		AActor* ViewTargetToUse = nullptr;
-
-		// Priority 1: Find first active CameraComponent in level
-		TArray<AActor*> AllActors = World->GetLevel()->GetLevelActors();
-		for (AActor* Actor : AllActors)
+		// Player 스폰에 성공했다면, ViewTarget은 Player
+		if (Player)
 		{
-			if (Actor)
-			{
-				UCameraComponent* CameraComp = Actor->GetComponentByClass<UCameraComponent>();
-				if (CameraComp && CameraComp->IsActive())
-				{
-					ViewTargetToUse = Actor;
-					UE_LOG_INFO("GameMode: Using Actor '%s' with active CameraComponent as ViewTarget",
-						Actor->GetName().ToString().c_str());
-					break;
-				}
-			}
+			PlayerCameraManager->SetViewTarget(Player);
+			UE_LOG_INFO("GameMode: Set ViewTarget to spawned Player '%s'",
+			   Player->GetName().ToString().c_str());
 		}
-
-		// Priority 2: Create default CameraActor at origin
-		if (!ViewTargetToUse)
+		// 만약 Player 스폰에 실패했다면, 기본 카메라를 스폰
+		else
 		{
+			UE_LOG("GameMode: Player spawning failed. Creating default spectator camera.");
 			ACameraActor* DefaultCamera = Cast<ACameraActor>(World->SpawnActor(ACameraActor::StaticClass()));
 			if (DefaultCamera)
 			{
 				DefaultCamera->SetActorLocation(FVector(0, 0, 0));
 				DefaultCamera->SetActorRotation(FQuaternion::Identity());
-				ViewTargetToUse = DefaultCamera;
+				PlayerCameraManager->SetViewTarget(DefaultCamera);
 				UE_LOG_INFO("GameMode: Created default CameraActor at origin as ViewTarget");
 			}
-		}
-
-		if (ViewTargetToUse)
-		{
-			PlayerCameraManager->SetViewTarget(ViewTargetToUse);
-		}
-		else
-		{
-			UE_LOG_ERROR("GameMode: Failed to create or find camera ViewTarget");
+			else
+			{
+				UE_LOG_ERROR("GameMode: Failed to create default camera ViewTarget");
+			}
 		}
 	}
 

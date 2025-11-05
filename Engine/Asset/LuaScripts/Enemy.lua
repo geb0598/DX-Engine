@@ -96,6 +96,15 @@ function Tick(dt)
         bInitialized = true
     end
 
+    -- 게임이 종료되었으면 더 이상 추적/공격하지 않음
+    local world = GetWorld()
+    if world then
+        local gameMode = world:GetGameMode()
+        if gameMode and gameMode.IsGameEnded then
+            return
+        end
+    end
+
     local enemyPos = Owner.Location
     local newLocation = FVector(enemyPos.X, enemyPos.Y, enemyPos.Z)
 
@@ -131,6 +140,15 @@ end
 -- 다른 액터와 오버랩이 시작될 때 호출됩니다.
 ---
 function OnActorBeginOverlap(overlappedActor, otherActor)
+    -- 게임이 종료되었으면 데미지 주지 않음
+    local world = GetWorld()
+    if world then
+        local gameMode = world:GetGameMode()
+        if gameMode and gameMode.IsGameEnded then
+            return
+        end
+    end
+
     Log("[Enemy] Overlap with: " .. otherActor.Name)
 
     -- Player와 충돌 시 처리

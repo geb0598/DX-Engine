@@ -9,11 +9,15 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Level/Public/Level.h"
+#include "Level/Public/CurveLibrary.h"
 #include "Physics/Public/HitResult.h"
 #include "Global/Enum.h"
+#include "Global/CurveTypes.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
 // Sound
 #include "Manager/Sound/Public/SoundManager.h"
+#include "Render/Camera/Public/CameraModifier.h"
+#include "Render/Camera/Public/CameraModifier_CameraShake.h"
 
 void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 {
@@ -173,8 +177,91 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 					return OverlappingComponents;
 				return sol::nullopt;
 			}
-		)
+		),
+
+		// Get CurveLibrary from level
+		"GetCurveLibrary", &ULevel::GetCurveLibrary
 	);
+
+	// --- FCurve ---
+	LuaState.new_usertype<FCurve>("FCurve",
+		sol::call_constructor, sol::factories(
+			[]() { return FCurve(); },
+			[](float CP1_X, float CP1_Y, float CP2_X, float CP2_Y) {
+				return FCurve(CP1_X, CP1_Y, CP2_X, CP2_Y);
+			}
+		),
+		// Members
+		"ControlPoint1X", &FCurve::ControlPoint1X,
+		"ControlPoint1Y", &FCurve::ControlPoint1Y,
+		"ControlPoint2X", &FCurve::ControlPoint2X,
+		"ControlPoint2Y", &FCurve::ControlPoint2Y,
+
+		// Evaluate method
+		"Evaluate", &FCurve::Evaluate,
+
+		// Static factory methods
+		"Linear", &FCurve::Linear,
+		"EaseIn", &FCurve::EaseIn,
+		"EaseOut", &FCurve::EaseOut,
+		"EaseInOut", &FCurve::EaseInOut,
+		"EaseInBack", &FCurve::EaseInBack,
+		"EaseOutBack", &FCurve::EaseOutBack
+	);
+
+	// --- UCurveLibrary ---
+	LuaState.new_usertype<UCurveLibrary>("UCurveLibrary",
+		// Get curve by name (returns nil if not found)
+		"GetCurve", [](UCurveLibrary* Library, const std::string& Name) -> FCurve* {
+			if (!Library)
+				return nullptr;
+
+			FCurve* Curve = Library->GetCurve(FString(Name));
+			return Curve; // Return pointer, not copy
+		},
+
+		// Check if curve exists
+		"HasCurve", [](UCurveLibrary* Library, const std::string& Name) -> bool {
+			if (!Library)
+				return false;
+			return Library->HasCurve(FString(Name));
+		},
+
+		// Get all curve names (returns Lua table)
+		"GetCurveNames", [](UCurveLibrary* Library, sol::this_state ts) -> sol::table {
+			sol::state_view lua(ts);
+			sol::table result = lua.create_table();
+
+			if (!Library)
+				return result;
+
+			TArray<FString> Names = Library->GetCurveNames();
+			for (int i = 0; i < Names.Num(); ++i)
+			{
+				result[i + 1] = std::string(Names[i]);  // Convert FString to std::string for Lua
+			}
+			return result;
+		},
+
+		// Get curve count
+		"GetCurveCount", [](UCurveLibrary* Library) -> int {
+			if (!Library)
+				return 0;
+			return Library->GetCurveCount();
+		}
+	);
+
+
+	// --- TimeManager ---
+	LuaState.new_usertype<UTimeManager>("UTimeManager",
+		"SetGlobalTimeDilation", &UTimeManager::SetGlobalTimeDilation,
+		"GetDeltaTimesa", &UTimeManager::GetDeltaTime
+	);
+
+	// --- TimeManager 인스턴스 접근자 (전역 함수) ---
+	LuaState.set_function("GetTimeManager", []() -> UTimeManager& {
+		return UTimeManager::GetInstance();
+	});
 }
 
 void FLuaBinder::BindMathTypes(sol::state& LuaState)
@@ -334,7 +421,8 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 
 		// Type-safe casting functions - add new actor types here using the macro
 		BIND_ACTOR_CAST(AEnemySpawnerActor),
-		BIND_ACTOR_CAST(APlayer)
+		BIND_ACTOR_CAST(APlayer),
+		BIND_ACTOR_CAST(APlayerCameraManager)
 	);
 
 	// --- AGameMode ---
@@ -388,18 +476,18 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
         ),
 
         "OnGameEnded", sol::writeonly_property(
-            [](AGameMode* Self, sol::function LuaFunc) {
-                if (!Self || !LuaFunc.valid()) return;
+            [](AGameMode* Self, const sol::function& InLuaFunc) {
+                if (!Self || !InLuaFunc.valid()) return;
+                sol::protected_function SafeFunc = InLuaFunc; // wrap for safety
                 TWeakObjectPtr<AGameMode> WeakGameMode(Self);
-                Self->OnGameEnded.Add([WeakGameMode, LuaFunc]()
+                Self->OnGameEnded.Add([WeakGameMode, SafeFunc]() mutable
                 {
-                    if (WeakGameMode.IsValid())
-                    {
-                        auto Result = LuaFunc();
-                        if (!Result.valid()) {
-                            sol::error Err = Result;
-                            UE_LOG_ERROR("[Lua Error] %s", Err.what());
-                        }
+                    if (!WeakGameMode.IsValid()) return;
+                    if (!SafeFunc.valid()) return;
+                    sol::protected_function_result Result = SafeFunc();
+                    if (!Result.valid()) {
+                        sol::error Err = Result;
+                        UE_LOG_ERROR("[Lua Error][OnGameEnded] %s", Err.what());
                     }
                 });
             }
@@ -444,11 +532,98 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 	BIND_WEAK_PTR(AActor);
 	// BIND_WEAK_PTR(AEnemySpawnerActor);  // Example: add more types as needed
 
+	// --- FOscillator ---
+	LuaState.new_usertype<FOscillator>("FOscillator",
+		sol::call_constructor, sol::factories(
+			[]() { return FOscillator(); },
+			[](float Amplitude, float Frequency) { return FOscillator(Amplitude, Frequency); }
+		),
+		"Amplitude", &FOscillator::Amplitude,
+		"Frequency", &FOscillator::Frequency,
+		"Phase", &FOscillator::Phase
+	);
+
+	// --- UCameraModifier (base class) ---
+	LuaState.new_usertype<UCameraModifier>("UCameraModifier",
+		"DisableModifier", &UCameraModifier::DisableModifier,
+		"EnableModifier", &UCameraModifier::EnableModifier,
+		"IsDisabled", &UCameraModifier::IsDisabled,
+		"GetAlpha", &UCameraModifier::GetAlpha,
+
+		// Alpha blend time
+		"GetAlphaInTime", &UCameraModifier::GetAlphaInTime,
+		"SetAlphaInTime", &UCameraModifier::SetAlphaInTime,
+		"GetAlphaOutTime", &UCameraModifier::GetAlphaOutTime,
+		"SetAlphaOutTime", &UCameraModifier::SetAlphaOutTime,
+
+		// Alpha blend curves
+		"SetAlphaInCurve", &UCameraModifier::SetAlphaInCurve,
+		"SetAlphaOutCurve", &UCameraModifier::SetAlphaOutCurve
+	);
+
+	// --- UCameraModifier_CameraShake ---
+	LuaState.new_usertype<UCameraModifier_CameraShake>("UCameraModifier_CameraShake",
+		sol::base_classes, sol::bases<UCameraModifier>(),
+		sol::call_constructor, sol::factories(
+			[]() { return NewObject<UCameraModifier_CameraShake>(); }
+		),
+		// Public properties
+		"Duration", &UCameraModifier_CameraShake::Duration,
+		"ElapsedTime", sol::readonly(&UCameraModifier_CameraShake::ElapsedTime),
+		"bIsPlaying", sol::readonly(&UCameraModifier_CameraShake::bIsPlaying),
+		"FOVOscillation", &UCameraModifier_CameraShake::FOVOscillation,
+		// Array accessors for LocOscillation[3] - lua uses 1-based indexing
+		"GetLocOscillation", [](UCameraModifier_CameraShake* self, int index) -> FOscillator& {
+			if (index < 1 || index > 3) {
+				throw std::out_of_range("LocOscillation index must be 1-3");
+			}
+			return self->LocOscillation[index - 1];
+		},
+		// Array accessors for RotOscillation[3]
+		"GetRotOscillation", [](UCameraModifier_CameraShake* self, int index) -> FOscillator& {
+			if (index < 1 || index > 3) {
+				throw std::out_of_range("RotOscillation index must be 1-3");
+			}
+			return self->RotOscillation[index - 1];
+		},
+		// Setter methods for convenience
+		"SetIntensity", &UCameraModifier_CameraShake::SetIntensity,
+		"SetDuration", &UCameraModifier_CameraShake::SetDuration,
+		"SetBlendInTime", &UCameraModifier_CameraShake::SetBlendInTime,
+		"SetBlendOutTime", &UCameraModifier_CameraShake::SetBlendOutTime
+	);
+
+	// --- APlayerCameraManager ---
 	LuaState.new_usertype<APlayerCameraManager>("APlayerCameraManager",
 		sol::base_classes, sol::bases<AActor>(),
 		"EnableLetterBox", &APlayerCameraManager::EnableLetterBox,
 		"DisableLetterBox", &APlayerCameraManager::DisableLetterBox,
-		"SetVignetteIntensity", &APlayerCameraManager::SetVignetteIntensity
+		"SetVignetteIntensity", &APlayerCameraManager::SetVignetteIntensity,
+		"AddCameraModifier", &APlayerCameraManager::AddCameraModifier,
+		"RemoveCameraModifier", &APlayerCameraManager::RemoveCameraModifier,
+		"ClearCameraModifiers", &APlayerCameraManager::ClearCameraModifiers,
+
+		// SetViewTargetWithBlend with optional curve parameter
+		"SetViewTargetWithBlend", [](APlayerCameraManager* Self, AActor* NewViewTarget, float BlendTime, sol::optional<FCurve*> Curve)
+		{
+			const FCurve* CurvePtr = Curve.value_or(nullptr);
+			Self->SetViewTargetWithBlend(NewViewTarget, BlendTime, CurvePtr);
+		},
+
+		// StartCameraFade with optional curve parameter
+		"StartCameraFade", [](APlayerCameraManager* Self, float FromAlpha, float ToAlpha, float Duration,
+		                       FVector Color, sol::optional<bool> bHoldWhenFinished, sol::optional<FCurve*> FadeCurve)
+		{
+			bool bHold = bHoldWhenFinished.value_or(false);
+			const FCurve* CurvePtr = FadeCurve.value_or(nullptr);
+			Self->StartCameraFade(FromAlpha, ToAlpha, Duration, Color, bHold, CurvePtr);
+		},
+
+		// StopCameraFade
+		"StopCameraFade", &APlayerCameraManager::StopCameraFade,
+
+		// SetManualCameraFade
+		"SetManualCameraFade", &APlayerCameraManager::SetManualCameraFade
 	);
 }
 
@@ -495,6 +670,40 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 		}
 	);
 
+	// -- Curve Helper -- //
+	// Global Curve() function for convenience
+	// Usage: local curve = Curve("EaseOutBack")
+	LuaState.set_function("Curve", [](const std::string& CurveName) -> FCurve* {
+		if (!GWorld)
+		{
+			UE_LOG_ERROR("Lua Curve(): GWorld is null");
+			return nullptr;
+		}
+
+		ULevel* Level = GWorld->GetLevel();
+		if (!Level)
+		{
+			UE_LOG_ERROR("Lua Curve(): Level is null");
+			return nullptr;
+		}
+
+		UCurveLibrary* Library = Level->GetCurveLibrary();
+		if (!Library)
+		{
+			UE_LOG_ERROR("Lua Curve(): CurveLibrary is null");
+			return nullptr;
+		}
+
+		FCurve* FoundCurve = Library->GetCurve(CurveName);
+		if (!FoundCurve)
+		{
+			UE_LOG_WARNING("Lua Curve(): Curve '%s' not found in CurveLibrary", CurveName.c_str());
+			return nullptr;
+		}
+
+		return FoundCurve;
+	});
+
 	// -- InputManager -- //
 	UInputManager& InputMgr = UInputManager::GetInstance();
 	LuaState.set_function("IsKeyDown", [&InputMgr](int32 Key) {
@@ -534,14 +743,19 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 			return FVector(0, 0, 0);
 		}
 
-		// PIE 모드에서는 ConsumeMouseDelta 사용
-		// 에디터 모드에서는 일반 GetMouseDelta
+		// PIE와 StandAlone 모두 ConsumeMouseDelta 사용
+		// Editor 모드(WorldType::Editor)에서만 일반 GetMouseDelta 사용
+#if WITH_EDITOR
 		if (GEditor && GEditor->IsPIESessionActive() && !GEditor->IsPIEMouseDetached())
 		{
 			return InputMgr.ConsumeMouseDelta();
 		}
-
+		// Editor 모드 (PIE 아님)
 		return InputMgr.GetMouseDelta();
+#else
+		// StandAlone 모드: PIE와 동일하게 ConsumeMouseDelta 사용
+		return InputMgr.ConsumeMouseDelta();
+#endif
 	});
 
 	// -- D2D Overlay Manager -- //

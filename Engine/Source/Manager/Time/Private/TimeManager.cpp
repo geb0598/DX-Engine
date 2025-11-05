@@ -15,13 +15,9 @@ void UTimeManager::Initialize()
 {
 	GameTime = 0.0f;
 	DeltaTime = 0.0f;
-	bIsPaused = false;
 }
 
 void UTimeManager::Update()
 {
-	if (!bIsPaused)
-	{
-		GameTime += DeltaTime;
-	}
+	GameTime += DeltaTime;
 }

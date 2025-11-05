@@ -42,7 +42,7 @@ local function CheckForDeath()
     if currentHP <= 0 then
         if gameMode and gameMode.IsGameRunning then
             Log("PlayerHealth: HP is 0. Calling EndGame.")
-            EndGameSequence()
+            gameMode:EndGame()
         end
     end
 end
@@ -141,7 +141,7 @@ function BeginPlay()
         end
 
         gameMode.OnGameStarted = StartGame
-        gameMode.OnGameEnded = EndedTest
+        gameMode.OnGameEnded = EndGameSequence
         -- gameMode:StartGame()
     end
 
@@ -229,7 +229,7 @@ function Movement(dt)
         if hitResult == nil then
             Owner.Location = targetLocation
         else
-            Log("Movement blocked by wall.")
+            -- Log("Movement blocked by wall.")
         end
     end
 

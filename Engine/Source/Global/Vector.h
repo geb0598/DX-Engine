@@ -157,17 +157,28 @@ struct FVector
 	{
 		return FVector{ Rad.X * (180.0f / PI), Rad.Y * (180.0f / PI), Rad.Z * (180.0f / PI) };
 	}
-	static float Dist(const FVector& V1, const FVector& V2) 
+	static float Dist(const FVector& V1, const FVector& V2)
 	{
 		FVector Diff = V1 - V2;
 		return Diff.Length();
 	}
-	static float DistSquared(const FVector& V1, const FVector& V2) 
+	static float DistSquared(const FVector& V1, const FVector& V2)
 	{
 		FVector Diff = V1 - V2;
 		return Diff.LengthSquared();
 	}
 
+	/**
+	 * @brief 두 벡터 사이의 선형 보간
+	 * @param A 시작 벡터
+	 * @param B 끝 벡터
+	 * @param Alpha 보간 계수 (0.0 = A, 1.0 = B)
+	 * @return 보간된 벡터
+	 */
+	static FVector Lerp(const FVector& A, const FVector& B, float Alpha)
+	{
+		return A + (B - A) * Alpha;
+	}
 
 	// Constant Vector (definition from UE5)
 	static FVector ZeroVector() { return {0.0f, 0.0f, 0.0f}; }

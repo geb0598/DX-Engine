@@ -4,8 +4,7 @@
 using std::chrono::high_resolution_clock;
 
 UCLASS()
-class UTimeManager :
-	public UObject
+class UTimeManager : public UObject
 {
 	GENERATED_BODY()
 	DECLARE_SINGLETON_CLASS(UTimeManager, UObject)
@@ -15,21 +14,17 @@ public:
 
 	// Getter & Setter
 	float GetFPS() const { return 1 / DeltaTime; }
-	float GetDeltaTime() const { return DeltaTime; }
+	float GetRealDeltaTime() const { return DeltaTime; }
+	float GetDeltaTime() const { return DeltaTime * GlobalTimeDilation; }
 	float GetGameTime() const { return GameTime; }
-	bool IsPaused() const { return bIsPaused; }
-	
-	void SetDeltaTime(float InDeltaTime) { DeltaTime = InDeltaTime; }
 
-	void PauseGame() { bIsPaused = true; }
-	void ResumeGame() { bIsPaused = false; }
+	void SetDeltaTime(float InDeltaTime) { DeltaTime = InDeltaTime; }
+	void SetGlobalTimeDilation(float InTimeDilation) { GlobalTimeDilation = InTimeDilation; }
 
 private:
+	void Initialize();
+
 	float GameTime;
 	float DeltaTime;
-
-	bool bIsPaused;
-
-	void Initialize();
-	void CalculateFPS();
+	float GlobalTimeDilation = 1.0f;
 };
