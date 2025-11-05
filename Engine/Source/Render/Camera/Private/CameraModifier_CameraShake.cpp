@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Render/Camera/Public/CameraModifier_CameraShake.h"
 #include "Actor/Public/PlayerCameraManager.h"
+#include "Global/CurveTypes.h"
 
 IMPLEMENT_CLASS(UCameraModifier_CameraShake, UCameraModifier)
 
@@ -45,7 +46,7 @@ void UCameraModifier_CameraShake::AddedToCamera(APlayerCameraManager* Camera)
 	}
 	FOVOscillation.Phase = 0.0f;
 
-	// Enable the modifier
+	// Enable the modifier - parent's UpdateAlpha() will handle blend in
 	EnableModifier();
 }
 
@@ -76,6 +77,15 @@ void UCameraModifier_CameraShake::SetBlendOutTime(float InTime)
 	PendingBlendOutTime = InTime;
 }
 
+void UCameraModifier_CameraShake::DisableModifier(bool bImmediate)
+{
+	// Stop shake when disabled
+	bIsPlaying = false;
+
+	// Call parent
+	Super::DisableModifier(bImmediate);
+}
+
 bool UCameraModifier_CameraShake::ModifyCamera(float DeltaTime, FMinimalViewInfo& InOutPOV)
 {
 	if (!bIsPlaying)
@@ -86,12 +96,13 @@ bool UCameraModifier_CameraShake::ModifyCamera(float DeltaTime, FMinimalViewInfo
 	// Update elapsed time
 	ElapsedTime += DeltaTime;
 
-	// Check if shake duration has expired
-	if (Duration > 0.0f && ElapsedTime >= Duration)
+	// Check if it's time to start blend out
+	// BlendOut should start at (Duration - AlphaOutTime) so it completes exactly at Duration
+	float BlendOutStartTime = (Duration > AlphaOutTime) ? (Duration - AlphaOutTime) : 0.0f;
+	if (Duration > 0.0f && ElapsedTime >= BlendOutStartTime && !bPendingDisable)
 	{
-		bIsPlaying = false;
-		DisableModifier(false); // Blend out smoothly
-		return false;
+		// Time to start blend out - let parent's UpdateAlpha() handle it
+		Super::DisableModifier(false);
 	}
 
 	// Call base class to apply shake with alpha blending

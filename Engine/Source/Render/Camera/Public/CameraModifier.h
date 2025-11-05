@@ -3,6 +3,7 @@
 #include "Global/CameraTypes.h"
 
 class APlayerCameraManager;
+struct FCurve;
 
 /**
  * A CameraModifier is a base class for objects that may adjust the final camera properties after
@@ -60,6 +61,26 @@ public:
 
 	class AActor* GetViewTarget() const;
 
+	/**
+	 * Set alpha-in curve
+	 * @param Curve Curve for alpha blending in (nullptr = linear)
+	 */
+	void SetAlphaInCurve(const FCurve* Curve);
+
+	/**
+	 * Set alpha-out curve
+	 * @param Curve Curve for alpha blending out (nullptr = linear)
+	 */
+	void SetAlphaOutCurve(const FCurve* Curve);
+
+	/** Get/Set alpha in time */
+	float GetAlphaInTime() const { return AlphaInTime; }
+	void SetAlphaInTime(float InTime) { AlphaInTime = InTime; }
+
+	/** Get/Set alpha out time */
+	float GetAlphaOutTime() const { return AlphaOutTime; }
+	void SetAlphaOutTime(float InTime) { AlphaOutTime = InTime; }
+
 protected:
 	/** @return Returns the ideal blend alpha for this modifier. Interpolation will seek this value. */
 	virtual float GetTargetAlpha();
@@ -99,7 +120,25 @@ protected:
 	float AlphaOutTime = 0.0f;
 
 	/** Current blend alpha. */
-	float Alpha = 1.0f;
+	float Alpha = 0.0f;
+
+	/** Curve for alpha blending in (nullptr = linear) */
+	const FCurve* AlphaInCurve = nullptr;
+
+	/** Curve for alpha blending out (nullptr = linear) */
+	const FCurve* AlphaOutCurve = nullptr;
+
+	/** Elapsed time in current blend state (for curve evaluation) */
+	float StateElapsedTime = 0.0f;
+
+	/** Alpha blend state */
+	enum class EAlphaBlendState : uint8
+	{
+		Idle,        // Not blending
+		BlendingIn,  // Blending from 0 to 1
+		BlendingOut  // Blending from 1 to 0
+	};
+	EAlphaBlendState BlendState = EAlphaBlendState::Idle;
 
 	friend class APlayerCameraManager;
 };

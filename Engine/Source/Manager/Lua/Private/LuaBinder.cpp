@@ -9,8 +9,10 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Level/Public/Level.h"
+#include "Level/Public/CurveLibrary.h"
 #include "Physics/Public/HitResult.h"
 #include "Global/Enum.h"
+#include "Global/CurveTypes.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
 #include "Render/Camera/Public/CameraModifier.h"
 #include "Render/Camera/Public/CameraModifier_CameraShake.h"
@@ -173,7 +175,78 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 					return OverlappingComponents;
 				return sol::nullopt;
 			}
-		)
+		),
+
+		// Get CurveLibrary from level
+		"GetCurveLibrary", &ULevel::GetCurveLibrary
+	);
+
+	// --- FCurve ---
+	LuaState.new_usertype<FCurve>("FCurve",
+		sol::call_constructor, sol::factories(
+			[]() { return FCurve(); },
+			[](float CP1_X, float CP1_Y, float CP2_X, float CP2_Y) {
+				return FCurve(CP1_X, CP1_Y, CP2_X, CP2_Y);
+			}
+		),
+		// Members
+		"ControlPoint1X", &FCurve::ControlPoint1X,
+		"ControlPoint1Y", &FCurve::ControlPoint1Y,
+		"ControlPoint2X", &FCurve::ControlPoint2X,
+		"ControlPoint2Y", &FCurve::ControlPoint2Y,
+
+		// Evaluate method
+		"Evaluate", &FCurve::Evaluate,
+
+		// Static factory methods
+		"Linear", &FCurve::Linear,
+		"EaseIn", &FCurve::EaseIn,
+		"EaseOut", &FCurve::EaseOut,
+		"EaseInOut", &FCurve::EaseInOut,
+		"EaseInBack", &FCurve::EaseInBack,
+		"EaseOutBack", &FCurve::EaseOutBack
+	);
+
+	// --- UCurveLibrary ---
+	LuaState.new_usertype<UCurveLibrary>("UCurveLibrary",
+		// Get curve by name (returns nil if not found)
+		"GetCurve", [](UCurveLibrary* Library, const std::string& Name) -> FCurve* {
+			if (!Library)
+				return nullptr;
+
+			FCurve* Curve = Library->GetCurve(FString(Name));
+			return Curve; // Return pointer, not copy
+		},
+
+		// Check if curve exists
+		"HasCurve", [](UCurveLibrary* Library, const std::string& Name) -> bool {
+			if (!Library)
+				return false;
+			return Library->HasCurve(FString(Name));
+		},
+
+		// Get all curve names (returns Lua table)
+		"GetCurveNames", [](UCurveLibrary* Library, sol::this_state ts) -> sol::table {
+			sol::state_view lua(ts);
+			sol::table result = lua.create_table();
+
+			if (!Library)
+				return result;
+
+			TArray<FString> Names = Library->GetCurveNames();
+			for (int i = 0; i < Names.Num(); ++i)
+			{
+				result[i + 1] = std::string(Names[i]);  // Convert FString to std::string for Lua
+			}
+			return result;
+		},
+
+		// Get curve count
+		"GetCurveCount", [](UCurveLibrary* Library) -> int {
+			if (!Library)
+				return 0;
+			return Library->GetCurveCount();
+		}
 	);
 
 
@@ -473,7 +546,17 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		"DisableModifier", &UCameraModifier::DisableModifier,
 		"EnableModifier", &UCameraModifier::EnableModifier,
 		"IsDisabled", &UCameraModifier::IsDisabled,
-		"GetAlpha", &UCameraModifier::GetAlpha
+		"GetAlpha", &UCameraModifier::GetAlpha,
+
+		// Alpha blend time
+		"GetAlphaInTime", &UCameraModifier::GetAlphaInTime,
+		"SetAlphaInTime", &UCameraModifier::SetAlphaInTime,
+		"GetAlphaOutTime", &UCameraModifier::GetAlphaOutTime,
+		"SetAlphaOutTime", &UCameraModifier::SetAlphaOutTime,
+
+		// Alpha blend curves
+		"SetAlphaInCurve", &UCameraModifier::SetAlphaInCurve,
+		"SetAlphaOutCurve", &UCameraModifier::SetAlphaOutCurve
 	);
 
 	// --- UCameraModifier_CameraShake ---
@@ -517,11 +600,28 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		"AddCameraModifier", &APlayerCameraManager::AddCameraModifier,
 		"RemoveCameraModifier", &APlayerCameraManager::RemoveCameraModifier,
 		"ClearCameraModifiers", &APlayerCameraManager::ClearCameraModifiers,
-		"SetViewTargetWithBlend", [](APlayerCameraManager& Self, AActor* NewViewTarget, float BlendTime)
+
+		// SetViewTargetWithBlend with optional curve parameter
+		"SetViewTargetWithBlend", [](APlayerCameraManager* Self, AActor* NewViewTarget, float BlendTime, sol::optional<FCurve*> Curve)
 		{
-			// @TODO - Blend Editor 구현시 String으로 키값 받아서 전달하게 변경
-			Self.SetViewTargetWithBlend(NewViewTarget, BlendTime);
-		}
+			const FCurve* CurvePtr = Curve.value_or(nullptr);
+			Self->SetViewTargetWithBlend(NewViewTarget, BlendTime, CurvePtr);
+		},
+
+		// StartCameraFade with optional curve parameter
+		"StartCameraFade", [](APlayerCameraManager* Self, float FromAlpha, float ToAlpha, float Duration,
+		                       FVector Color, sol::optional<bool> bHoldWhenFinished, sol::optional<FCurve*> FadeCurve)
+		{
+			bool bHold = bHoldWhenFinished.value_or(false);
+			const FCurve* CurvePtr = FadeCurve.value_or(nullptr);
+			Self->StartCameraFade(FromAlpha, ToAlpha, Duration, Color, bHold, CurvePtr);
+		},
+
+		// StopCameraFade
+		"StopCameraFade", &APlayerCameraManager::StopCameraFade,
+
+		// SetManualCameraFade
+		"SetManualCameraFade", &APlayerCameraManager::SetManualCameraFade
 	);
 }
 
@@ -567,6 +667,40 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 			UE_LOG("%s", FinalLogMessage.c_str());
 		}
 	);
+
+	// -- Curve Helper -- //
+	// Global Curve() function for convenience
+	// Usage: local curve = Curve("EaseOutBack")
+	LuaState.set_function("Curve", [](const std::string& CurveName) -> FCurve* {
+		if (!GWorld)
+		{
+			UE_LOG_ERROR("Lua Curve(): GWorld is null");
+			return nullptr;
+		}
+
+		ULevel* Level = GWorld->GetLevel();
+		if (!Level)
+		{
+			UE_LOG_ERROR("Lua Curve(): Level is null");
+			return nullptr;
+		}
+
+		UCurveLibrary* Library = Level->GetCurveLibrary();
+		if (!Library)
+		{
+			UE_LOG_ERROR("Lua Curve(): CurveLibrary is null");
+			return nullptr;
+		}
+
+		FCurve* FoundCurve = Library->GetCurve(CurveName);
+		if (!FoundCurve)
+		{
+			UE_LOG_WARNING("Lua Curve(): Curve '%s' not found in CurveLibrary", CurveName.c_str());
+			return nullptr;
+		}
+
+		return FoundCurve;
+	});
 
 	// -- InputManager -- //
 	UInputManager& InputMgr = UInputManager::GetInstance();
