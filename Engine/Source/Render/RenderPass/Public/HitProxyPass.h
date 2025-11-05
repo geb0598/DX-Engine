@@ -12,6 +12,8 @@ class FHitProxyPass :
 public:
 	FHitProxyPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera, ID3D11Buffer* InConstantBufferModel,
 		ID3D11VertexShader* InVS, ID3D11PixelShader* InPS, ID3D11InputLayout* InLayout, ID3D11DepthStencilState* InDS);
+
+	void SetRenderTargets(class UDeviceResources* DeviceResources) override;
 	void Execute(FRenderingContext& Context) override;
 	void Release() override;
 

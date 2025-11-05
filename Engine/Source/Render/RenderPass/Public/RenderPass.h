@@ -16,6 +16,13 @@ public:
 
     virtual ~FRenderPass() = default;
 
+	/**
+	 * @brief 프레임마다 실행할 렌더 타겟 설정 함수
+	 * Execute 전에 호출되어 해당 Pass의 렌더 타겟을 설정함
+	 * @param DeviceResources RTV/DSV/Buffer 등을 담고 있는 DeviceResources 객체
+	 */
+	virtual void SetRenderTargets(class UDeviceResources* DeviceResources) = 0;
+
     /**
      * @brief 프레임마다 실행할 렌더 함수
      * @param Context 프레임 렌더링에 필요한 모든 정보를 담고 있는 객체

@@ -37,6 +37,8 @@ public:
 	 */
 	~FFXAAPass();
 
+	void SetRenderTargets(class UDeviceResources* DeviceResources) override;
+
 	/**
 	 * @brief FXAA 렌더링 패스를 실행합니다.
 	 * @param Context 렌더링 컨텍스트입니다.
@@ -68,7 +70,7 @@ private:
 	 * @brief 렌더 타겟을 설정합니다.
 	 */
 	void SetRenderTargets();
-    
+
 private:
     UDeviceResources* DeviceResources = nullptr;
 
@@ -84,4 +86,5 @@ private:
 
     ID3D11Buffer* FXAAConstantBuffer = nullptr;
     FFXAAConstants FXAAParams{};
+	ID3D11ShaderResourceView* SceneSRV;
 };

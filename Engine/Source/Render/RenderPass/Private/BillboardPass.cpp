@@ -13,6 +13,13 @@ FBillboardPass::FBillboardPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBu
     BillboardMaterialConstants.Kd = FVector4(1.0f, 1.0f, 1.0f, 1.0f);  // White to preserve texture colors
 }
 
+void FBillboardPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV() };
+	ID3D11DepthStencilView* DSV = DeviceResources->GetDepthBufferDSV();
+	Pipeline->SetRenderTargets(1, RTVs, DSV);
+}
+
 void FBillboardPass::Execute(FRenderingContext& Context)
 {
     FRenderState RenderState = UBillBoardComponent::GetClassDefaultRenderState();
@@ -67,7 +74,7 @@ void FBillboardPass::Execute(FRenderingContext& Context)
         FMatrix WorldMatrix;
         if (BillBoardComp->IsScreenSizeScaled())
         {
-            FVector FixedWorldScale = BillBoardComp->GetRelativeScale3D(); 
+            FVector FixedWorldScale = BillBoardComp->GetRelativeScale3D();
             FVector BillboardLocation = BillBoardComp->GetWorldLocation();
             FQuaternion BillboardRotation = BillBoardComp->GetWorldRotationAsQuaternion();
 

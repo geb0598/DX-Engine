@@ -17,6 +17,19 @@ FHitProxyPass::FHitProxyPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBuff
 	ConstantBufferHitProxyColor = FRenderResourceFactory::CreateConstantBuffer<FVector4>();
 }
 
+void FHitProxyPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	// HitProxy RTV/DSV 설정
+	ID3D11RenderTargetView* HitProxyRTV = DeviceResources->GetHitProxyRTV();
+	ID3D11DepthStencilView* DSV = DeviceResources->GetDepthBufferDSV();
+	Pipeline->SetRenderTargets(1, &HitProxyRTV, DSV);
+
+	// HitProxy 텍스처 클리어 (검은색 = 배경)
+	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	DeviceResources->GetDeviceContext()->ClearRenderTargetView(HitProxyRTV, ClearColor);
+	DeviceResources->GetDeviceContext()->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+
 void FHitProxyPass::Execute(FRenderingContext& Context)
 {
 	if (!VS || !PS || !InputLayout)
@@ -55,16 +68,6 @@ void FHitProxyPass::Execute(FRenderingContext& Context)
 	Pipeline->SetConstantBuffer(0, EShaderType::VS, ConstantBufferModel);
 	Pipeline->SetConstantBuffer(1, EShaderType::VS | EShaderType::PS, ConstantBufferCamera);
 	Pipeline->SetConstantBuffer(2, EShaderType::PS, ConstantBufferHitProxyColor);
-
-	// HitProxy RTV/DSV 설정
-	ID3D11RenderTargetView* HitProxyRTV = DeviceResources->GetHitProxyRenderTargetView();
-	ID3D11DepthStencilView* DSV = DeviceResources->GetDepthStencilView();
-	Pipeline->SetRenderTargets(1, &HitProxyRTV, DSV);
-
-	// HitProxy 텍스처 클리어 (검은색 = 배경)
-	float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-	DeviceResources->GetDeviceContext()->ClearRenderTargetView(HitProxyRTV, ClearColor);
-	DeviceResources->GetDeviceContext()->ClearDepthStencilView(DSV, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
 	// HitProxyManager 초기화
 	FHitProxyManager& HitProxyManager = FHitProxyManager::GetInstance();

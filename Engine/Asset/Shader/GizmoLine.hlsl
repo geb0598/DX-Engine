@@ -1,5 +1,3 @@
-
-
 //inputlayout 만들어 놨으나 안쓴다. 주의 GizmoInputLayout
 
 struct FGizmoVertex
@@ -60,7 +58,7 @@ PS_INPUT mainVS(uint id : SV_VertexID)
     {
         VertexIdx += 7;
     }
-        
+
     //24, 16, 32
     //if (ClusterIdx >= 0)
     //{
@@ -72,7 +70,7 @@ PS_INPUT mainVS(uint id : SV_VertexID)
     //        VertexIdx = 0;
     //    }
     //}
-    
+
     //if(id > 20000)
     //{
     //    VertexIdx = 0;
@@ -83,7 +81,7 @@ PS_INPUT mainVS(uint id : SV_VertexID)
     float4 tmp = float4(Vertex.Pos, 1);
     tmp = mul(tmp, View);
     tmp = mul(tmp, Projection);
-	
+
     output.Position = tmp;
     output.Color = Vertex.Color;
 

@@ -93,7 +93,7 @@ namespace
             Dot_t = Distance.X * R[0][0] + Distance.Y * R[1][0] + Distance.Z * R[2][0];
             RightAABBValue = AABBHalf.X * AbsR[0][0] + AABBHalf.Y * AbsR[1][0] + AABBHalf.Z * AbsR[2][0];
             if (Abs(Dot_t) > OBBExtents[0] + RightAABBValue) return false;
- 
+
             // Uy (j=1)
             Dot_t = Distance.X * R[0][1] + Distance.Y * R[1][1] + Distance.Z * R[2][1];
             RightAABBValue = AABBHalf.X * AbsR[0][1] + AABBHalf.Y * AbsR[1][1] + AABBHalf.Z * AbsR[2][1];
@@ -138,12 +138,19 @@ FDecalPass::FDecalPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCame
     ConstantBufferDecal = FRenderResourceFactory::CreateConstantBuffer<FDecalConstants>();
 }
 
+void FDecalPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV() };
+	ID3D11DepthStencilView* DSV = DeviceResources->GetDepthBufferDSV();
+	Pipeline->SetRenderTargets(1, RTVs, DSV);
+}
+
 void FDecalPass::Execute(FRenderingContext& Context)
 {
 	TIME_PROFILE(DecalPass)
 
     if (!(Context.ShowFlags & EEngineShowFlags::SF_Decal) || (Context.ViewMode == EViewModeIndex::VMI_SceneDepth)) return;
-    
+
     // --- Set Pipeline State ---
     FPipelineInfo PipelineInfo = { InputLayout, VS, FRenderResourceFactory::GetRasterizerState({ ECullMode::Back, EFillMode::Solid }),
         DS_Read, PS, BlendState, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
@@ -155,7 +162,7 @@ void FDecalPass::Execute(FRenderingContext& Context)
     uint32 CollidedComps = 0;
 
     TArray<UPrimitiveComponent*> DynamicPrimitives = GWorld->GetLevel()->GetDynamicPrimitives();
-    
+
     // --- Render Decals ---
     for (UDecalComponent* Decal : Context.Decals)
     {
@@ -164,7 +171,7 @@ void FDecalPass::Execute(FRenderingContext& Context)
         const IBoundingVolume* DecalBV = Decal->GetBoundingBox();
         if (!DecalBV || DecalBV->GetType() != EBoundingVolumeType::OBB) { continue; }
         RenderedDecal++;
-        
+
         const FOBB* DecalOBB = static_cast<const FOBB*>(DecalBV);
 
         Decal->UpdateProjectionMatrix();
@@ -196,13 +203,13 @@ void FDecalPass::Execute(FRenderingContext& Context)
 
         TArray<UPrimitiveComponent*> Primitives;
 
-        // --- Enable Octree Optimization --- 
+        // --- Enable Octree Optimization ---
         ULevel* CurrentLevel = GWorld->GetLevel();
 
         Query(CurrentLevel->GetStaticOctree(), Decal, Primitives);
         Primitives.Append(DynamicPrimitives);
 
-        // --- Disable Octree Optimization --- 
+        // --- Disable Octree Optimization ---
         // Primitives = Context.DefaultPrimitives;
 
         for (UPrimitiveComponent* Prim : Primitives)
@@ -211,11 +218,11 @@ void FDecalPass::Execute(FRenderingContext& Context)
 
             const IBoundingVolume* PrimBV = Prim->GetBoundingBox();
         	if (!PrimBV || PrimBV->GetType() != EBoundingVolumeType::AABB) { continue; }
-        
+
         	FVector WorldMin, WorldMax;
         	Prim->GetWorldAABB(WorldMin, WorldMax);
         	const FAABB WorldAABB(WorldMin, WorldMax);
-        
+
         	if (!Intersects(*DecalOBB, WorldAABB))
         	{
         		continue;
@@ -265,7 +272,7 @@ void FDecalPass::Query(FOctree* InOctree, UDecalComponent* InDecal, TArray<UPrim
         return;
     }
 
-    
+
     for (auto Child : InOctree->GetChildren())
     {
         Query(Child, InDecal, OutPrimitives);

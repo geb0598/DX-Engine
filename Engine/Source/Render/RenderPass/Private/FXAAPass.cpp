@@ -28,14 +28,21 @@ FFXAAPass::~FFXAAPass()
     Release();
 }
 
+void FFXAAPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	// PP라서 Swap
+	DeviceResources->SwapFrameBuffers();
+
+	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV() };
+	Pipeline->SetRenderTargets(1, RTVs, nullptr);
+	SceneSRV = DeviceResources->GetSourceSRV();
+
+	const D3D11_VIEWPORT& VP = DeviceResources->GetViewportInfo();
+	DeviceResources->GetDeviceContext()->RSSetViewports(1, &VP);
+}
+
 void FFXAAPass::Execute(FRenderingContext& Context)
 {
-    ID3D11ShaderResourceView* SceneSRV = DeviceResources->GetSceneColorShaderResourceView(); // 오프스크린 컬러입력
-    if (!SceneSRV)
-    {
-        return;
-    }
-
     UpdateConstants();
     SetRenderTargets();
 
@@ -49,7 +56,6 @@ void FFXAAPass::Execute(FRenderingContext& Context)
 
     Pipeline->UpdatePipeline(PipelineInfo);
 
-    UINT offset = 0;
     Pipeline->SetVertexBuffer(FullscreenVB, FullscreenStride);
     Pipeline->SetIndexBuffer(FullscreenIB, 0);
 
@@ -111,19 +117,14 @@ void FFXAAPass::UpdateConstants()
     const D3D11_VIEWPORT& VP = DeviceResources->GetViewportInfo();
     FXAAParams.InvResolution = FVector2(1.0f / VP.Width, 1.0f / VP.Height);
 
-    // FXAA 품질 설정값을 명시적으로 업데이트                                           
-    FXAAParams.FXAASpanMax = 8.0f;                                        
-    FXAAParams.FXAAReduceMul = 1.0f / 8.0f;                               
+    // FXAA 품질 설정값을 명시적으로 업데이트
+    FXAAParams.FXAASpanMax = 8.0f;
+    FXAAParams.FXAAReduceMul = 1.0f / 8.0f;
     FXAAParams.FXAAReduceMin = 1.0f / 128.0f;
-    
+
     FRenderResourceFactory::UpdateConstantBufferData(FXAAConstantBuffer, FXAAParams);
 }
 
 void FFXAAPass::SetRenderTargets()
 {
-    ID3D11RenderTargetView* RTV = DeviceResources->GetRenderTargetView(); // 스왑체인 RTV
-    DeviceResources->GetDeviceContext()->OMSetRenderTargets(1, &RTV, nullptr);
-
-    const D3D11_VIEWPORT& VP = DeviceResources->GetViewportInfo();
-    DeviceResources->GetDeviceContext()->RSSetViewports(1, &VP);
 }

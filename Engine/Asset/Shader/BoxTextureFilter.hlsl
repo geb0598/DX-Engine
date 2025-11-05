@@ -2,12 +2,12 @@
  * @file BoxTextureFilter.hlsl
  * @brief 분리 가능한 박스 필터 - Row/Column 통합 셰이더
  *
- * @author geb0598 
+ * @author geb0598
  * @date 2025-10-27
  */
 
 /*-----------------------------------------------------------------------------
-    고정 매개변수 (커널 관련) 
+    고정 매개변수 (커널 관련)
  -----------------------------------------------------------------------------*/
 
 // 0.0 (블러 없음)일 때의 최소 커널 반지름
@@ -34,7 +34,7 @@ cbuffer TextureInfo : register(b0)
 {
     uint RegionStartX;
     uint RegionStartY;
-    uint RegionWidth;  
+    uint RegionWidth;
     uint RegionHeight;
     uint TextureWidth;
     uint TextureHeight;
@@ -50,23 +50,21 @@ cbuffer FilterInfo : register(b1)
  -----------------------------------------------------------------------------*/
 
 [numthreads(THREAD_BLOCK_SIZE_X, THREAD_BLOCK_SIZE_Y, 1)]
-void mainCS(
-    uint3 DispatchThreadID : SV_DispatchThreadID
-    )
+void mainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
 {
     // 텍스처 경계 검사 (cbuffer 값 사용)
     if (DispatchThreadID.x >= RegionWidth || DispatchThreadID.y >= RegionHeight)
     {
         return;
     }
-    
+
     // --- 1. 인덱스 계산 ---
-    
+
     // 현재 스레드가 처리할 픽셀의 2D 좌표
     uint2 PixelCoord = DispatchThreadID.xy + uint2(RegionStartX, RegionStartY);
 
     // --- 2. 박스 필터 컨볼루션 (평균 계산) ---
-    
+
     float2 AccumulatedValue = float2(0.0f, 0.0f);
 
     float ValidSampleCount = 0.0f;
@@ -98,7 +96,7 @@ void mainCS(
         if (SampleCol >= (int)RegionStartX && SampleCol < (int)(RegionStartX + RegionWidth))
         {
             SampleCoord = uint2((uint)SampleCol, PixelCoord.y);
-            
+
             AccumulatedValue += InputTexture[SampleCoord];
             ValidSampleCount += 1.0f;
         }

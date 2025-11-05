@@ -38,6 +38,13 @@ FTextPass::FTextPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera
     FontTexture = ResourceManager.LoadTexture("Data/Texture/DejaVu Sans Mono.png");
 }
 
+void FTextPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV() };
+	ID3D11DepthStencilView* DSV = DeviceResources->GetDepthBufferDSV();
+	Pipeline->SetRenderTargets(1, RTVs, DSV);
+}
+
 void FTextPass::Execute(FRenderingContext& Context)
 {
     // Set up pipeline

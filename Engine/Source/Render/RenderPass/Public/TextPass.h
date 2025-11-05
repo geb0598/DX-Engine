@@ -20,12 +20,14 @@ class FTextPass : public FRenderPass
 {
 public:
     FTextPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferViewProj, ID3D11Buffer* InConstantBufferModel);
-    void Execute(FRenderingContext& Context) override;
+
+	void SetRenderTargets(class UDeviceResources* DeviceResources) override;
+	void Execute(FRenderingContext& Context) override;
     void Release() override;
 
 private:
     void RenderTextInternal(const FString& Text, const FMatrix& WorldMatrix);
-    
+
     // Font rendering resources
     ID3D11VertexShader* FontVertexShader = nullptr;
     ID3D11PixelShader* FontPixelShader = nullptr;

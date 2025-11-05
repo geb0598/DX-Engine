@@ -7,7 +7,9 @@ class FBillboardPass : public FRenderPass
 public:
 	FBillboardPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera, ID3D11Buffer* InConstantBufferModel,
         ID3D11VertexShader* InVS, ID3D11PixelShader* InPS, ID3D11InputLayout* InLayout, ID3D11DepthStencilState* InDS, ID3D11BlendState* InBS);
-    void Execute(FRenderingContext& Context) override;
+
+	void SetRenderTargets(class UDeviceResources* DeviceResources) override;
+	void Execute(FRenderingContext& Context) override;
     void Release() override;
 
 	void SetVertexShader(ID3D11VertexShader* InVS) { VS = InVS; }

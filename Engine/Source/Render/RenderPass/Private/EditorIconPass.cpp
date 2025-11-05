@@ -13,6 +13,13 @@ FEditorIconPass::FEditorIconPass(UPipeline* InPipeline, ID3D11Buffer* InConstant
 	EditorIconMaterialConstants.Kd = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
+void FEditorIconPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV() };
+	ID3D11DepthStencilView* DSV = DeviceResources->GetDepthBufferDSV();
+	Pipeline->SetRenderTargets(1, RTVs, DSV);
+}
+
 void FEditorIconPass::Execute(FRenderingContext& Context)
 {
 	FRenderState RenderState = UEditorIconComponent::GetClassDefaultRenderState();
