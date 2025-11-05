@@ -1124,6 +1124,9 @@ bool ULevel::LineTraceSingle(const FVector& Start, const FVector& End, FHitResul
 		if (!Candidate || Candidate->GetOwner() == IgnoredActor || Candidate->GetOwner()->GetCollisionTag() == IgnoredTag)
 			continue;
 
+		if (Candidate->GetOwner()->GetCollisionTag() == ECollisionTag::Enemy) // For Demo!!!!!!!!!!!!
+			continue;
+
 		const IBoundingVolume* Shape = Candidate->GetCollisionShape();
 		if (!Shape)
 			continue;

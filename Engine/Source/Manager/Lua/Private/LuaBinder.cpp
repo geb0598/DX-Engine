@@ -431,6 +431,7 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
         "InitGame", &AGameMode::InitGame,
         "StartGame", &AGameMode::StartGame,
         "EndGame", &AGameMode::EndGame,
+        "OverGame", &AGameMode::OverGame,
         "GetPlayerCameraManager", &AGameMode::GetPlayerCameraManager,
 
 
@@ -488,6 +489,24 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
                     if (!Result.valid()) {
                         sol::error Err = Result;
                         UE_LOG_ERROR("[Lua Error][OnGameEnded] %s", Err.what());
+                    }
+                });
+            }
+        ),
+
+        "OnGameOvered", sol::writeonly_property(
+            [](AGameMode* Self, const sol::function& InLuaFunc) {
+                if (!Self || !InLuaFunc.valid()) return;
+                sol::protected_function SafeFunc = InLuaFunc; // wrap for safety
+                TWeakObjectPtr<AGameMode> WeakGameMode(Self);
+                Self->OnGameOvered.Add([WeakGameMode, SafeFunc]() mutable
+                {
+                    if (!WeakGameMode.IsValid()) return;
+                    if (!SafeFunc.valid()) return;
+                    sol::protected_function_result Result = SafeFunc();
+                    if (!Result.valid()) {
+                        sol::error Err = Result;
+                        UE_LOG_ERROR("[Lua Error][OnGameOvered] %s", Err.what());
                     }
                 });
             }

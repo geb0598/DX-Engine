@@ -4,6 +4,7 @@
 DECLARE_DELEGATE(FOnGameInit);
 DECLARE_DELEGATE(FOnGameStart);
 DECLARE_DELEGATE(FOnGameEnd);
+DECLARE_DELEGATE(FOnGameOver);
 
 class APlayerCameraManager;
 
@@ -16,6 +17,7 @@ public:
 	FOnGameInit OnGameInited;
 	FOnGameStart OnGameStarted;
 	FOnGameEnd OnGameEnded;
+	FOnGameEnd OnGameOvered;
 
 public:
 	AGameMode() = default;
@@ -26,6 +28,7 @@ public:
 	virtual void InitGame();
 	virtual void StartGame();
 	virtual void EndGame();
+	virtual void OverGame();
 
 	bool IsGameRunning() const { return bGameRunning; }
 	bool IsGameEnded() const { return bGameEnded; }

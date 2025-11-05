@@ -39,13 +39,13 @@ local elapsedTime = 0.0
 local finalScore = 0
 
 ---
--- [Health] HP가 0 이하가 되었는지 확인하고 GameMode의 EndGame을 호출
+-- [Health] HP가 0 이하가 되었는지 확인하고 GameMode의 OverGame을 호출
 ---
 local function CheckForDeath()
     if currentHP <= 0 then
         if gameMode and gameMode.IsGameRunning then
-            Log("PlayerHealth: HP is 0. Calling EndGame.")
-            gameMode:EndGame()
+            Log("PlayerHealth: HP is 0. Calling OverGame.")
+            gameMode:OverGame()
         end
     end
 end
@@ -54,7 +54,7 @@ end
 -- [Health] 플레이어에게 데미지를 입힘
 ---
 local function TakeDamage(damage)
-    if currentHP <= 0 then return end
+    if currentHP <= 0 or remainingTime < 0 then return end
     if elapsedTime - lastHitTime < 1.0 then return end
 
     lastHitTime = elapsedTime
@@ -87,7 +87,7 @@ local function TakeDamage(damage)
 end
 
 ---
--- [Game] 게임 종료 시퀀스
+-- [Game] 게임 종료 시퀀스 (EndGame 델리게이트에 연결)
 ---
 function EndGameSequence()
     bGameEnded = true
@@ -103,14 +103,6 @@ function EndGameSequence()
     if Sound_StopBGM ~= nil then
         Sound_StopBGM(0.3)
     end
-
-    -- Do NOT call gameMode:EndGame() here.
-    -- This function is registered as the OnGameEnded callback.
-    -- Calling EndGame again would re-broadcast OnGameEnded and recurse.
-end
-
-local function EndedTest()
-    Log("GameEnded Delegate!")
 end
 
 function OnLightIntensityChanged(current, previous)
@@ -161,8 +153,7 @@ function BeginPlay()
         end
 
         gameMode.OnGameStarted = StartGame
-        gameMode.OnGameEnded = EndGameSequence
-        -- gameMode:StartGame()
+        gameMode.OnGameEnded = EndGameSequence  -- EndGame 시 UI 표시
     end
 
     -- Preload result SFX so they play instantly on end
@@ -201,16 +192,19 @@ function Tick(dt)
         remainingTime = 0
         Log("Time Over! Game Failed.")
         if gameMode then
-            gameMode:EndGame()
-        else
-            EndGameSequence()
+            gameMode:OverGame()  -- OverGame만 호출
         end
         return
     end
 
     Movement(dt)
     UpdateLightExposure(dt)
-    DrawDangerOverlay()  -- 위험 오버레이 (먼저 그리기)
+    
+    -- HP가 0보다 클 때만 빨간 오버레이 표시
+    if currentHP > 0 then
+        DrawDangerOverlay()
+    end
+    
     DrawUI()
 end
 
@@ -529,10 +523,10 @@ function DrawGameOverUI()
     local content_w = panel_w - (padding * 2)
     local content_y = panel_y + padding
 
-    local title_text = "코치님께 발각되고 말았다..."
+    local title_text = "??? : 다음 발제가 왜 궁금해요?"
     local title_color_r, title_color_g, title_color_b = 1.0, 0.2, 0.2
 
-    local sub_text = "??? : 다음 발제가 왜 궁금해요?"
+    local sub_text = "??? : 현재에 집중하세요!"
     local sub_color_r, sub_color_g, sub_color_b = 1.0, 0.0, 0.0
 
     if currentHP > 0 and remainingTime > 0 then
@@ -618,6 +612,8 @@ function RestartGame()
 end
 
 function StartGame()
+    local blendCurve = Curve("EaseOut")
+    PlayerCameraManager:SetViewTargetWithBlend(Owner, 1.0, blendCurve)
     remainingTime = MaxTime
     finalScore = 0
     bStarted = true
@@ -656,7 +652,10 @@ function OnActorBeginOverlap(overlappedActor, otherActor)
         if Sound_PlaySFX ~= nil then
             Sound_PlaySFX("SuccessOnce", 1.0, 1.0)
         end
-        EndGameSequence()
+        -- 클리어 시에도 OverGame 호출 (시퀀스 먼저 재생 후 EndGame)
+        if gameMode then
+            gameMode:OverGame()
+        end
     end
 end
 

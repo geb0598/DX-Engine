@@ -100,7 +100,7 @@ function Tick(dt)
     local world = GetWorld()
     if world then
         local gameMode = world:GetGameMode()
-        if gameMode and gameMode.IsGameEnded then
+        if gameMode and not gameMode.IsGameRunning then
             return
         end
     end
@@ -144,7 +144,7 @@ function OnActorBeginOverlap(overlappedActor, otherActor)
     local world = GetWorld()
     if world then
         local gameMode = world:GetGameMode()
-        if gameMode and gameMode.IsGameEnded then
+        if gameMode and not gameMode.IsGameRunning then
             return
         end
     end

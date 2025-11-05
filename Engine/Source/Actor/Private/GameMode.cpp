@@ -134,3 +134,14 @@ void AGameMode::EndGame()
     bGameEnded = true;
     OnGameEnded.Broadcast();
 }
+
+void AGameMode::OverGame()
+{
+	if (bGameEnded) {
+		return;
+	}
+	
+	bGameRunning = false;
+
+	OnGameOvered.Broadcast();
+}

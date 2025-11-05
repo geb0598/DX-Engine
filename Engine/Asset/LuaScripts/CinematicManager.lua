@@ -18,22 +18,10 @@ local bInitialized = false  -- GameMode 초기화 완료 여부
 function BeginPlay()
     Log("[CinematicManager] BeginPlay called")
     World = GetWorld()
-    -- GameMode는 나중에 Tick에서 찾음 (BeginPlay 순서 문제)
---         if World then
---             GameMode = World:GetGameMode()
---             if GameMode then
---                 CameraManager = GameMode:GetPlayerCameraManager()
---             end
---         end
---
---         -- 대사 시퀀스 시작
---         if CameraManager then
---             Self:StartCoroutine("PlayDialogueSequence")
---         end
 end
 
 ---
--- 대사 시퀀스를 재생하는 코루틴
+-- 대사 시퀀스를 재생하는 코루틴 (게임 시작 시)
 ---
 function PlayDialogueSequence()
     local Color = FVector(0, 0, 0)
@@ -43,9 +31,9 @@ function PlayDialogueSequence()
     Log("[CinematicManager] PlayDialogueSequence coroutine started!")
 
     local dialogues = {
-        "다음 발제가 너무 궁금해진 테크군...",
-        "\"몰래 사무실에 들어가서 발제를 찾아볼까?!!\"",
-        "코치님들의 눈을 피해서 들어가보자."
+        "다음 발제가 너무 궁금한 테크군...",
+        "\"몰래 사무실에 들어가서 발제를 찾아보는건 어떨까?!!\"",
+        "코치님들의 눈을 최대한 피해 들어가보자."
     }
 
     -- 레터박스 활성화
@@ -58,7 +46,7 @@ function PlayDialogueSequence()
     -- 레터박스 페이드 인 대기
     coroutine.yield(0.5)
 
-    -- 3개의 대사를 각각 5초씩 표시
+    -- 3개의 대사를 각각 2초씩 표시
     for i = 1, #dialogues do
         currentDialogue = dialogues[i]
         dialogueAlpha = 1.0
@@ -82,6 +70,56 @@ function PlayDialogueSequence()
 end
 
 ---
+-- 게임 오버 시퀀스를 재생하는 코루틴
+---
+function PlayGameOverSequence()
+    Log("[CinematicManager] PlayGameOverSequence coroutine started!")
+
+    local dialogues = {
+        "앗! 코치님께 들켰다!",
+        "\"다음 발제가 왜 궁금해요?\""
+    }
+
+    -- 카메라 뷰 타겟을 Owner로 변경
+    local blendCurve = Curve("EaseOutBack")
+    CameraManager:SetViewTargetWithBlend(Owner, 1.0, blendCurve)
+    
+    coroutine.yield(1.0) -- 카메라 전환 대기
+
+    -- 레터박스 활성화
+    Log("[CinematicManager] Enabling letterbox for Game Over...")
+    isLetterBoxActive = true
+    if CameraManager then
+        CameraManager:EnableLetterBox(2, 0.5) -- 0.5초 페이드 인
+    end
+
+    -- 레터박스 페이드 인 대기
+    coroutine.yield(0.5)
+
+    -- 2개의 대사를 각각 3초씩 표시
+    for i = 1, #dialogues do
+        currentDialogue = dialogues[i]
+        dialogueAlpha = 1.0
+        coroutine.yield(3.0) -- 3초 대기
+    end
+
+    -- 대사 페이드 아웃
+    dialogueAlpha = 0.0
+    currentDialogue = ""
+
+    -- 레터박스 비활성화
+    if CameraManager then
+        CameraManager:DisableLetterBox(0.5) -- 0.5초 페이드 아웃
+    end
+
+    coroutine.yield(0.5)
+    isLetterBoxActive = false
+
+    Log("[CinematicManager] Game Over sequence finished, calling EndGame()")
+    GameMode:EndGame()
+end
+
+---
 -- 매 프레임 호출됩니다.
 -- @param dt (float): 이전 프레임으로부터 경과한 시간 (Delta Time)
 ---
@@ -93,11 +131,14 @@ function Tick(dt)
             if GameMode then
                 CameraManager = GameMode:GetPlayerCameraManager()
                 if CameraManager then
-                    Log("[CinematicManager] GameMode and CameraManager found, starting coroutine...")
+                    Log("[CinematicManager] GameMode and CameraManager found, setting up delegates...")
                     bInitialized = true
                     Self:StartCoroutine("PlayDialogueSequence")
 
                     GameMode.OnGameStarted = RestartFadeIn
+                    GameMode.OnGameOvered = function()
+                        Self:StartCoroutine("PlayGameOverSequence")
+                    end
                 end
             end
         end
