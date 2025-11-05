@@ -175,6 +175,18 @@ void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 			}
 		)
 	);
+
+
+	// --- TimeManager ---
+	LuaState.new_usertype<UTimeManager>("UTimeManager",
+		"SetGlobalTimeDilation", &UTimeManager::SetGlobalTimeDilation,
+		"GetDeltaTimesa", &UTimeManager::GetDeltaTime
+	);
+
+	// --- TimeManager 인스턴스 접근자 (전역 함수) ---
+	LuaState.set_function("GetTimeManager", []() -> UTimeManager& {
+		return UTimeManager::GetInstance();
+	});
 }
 
 void FLuaBinder::BindMathTypes(sol::state& LuaState)

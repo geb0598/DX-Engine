@@ -52,7 +52,7 @@ void UStatOverlay::RenderFPS()
 {
     auto& timeManager = UTimeManager::GetInstance();
     CurrentFPS = timeManager.GetFPS();
-    FrameTime = timeManager.GetDeltaTime() * 1000;
+    FrameTime = timeManager.GetRealDeltaTime() * 1000;
 
     char buf[64];
     (void)sprintf_s(buf, sizeof(buf), "FPS: %.1f (%.2f ms)", CurrentFPS, FrameTime);

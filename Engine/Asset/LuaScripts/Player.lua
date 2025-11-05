@@ -42,7 +42,7 @@ local function CheckForDeath()
     if currentHP <= 0 then
         if gameMode and gameMode.IsGameRunning then
             Log("PlayerHealth: HP is 0. Calling EndGame.")
-            EndGameSequence()
+            gameMode:EndGame()
         end
     end
 end
@@ -71,14 +71,6 @@ function EndGameSequence()
     finalScore = math.floor(remainingTime * 100)
 
     Log(string.format("Game Ended! Remaining Time: %.2fs, Score: %d", remainingTime, finalScore))
-
-    if gameMode then
-        gameMode:EndGame()
-    end
-end
-
-local function EndedTest()
-    Log("GameEnded Delegate!")
 end
 
 function OnLightIntensityChanged(current, previous)
@@ -125,7 +117,7 @@ function BeginPlay()
         end
 
         gameMode.OnGameStarted = StartGame
-        gameMode.OnGameEnded = EndedTest
+        gameMode.OnGameEnded = EndGameSequence
         -- gameMode:StartGame()
     end
 end
@@ -562,9 +554,6 @@ function OnActorBeginOverlap(overlappedActor, otherActor)
 
     if otherActor.Tag == CollisionTag.Enemy then
         TakeDamage(1)
-    elseif otherActor.Tag == CollisionTag.Clear then
-        Log("Clear!")
-        EndGameSequence()
     end
 end
 
