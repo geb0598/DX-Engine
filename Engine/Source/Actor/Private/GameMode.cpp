@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Actor/Public/GameMode.h"
 #include "Actor/Public/PlayerStart.h"
 #include "Actor/Public/PlayerCameraManager.h"
@@ -22,9 +22,26 @@ void AGameMode::BeginPlay()
 	}
 
 	// TODO: Move to APlayerController::SpawnPlayerCameraManager() when PlayerController is implemented
-	// Create PlayerCameraManager
-	PlayerCameraManager = Cast<APlayerCameraManager>(World->SpawnActor(APlayerCameraManager::StaticClass()));
-	PlayerCameraManager->BeginPlay();
+	// Find existing PlayerCameraManager in level, or create new one
+	TArray<APlayerCameraManager*> CameraManagers = World->FindActorsOfClass<APlayerCameraManager>();
+	if (CameraManagers.Num() > 0)
+	{
+		// Use first PlayerCameraManager found in level
+		PlayerCameraManager = CameraManagers[0];
+		UE_LOG_INFO("GameMode: Using existing PlayerCameraManager '%s' from level",
+			PlayerCameraManager->GetName().ToString().c_str());
+	}
+	else
+	{
+		// Create new PlayerCameraManager
+		PlayerCameraManager = Cast<APlayerCameraManager>(World->SpawnActor(APlayerCameraManager::StaticClass()));
+		UE_LOG_INFO("GameMode: Created new PlayerCameraManager");
+	}
+
+	if (PlayerCameraManager)
+	{
+		PlayerCameraManager->BeginPlay();
+	}
 
 	const FWorldSettings& WorldSettings = World->GetWorldSettings();
 	if (WorldSettings.DefaultPlayerClass)

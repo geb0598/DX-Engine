@@ -112,6 +112,45 @@ public:
 		}
 	}
 
+	// Camera Modifier Management
+
+	/**
+	 * Add a camera modifier to the list
+	 * @param NewModifier The modifier to add
+	 * @return The added modifier
+	 */
+	UCameraModifier* AddCameraModifier(UCameraModifier* NewModifier);
+
+	/**
+	 * Remove a camera modifier from the list
+	 * @param ModifierToRemove The modifier to remove
+	 * @return True if removed successfully
+	 */
+	bool RemoveCameraModifier(UCameraModifier* ModifierToRemove);
+
+	/**
+	 * Remove all camera modifiers
+	 */
+	void ClearCameraModifiers();
+
+	/**
+	 * Find a camera modifier by class
+	 */
+	template<class T>
+	T* FindCameraModifierByClass() const
+	{
+		static_assert(std::is_base_of_v<UCameraModifier, T>, "T must inherit from UCameraModifier");
+
+		for (UCameraModifier* Modifier : ModifierList)
+		{
+			if (T* TypedModifier = Cast<T>(Modifier))
+			{
+				return TypedModifier;
+			}
+		}
+		return nullptr;
+	}
+
 private:
 	/** Whether camera needs update */
 	mutable bool bCameraDirty = true;
@@ -143,6 +182,7 @@ public:
 	 * Get current post process settings
 	 */
 	const FPostProcessSettings& GetPostProcessSettings() const { return CurrentPostProcessSettings; }
+	FPostProcessSettings& GetPostProcessSettings() { return CurrentPostProcessSettings; }
 
 // ============================================
 // Camera Fade

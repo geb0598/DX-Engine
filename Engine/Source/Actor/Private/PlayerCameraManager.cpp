@@ -2,6 +2,7 @@
 #include "Actor/Public/PlayerCameraManager.h"
 #include "Component/Public/CameraComponent.h"
 #include "Actor/Public/Actor.h"
+#include "Render/Camera/Public/CameraModifier.h"
 
 IMPLEMENT_CLASS(APlayerCameraManager, AActor)
 
@@ -106,8 +107,24 @@ void APlayerCameraManager::GetViewTargetPOV(FViewTarget& OutVT)
 
 void APlayerCameraManager::ApplyCameraModifiers(float DeltaTime, FMinimalViewInfo& InOutPOV)
 {
-	// TODO: Implement camera modifiers
-	// For now, just apply fade amount if set
+	// Apply all active camera modifiers
+	for (UCameraModifier* Modifier : ModifierList)
+	{
+		if (Modifier && !Modifier->IsDisabled())
+		{
+			// Update modifier's alpha blend
+			Modifier->UpdateAlpha(DeltaTime);
+
+			// Let modifier modify the camera
+			if (Modifier->ModifyCamera(DeltaTime, InOutPOV))
+			{
+				// Modifier returned true, stop processing chain
+				break;
+			}
+		}
+	}
+
+	// Apply fade amount if set
 	InOutPOV.FadeAmount = FadeAmount;
 	InOutPOV.FadeColor = FadeColor;
 }
@@ -229,4 +246,51 @@ void APlayerCameraManager::UpdateCameraFade(float DeltaTime)
 		FadeAmount = Lerp(FadeStartAlpha, FadeEndAlpha, LerpAlpha);
 	}
 }
+}
+
+// Camera Modifier Management
+
+UCameraModifier* APlayerCameraManager::AddCameraModifier(UCameraModifier* NewModifier)
+{
+	if (!NewModifier)
+	{
+		return nullptr;
+	}
+
+	// Check if this modifier is already in the list
+	if (ModifierList.Contains(NewModifier))
+	{
+		return NewModifier;
+	}
+
+	// Add to list
+	ModifierList.Add(NewModifier);
+
+	// Initialize the modifier
+	NewModifier->AddedToCamera(this);
+
+	// Sort by priority (lower number = higher priority)
+	ModifierList.Sort([](const UCameraModifier* A, const UCameraModifier* B)
+	{
+		return A->GetPriority() < B->GetPriority();
+	});
+
+	return NewModifier;
+}
+
+bool APlayerCameraManager::RemoveCameraModifier(UCameraModifier* ModifierToRemove)
+{
+	if (!ModifierToRemove)
+	{
+		return false;
+	}
+
+	// Find and remove the modifier
+	int32 RemovedCount = ModifierList.Remove(ModifierToRemove);
+	return RemovedCount > 0;
+}
+
+void APlayerCameraManager::ClearCameraModifiers()
+{
+	ModifierList.Empty();
 }
