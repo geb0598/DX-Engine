@@ -868,11 +868,12 @@ void URenderer::Update()
     	D3D11_VIEWPORT LocalViewport = { (float)SingleWindowRect.Left,(float)SingleWindowRect.Top + ViewportToolBarHeight, (float)SingleWindowRect.Width, (float)SingleWindowRect.Height - ViewportToolBarHeight, 0.0f, 1.0f };
     	GetDeviceContext()->RSSetViewports(1, &LocalViewport);
 		Viewport->SetRenderRect(LocalViewport);
-        UCamera* CurrentCamera = Viewport->GetViewportClient()->GetCamera();
 
-        CurrentCamera->Update(LocalViewport);
+        FViewportClient* ViewportClient = Viewport->GetViewportClient();
+        ViewportClient->PrepareCamera(LocalViewport);
 
-        FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, CurrentCamera->GetFViewProjConstants());
+        const FCameraConstants& CameraConstants = ViewportClient->GetCameraConstants();
+        FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, CameraConstants);
         Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferViewProj);
         {
             TIME_PROFILE(RenderLevel)
@@ -886,7 +887,7 @@ void URenderer::Update()
 		{
 			// Grid, Gizmo 렌더링 (3D, FXAA 적용 대상)
 			GEditor->GetEditorModule()->RenderEditorGeometry();
-			GEditor->GetEditorModule()->RenderGizmo(CurrentCamera, LocalViewport);
+			GEditor->GetEditorModule()->RenderGizmo(ViewportClient->GetCamera(), LocalViewport);
 		}
     }
 
@@ -920,9 +921,10 @@ void URenderer::Update()
     	FRect SingleWindowRect = Viewport->GetRect();
     	const int32 ViewportToolBarHeight = 32;
     	D3D11_VIEWPORT LocalViewport = { static_cast<float>(SingleWindowRect.Left),static_cast<float>(SingleWindowRect.Top) + ViewportToolBarHeight, static_cast<float>(SingleWindowRect.Width), static_cast<float>(SingleWindowRect.Height) - ViewportToolBarHeight, 0.0f, 1.0f };
-    	UCamera* CurrentCamera = Viewport->GetViewportClient()->GetCamera();
 
-    	GEditor->GetEditorModule()->Collect2DRender(CurrentCamera, LocalViewport, bIsPIEViewport);
+    	// Note: Collect2DRender uses editor camera for UI overlay coordinates
+    	UCamera* EditorCamera = Viewport->GetViewportClient()->GetCamera();
+    	GEditor->GetEditorModule()->Collect2DRender(EditorCamera, LocalViewport, bIsPIEViewport);
     	TIME_PROFILE(FlushAndRender)
 		FD2DOverlayManager::GetInstance().FlushAndRender();
 
@@ -981,7 +983,7 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	const ULevel* CurrentLevel = WorldToRender->GetLevel();
 	if (!CurrentLevel) { return; }
 
-	const FCameraConstants& ViewProj = InViewport->GetViewportClient()->GetCamera()->GetFViewProjConstants();
+	const FCameraConstants& ViewProj = InViewport->GetViewportClient()->GetCameraConstants();
 
 	static bool bCullingEnabled = false; // 임시 토글(초기값: 컬링 비활성)
 	TArray<UPrimitiveComponent*> FinalVisiblePrims;

@@ -3,6 +3,7 @@
 #include "Render/UI/Viewport/Public/Viewport.h"
 #include "Render/UI/Viewport/Public/ViewportClient.h"
 #include "Manager/UI/Public/ViewportManager.h"
+#include "Actor/Public/PlayerCameraManager.h"
 
 FViewportClient::FViewportClient()
 {
@@ -147,6 +148,8 @@ void FViewportClient::SetViewType(EViewType InType)
     }
 }
 
+// TODO: This function is not called anywhere (dead code since Oct 20, 2025)
+// Investigate original intention and either remove or integrate into rendering pipeline
 void FViewportClient::Tick() const
 {
     // FutureEngine 철학: Camera는 Viewport의 크기 정보를 받아야 함
@@ -157,6 +160,9 @@ void FViewportClient::Tick() const
     }
 }
 
+// TODO: This function is not called anywhere (dead code since Oct 20, 2025)
+// Consider using this or a new method to update camera before rendering
+// Should handle both ActiveCamera (PIE/Game) and ViewportCamera (Editor)
 void FViewportClient::Draw(const FViewport* InViewport) const
 {
     if (!InViewport) { return; }
@@ -172,4 +178,45 @@ void FViewportClient::Draw(const FViewport* InViewport) const
     {
         ViewportCamera->UpdateMatrixByPers();
     }
+}
+
+void FViewportClient::SetPlayerCameraManager(APlayerCameraManager* Manager)
+{
+    PlayerCameraManager = Manager;
+}
+
+void FViewportClient::PrepareCamera(const D3D11_VIEWPORT& InViewport)
+{
+    if (PlayerCameraManager)  // PIE/Game mode
+    {
+        // Update aspect ratio from viewport (marks camera as dirty)
+        if (InViewport.Width > 0.f && InViewport.Height > 0.f)
+        {
+            PlayerCameraManager->SetDefaultAspectRatio(InViewport.Width / InViewport.Height);
+        }
+        // Camera will be updated automatically in GetCameraCachePOV() if dirty
+    }
+    else if (ViewportCamera)  // Editor mode
+    {
+        ViewportCamera->Update(InViewport);
+    }
+}
+
+const FCameraConstants& FViewportClient::GetCameraConstants() const
+{
+    // PIE/Game mode: Use player camera manager
+    if (PlayerCameraManager)
+    {
+        return PlayerCameraManager->GetCameraCachePOV().CameraConstants;
+    }
+
+    // Editor mode: Use editor camera
+    if (ViewportCamera)
+    {
+        return ViewportCamera->GetCameraConstants();
+    }
+
+    // Fallback: return empty camera constants
+    static const FCameraConstants EmptyCameraConstants;
+    return EmptyCameraConstants;
 }

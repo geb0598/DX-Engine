@@ -177,6 +177,7 @@
     <ClInclude Include="Source\Actor\Public\Actor.h" />
     <ClInclude Include="Source\Actor\Public\AmbientLight.h" />
     <ClInclude Include="Source\Actor\Public\BillBoardActor.h" />
+    <ClInclude Include="Source\Actor\Public\CameraActor.h" />
     <ClInclude Include="Source\Actor\Public\CubeActor.h" />
     <ClInclude Include="Source\Actor\Public\DecalActor.h" />
     <ClInclude Include="Source\Actor\Public\DecalSpotLightActor.h" />
@@ -186,6 +187,7 @@
     <ClInclude Include="Source\Actor\Public\HeightFogActor.h" />
     <ClInclude Include="Source\Actor\Public\Light.h" />
     <ClInclude Include="Source\Actor\Public\MovingCubeActor.h" />
+    <ClInclude Include="Source\Actor\Public\PlayerCameraManager.h" />
     <ClInclude Include="Source\Actor\Public\PlayerStart.h" />
     <ClInclude Include="Source\Actor\Public\PointLight.h" />
     <ClInclude Include="Source\Actor\Public\SphereActor.h" />
@@ -199,6 +201,7 @@
     <ClInclude Include="Source\Component\Public\ActorComponent.h" />
     <ClInclude Include="Source\Component\Public\AmbientLightComponent.h" />
     <ClInclude Include="Source\Component\Public\BillBoardComponent.h" />
+    <ClInclude Include="Source\Component\Public\CameraComponent.h" />
     <ClInclude Include="Source\Component\Public\DecalComponent.h" />
     <ClInclude Include="Source\Component\Public\DecalSpotLightComponent.h" />
     <ClInclude Include="Source\Component\Public\DirectionalLightComponent.h" />
@@ -230,6 +233,7 @@
     <ClInclude Include="Source\Demo\Public\Player.h" />
     <ClInclude Include="Source\Editor\Public\EditorEngine.h" />
     <ClInclude Include="Source\Global\BVH.h" />
+    <ClInclude Include="Source\Global\CameraTypes.h" />
     <ClInclude Include="Source\Global\FString.h" />
     <ClInclude Include="Source\Global\Octree.h" />
     <ClInclude Include="Source\Global\OverlapInfo.h" />
@@ -403,6 +407,7 @@
     <ClCompile Include="Source\Actor\Private\Actor.cpp" />
     <ClCompile Include="Source\Actor\Private\AmbientLight.cpp" />
     <ClCompile Include="Source\Actor\Private\BillBoardActor.cpp" />
+    <ClCompile Include="Source\Actor\Private\CameraActor.cpp" />
     <ClCompile Include="Source\Actor\Private\CubeActor.cpp" />
     <ClCompile Include="Source\Actor\Private\DecalActor.cpp" />
     <ClCompile Include="Source\Actor\Private\DecalSpotLightActor.cpp" />
@@ -413,6 +418,7 @@
     <ClCompile Include="Source\Actor\Private\Light.cpp" />
     <ClCompile Include="Source\Actor\Private\MovingCubeActor.cpp">
     </ClCompile>
+    <ClCompile Include="Source\Actor\Private\PlayerCameraManager.cpp" />
     <ClCompile Include="Source\Actor\Private\PlayerStart.cpp" />
     <ClCompile Include="Source\Actor\Private\PointLight.cpp" />
     <ClCompile Include="Source\Actor\Private\SphereActor.cpp" />
@@ -426,6 +432,7 @@
     <ClCompile Include="Source\Component\Private\ActorComponent.cpp" />
     <ClCompile Include="Source\Component\Private\AmbientLightComponent.cpp" />
     <ClCompile Include="Source\Component\Private\BillBoardComponent.cpp" />
+    <ClCompile Include="Source\Component\Private\CameraComponent.cpp" />
     <ClCompile Include="Source\Component\Private\DecalComponent.cpp" />
     <ClCompile Include="Source\Component\Private\DecalSpotLightComponent.cpp" />
     <ClCompile Include="Source\Component\Private\DirectionalLightComponent.cpp" />
@@ -459,6 +466,7 @@
     <ClCompile Include="Source\Editor\Private\GizmoMath.cpp" />
     <ClCompile Include="Source\Editor\Private\GizmoRenderer.cpp" />
     <ClCompile Include="Source\Global\BVH.cpp" />
+    <ClCompile Include="Source\Global\CameraTypes.cpp" />
     <ClCompile Include="Source\Global\Octree.cpp" />
     <ClCompile Include="Source\Global\OverlapInfo.cpp" />
     <ClCompile Include="Source\Global\Quaternion.cpp" />

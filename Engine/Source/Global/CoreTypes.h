@@ -4,6 +4,7 @@
 #include "Global/Types.h"
 #include "Core/Public/Name.h"
 #include <Texture/Public/Material.h>
+#include "Global/CameraTypes.h"
 
 //struct BatchLineContants
 //{
@@ -12,21 +13,6 @@
 //	uint32 ZGridStartIndex; // 인덱스 버퍼에서, z방향쪽 그리드가 시작되는 인덱스
 //	uint32 BoundingBoxStartIndex; // 인덱스 버퍼에서, 바운딩박스가 시작되는 인덱스
 //};
-
-struct FCameraConstants
-{
-	FCameraConstants() : NearClip(0), FarClip(0)
-	{
-		View = FMatrix::Identity();
-		Projection = FMatrix::Identity();
-	}
-
-	FMatrix View;
-	FMatrix Projection;
-	FVector ViewWorldLocation;    
-	float NearClip;
-	float FarClip;
-};
 
 #define HAS_DIFFUSE_MAP	 (1 << 0)
 #define HAS_AMBIENT_MAP	 (1 << 1)
