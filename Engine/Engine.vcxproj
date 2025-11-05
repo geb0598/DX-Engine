@@ -367,6 +367,7 @@
     <ClInclude Include="Source\Render\UI\Widget\Public\PointLightComponentWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\SphereComponentWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\BoxComponentWidget.h" />
+    <ClInclude Include="Source\Render\UI\Widget\Public\CameraComponentWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\CapsuleComponentWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\ProjectileMovementComponentWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\RotatingMovementComponentWidget.h" />
@@ -565,6 +566,7 @@
     <ClCompile Include="Source\Render\UI\Widget\Private\PointLightComponentWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\SphereComponentWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\BoxComponentWidget.cpp" />
+    <ClCompile Include="Source\Render\UI\Widget\Private\CameraComponentWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\CapsuleComponentWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\ProjectileMovementComponentWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\RotatingMovementComponentWidget.cpp" />

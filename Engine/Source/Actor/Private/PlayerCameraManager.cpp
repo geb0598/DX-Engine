@@ -63,17 +63,28 @@ void APlayerCameraManager::GetViewTargetPOV(FViewTarget& OutVT)
 	// If we have a view target, try to get camera component from it
 	if (OutVT.Target)
 	{
-		// Try to find a camera component on the view target
-		UCameraComponent* CameraComp = OutVT.Target->GetComponentByClass<UCameraComponent>();
+		// Find all camera components on the view target
+		TArray<UCameraComponent*> CameraComponents = OutVT.Target->GetComponentsByClass<UCameraComponent>();
 
-		if (CameraComp)
+		// Find first active camera component
+		UCameraComponent* ActiveCameraComp = nullptr;
+		for (UCameraComponent* CameraComp : CameraComponents)
 		{
-			// Get camera view from component
-			OutVT.POV = CameraComp->GetCameraView();
+			if (CameraComp && CameraComp->IsActive())
+			{
+				ActiveCameraComp = CameraComp;
+				break;
+			}
+		}
+
+		if (ActiveCameraComp)
+		{
+			// Get camera view from active component
+			OutVT.POV = ActiveCameraComp->GetCameraView();
 		}
 		else
 		{
-			// No camera component, use actor's transform as fallback
+			// No active camera component, use actor's transform as fallback
 			OutVT.POV.Location = OutVT.Target->GetActorLocation();
 			OutVT.POV.Rotation = OutVT.Target->GetActorRotation();
 			OutVT.POV.FOV = DefaultFOV;

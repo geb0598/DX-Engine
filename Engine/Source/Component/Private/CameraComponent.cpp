@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Component/Public/CameraComponent.h"
 #include "Utility/Public/JsonSerializer.h"
+#include "Render/UI/Widget/Public/CameraComponentWidget.h"
 
 IMPLEMENT_CLASS(UCameraComponent, USceneComponent)
 
@@ -53,6 +54,7 @@ void UCameraComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		FJsonSerializer::ReadFloat(InOutHandle, "OrthoWidth", OrthoWidth, 512.0f);
 		FJsonSerializer::ReadBool(InOutHandle, "bConstrainAspectRatio", bConstrainAspectRatio, false);
 		FJsonSerializer::ReadBool(InOutHandle, "bUsePawnControlRotation", bUsePawnControlRotation, false);
+		FJsonSerializer::ReadBool(InOutHandle, "bIsActive", bIsActive, true);
 
 		uint32 ProjectionModeValue = static_cast<uint32>(ProjectionMode);
 		FJsonSerializer::ReadUint32(InOutHandle, "ProjectionMode", ProjectionModeValue, 0);
@@ -69,6 +71,7 @@ void UCameraComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		InOutHandle["OrthoWidth"] = OrthoWidth;
 		InOutHandle["bConstrainAspectRatio"] = bConstrainAspectRatio;
 		InOutHandle["bUsePawnControlRotation"] = bUsePawnControlRotation;
+		InOutHandle["bIsActive"] = bIsActive;
 		InOutHandle["ProjectionMode"] = static_cast<uint32>(ProjectionMode);
 	}
 }
@@ -278,6 +281,7 @@ UObject* UCameraComponent::Duplicate()
 		DuplicatedComponent->OrthoWidth = OrthoWidth;
 		DuplicatedComponent->bConstrainAspectRatio = bConstrainAspectRatio;
 		DuplicatedComponent->bUsePawnControlRotation = bUsePawnControlRotation;
+		DuplicatedComponent->bIsActive = bIsActive;
 		DuplicatedComponent->bNeedsConstantsUpdate = true;
 	}
 
@@ -287,4 +291,9 @@ UObject* UCameraComponent::Duplicate()
 void UCameraComponent::DuplicateSubObjects(UObject* DuplicatedObject)
 {
 	Super::DuplicateSubObjects(DuplicatedObject);
+}
+
+UClass* UCameraComponent::GetSpecificWidgetClass() const
+{
+	return UCameraComponentWidget::StaticClass();
 }

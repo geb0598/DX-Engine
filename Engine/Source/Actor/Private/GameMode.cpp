@@ -3,6 +3,8 @@
 #include "Actor/Public/PlayerStart.h"
 #include "Actor/Public/PlayerCameraManager.h"
 #include "Actor/Public/CameraActor.h"
+#include "Component/Public/CameraComponent.h"
+#include "Level/Public/Level.h"
 
 IMPLEMENT_CLASS(AGameMode, AActor)
 
@@ -39,34 +41,45 @@ void AGameMode::BeginPlay()
 	// Set ViewTarget for camera system
 	if (PlayerCameraManager)
 	{
-		ACameraActor* CameraToUse = nullptr;
+		AActor* ViewTargetToUse = nullptr;
 
-		// Priority 1: Find CameraActor placed in level
-		TArray<ACameraActor*> CameraActors = World->FindActorsOfClass<ACameraActor>();
-		if (CameraActors.Num() > 0)
+		// Priority 1: Find first active CameraComponent in level
+		TArray<AActor*> AllActors = World->GetLevel()->GetLevelActors();
+		for (AActor* Actor : AllActors)
 		{
-			CameraToUse = CameraActors[0];
-			UE_LOG_INFO("GameMode: Using existing CameraActor as ViewTarget");
-		}
-		// Priority 2: Create default CameraActor at origin
-		else
-		{
-			CameraToUse = Cast<ACameraActor>(World->SpawnActor(ACameraActor::StaticClass()));
-			if (CameraToUse)
+			if (Actor)
 			{
-				CameraToUse->SetActorLocation(FVector(0, 0, 0));
-				CameraToUse->SetActorRotation(FQuaternion::Identity());
+				UCameraComponent* CameraComp = Actor->GetComponentByClass<UCameraComponent>();
+				if (CameraComp && CameraComp->IsActive())
+				{
+					ViewTargetToUse = Actor;
+					UE_LOG_INFO("GameMode: Using Actor '%s' with active CameraComponent as ViewTarget",
+						Actor->GetName().ToString().c_str());
+					break;
+				}
+			}
+		}
+
+		// Priority 2: Create default CameraActor at origin
+		if (!ViewTargetToUse)
+		{
+			ACameraActor* DefaultCamera = Cast<ACameraActor>(World->SpawnActor(ACameraActor::StaticClass()));
+			if (DefaultCamera)
+			{
+				DefaultCamera->SetActorLocation(FVector(0, 0, 0));
+				DefaultCamera->SetActorRotation(FQuaternion::Identity());
+				ViewTargetToUse = DefaultCamera;
 				UE_LOG_INFO("GameMode: Created default CameraActor at origin as ViewTarget");
 			}
 		}
 
-		if (CameraToUse)
+		if (ViewTargetToUse)
 		{
-			PlayerCameraManager->SetViewTarget(CameraToUse);
+			PlayerCameraManager->SetViewTarget(ViewTargetToUse);
 		}
 		else
 		{
-			UE_LOG_ERROR("GameMode: Failed to create or find CameraActor");
+			UE_LOG_ERROR("GameMode: Failed to create or find camera ViewTarget");
 		}
 	}
 

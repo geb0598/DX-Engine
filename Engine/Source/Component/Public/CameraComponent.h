@@ -78,7 +78,14 @@ public:
 	bool ShouldUsePawnControlRotation() const { return bUsePawnControlRotation; }
 	void SetUsePawnControlRotation(bool bUse) { bUsePawnControlRotation = bUse; }
 
+	// Active Camera (for ViewTarget selection)
+	bool IsActive() const { return bIsActive; }
+	void SetActive(bool bActive) { bIsActive = bActive; }
+
 	UObject* Duplicate() override;
+
+	// Widget
+	UClass* GetSpecificWidgetClass() const override;
 
 protected:
 	virtual void DuplicateSubObjects(UObject* DuplicatedObject) override;
@@ -112,6 +119,9 @@ private:
 
 	/** Use pawn's control rotation instead of component rotation */
 	bool bUsePawnControlRotation = false;
+
+	/** Whether this camera is active and can be used as ViewTarget */
+	bool bIsActive = true;
 
 	/** Cached to detect changes and update constants */
 	mutable bool bNeedsConstantsUpdate = true;
