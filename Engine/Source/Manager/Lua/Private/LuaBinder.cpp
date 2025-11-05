@@ -12,6 +12,8 @@
 #include "Physics/Public/HitResult.h"
 #include "Global/Enum.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
+#include "Render/Camera/Public/CameraModifier.h"
+#include "Render/Camera/Public/CameraModifier_CameraShake.h"
 
 void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 {
@@ -332,7 +334,8 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 
 		// Type-safe casting functions - add new actor types here using the macro
 		BIND_ACTOR_CAST(AEnemySpawnerActor),
-		BIND_ACTOR_CAST(APlayer)
+		BIND_ACTOR_CAST(APlayer),
+		BIND_ACTOR_CAST(APlayerCameraManager)
 	);
 
 	// --- AGameMode ---
@@ -442,11 +445,66 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 	BIND_WEAK_PTR(AActor);
 	// BIND_WEAK_PTR(AEnemySpawnerActor);  // Example: add more types as needed
 
+	// --- FOscillator ---
+	LuaState.new_usertype<FOscillator>("FOscillator",
+		sol::call_constructor, sol::factories(
+			[]() { return FOscillator(); },
+			[](float Amplitude, float Frequency) { return FOscillator(Amplitude, Frequency); }
+		),
+		"Amplitude", &FOscillator::Amplitude,
+		"Frequency", &FOscillator::Frequency,
+		"Phase", &FOscillator::Phase
+	);
+
+	// --- UCameraModifier (base class) ---
+	LuaState.new_usertype<UCameraModifier>("UCameraModifier",
+		"DisableModifier", &UCameraModifier::DisableModifier,
+		"EnableModifier", &UCameraModifier::EnableModifier,
+		"IsDisabled", &UCameraModifier::IsDisabled,
+		"GetAlpha", &UCameraModifier::GetAlpha
+	);
+
+	// --- UCameraModifier_CameraShake ---
+	LuaState.new_usertype<UCameraModifier_CameraShake>("UCameraModifier_CameraShake",
+		sol::base_classes, sol::bases<UCameraModifier>(),
+		sol::call_constructor, sol::factories(
+			[]() { return NewObject<UCameraModifier_CameraShake>(); }
+		),
+		// Public properties
+		"Duration", &UCameraModifier_CameraShake::Duration,
+		"ElapsedTime", sol::readonly(&UCameraModifier_CameraShake::ElapsedTime),
+		"bIsPlaying", sol::readonly(&UCameraModifier_CameraShake::bIsPlaying),
+		"FOVOscillation", &UCameraModifier_CameraShake::FOVOscillation,
+		// Array accessors for LocOscillation[3] - lua uses 1-based indexing
+		"GetLocOscillation", [](UCameraModifier_CameraShake* self, int index) -> FOscillator& {
+			if (index < 1 || index > 3) {
+				throw std::out_of_range("LocOscillation index must be 1-3");
+			}
+			return self->LocOscillation[index - 1];
+		},
+		// Array accessors for RotOscillation[3]
+		"GetRotOscillation", [](UCameraModifier_CameraShake* self, int index) -> FOscillator& {
+			if (index < 1 || index > 3) {
+				throw std::out_of_range("RotOscillation index must be 1-3");
+			}
+			return self->RotOscillation[index - 1];
+		},
+		// Setter methods for convenience
+		"SetIntensity", &UCameraModifier_CameraShake::SetIntensity,
+		"SetDuration", &UCameraModifier_CameraShake::SetDuration,
+		"SetBlendInTime", &UCameraModifier_CameraShake::SetBlendInTime,
+		"SetBlendOutTime", &UCameraModifier_CameraShake::SetBlendOutTime
+	);
+
+	// --- APlayerCameraManager ---
 	LuaState.new_usertype<APlayerCameraManager>("APlayerCameraManager",
 		sol::base_classes, sol::bases<AActor>(),
 		"EnableLetterBox", &APlayerCameraManager::EnableLetterBox,
 		"DisableLetterBox", &APlayerCameraManager::DisableLetterBox,
-		"SetVignetteIntensity", &APlayerCameraManager::SetVignetteIntensity
+		"SetVignetteIntensity", &APlayerCameraManager::SetVignetteIntensity,
+		"AddCameraModifier", &APlayerCameraManager::AddCameraModifier,
+		"RemoveCameraModifier", &APlayerCameraManager::RemoveCameraModifier,
+		"ClearCameraModifiers", &APlayerCameraManager::ClearCameraModifiers
 	);
 }
 

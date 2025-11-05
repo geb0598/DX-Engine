@@ -275,6 +275,8 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Source\Render\Camera\Public\CameraModifier.h" />
+    <ClInclude Include="Source\Render\Camera\Public\CameraModifier_CameraShake.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Source\Actor\Public\Actor.h" />
     <ClInclude Include="Source\Actor\Public\AmbientLight.h" />
@@ -417,6 +419,7 @@
     <ClInclude Include="Source\Render\Renderer\Public\SceneView.h" />
     <ClInclude Include="Source\Render\Renderer\Public\SceneViewFamily.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\BillboardPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\CameraPostProcessPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\CameraPrePass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\ClusteredRenderingGridPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\ColorCopyPass.h" />
@@ -514,6 +517,8 @@
     <ClInclude Include="Source\Utility\Public\UELogParser.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\Render\Camera\Private\CameraModifier.cpp" />
+    <ClCompile Include="Source\Render\Camera\Private\CameraModifier_CameraShake.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -640,6 +645,7 @@
     <ClCompile Include="Source\Render\Renderer\Private\SceneView.cpp" />
     <ClCompile Include="Source\Render\Renderer\Private\SceneViewFamily.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\BillboardPass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\CameraPostProcessPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\CameraPrePass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\ClusteredRenderingGridPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\ColorCopyPass.cpp" />
@@ -796,6 +802,13 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Asset\Shader\BlitVS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='StandAlone_Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='StandAlone_Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Asset\Shader\FadePS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='StandAlone_Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>

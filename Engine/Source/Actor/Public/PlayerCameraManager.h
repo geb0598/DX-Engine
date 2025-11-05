@@ -84,13 +84,6 @@ private:
 	/** Final cached camera POV */
 	FMinimalViewInfo CameraCachePOV;
 
-	/** Camera fade parameters */
-	FVector4 FadeColor = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
-	float FadeAmount = 0.0f;
-	FVector2 FadeAlpha = FVector2(0.0f, 0.0f);
-	float FadeTime = 0.0f;
-	float FadeTimeRemaining = 0.0f;
-
 	/** Camera style name (for future use) */
 	FName CameraStyle;
 
@@ -119,27 +112,136 @@ public:
 		}
 	}
 
+	// Camera Modifier Management
+
+	/**
+	 * Add a camera modifier to the list
+	 * @param NewModifier The modifier to add
+	 * @return The added modifier
+	 */
+	UCameraModifier* AddCameraModifier(UCameraModifier* NewModifier);
+
+	/**
+	 * Remove a camera modifier from the list
+	 * @param ModifierToRemove The modifier to remove
+	 * @return True if removed successfully
+	 */
+	bool RemoveCameraModifier(UCameraModifier* ModifierToRemove);
+
+	/**
+	 * Remove all camera modifiers
+	 */
+	void ClearCameraModifiers();
+
+	/**
+	 * Find a camera modifier by class
+	 */
+	template<class T>
+	T* FindCameraModifierByClass() const
+	{
+		static_assert(std::is_base_of_v<UCameraModifier, T>, "T must inherit from UCameraModifier");
+
+		for (UCameraModifier* Modifier : ModifierList)
+		{
+			if (T* TypedModifier = Cast<T>(Modifier))
+			{
+				return TypedModifier;
+			}
+		}
+		return nullptr;
+	}
+
 private:
 	/** Whether camera needs update */
 	mutable bool bCameraDirty = true;
 
-// Post Process
-
+// ============================================
+// Post Process Effects
+// ============================================
 public:
+	/**
+	 * Enable letterbox with cinematic aspect ratio
+	 * @param InTargetAspectRatio Target aspect ratio (e.g., 2.35 for cinemascope)
+	 * @param InTransitionTime Time to fade in the letterbox
+	 */
 	void EnableLetterBox(float InTargetAspectRatio, float InTransitionTime);
+
+	/**
+	 * Disable letterbox effect
+	 * @param InTransitionTime Time to fade out the letterbox
+	 */
 	void DisableLetterBox(float InTransitionTime);
 
+	/**
+	 * Set vignette intensity
+	 * @param InIntensity Vignette intensity (0.0 = none, 1.0 = full)
+	 */
 	void SetVignetteIntensity(float InIntensity);
 
+	/**
+	 * Get current post process settings
+	 */
 	const FPostProcessSettings& GetPostProcessSettings() const { return CurrentPostProcessSettings; }
+	FPostProcessSettings& GetPostProcessSettings() { return CurrentPostProcessSettings; }
+
+// ============================================
+// Camera Fade
+// ============================================
+public:
+	/**
+	 * Fade camera to/from a color
+	 * @param FromAlpha Starting alpha (0.0 = clear, 1.0 = opaque)
+	 * @param ToAlpha Ending alpha
+	 * @param Duration Fade duration in seconds
+	 * @param Color Fade color (RGB)
+	 * @param bHoldWhenFinished If true, holds at ToAlpha after fade completes
+	 */
+	void StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color, bool bHoldWhenFinished = false);
+
+	/**
+	 * Stop camera fade immediately
+	 * @param bStopAtCurrent If true, stays at current alpha. If false, goes to 0.0
+	 */
+	void StopCameraFade(bool bStopAtCurrent = false);
+
+	/**
+	 * Set camera fade manually (no animation)
+	 * @param InFadeAmount Alpha value (0.0 = clear, 1.0 = opaque)
+	 * @param InFadeColor Fade color (RGB)
+	 */
+	void SetManualCameraFade(float InFadeAmount, FVector InFadeColor);
+
+	/**
+	 * Get current fade amount
+	 */
+	float GetCameraFadeAmount() const { return FadeAmount; }
+
+	/**
+	 * Get current fade color
+	 */
+	FVector GetCameraFadeColor() const { return FVector(FadeColor.X, FadeColor.Y, FadeColor.Z); }
+
+	/**
+	 * Check if camera is currently fading
+	 */
+	bool IsFading() const { return FadeTimeRemaining > 0.0f; }
 
 private:
 	void UpdatePostProcessAnimations(float DeltaTime);
+	void UpdateCameraFade(float DeltaTime);
 
 	FPostProcessSettings CurrentPostProcessSettings;
 
-	// --- LetterBox 애니메이션 상태 변수 ---
-	float TargetLetterBoxAmount = 0.0f; // 목표 강도
-	float LetterBoxTransitionSpeed = 1.0f; // 전환 속도
-private:
+	// --- LetterBox Animation ---
+	float TargetLetterBoxAmount = 0.0f;
+	float LetterBoxTransitionSpeed = 1.0f;
+
+	// --- Camera Fade ---
+	FVector4 FadeColor = FVector4(0.0f, 0.0f, 0.0f, 0.0f);
+	float FadeAmount = 0.0f;
+	float FadeStartAlpha = 0.0f;
+	float FadeEndAlpha = 0.0f;
+	float FadeDuration = 0.0f;
+	float FadeTimeRemaining = 0.0f;
+	bool bHoldFadeWhenFinished = false;
 };
