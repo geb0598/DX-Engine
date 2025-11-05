@@ -590,19 +590,19 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		"ClearCameraModifiers", &APlayerCameraManager::ClearCameraModifiers,
 
 		// SetViewTargetWithBlend with optional curve parameter
-		"SetViewTargetWithBlend", [](APlayerCameraManager& Self, AActor* NewViewTarget, float BlendTime, sol::optional<FCurve*> Curve)
+		"SetViewTargetWithBlend", [](APlayerCameraManager* Self, AActor* NewViewTarget, float BlendTime, sol::optional<FCurve*> Curve)
 		{
 			const FCurve* CurvePtr = Curve.value_or(nullptr);
-			Self.SetViewTargetWithBlend(NewViewTarget, BlendTime, CurvePtr);
+			Self->SetViewTargetWithBlend(NewViewTarget, BlendTime, CurvePtr);
 		},
 
 		// StartCameraFade with optional curve parameter
-		"StartCameraFade", [](APlayerCameraManager& Self, float FromAlpha, float ToAlpha, float Duration,
+		"StartCameraFade", [](APlayerCameraManager* Self, float FromAlpha, float ToAlpha, float Duration,
 		                       FVector Color, sol::optional<bool> bHoldWhenFinished, sol::optional<FCurve*> FadeCurve)
 		{
 			bool bHold = bHoldWhenFinished.value_or(false);
 			const FCurve* CurvePtr = FadeCurve.value_or(nullptr);
-			Self.StartCameraFade(FromAlpha, ToAlpha, Duration, Color, bHold, CurvePtr);
+			Self->StartCameraFade(FromAlpha, ToAlpha, Duration, Color, bHold, CurvePtr);
 		},
 
 		// StopCameraFade

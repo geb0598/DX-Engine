@@ -128,11 +128,17 @@ protected:
 	/** Curve for alpha blending out (nullptr = linear) */
 	const FCurve* AlphaOutCurve = nullptr;
 
-	/** Elapsed time for current alpha blend */
-	float AlphaBlendElapsedTime = 0.0f;
+	/** Elapsed time in current blend state (for curve evaluation) */
+	float StateElapsedTime = 0.0f;
 
-	/** Is currently blending in (true) or out (false) */
-	bool bIsBlendingIn = false;
+	/** Alpha blend state */
+	enum class EAlphaBlendState : uint8
+	{
+		Idle,        // Not blending
+		BlendingIn,  // Blending from 0 to 1
+		BlendingOut  // Blending from 1 to 0
+	};
+	EAlphaBlendState BlendState = EAlphaBlendState::Idle;
 
 	friend class APlayerCameraManager;
 };

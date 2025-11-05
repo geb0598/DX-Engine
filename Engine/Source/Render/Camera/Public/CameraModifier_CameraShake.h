@@ -74,6 +74,11 @@ public:
 
 	virtual bool ModifyCamera(float DeltaTime, FMinimalViewInfo& InOutPOV) override;
 
+	/**
+	 * Override to stop oscillation when fully disabled
+	 */
+	virtual void DisableModifier(bool bImmediate) override;
+
 protected:
 	virtual void ModifyCamera(float DeltaTime, FVector ViewLocation, FQuaternion ViewRotation, float FOV,
 	                          FVector& NewViewLocation, FQuaternion& NewViewRotation, float& NewFOV) override;

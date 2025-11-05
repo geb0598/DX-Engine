@@ -84,7 +84,7 @@ FMinimalViewInfo FMinimalViewInfo::Blend(
 
 	// Lerp FOV (safe, but clamp to reasonable range)
 	Result.FOV = A.FOV + (B.FOV - A.FOV) * BlendedAlpha;
-	Result.FOV = std::clamp(Result.FOV, 10.0f, 150.0f); // Safety clamp
+	Result.FOV = std::clamp(Result.FOV, 1.0f, 179.0f); // Safety clamp
 
 	// Lerp aspect ratio (overshoot generally safe)
 	Result.AspectRatio = A.AspectRatio + (B.AspectRatio - A.AspectRatio) * BlendedAlpha;

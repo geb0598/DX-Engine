@@ -83,87 +83,111 @@ void UCameraModifier::ModifyPostProcess(float DeltaTime, float& PostProcessBlend
 
 void UCameraModifier::UpdateAlpha(float DeltaTime)
 {
-	float TargetAlpha = GetTargetAlpha();
-
-	if (Alpha < TargetAlpha)
+	if (bDisabled)
 	{
-		// Blend in (0 → 1)
-		if (!bIsBlendingIn)
-		{
-			// Started new blend in
-			bIsBlendingIn = true;
-			AlphaBlendElapsedTime = 0.0f;
-		}
+		return;
+	}
 
+	// State transitions
+	bool bShouldBeActive = !bPendingDisable;
+
+	if (BlendState == EAlphaBlendState::Idle)
+	{
+		if (bShouldBeActive && Alpha < 1.0f)
+		{
+			BlendState = EAlphaBlendState::BlendingIn;
+			StateElapsedTime = 0.0f;
+		}
+		else if (!bShouldBeActive && Alpha > 0.0f)
+		{
+			BlendState = EAlphaBlendState::BlendingOut;
+			StateElapsedTime = 0.0f;
+		}
+	}
+	else if (BlendState == EAlphaBlendState::BlendingIn)
+	{
+		if (!bShouldBeActive)
+		{
+			BlendState = EAlphaBlendState::BlendingOut;
+			StateElapsedTime = 0.0f;
+		}
+	}
+	else if (BlendState == EAlphaBlendState::BlendingOut)
+	{
+		if (bShouldBeActive)
+		{
+			BlendState = EAlphaBlendState::BlendingIn;
+			StateElapsedTime = 0.0f;
+		}
+	}
+
+	// Update state elapsed time (for curve evaluation)
+	if (BlendState != EAlphaBlendState::Idle)
+	{
+		StateElapsedTime += DeltaTime;
+	}
+
+	// Update alpha based on current state
+	if (BlendState == EAlphaBlendState::BlendingIn)
+	{
 		if (AlphaInTime > 0.0f)
 		{
-			AlphaBlendElapsedTime += DeltaTime;
-			float NormalizedTime = AlphaBlendElapsedTime / AlphaInTime;
-			NormalizedTime = std::min(NormalizedTime, 1.0f);
-
-			// Evaluate curve or use linear
-			if (AlphaInCurve)
+			if (StateElapsedTime >= AlphaInTime)
 			{
-				Alpha = AlphaInCurve->Evaluate(NormalizedTime);
+				Alpha = 1.0f;
+				BlendState = EAlphaBlendState::Idle;
 			}
 			else
 			{
-				Alpha = NormalizedTime; // Linear
+				float t = StateElapsedTime / AlphaInTime;
+				Alpha = AlphaInCurve ? AlphaInCurve->Evaluate(t) : t;
 			}
-
-			Alpha = std::min(Alpha, TargetAlpha);
 		}
 		else
 		{
-			Alpha = TargetAlpha;
+			Alpha = 1.0f;
+			BlendState = EAlphaBlendState::Idle;
 		}
 	}
-	else if (Alpha > TargetAlpha)
+	else if (BlendState == EAlphaBlendState::BlendingOut)
 	{
-		// Blend out (1 → 0)
-		if (bIsBlendingIn)
-		{
-			// Started new blend out
-			bIsBlendingIn = false;
-			AlphaBlendElapsedTime = 0.0f;
-		}
-
 		if (AlphaOutTime > 0.0f)
 		{
-			AlphaBlendElapsedTime += DeltaTime;
-			float NormalizedTime = AlphaBlendElapsedTime / AlphaOutTime;
-			NormalizedTime = std::min(NormalizedTime, 1.0f);
-
-			// Evaluate curve or use linear
-			float BlendValue;
-			if (AlphaOutCurve)
+			if (StateElapsedTime >= AlphaOutTime)
 			{
-				BlendValue = AlphaOutCurve->Evaluate(NormalizedTime);
+				Alpha = 0.0f;
+				BlendState = EAlphaBlendState::Idle;
+
+				if (bPendingDisable)
+				{
+					DisableModifier(true);
+				}
 			}
 			else
 			{
-				BlendValue = NormalizedTime; // Linear
+				float t = StateElapsedTime / AlphaOutTime;
+				float curveValue = AlphaOutCurve ? AlphaOutCurve->Evaluate(t) : t;
+				Alpha = 1.0f - curveValue;
 			}
-
-			// Blend from 1 to 0
-			Alpha = 1.0f - BlendValue;
-			Alpha = std::max(Alpha, TargetAlpha);
 		}
 		else
 		{
-			Alpha = TargetAlpha;
-		}
+			Alpha = 0.0f;
+			BlendState = EAlphaBlendState::Idle;
 
-		// Auto-disable when fully blended out
-		if (bPendingDisable && Alpha <= 0.0f)
-		{
-			DisableModifier(true);
+			if (bPendingDisable)
+			{
+				DisableModifier(true);
+			}
 		}
 	}
-	else
+	else // Idle
 	{
-		// Alpha == TargetAlpha, reset timer
-		AlphaBlendElapsedTime = 0.0f;
+		// Keep alpha at 1.0 during full effect
+		if (!bPendingDisable)
+		{
+			Alpha = 1.0f;
+		}
 	}
 }
 
@@ -193,10 +217,10 @@ void UCameraModifier::EnableModifier()
 	bDisabled = false;
 	bPendingDisable = false;
 
-	// Reset alpha to 0 to start fresh blend-in
+	// Reset state for fresh start
 	Alpha = 0.0f;
-	AlphaBlendElapsedTime = 0.0f;
-	bIsBlendingIn = false;
+	StateElapsedTime = 0.0f;
+	BlendState = EAlphaBlendState::Idle;
 }
 
 AActor* UCameraModifier::GetViewTarget() const
