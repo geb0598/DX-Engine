@@ -140,7 +140,7 @@ bool USoundManager::PlayBGM(const FString& FilePath, bool bLoop, float FadeSecon
 
     FMOD::Channel* NewChannel = nullptr;
     Result = AudioSystem->playSound(CurrentBGMSound, BGMChannelGroup, false, &NewChannel);
-    if (!CheckFMODResult(Result, "PlaySound(BGM)")) { UE_LOG_ERROR("[Sound] playSound failed"); return false; }
+    if (!CheckFMODResult(Result, "PlaySound(BGM)")) { UE_LOG_ERROR("[Sound] PlaySound failed"); return false; }
 
     CurrentBGMChannel = NewChannel;
     CurrentBGMPath = FilePath;
