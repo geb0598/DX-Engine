@@ -504,7 +504,12 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		"SetVignetteIntensity", &APlayerCameraManager::SetVignetteIntensity,
 		"AddCameraModifier", &APlayerCameraManager::AddCameraModifier,
 		"RemoveCameraModifier", &APlayerCameraManager::RemoveCameraModifier,
-		"ClearCameraModifiers", &APlayerCameraManager::ClearCameraModifiers
+		"ClearCameraModifiers", &APlayerCameraManager::ClearCameraModifiers,
+		"SetViewTargetWithBlend", [](APlayerCameraManager& Self, AActor* NewViewTarget, float BlendTime)
+		{
+			// @TODO - Blend Editor 구현시 String으로 키값 받아서 전달하게 변경
+			Self.SetViewTargetWithBlend(NewViewTarget, BlendTime);
+		}
 	);
 }
 

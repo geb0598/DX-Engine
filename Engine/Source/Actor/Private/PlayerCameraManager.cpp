@@ -33,6 +33,10 @@ void APlayerCameraManager::SetViewTarget(AActor* NewViewTarget)
 {
 	ViewTarget.Target = NewViewTarget;
 	bCameraDirty = true;
+	CachedCameraComponent = nullptr; // 캐시 무효화
+
+	bIsBlending = false;
+	CurrentBlendTime = 0.f;
 }
 
 void APlayerCameraManager::UpdateCamera(float DeltaTime)
@@ -40,8 +44,8 @@ void APlayerCameraManager::UpdateCamera(float DeltaTime)
 	// Get POV from view target
 	GetViewTargetPOV(ViewTarget);
 
-	// Copy to cache
-	CameraCachePOV = ViewTarget.POV;
+	const FMinimalViewInfo& GoalPOV = ViewTarget.POV;
+	UpdateCameraBlending(DeltaTime, GoalPOV);
 
 	// Apply camera modifiers (empty for now)
 	ApplyCameraModifiers(DeltaTime, CameraCachePOV);
@@ -65,14 +69,27 @@ const FMinimalViewInfo& APlayerCameraManager::GetCameraCachePOV() const
 
 void APlayerCameraManager::GetViewTargetPOV(FViewTarget& OutVT)
 {
-	// If we have a view target, try to get camera component from it
-	if (OutVT.Target)
+	if (!OutVT.Target)
 	{
-		// Find all camera components on the view target
-		TArray<UCameraComponent*> CameraComponents = OutVT.Target->GetComponentsByClass<UCameraComponent>();
+		OutVT.POV.FOV = DefaultFOV;
+		OutVT.POV.AspectRatio = DefaultAspectRatio;
+		CachedCameraComponent = nullptr;
+		return;
+	}
 
-		// Find first active camera component
+	if (CachedCameraComponent && CachedCameraComponent->IsActive())
+	{
+		OutVT.POV = CachedCameraComponent->GetCameraView();
+		OutVT.POV.AspectRatio = DefaultAspectRatio;
+	}
+	else
+	{
+		// --- 캐시 미스 ---
+		UE_LOG_INFO("APlayerCameraManager: Cache miss. Re-searching for active camera component.");
+
+		TArray<UCameraComponent*> CameraComponents = OutVT.Target->GetComponentsByClass<UCameraComponent>();
 		UCameraComponent* ActiveCameraComp = nullptr;
+
 		for (UCameraComponent* CameraComp : CameraComponents)
 		{
 			if (CameraComp && CameraComp->IsActive())
@@ -84,24 +101,41 @@ void APlayerCameraManager::GetViewTargetPOV(FViewTarget& OutVT)
 
 		if (ActiveCameraComp)
 		{
-			// Get camera view from active component
 			OutVT.POV = ActiveCameraComp->GetCameraView();
 			OutVT.POV.AspectRatio = DefaultAspectRatio;
+			CachedCameraComponent = ActiveCameraComp;
 		}
 		else
 		{
-			// No active camera component, use actor's transform as fallback
 			OutVT.POV.Location = OutVT.Target->GetActorLocation();
 			OutVT.POV.Rotation = OutVT.Target->GetActorRotation();
 			OutVT.POV.FOV = DefaultFOV;
 			OutVT.POV.AspectRatio = DefaultAspectRatio;
+			CachedCameraComponent = nullptr;
+		}
+	}
+}
+
+void APlayerCameraManager::UpdateCameraBlending(float DeltaTime, const FMinimalViewInfo& GoalPOV)
+{
+	if (bIsBlending)
+	{
+		CurrentBlendTime -= DeltaTime;
+
+		if (CurrentBlendTime <= 0.0f)
+		{
+			bIsBlending = false;
+			CameraCachePOV = GoalPOV;
+		}
+		else
+		{
+			float BlendAlpha = (TotalBlendTime - CurrentBlendTime) / TotalBlendTime;
+			CameraCachePOV = FMinimalViewInfo::Blend(BlendStartPOV, GoalPOV, BlendAlpha, CurrentBlendFunction);
 		}
 	}
 	else
 	{
-		// No view target, use defaults
-		OutVT.POV.FOV = DefaultFOV;
-		OutVT.POV.AspectRatio = DefaultAspectRatio;
+		CameraCachePOV = GoalPOV;
 	}
 }
 
@@ -207,6 +241,7 @@ void APlayerCameraManager::UpdatePostProcessAnimations(float DeltaTime)
 	// LetterBox
 	CurrentPostProcessSettings.LetterBoxAmount = InterpTo(CurrentPostProcessSettings.LetterBoxAmount,
 			TargetLetterBoxAmount, DeltaTime, LetterBoxTransitionSpeed * 2.0f);
+	// Fade
 	UpdateCameraFade(DeltaTime);
 }
 
@@ -293,4 +328,21 @@ bool APlayerCameraManager::RemoveCameraModifier(UCameraModifier* ModifierToRemov
 void APlayerCameraManager::ClearCameraModifiers()
 {
 	ModifierList.Empty();
+}
+
+void APlayerCameraManager::SetViewTargetWithBlend(AActor* NewViewTarget, float BlendTime, EViewTargetBlendFunction BlendFunc)
+{
+	if (BlendTime <= 0.0f || !NewViewTarget)
+	{
+		SetViewTarget(NewViewTarget);
+		return;
+	}
+
+	BlendStartPOV = GetCameraCachePOV();
+	SetViewTarget(NewViewTarget);
+
+	bIsBlending = true;
+	TotalBlendTime = BlendTime;
+	CurrentBlendTime = BlendTime;
+	CurrentBlendFunction = BlendFunc;
 }

@@ -207,7 +207,7 @@ function Movement(dt)
         if hitResult == nil then
             Owner.Location = targetLocation
         else
-            Log("Movement blocked by wall.")
+            -- Log("Movement blocked by wall.")
         end
     end
 
