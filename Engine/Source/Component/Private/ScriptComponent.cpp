@@ -301,6 +301,7 @@ void UScriptComponent::UpdateCoroutines(float DeltaTime)
 		}
 
 		auto& Co = ActiveCoroutine.Coroutine; // ✅ 복사 금지!
+		if (!Co.valid()) { continue; }
 		auto Result = Co();
 
 		if (!Result.valid())
