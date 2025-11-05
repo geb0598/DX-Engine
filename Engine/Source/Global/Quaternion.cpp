@@ -252,3 +252,65 @@ FVector FQuaternion::RotateVector(const FVector& V) const
 	const FVector Result = V + (W * T) + Q.Cross(T);
 	return Result;
 }
+
+FQuaternion FQuaternion::Slerp(const FQuaternion& A, const FQuaternion& B, float Alpha)
+{
+	// Clamp alpha to [0, 1]
+	Alpha = (Alpha < 0.0f) ? 0.0f : (Alpha > 1.0f) ? 1.0f : Alpha;
+
+	// Compute dot product
+	float DotProduct = A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W;
+
+	// If quaternions are very close, use linear interpolation
+	const float SLERP_THRESHOLD = 0.9995f;
+	if (fabs(DotProduct) > SLERP_THRESHOLD)
+	{
+		// Linear interpolation (Lerp)
+		FQuaternion Result(
+			A.X + Alpha * (B.X - A.X),
+			A.Y + Alpha * (B.Y - A.Y),
+			A.Z + Alpha * (B.Z - A.Z),
+			A.W + Alpha * (B.W - A.W)
+		);
+		Result.Normalize();
+		return Result;
+	}
+
+	// Clamp dot product to avoid numerical errors with acos
+	DotProduct = (DotProduct < -1.0f) ? -1.0f : (DotProduct > 1.0f) ? 1.0f : DotProduct;
+
+	// Calculate angle between quaternions
+	float Theta = acosf(DotProduct);
+	float SinTheta = sinf(Theta);
+
+	// Compute interpolation weights
+	float WeightA = sinf((1.0f - Alpha) * Theta) / SinTheta;
+	float WeightB = sinf(Alpha * Theta) / SinTheta;
+
+	// Compute result
+	return FQuaternion(
+		WeightA * A.X + WeightB * B.X,
+		WeightA * A.Y + WeightB * B.Y,
+		WeightA * A.Z + WeightB * B.Z,
+		WeightA * A.W + WeightB * B.W
+	);
+}
+
+FQuaternion FQuaternion::SlerpShortestPath(const FQuaternion& A, const FQuaternion& B, float Alpha)
+{
+	// Compute dot product
+	float DotProduct = A.X * B.X + A.Y * B.Y + A.Z * B.Z + A.W * B.W;
+
+	// If dot product is negative, negate one quaternion to take shorter path
+	FQuaternion BModified = B;
+	if (DotProduct < 0.0f)
+	{
+		BModified.X = -B.X;
+		BModified.Y = -B.Y;
+		BModified.Z = -B.Z;
+		BModified.W = -B.W;
+	}
+
+	// Use regular Slerp with modified B
+	return Slerp(A, BModified, Alpha);
+}

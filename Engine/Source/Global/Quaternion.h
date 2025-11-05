@@ -31,4 +31,24 @@ struct FQuaternion
 	static FQuaternion MakeFromDirection(const FVector& Direction);
 	static FVector RotateVector(const FQuaternion& q, const FVector& v);
 	FVector RotateVector(const FVector& V) const;
+
+	/**
+	 * Spherical Linear Interpolation
+	 * Smoothly interpolates between two quaternions with constant angular velocity
+	 * @param A Starting quaternion
+	 * @param B Ending quaternion
+	 * @param Alpha Interpolation factor (0 to 1)
+	 * @return Interpolated quaternion
+	 */
+	static FQuaternion Slerp(const FQuaternion& A, const FQuaternion& B, float Alpha);
+
+	/**
+	 * Spherical Linear Interpolation with shortest path
+	 * Automatically chooses the shorter rotation path
+	 * @param A Starting quaternion
+	 * @param B Ending quaternion
+	 * @param Alpha Interpolation factor (0 to 1)
+	 * @return Interpolated quaternion
+	 */
+	static FQuaternion SlerpShortestPath(const FQuaternion& A, const FQuaternion& B, float Alpha);
 };

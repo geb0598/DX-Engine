@@ -414,6 +414,7 @@ void UWorld::DuplicateSubObjects(UObject* DuplicatedObject)
 	UWorld* World = Cast<UWorld>(DuplicatedObject);
 	World->Level = Cast<ULevel>(Level->Duplicate());
 	World->Level->SetOuter(World);  // Level의 Outer를 World로 설정
+	World->Level->OwningWorld = World;  // Level이 자신을 소유한 World를 알도록 설정
 }
 
 void UWorld::CreateNewLevel(const FName& InLevelName)

@@ -74,6 +74,11 @@ private:
     // 현재 PIE 세션 중인지 확인하고, 그렇다면 현재 WorldContext를 반환
     FWorldContext* GetActiveWorldContext();
 
+    // Helper: Inject game camera into PIE viewport
+    void InjectGameCameraIntoPIEViewport(UWorld* PIEWorld, int32 ViewportIndex);
+    // Helper: Remove game camera from PIE viewport
+    void RemoveGameCameraFromPIEViewport(int32 ViewportIndex);
+
     EPIEState PIEState = EPIEState::Stopped;
     TArray<FWorldContext> WorldContexts;
     UEditor* EditorModule;

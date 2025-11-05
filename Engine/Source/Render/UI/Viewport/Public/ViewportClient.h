@@ -3,6 +3,7 @@
 #include "Editor/Public/Camera.h"
 
 class FViewport;
+class APlayerCameraManager;
 
 class FViewportClient
 {
@@ -52,12 +53,34 @@ public:
 
     UCamera* GetCamera()const { return ViewportCamera; }
 
+    /**
+     * Set player camera manager for PIE/Game mode
+     * @param Manager Player camera manager, or nullptr to use editor camera
+     */
+    void SetPlayerCameraManager(APlayerCameraManager* Manager);
+
+    /**
+     * Prepare camera for rendering (update camera constants based on viewport)
+     * Should be called before GetCameraConstants() each frame
+     * @param InViewport D3D11 viewport information for aspect ratio and camera update
+     */
+    void PrepareCamera(const D3D11_VIEWPORT& InViewport);
+
+    /**
+     * Get camera constants for rendering
+     * Uses player camera manager in PIE/Game mode, otherwise uses editor camera
+     */
+    const FCameraConstants& GetCameraConstants() const;
+
 private:
     // 상태
     EViewType       ViewType = EViewType::Perspective;
     EViewModeIndex  ViewMode = EViewModeIndex::VMI_Gouraud;
 
-    UCamera* ViewportCamera = nullptr;
+    // 카메라 시스템 (타입별 분리)
+    UCamera* ViewportCamera = nullptr;  // Editor camera
+    APlayerCameraManager* PlayerCameraManager = nullptr;  // PIE/Game camera manager
+
     FViewport* OwningViewport = nullptr;  // FutureEngine: 소속 Viewport 참조
     
     // Store perspective camera state for restoration

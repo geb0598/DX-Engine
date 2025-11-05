@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Core/Public/Object.h"
 #include "Editor/Public/EditorEngine.h"
 #include "Editor/Public/Editor.h"
@@ -8,6 +8,9 @@
 #include "Manager/Path/Public/PathManager.h"
 #include "Manager/UI/Public/ViewportManager.h"
 #include "Render/UI/Viewport/Public/Viewport.h"
+#include "Render/UI/Viewport/Public/ViewportClient.h"
+#include "Actor/Public/GameMode.h"
+#include "Actor/Public/PlayerCameraManager.h"
 
 IMPLEMENT_CLASS(UEditorEngine, UObject)
 UEditorEngine* GEditor = nullptr;
@@ -176,6 +179,9 @@ void UEditorEngine::StartPIE()
         GWorld = PIEWorld;
         PIEWorld->BeginPlay();
 
+        // Inject game camera into PIE viewport
+        InjectGameCameraIntoPIEViewport(PIEWorld, LastClickedViewport);
+
         // PIE 시작 시 커서 숨김
         while (ShowCursor(FALSE) >= 0);
     }
@@ -195,8 +201,13 @@ void UEditorEngine::EndPIE()
     // PIE Mouse Detach 상태 초기화
     bPIEMouseDetached = false;
 
+    // Remove game camera from PIE viewport
+    UViewportManager& ViewportMgr = UViewportManager::GetInstance();
+    int32 PIEActiveViewport = ViewportMgr.GetPIEActiveViewportIndex();
+    RemoveGameCameraFromPIEViewport(PIEActiveViewport);
+
     // PIE 전용 뷰포트 인덱스 리셋
-    UViewportManager::GetInstance().SetPIEActiveViewportIndex(-1);
+    ViewportMgr.SetPIEActiveViewportIndex(-1);
 
     FWorldContext* PIEContext = GetPIEWorldContext();
     if (PIEContext)
@@ -380,6 +391,85 @@ FWorldContext* UEditorEngine::GetActiveWorldContext()
     }
 
     return nullptr;
+}
+
+/**
+ * @brief PIE 시작 시 PlayerCameraManager를 뷰포트에 설정
+ */
+void UEditorEngine::InjectGameCameraIntoPIEViewport(UWorld* PIEWorld, int32 ViewportIndex)
+{
+    if (!PIEWorld)
+    {
+        return;
+    }
+
+    // Get GameMode
+    AGameMode* GameMode = PIEWorld->GetGameMode();
+    if (!GameMode)
+    {
+        UE_LOG_WARNING("EditorEngine: No GameMode found in PIE world, using editor camera");
+        return;
+    }
+
+    // Get PlayerCameraManager
+    APlayerCameraManager* CameraManager = GameMode->GetPlayerCameraManager();
+    if (!CameraManager)
+    {
+        UE_LOG_WARNING("EditorEngine: No PlayerCameraManager found, using editor camera");
+        return;
+    }
+
+    // Get viewport and inject PlayerCameraManager
+    UViewportManager& ViewportMgr = UViewportManager::GetInstance();
+    if (ViewportIndex < 0 || ViewportIndex >= ViewportMgr.GetViewports().Num())
+    {
+        return;
+    }
+
+    FViewport* PIEViewport = ViewportMgr.GetViewports()[ViewportIndex];
+    if (!PIEViewport)
+    {
+        return;
+    }
+
+    FViewportClient* ViewportClient = PIEViewport->GetViewportClient();
+    if (!ViewportClient)
+    {
+        return;
+    }
+
+    // Set PlayerCameraManager for PIE viewport
+    ViewportClient->SetPlayerCameraManager(CameraManager);
+    UE_LOG_INFO("EditorEngine: PlayerCameraManager set for PIE viewport");
+}
+
+/**
+ * @brief PIE 종료 시 PlayerCameraManager를 뷰포트에서 제거
+ */
+void UEditorEngine::RemoveGameCameraFromPIEViewport(int32 ViewportIndex)
+{
+    UViewportManager& ViewportMgr = UViewportManager::GetInstance();
+
+    if (ViewportIndex < 0 || ViewportIndex >= ViewportMgr.GetViewports().Num())
+    {
+        return;
+    }
+
+    FViewport* PIEViewport = ViewportMgr.GetViewports()[ViewportIndex];
+    if (!PIEViewport)
+    {
+        return;
+    }
+
+    FViewportClient* ViewportClient = PIEViewport->GetViewportClient();
+    if (!ViewportClient)
+    {
+        return;
+    }
+
+    // Remove PlayerCameraManager, revert to editor camera
+    ViewportClient->SetPlayerCameraManager(nullptr);
+    UE_LOG_INFO("EditorEngine: PlayerCameraManager removed from PIE viewport");
 }
 
 /**
