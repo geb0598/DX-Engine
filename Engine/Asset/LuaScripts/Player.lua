@@ -88,9 +88,9 @@ function EndGameSequence()
         Sound_StopBGM(0.3)
     end
 
-    if gameMode then
-        gameMode:EndGame()
-    end
+    -- Do NOT call gameMode:EndGame() here.
+    -- This function is registered as the OnGameEnded callback.
+    -- Calling EndGame again would re-broadcast OnGameEnded and recurse.
 end
 
 local function EndedTest()
@@ -179,7 +179,11 @@ function Tick(dt)
     if remainingTime <= 0 then
         remainingTime = 0
         Log("Time Over! Game Failed.")
-        EndGameSequence()
+        if gameMode then
+            gameMode:EndGame()
+        else
+            EndGameSequence()
+        end
         return
     end
 
