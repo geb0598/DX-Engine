@@ -309,6 +309,7 @@
     <ClInclude Include="Source\Render\Renderer\Public\Renderer.h" />
     <ClInclude Include="Source\Render\Renderer\Public\RenderResourceFactory.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\BillboardPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\CameraPostProcessPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\CameraPrePass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\ClusteredRenderingGridPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\ColorCopyPass.h" />
@@ -524,6 +525,7 @@
     <ClCompile Include="Source\Render\Renderer\Private\Renderer.cpp" />
     <ClCompile Include="Source\Render\Renderer\Private\RenderResourceFactory.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\BillboardPass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\CameraPostProcessPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\CameraPrePass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\ClusteredRenderingGridPass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Private\ColorCopyPass.cpp" />
@@ -656,6 +658,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|x64'">true</ExcludedFromBuild>
     </FxCompile>
     <FxCompile Include="Asset\Shader\BlitVS.hlsl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|x64'">true</ExcludedFromBuild>
+    </FxCompile>
+    <FxCompile Include="Asset\Shader\FadePS.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='ObjViewerDebug|x64'">true</ExcludedFromBuild>

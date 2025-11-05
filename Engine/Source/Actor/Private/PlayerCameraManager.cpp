@@ -18,6 +18,7 @@ void APlayerCameraManager::BeginPlay()
 	if (bBegunPlay) return;
 
 	Super::BeginPlay();
+	//StartCameraFade(0, 1, 5.0, FVector(0.0, 0.0, 0.0), true); FadeIn Test
 }
 
 void APlayerCameraManager::Tick(float DeltaTime)
@@ -133,9 +134,99 @@ void APlayerCameraManager::SetVignetteIntensity(float InIntensity)
 	CurrentPostProcessSettings.VignetteIntensity = InIntensity;
 }
 
+void APlayerCameraManager::StartCameraFade(float FromAlpha, float ToAlpha, float Duration, FVector Color, bool bHoldWhenFinished)
+{
+	FadeStartAlpha = FromAlpha;
+	FadeEndAlpha = ToAlpha;
+	FadeDuration = Duration;
+	FadeTimeRemaining = Duration;
+	bHoldFadeWhenFinished = bHoldWhenFinished;
+
+	FadeColor.X = Color.X;
+	FadeColor.Y = Color.Y;
+	FadeColor.Z = Color.Z;
+
+	if (Duration <= 0.0f)
+	{
+		FadeAmount = ToAlpha;
+		FadeTimeRemaining = 0.0f;
+	}
+	else
+	{
+		// 즉시 시작 값으로 설정
+		FadeAmount = FromAlpha;
+	}
+}
+
+void APlayerCameraManager::StopCameraFade(bool bStopAtCurrent)
+{
+	FadeTimeRemaining = 0.0f;
+
+	if (!bStopAtCurrent)
+	{
+		FadeAmount = 0.0f;
+	}
+
+	FadeStartAlpha = FadeAmount;
+	FadeEndAlpha = FadeAmount;
+}
+
+void APlayerCameraManager::SetManualCameraFade(float InFadeAmount, FVector InFadeColor)
+{
+	FadeTimeRemaining = 0.0f;
+
+	FadeAmount = InFadeAmount;
+	FadeColor.X = InFadeColor.X;
+	FadeColor.Y = InFadeColor.Y;
+	FadeColor.Z = InFadeColor.Z;
+
+	// 현재 상태를 동기화합니다.
+	FadeStartAlpha = InFadeAmount;
+	FadeEndAlpha = InFadeAmount;
+}
+
 void APlayerCameraManager::UpdatePostProcessAnimations(float DeltaTime)
 {
 	// LetterBox
 	CurrentPostProcessSettings.LetterBoxAmount = InterpTo(CurrentPostProcessSettings.LetterBoxAmount,
 			TargetLetterBoxAmount, DeltaTime, LetterBoxTransitionSpeed * 2.0f);
+	UpdateCameraFade(DeltaTime);
+}
+
+void APlayerCameraManager::UpdateCameraFade(float DeltaTime)
+{
+	if (FadeTimeRemaining > 0.0f)
+	{
+		FadeTimeRemaining -= DeltaTime;
+
+		if (FadeTimeRemaining <= 0.0f)
+		{
+			// --- 페이드 완료 ---
+			FadeTimeRemaining = 0.0f;
+			FadeAmount = FadeEndAlpha; // 목표 값으로 정확히 스냅
+
+			// "완료 시 유지"가 false라면,
+			// 0.0으로 다시 돌아가는 페이드를 *새로* 시작합니다.
+			if (!bHoldFadeWhenFinished)
+			{
+				// 현재 값(FadeEndAlpha)에서 0.0으로, 동일한 시간 동안 페이드 아웃
+				StartCameraFade(FadeEndAlpha, 0.0f, FadeDuration, FVector(FadeColor.X, FadeColor.Y, FadeColor.Z), true);
+			}
+		}
+	else
+	{
+		// --- 페이드 진행 중 ---
+		// (총 시간 - 남은 시간) / 총 시간 = 진행률 (0.0 -> 1.0)
+		// (1.0 - (남은 시간 / 총 시간))
+
+		float LerpAlpha = 0.0f;
+		if (FadeDuration > 0.0f)
+		{
+			LerpAlpha = 1.0f - (FadeTimeRemaining / FadeDuration);
+		}
+
+		// 시작 알파와 끝 알파 사이를 보간합니다.
+		FadeAmount = Lerp(FadeStartAlpha, FadeEndAlpha, LerpAlpha);
+	}
+}
 }

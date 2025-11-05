@@ -34,6 +34,8 @@
 #include "Render/RenderPass/Public/TextPass.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Render/Renderer/Public/Renderer.h"
+
+#include "Render/RenderPass/Public/CameraPostProcessPass.h"
 #include "Render/RenderPass/Public/ColorCopyPass.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
 #include "Render/UI/Viewport/Public/Viewport.h"
@@ -114,10 +116,11 @@ void URenderer::Init(HWND InWindowHandle)
 	FSceneDepthPass* SceneDepthPass = new FSceneDepthPass(Pipeline, ConstantBufferViewProj, DisabledDepthStencilState);
 	RenderPasses.Add(SceneDepthPass);
 
+	CameraPostProcessPass = new FCameraPostProcessPass(Pipeline, DisabledDepthStencilState, AlphaBlendState);
 	FXAAPass = new FFXAAPass(Pipeline, DeviceResources, FXAAVertexShader, FXAAPixelShader, FXAAInputLayout, FXAASamplerState);
 	CameraPrePass = new FCameraPrePass(Pipeline);
 
-	ColorCopyPass = new FColorCopyPass(Pipeline, GetDisabledDepthStencilState());
+	ColorCopyPass = new FColorCopyPass(Pipeline, DisabledDepthStencilState);
 
 	HitProxyPass = new FHitProxyPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
 		HitProxyVS, HitProxyPS, HitProxyInputLayout, DefaultDepthStencilState);
@@ -148,6 +151,18 @@ void URenderer::Release()
 	{
 		ColorCopyPass->Release();
 		SafeDelete(ColorCopyPass);
+	}
+
+	if (CameraPostProcessPass)
+	{
+		CameraPostProcessPass->Release();
+		SafeDelete(CameraPostProcessPass);
+	}
+
+	if (CameraPrePass)
+	{
+		CameraPrePass->Release();
+		SafeDelete(CameraPrePass);
 	}
 
 	SafeDelete(ViewportClient);
@@ -886,6 +901,12 @@ void URenderer::Update()
 			Pipeline->SetRenderTargets(1, RTVs, GetDepthBufferDSV());
 			GEditor->GetEditorModule()->RenderEditorGeometry();
 			GEditor->GetEditorModule()->RenderGizmo(ViewportClient->GetCamera(), LocalViewport);
+		}
+    	// PIE 일때만 Camera Post Process 적용
+		else
+		{
+			CameraPostProcessPass->SetRenderTargets(DeviceResources);
+			CameraPostProcessPass->Execute(RenderingContext);
 		}
     }
 

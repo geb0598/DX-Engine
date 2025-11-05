@@ -6,6 +6,7 @@
 #include "Component/Public/PrimitiveComponent.h"
 #include "Editor/Public/EditorPrimitive.h"
 #include "Render/Renderer/Public/Pipeline.h"
+#include "Render/RenderPass/Public/CameraPostProcessPass.h"
 #include "Render/RenderPass/Public/CameraPrePass.h"
 #include "Render/RenderPass/Public/ColorCopyPass.h"
 #include "Render/RenderPass/Public/FXAAPass.h"
@@ -245,6 +246,7 @@ private:
 	FClusteredRenderingGridPass* ClusteredRenderingGridPass = nullptr;
 	FShadowMapPass* ShadowMapPass = nullptr;
 	FShadowMapFilterPass* ShadowMapFilterPass = nullptr;
+	FCameraPostProcessPass* CameraPostProcessPass;
 
 	// For Hot Reloading Shaders
 	TMap<std::wstring, TSet<ShaderUsage>> ShaderFileUsageMap;
