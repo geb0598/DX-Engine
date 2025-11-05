@@ -225,8 +225,8 @@ void UEditorEngine::EndPIE()
         WorldContexts.Remove(*PIEContext);
     }
 
-    // 오디오 정리: 재생 중인 BGM 정지 및 오디오 시스템 종료
-    USoundManager::GetInstance().StopBGM(0.0f);
+    // 오디오 정리: 모든 사운드 정지 후 오디오 시스템 종료
+    USoundManager::GetInstance().StopAllSounds();
     USoundManager::GetInstance().ShutdownAudio();
 
     // GWorld를 다시 Editor World로 복원

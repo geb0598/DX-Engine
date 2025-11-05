@@ -58,6 +58,9 @@ void USoundManager::ShutdownAudio()
     if (!AudioSystem)
         return;
 
+    // 루프 SFX/채널 등 모든 재생 자원을 먼저 정리
+    StopAllSounds();
+
     if (CurrentBGMChannel)
     {
         CurrentBGMChannel->stop();
@@ -306,24 +309,27 @@ bool USoundManager::PlayLoopingSFX(const FName& SoundName, const FString& FilePa
 
 void USoundManager::StopLoopingSFX(const FName& SoundName)
 {
+    // AudioSystem이 내려간 상태에서도 내부 맵 정리는 수행하되, FMOD 호출은 건너뜁니다.
     if (LoopingSFXChannels.Contains(SoundName))
     {
         FMOD::Channel** FoundChannelPtr = LoopingSFXChannels.Find(SoundName);
         FMOD::Channel* Channel = FoundChannelPtr ? *FoundChannelPtr : nullptr;
-        if (Channel)
+        if (Channel && AudioSystem)
         {
             Channel->stop();
         }
+        if (FoundChannelPtr) { *FoundChannelPtr = nullptr; }
         LoopingSFXChannels.Remove(SoundName);
     }
     if (LoopingSFXSounds.Contains(SoundName))
     {
         FMOD::Sound** FoundSoundPtr = LoopingSFXSounds.Find(SoundName);
         FMOD::Sound* Snd = FoundSoundPtr ? *FoundSoundPtr : nullptr;
-        if (Snd)
+        if (Snd && AudioSystem)
         {
             Snd->release();
         }
+        if (FoundSoundPtr) { *FoundSoundPtr = nullptr; }
         LoopingSFXSounds.Remove(SoundName);
     }
 }
