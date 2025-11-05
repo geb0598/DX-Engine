@@ -677,4 +677,52 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
             }
         )
     );
+
+    // --- SFX (basic bindings) ---
+    LuaState.set_function("Sound_PreloadSFX",
+        [](const std::string& Name, const std::string& Path, bool bIsThreeDimensional, float MinDistance, float MaxDistance)
+        {
+            auto& Manager = USoundManager::GetInstance();
+            Manager.InitializeAudio();
+            Manager.PreloadSFX(FName(Name.c_str()), FString(Path), bIsThreeDimensional, MinDistance, MaxDistance);
+        }
+    );
+
+    LuaState.set_function("Sound_PlaySFX",
+        sol::overload(
+            [](const std::string& Name)
+            {
+                USoundManager::GetInstance().PlaySFX(FName(Name.c_str()), 1.0f, 1.0f);
+            },
+            [](const std::string& Name, float Volume)
+            {
+                USoundManager::GetInstance().PlaySFX(FName(Name.c_str()), Volume, 1.0f);
+            },
+            [](const std::string& Name, float Volume, float Pitch)
+            {
+                USoundManager::GetInstance().PlaySFX(FName(Name.c_str()), Volume, Pitch);
+            }
+        )
+    );
+
+    LuaState.set_function("Sound_PlaySFXAt",
+        sol::overload(
+            [](const std::string& Name, const FVector& Position)
+            {
+                USoundManager::GetInstance().PlaySFXAt(FName(Name.c_str()), Position, FVector::Zero(), 1.0f, 1.0f);
+            },
+            [](const std::string& Name, const FVector& Position, float Volume)
+            {
+                USoundManager::GetInstance().PlaySFXAt(FName(Name.c_str()), Position, FVector::Zero(), Volume, 1.0f);
+            },
+            [](const std::string& Name, const FVector& Position, float Volume, float Pitch)
+            {
+                USoundManager::GetInstance().PlaySFXAt(FName(Name.c_str()), Position, FVector::Zero(), Volume, Pitch);
+            },
+            [](const std::string& Name, const FVector& Position, const FVector& Velocity, float Volume, float Pitch)
+            {
+                USoundManager::GetInstance().PlaySFXAt(FName(Name.c_str()), Position, Velocity, Volume, Pitch);
+            }
+        )
+    );
 }

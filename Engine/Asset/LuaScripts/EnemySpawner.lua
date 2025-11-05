@@ -80,6 +80,11 @@ function BeginPlay()
     end
 
     Log("[EnemySpawner] Ready for spawn requests with " .. tostring(#enemyTemplates) .. " templates")
+
+    -- Preload spawn SFX (2D playback for clarity)
+    if Sound_PreloadSFX ~= nil then
+        Sound_PreloadSFX("EnemySpawn", "Asset/Sound/SFX/EnemySpawn.wav", false, 1.0, 30.0)
+    end
 end
 
 -- Owner의 OnEnemySpawnRequested Delegate가 호출할 콜백
@@ -184,6 +189,10 @@ function SpawnInternal()
     local newEnemy = selectedTemplate:DuplicateFromTemplate(level, spawnLocation)
     if newEnemy ~= nil then
         Log("[EnemySpawner] Spawned enemy '" .. enemyTemplateNames[randomIndex] .. "' at: " .. tostring(spawnLocation.X) .. ", " .. tostring(spawnLocation.Y))
+        -- Play spawn SFX
+        if Sound_PlaySFX ~= nil then
+            Sound_PlaySFX("EnemySpawn", 1.0, 1.0)
+        end
     else
         Log("[EnemySpawner] DuplicateFromTemplate failed")
     end
