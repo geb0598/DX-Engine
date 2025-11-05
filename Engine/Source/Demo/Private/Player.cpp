@@ -5,7 +5,7 @@
 #include "Component/Public/BoxComponent.h"
 #include "Component/Public/LightSensorComponent.h"
 #include "Component/Public/ScriptComponent.h"
-#include "Component/Public/LightSensorComponent.h"
+#include "Component/Public/CameraComponent.h"
 
 IMPLEMENT_CLASS(APlayer, AActor)
 APlayer::APlayer()
@@ -24,6 +24,9 @@ void APlayer::InitializeComponents()
 {
 	Super::InitializeComponents();
 	Cast<UBoxComponent>(GetRootComponent())->SetBoxExtent({0.5f, 0.5f, 0.5f});
+
+	UCameraComponent* Camera = CreateDefaultSubobject<UCameraComponent>();
+	Camera->AttachToComponent(GetRootComponent());
 
 	ULightSensorComponent* LightSensor = CreateDefaultSubobject<ULightSensorComponent>();
 	LightSensor->AttachToComponent(GetRootComponent());

@@ -10,7 +10,7 @@ UCameraComponent::UCameraComponent()
 	// Default camera settings
 	FieldOfView = 90.0f;
 	AspectRatio = 1.777f; // 16:9
-	NearClipPlane = 10.0f;
+	NearClipPlane = 0.1f;
 	FarClipPlane = 10000.0f;
 	ProjectionMode = ECameraProjectionMode::Perspective;
 	OrthoWidth = 512.0f;
