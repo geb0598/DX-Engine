@@ -4,9 +4,8 @@
 UCLASS()
 class USoundManager :public UObject
 {
-	GENERATED_BODY()
-	DECLARE_SINGLETON_CLASS(USoundManager, UObject)
+    GENERATED_BODY()
+    DECLARE_SINGLETON_CLASS(USoundManager, UObject)
 
 public:
-	USoundManager();
 };
