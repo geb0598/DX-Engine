@@ -45,16 +45,11 @@ void FHitProxyPass::Execute(FRenderingContext& Context)
 	DeviceResources->GetDeviceContext()->RSSetViewports(1, &Context.Viewport);
 
 	// 카메라 상수 버퍼 업데이트
-	if (Context.CurrentCamera)
-	{
-		FCameraConstants CameraConstants;
-		CameraConstants.View = Context.CurrentCamera->GetFViewProjConstants().View;
-		CameraConstants.Projection = Context.CurrentCamera->GetFViewProjConstants().Projection;
-		CameraConstants.ViewWorldLocation = Context.CurrentCamera->GetLocation();
-		CameraConstants.NearClip = Context.CurrentCamera->GetNearZ();
-		CameraConstants.FarClip = Context.CurrentCamera->GetFarZ();
-		FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferCamera, CameraConstants);
-	}
+	FCameraConstants CameraConstants = Context.ViewInfo.CameraConstants;
+	CameraConstants.ViewWorldLocation = Context.ViewInfo.Location;
+	CameraConstants.NearClip = Context.ViewInfo.NearClipPlane;
+	CameraConstants.FarClip = Context.ViewInfo.FarClipPlane;
+	FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferCamera, CameraConstants);
 
 	// RenderState 설정 (StaticMeshPass와 동일)
 	FRenderState RenderState = UStaticMeshComponent::GetClassDefaultRenderState();
@@ -83,7 +78,8 @@ void FHitProxyPass::Execute(FRenderingContext& Context)
 		}
 
 		// Billboard 카메라 정렬 적용
-		IconComp->FaceCamera(Context.CurrentCamera->GetForward());
+		FVector CameraForward = Context.ViewInfo.Rotation.RotateVector(FVector::ForwardVector());
+		IconComp->FaceCamera(CameraForward);
 
 		// HitProxy ID 할당
 		HComponent* ComponentProxy = new HComponent(IconComp, InvalidHitProxyId);

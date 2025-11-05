@@ -214,16 +214,49 @@ void FLightPass::Execute(FRenderingContext& Context)
 	FRenderResourceFactory::UpdateStructuredBuffer(PointLightStructuredBuffer, PointLightDatas);
 	FRenderResourceFactory::UpdateStructuredBuffer(SpotLightStructuredBuffer, SpotLightDatas);
 
+	// Debug: Log light counts and first light position
+	static int LightDataLogCounter = 0;
+	if (LightDataLogCounter++ % 60 == 0)
+	{
+		UE_LOG("LightPass - Light counts: Point=%d, Spot=%d", PointLightCount, SpotLightCount);
+		if (PointLightCount > 0)
+		{
+			UE_LOG("LightPass - First PointLight world pos: (%.2f, %.2f, %.2f), Range: %.2f",
+				PointLightDatas[0].Position.X, PointLightDatas[0].Position.Y, PointLightDatas[0].Position.Z, PointLightDatas[0].Range);
+		}
+	}
+
 	// Cluster AABB Set
-	FCameraConstants Inv = Context.CurrentCamera->GetFViewProjConstantsInverse();
-	FMatrix ProjectionInv = Inv.Projection;
-	FMatrix ViewInv = Inv.View;
-	FMatrix ViewMatrix = Context.CurrentCamera->GetFViewProjConstants().View;
-	float CamNear = Context.CurrentCamera->GetNearZ();
-	float CamFar = Context.CurrentCamera->GetFarZ();
-	float Aspect = Context.CurrentCamera->GetAspect();
-	float fov = Context.CurrentCamera->GetFovY();
-	uint32 Orthographic = ECameraType::ECT_Orthographic == Context.CurrentCamera->GetCameraType() ? 1 : 0;
+	const FCameraConstants& CameraConst = Context.ViewInfo.CameraConstants;
+	FMatrix ProjectionInv = CameraConst.Projection.Inverse();
+	FMatrix ViewInv = CameraConst.View.Inverse();
+	FMatrix ViewMatrix = CameraConst.View;
+	float CamNear = Context.ViewInfo.NearClipPlane;
+	float CamFar = Context.ViewInfo.FarClipPlane;
+	float Aspect = Context.ViewInfo.AspectRatio;
+	float fov = Context.ViewInfo.FOV;
+	uint32 Orthographic = (Context.ViewInfo.ProjectionMode == ECameraProjectionMode::Orthographic) ? 1 : 0;
+
+	// Debug: Verify Projection * ProjectionInv = Identity
+	static int LightPassLogCounter = 0;
+	if (LightPassLogCounter++ % 60 == 0)
+	{
+		UE_LOG("LightPass - Near: %.2f, Far: %.2f, FOV: %.2f, Aspect: %.2f, Ortho: %d",
+			CamNear, CamFar, fov, Aspect, Orthographic);
+
+		// Test: Projection * ProjectionInv should equal Identity
+		FMatrix TestIdentity = CameraConst.Projection * ProjectionInv;
+		UE_LOG("LightPass - Proj * ProjInv test (should be ~Identity):");
+		UE_LOG("  [0,0]=%.4f [1,1]=%.4f [2,2]=%.4f [3,3]=%.4f",
+			TestIdentity.Data[0][0], TestIdentity.Data[1][1], TestIdentity.Data[2][2], TestIdentity.Data[3][3]);
+		UE_LOG("  [0,1]=%.4f [1,0]=%.4f (should be ~0)",
+			TestIdentity.Data[0][1], TestIdentity.Data[1][0]);
+
+		UE_LOG("LightPass - ViewMatrix.Data[3][0]: %.2f, [3][1]: %.2f, [3][2]: %.2f (translation)",
+			ViewMatrix.Data[3][0], ViewMatrix.Data[3][1], ViewMatrix.Data[3][2]);
+		UE_LOG("LightPass - Camera Location from ViewInfo: (%.2f, %.2f, %.2f)",
+			Context.ViewInfo.Location.X, Context.ViewInfo.Location.Y, Context.ViewInfo.Location.Z);
+	}
 
 	FRenderResourceFactory::UpdateConstantBufferData(ViewClusterInfoConstantBuffer,
 		FViewClusterInfo{ ProjectionInv, ViewInv, ViewMatrix, CamNear,CamFar,Aspect,fov});

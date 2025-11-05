@@ -1,4 +1,5 @@
 ﻿#pragma once
+#include "Global/CameraTypes.h"
 
 struct FSharedLightResources;
 
@@ -6,11 +7,14 @@ struct FRenderingContext
 {
     FRenderingContext(){}
 
-    FRenderingContext(const FCameraConstants* InViewProj, class UCamera* InCurrentCamera, EViewModeIndex InViewMode, uint64 InShowFlags, const D3D11_VIEWPORT& InViewport, const FVector2& InRenderTargetSize)
-        : ViewProjConstants(InViewProj), CurrentCamera(InCurrentCamera), ViewMode(InViewMode), ShowFlags(InShowFlags), Viewport(InViewport), RenderTargetSize(InRenderTargetSize) {}
+    // Constructor with FMinimalViewInfo (world-specific camera data)
+    FRenderingContext(const FMinimalViewInfo& InViewInfo, EViewModeIndex InViewMode, uint64 InShowFlags, const D3D11_VIEWPORT& InViewport, const FVector2& InRenderTargetSize)
+        : ViewInfo(InViewInfo), ViewProjConstants(&ViewInfo.CameraConstants), ViewMode(InViewMode), ShowFlags(InShowFlags), Viewport(InViewport), RenderTargetSize(InRenderTargetSize) {}
+
+    // Complete view information (world-specific camera data)
+    FMinimalViewInfo ViewInfo;
 
     const FCameraConstants* ViewProjConstants = nullptr;
-    UCamera* CurrentCamera = nullptr;
     EViewModeIndex ViewMode;
     uint64 ShowFlags;
     D3D11_VIEWPORT Viewport;

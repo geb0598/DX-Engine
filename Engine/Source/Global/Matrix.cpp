@@ -466,37 +466,54 @@ FMatrix FMatrix::CreateFromRotator(const FRotator& InRotator)
 FMatrix FMatrix::Inverse() const
 {
     FMatrix Result;
+    const float* m = &Data[0][0];
 
-    float Det = Data[0][0] * (Data[1][1] * Data[2][2] - Data[1][2] * Data[2][1])
-              - Data[0][1] * (Data[1][0] * Data[2][2] - Data[1][2] * Data[2][0])
-              + Data[0][2] * (Data[1][0] * Data[2][1] - Data[1][1] * Data[2][0]);
+    // Calculate cofactors for full 4x4 matrix using Laplace expansion
+    float Coef00 = m[5]  * m[10] * m[15] - m[5]  * m[11] * m[14] - m[9]  * m[6]  * m[15] + m[9]  * m[7]  * m[14] + m[13] * m[6]  * m[11] - m[13] * m[7]  * m[10];
+    float Coef04 = -m[4]  * m[10] * m[15] + m[4]  * m[11] * m[14] + m[8]  * m[6]  * m[15] - m[8]  * m[7]  * m[14] - m[12] * m[6]  * m[11] + m[12] * m[7]  * m[10];
+    float Coef08 = m[4]  * m[9]  * m[15] - m[4]  * m[11] * m[13] - m[8]  * m[5]  * m[15] + m[8]  * m[7]  * m[13] + m[12] * m[5]  * m[11] - m[12] * m[7]  * m[9];
+    float Coef12 = -m[4]  * m[9]  * m[14] + m[4]  * m[10] * m[13] + m[8]  * m[5]  * m[14] - m[8]  * m[6]  * m[13] - m[12] * m[5]  * m[10] + m[12] * m[6]  * m[9];
 
-    if (std::abs(Det) < 1e-6f)
+    float Det = m[0] * Coef00 + m[1] * Coef04 + m[2] * Coef08 + m[3] * Coef12;
+
+    if (std::abs(Det) < 1e-8f)
     {
         return FMatrix::Identity();
     }
 
+    float Coef01 = -m[1]  * m[10] * m[15] + m[1]  * m[11] * m[14] + m[9]  * m[2]  * m[15] - m[9]  * m[3]  * m[14] - m[13] * m[2]  * m[11] + m[13] * m[3]  * m[10];
+    float Coef05 = m[0]  * m[10] * m[15] - m[0]  * m[11] * m[14] - m[8]  * m[2]  * m[15] + m[8]  * m[3]  * m[14] + m[12] * m[2]  * m[11] - m[12] * m[3]  * m[10];
+    float Coef09 = -m[0]  * m[9]  * m[15] + m[0]  * m[11] * m[13] + m[8]  * m[1]  * m[15] - m[8]  * m[3]  * m[13] - m[12] * m[1]  * m[11] + m[12] * m[3]  * m[9];
+    float Coef13 = m[0]  * m[9]  * m[14] - m[0]  * m[10] * m[13] - m[8]  * m[1]  * m[14] + m[8]  * m[2]  * m[13] + m[12] * m[1]  * m[10] - m[12] * m[2]  * m[9];
+
+    float Coef02 = m[1]  * m[6]  * m[15] - m[1]  * m[7]  * m[14] - m[5]  * m[2]  * m[15] + m[5]  * m[3]  * m[14] + m[13] * m[2]  * m[7]  - m[13] * m[3]  * m[6];
+    float Coef06 = -m[0]  * m[6]  * m[15] + m[0]  * m[7]  * m[14] + m[4]  * m[2]  * m[15] - m[4]  * m[3]  * m[14] - m[12] * m[2]  * m[7]  + m[12] * m[3]  * m[6];
+    float Coef10 = m[0]  * m[5]  * m[15] - m[0]  * m[7]  * m[13] - m[4]  * m[1]  * m[15] + m[4]  * m[3]  * m[13] + m[12] * m[1]  * m[7]  - m[12] * m[3]  * m[5];
+    float Coef14 = -m[0]  * m[5]  * m[14] + m[0]  * m[6]  * m[13] + m[4]  * m[1]  * m[14] - m[4]  * m[2]  * m[13] - m[12] * m[1]  * m[6]  + m[12] * m[2]  * m[5];
+
+    float Coef03 = -m[1]  * m[6]  * m[11] + m[1]  * m[7]  * m[10] + m[5]  * m[2]  * m[11] - m[5]  * m[3]  * m[10] - m[9]  * m[2]  * m[7]  + m[9]  * m[3]  * m[6];
+    float Coef07 = m[0]  * m[6]  * m[11] - m[0]  * m[7]  * m[10] - m[4]  * m[2]  * m[11] + m[4]  * m[3]  * m[10] + m[8]  * m[2]  * m[7]  - m[8]  * m[3]  * m[6];
+    float Coef11 = -m[0]  * m[5]  * m[11] + m[0]  * m[7]  * m[9]  + m[4]  * m[1]  * m[11] - m[4]  * m[3]  * m[9]  - m[8]  * m[1]  * m[7]  + m[8]  * m[3]  * m[5];
+    float Coef15 = m[0]  * m[5]  * m[10] - m[0]  * m[6]  * m[9]  - m[4]  * m[1]  * m[10] + m[4]  * m[2]  * m[9]  + m[8]  * m[1]  * m[6]  - m[8]  * m[2]  * m[5];
+
     float InvDet = 1.0f / Det;
 
-    Result.Data[0][0] = (Data[1][1] * Data[2][2] - Data[1][2] * Data[2][1]) * InvDet;
-    Result.Data[0][1] = (Data[0][2] * Data[2][1] - Data[0][1] * Data[2][2]) * InvDet;
-    Result.Data[0][2] = (Data[0][1] * Data[1][2] - Data[0][2] * Data[1][1]) * InvDet;
-    Result.Data[0][3] = 0.0f;
-
-    Result.Data[1][0] = (Data[1][2] * Data[2][0] - Data[1][0] * Data[2][2]) * InvDet;
-    Result.Data[1][1] = (Data[0][0] * Data[2][2] - Data[0][2] * Data[2][0]) * InvDet;
-    Result.Data[1][2] = (Data[0][2] * Data[1][0] - Data[0][0] * Data[1][2]) * InvDet;
-    Result.Data[1][3] = 0.0f;
-
-    Result.Data[2][0] = (Data[1][0] * Data[2][1] - Data[1][1] * Data[2][0]) * InvDet;
-    Result.Data[2][1] = (Data[0][1] * Data[2][0] - Data[0][0] * Data[2][1]) * InvDet;
-    Result.Data[2][2] = (Data[0][0] * Data[1][1] - Data[0][1] * Data[1][0]) * InvDet;
-    Result.Data[2][3] = 0.0f;
-
-    Result.Data[3][0] = -(Result.Data[0][0] * Data[3][0] + Result.Data[1][0] * Data[3][1] + Result.Data[2][0] * Data[3][2]);
-    Result.Data[3][1] = -(Result.Data[0][1] * Data[3][0] + Result.Data[1][1] * Data[3][1] + Result.Data[2][1] * Data[3][2]);
-    Result.Data[3][2] = -(Result.Data[0][2] * Data[3][0] + Result.Data[1][2] * Data[3][1] + Result.Data[2][2] * Data[3][2]);
-    Result.Data[3][3] = 1.0f;
+    Result.Data[0][0] = Coef00 * InvDet;
+    Result.Data[0][1] = Coef01 * InvDet;
+    Result.Data[0][2] = Coef02 * InvDet;
+    Result.Data[0][3] = Coef03 * InvDet;
+    Result.Data[1][0] = Coef04 * InvDet;
+    Result.Data[1][1] = Coef05 * InvDet;
+    Result.Data[1][2] = Coef06 * InvDet;
+    Result.Data[1][3] = Coef07 * InvDet;
+    Result.Data[2][0] = Coef08 * InvDet;
+    Result.Data[2][1] = Coef09 * InvDet;
+    Result.Data[2][2] = Coef10 * InvDet;
+    Result.Data[2][3] = Coef11 * InvDet;
+    Result.Data[3][0] = Coef12 * InvDet;
+    Result.Data[3][1] = Coef13 * InvDet;
+    Result.Data[3][2] = Coef14 * InvDet;
+    Result.Data[3][3] = Coef15 * InvDet;
 
     return Result;
 }

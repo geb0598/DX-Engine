@@ -2,7 +2,7 @@
 
 #include "Component/Public/DirectionalLightComponent.h"
 #include "Render/RenderPass/Public/ShadowData.h"
-#include "Editor/Public/Camera.h"
+#include "Global/CameraTypes.h"
 
 UCLASS()
 class UCascadeManager : public UObject
@@ -25,7 +25,7 @@ public:
 
     float CalculateFrustumXYWithZ(float Z, float Fov);
     FCascadeShadowMapData GetCascadeShadowMapData(
-        UCamera* InCamera,
+        const FMinimalViewInfo& InViewInfo,
         UDirectionalLightComponent* InDirectionalLight
         );
 

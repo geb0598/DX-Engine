@@ -983,7 +983,21 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	const ULevel* CurrentLevel = WorldToRender->GetLevel();
 	if (!CurrentLevel) { return; }
 
-	const FCameraConstants& ViewProj = InViewport->GetViewportClient()->GetCameraConstants();
+	// Get view info from viewport (handles Editor/PIE mode automatically)
+	// Note: PrepareCamera() is already called before RenderLevel() in Render() function
+	const FMinimalViewInfo& ViewInfo = InViewport->GetViewportClient()->GetViewInfo();
+	const FCameraConstants& ViewProj = ViewInfo.CameraConstants;
+
+	// Debug: Log camera constants to verify they're being updated
+	static int LogCounter = 0;
+	if (LogCounter++ % 60 == 0)  // Log every 60 frames to reduce spam
+	{
+		UE_LOG("RenderLevel - Camera Location: (%.2f, %.2f, %.2f)", ViewInfo.Location.X, ViewInfo.Location.Y, ViewInfo.Location.Z);
+		UE_LOG("RenderLevel - FOV: %.2f, Aspect: %.2f, Near: %.2f, Far: %.2f",
+			ViewInfo.FOV, ViewInfo.AspectRatio, ViewInfo.NearClipPlane, ViewInfo.FarClipPlane);
+		UE_LOG("RenderLevel - View.Data[0][0]: %.2f, Proj.Data[0][0]: %.2f",
+			ViewProj.View.Data[0][0], ViewProj.Projection.Data[0][0]);
+	}
 
 	static bool bCullingEnabled = false; // 임시 토글(초기값: 컬링 비활성)
 	TArray<UPrimitiveComponent*> FinalVisiblePrims;
@@ -1016,13 +1030,14 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	}
 	else
 	{
-		FinalVisiblePrims = InViewport->GetViewportClient()->GetCamera()->GetViewVolumeCuller().GetRenderableObjects();
+		// Perform view frustum culling using ViewportClient's culler
+		// ViewportClient manages its own culler and handles Editor/PIE mode automatically
+		InViewport->GetViewportClient()->UpdateVisiblePrimitives(WorldToRender);
+		FinalVisiblePrims = InViewport->GetViewportClient()->GetVisiblePrimitives();
 	}
 
 	RenderingContext = FRenderingContext(
-
-		&ViewProj,
-		InViewport->GetViewportClient()->GetCamera(),
+		ViewInfo,
 		InViewport->GetViewportClient()->GetViewMode(),
 		CurrentLevel->GetShowFlags(),
 		InViewport->GetRenderRect(),
@@ -1319,14 +1334,28 @@ void URenderer::RenderHitProxyPass(UCamera* InCamera, const D3D11_VIEWPORT& InVi
 		return;
 	}
 
+	// Build FMinimalViewInfo from editor camera
+	FMinimalViewInfo ViewInfo;
+	ViewInfo.Location = InCamera->GetLocation();
+	ViewInfo.Rotation = InCamera->GetRotationQuat();
+	ViewInfo.FOV = InCamera->GetFovY();
+	ViewInfo.AspectRatio = InCamera->GetAspect();
+	ViewInfo.NearClipPlane = InCamera->GetNearZ();
+	ViewInfo.FarClipPlane = InCamera->GetFarZ();
+	ViewInfo.ProjectionMode = (InCamera->GetCameraType() == ECameraType::ECT_Orthographic)
+		? ECameraProjectionMode::Orthographic
+		: ECameraProjectionMode::Perspective;
+	ViewInfo.OrthoWidth = InCamera->GetOrthoWidth();
+	ViewInfo.CameraConstants = InCamera->GetCameraConstants();
+
 	// RenderingContext 구성
-	FRenderingContext Context;
-	Context.ViewProjConstants = nullptr;
-	Context.CurrentCamera = InCamera;
-	Context.ViewMode = EViewModeIndex::VMI_Unlit;
-	Context.ShowFlags = static_cast<uint64>(EEngineShowFlags::SF_StaticMesh);
-	Context.Viewport = InViewport;
-	Context.RenderTargetSize = FVector2(InViewport.Width, InViewport.Height);
+	FRenderingContext Context(
+		ViewInfo,
+		EViewModeIndex::VMI_Unlit,
+		static_cast<uint64>(EEngineShowFlags::SF_StaticMesh),
+		InViewport,
+		FVector2(InViewport.Width, InViewport.Height)
+	);
 
 	// 모든 Primitive 컴포넌트 수집
 	TArray<UPrimitiveComponent*> AllVisiblePrims;
@@ -1464,19 +1493,32 @@ void URenderer::RenderLevelForGameInstance(UWorld* InWorld, const FSceneView* In
 		}
 	}
 
-	// Legacy Camera 가져오기 (RenderPass 호환성)
-	UCamera* CurrentCamera = nullptr;
+	// Legacy Camera for D2D overlay (used by Lua debug drawing)
+	UCamera* LegacyCamera = nullptr;
 	UGameViewportClient* ViewportClient = InGameInstance->GetViewportClient();
 	if (ViewportClient)
 	{
 		ViewportClient->UpdateLegacyCamera();
-		CurrentCamera = ViewportClient->GetLegacyCamera();
+		LegacyCamera = ViewportClient->GetLegacyCamera();
 	}
+
+	// Build FMinimalViewInfo from SceneView
+	FMinimalViewInfo ViewInfo;
+	ViewInfo.Location = InSceneView->GetViewLocation();
+	ViewInfo.Rotation = InSceneView->GetViewRotation();
+	ViewInfo.FOV = InSceneView->GetFOV();
+	ViewInfo.AspectRatio = (D3DViewport.Height > 0) ? (D3DViewport.Width / D3DViewport.Height) : 1.777f;
+	ViewInfo.NearClipPlane = InSceneView->GetNearClippingPlane();
+	ViewInfo.FarClipPlane = InSceneView->GetFarClippingPlane();
+	ViewInfo.ProjectionMode = (InSceneView->GetViewType() == EViewType::Perspective)
+		? ECameraProjectionMode::Perspective
+		: ECameraProjectionMode::Orthographic;
+	ViewInfo.OrthoWidth = 1000.0f; // Default ortho width for game mode
+	ViewInfo.CameraConstants = ViewProj;
 
 	// RenderingContext 구성
 	RenderingContext = FRenderingContext(
-		&ViewProj,
-		CurrentCamera,
+		ViewInfo,
 		InSceneView->GetViewModeIndex(),
 		CurrentLevel->GetShowFlags(),
 		D3DViewport,
@@ -1573,7 +1615,7 @@ void URenderer::RenderLevelForGameInstance(UWorld* InWorld, const FSceneView* In
 	Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferViewProj);
 
 	// D2D Overlay 수집 시작 (Lua DebugDraw 호출을 위한 뷰포트 정보 설정)
-	FD2DOverlayManager::GetInstance().BeginCollect(CurrentCamera, D3DViewport);
+	FD2DOverlayManager::GetInstance().BeginCollect(LegacyCamera, D3DViewport);
 
 	// RenderPasses 실행
 	for (auto RenderPass : RenderPasses)
