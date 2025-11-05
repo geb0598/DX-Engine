@@ -1099,7 +1099,7 @@ bool ULevel::SweepComponentMulti(
 	return OutOverlappingComponents.Num() > 0;
 }
 
-bool ULevel::LineTraceSingle(const FVector& Start, const FVector& End, FHitResult& OutHit, AActor* IgnoredActor)
+bool ULevel::LineTraceSingle(const FVector& Start, const FVector& End, FHitResult& OutHit, AActor* IgnoredActor, ECollisionTag IgnoredTag)
 {
 	if (!StaticOctree)
 		return false;
@@ -1121,7 +1121,7 @@ bool ULevel::LineTraceSingle(const FVector& Start, const FVector& End, FHitResul
 
 	for (UPrimitiveComponent* Candidate : Candidates)
 	{
-		if (!Candidate || Candidate->GetOwner() == IgnoredActor)
+		if (!Candidate || Candidate->GetOwner() == IgnoredActor || Candidate->GetOwner()->GetCollisionTag() == IgnoredTag)
 			continue;
 
 		const IBoundingVolume* Shape = Candidate->GetCollisionShape();

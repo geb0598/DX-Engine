@@ -36,6 +36,10 @@ end
 -- 대사 시퀀스를 재생하는 코루틴
 ---
 function PlayDialogueSequence()
+    local Color = FVector(0, 0, 0)
+    local blendCurve = Curve("EaseOut")
+    CameraManager:StartCameraFade(1, 0, 2, Color, false, blendCurve)
+
     Log("[CinematicManager] PlayDialogueSequence coroutine started!")
 
     local dialogues = {
@@ -58,7 +62,7 @@ function PlayDialogueSequence()
     for i = 1, #dialogues do
         currentDialogue = dialogues[i]
         dialogueAlpha = 1.0
-        coroutine.yield(5.0) -- 5초 대기
+        coroutine.yield(2.0) -- 2초 대기
     end
 
     -- 대사 페이드 아웃
@@ -92,6 +96,8 @@ function Tick(dt)
                     Log("[CinematicManager] GameMode and CameraManager found, starting coroutine...")
                     bInitialized = true
                     Self:StartCoroutine("PlayDialogueSequence")
+
+                    GameMode.OnGameStarted = RestartFadeIn
                 end
             end
         end
@@ -135,6 +141,12 @@ function DrawDialogue()
         1.0, 1.0, 1.0, dialogueAlpha,
         20.0, true, true, "Consolas"
     )
+end
+
+function RestartFadeIn()
+    local Color = FVector(0, 0, 0)
+    local blendCurve = Curve("EaseOut")
+    CameraManager:StartCameraFade(1, 0, 3, Color, false, blendCurve)
 end
 
 ---

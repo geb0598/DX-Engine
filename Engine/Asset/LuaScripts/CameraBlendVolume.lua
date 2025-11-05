@@ -60,11 +60,26 @@ function OnActorBeginOverlap(overlappedActor, otherActor)
         return
     end
 
-
     if otherActor.Tag == CollisionTag.Player then
         Log("[CameraBlendVolume] Player entered. Blending to This Actor")
         OriginalViewTarget = otherActor 
-        CameraManager:SetViewTargetWithBlend(Owner, 1.0)
+        local blendCurve = Curve("EaseOutBack")
+        CameraManager:SetViewTargetWithBlend(Owner, 1.0, blendCurve)
+        Self:StartCoroutine("EndCinematic")
+    end
+end
+
+function EndCinematic()
+    if CameraManager == nil then
+        return
+    end
+
+    coroutine.yield(2.0)
+    if OriginalViewTarget ~= nil then
+        Log("[CameraBlendVolume] Blending back")
+        local blendCurve = Curve("EaseInBack")
+        CameraManager:SetViewTargetWithBlend(OriginalViewTarget, 1.0, blendCurve)
+        OriginalViewTarget = nil
     end
 end
 
@@ -72,13 +87,4 @@ end
 -- 다른 액터와 오버랩이 종료될 때 호출됩니다.
 ---
 function OnActorEndOverlap(overlappedActor, otherActor)
-    if CameraManager == nil then
-        return
-    end
-
-    if otherActor == OriginalViewTarget then
-        Log("[CameraBlendVolume] Player exited. Blending back")
-        CameraManager:SetViewTargetWithBlend(OriginalViewTarget, 1.0)
-        OriginalViewTarget = nil
-    end
 end
