@@ -83,6 +83,11 @@ void ULuaManager::LoadAllLuaScripts()
             {
             	MasterLuaState.script_file(FullPath);
             }
+            else if (FileName == "Sound" || FileName == "sound")
+            {
+                // Auto-run global sound hooks (BGM on StartGame, off on EndGame)
+                MasterLuaState.script_file(FullPath);
+            }
         }
     }
 }

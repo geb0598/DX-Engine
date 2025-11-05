@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include "sol/sol.hpp"
 #include "Core/Public/WeakObjectPtr.h"
 

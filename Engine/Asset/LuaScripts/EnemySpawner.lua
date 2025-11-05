@@ -80,6 +80,8 @@ function BeginPlay()
     end
 
     Log("[EnemySpawner] Ready for spawn requests with " .. tostring(#enemyTemplates) .. " templates")
+
+    -- (moved) spawn SFX handled per-enemy in Enemy.lua BeginPlay
 end
 
 -- Owner의 OnEnemySpawnRequested Delegate가 호출할 콜백

@@ -5,6 +5,7 @@
 #include "Level/Public/Level.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Manager/Lua/Public/LuaManager.h"
+#include "Manager/Sound/Public/SoundManager.h"
 #include "Manager/Path/Public/PathManager.h"
 #include "Manager/UI/Public/ViewportManager.h"
 #include "Render/UI/Viewport/Public/Viewport.h"
@@ -90,6 +91,9 @@ void UEditorEngine::Tick(float DeltaSeconds)
     }
 
     ULuaManager::GetInstance().Update(DeltaSeconds);
+
+    // Update audio system each frame
+    USoundManager::GetInstance().Update(DeltaSeconds);
 }
 
 class UCamera* UEditorEngine::GetMainCamera() const
@@ -133,6 +137,8 @@ void UEditorEngine::StartPIE()
     }
 
     PIEState = EPIEState::Playing;
+    // Ensure audio system is initialized as soon as PIE starts
+    USoundManager::GetInstance().InitializeAudio();
     UWorld* EditorWorld = GetEditorWorldContext().World();
     if (!EditorWorld)
     {
@@ -218,6 +224,10 @@ void UEditorEngine::EndPIE()
 
         WorldContexts.Remove(*PIEContext);
     }
+
+    // 오디오 정리: 재생 중인 BGM 정지 및 오디오 시스템 종료
+    USoundManager::GetInstance().StopBGM(0.0f);
+    USoundManager::GetInstance().ShutdownAudio();
 
     // GWorld를 다시 Editor World로 복원
     GWorld = GetEditorWorldContext().World();

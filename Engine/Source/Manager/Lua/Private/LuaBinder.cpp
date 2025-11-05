@@ -14,6 +14,8 @@
 #include "Global/Enum.h"
 #include "Global/CurveTypes.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
+// Sound
+#include "Manager/Sound/Public/SoundManager.h"
 #include "Render/Camera/Public/CameraModifier.h"
 #include "Render/Camera/Public/CameraModifier_CameraShake.h"
 
@@ -474,18 +476,18 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
         ),
 
         "OnGameEnded", sol::writeonly_property(
-            [](AGameMode* Self, sol::function LuaFunc) {
-                if (!Self || !LuaFunc.valid()) return;
+            [](AGameMode* Self, const sol::function& InLuaFunc) {
+                if (!Self || !InLuaFunc.valid()) return;
+                sol::protected_function SafeFunc = InLuaFunc; // wrap for safety
                 TWeakObjectPtr<AGameMode> WeakGameMode(Self);
-                Self->OnGameEnded.Add([WeakGameMode, LuaFunc]()
+                Self->OnGameEnded.Add([WeakGameMode, SafeFunc]() mutable
                 {
-                    if (WeakGameMode.IsValid())
-                    {
-                        auto Result = LuaFunc();
-                        if (!Result.valid()) {
-                            sol::error Err = Result;
-                            UE_LOG_ERROR("[Lua Error] %s", Err.what());
-                        }
+                    if (!WeakGameMode.IsValid()) return;
+                    if (!SafeFunc.valid()) return;
+                    sol::protected_function_result Result = SafeFunc();
+                    if (!Result.valid()) {
+                        sol::error Err = Result;
+                        UE_LOG_ERROR("[Lua Error][OnGameEnded] %s", Err.what());
                     }
                 });
             }
@@ -841,4 +843,130 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 	);
 	// -- Math -- //
 	LuaState.set_function("Clamp", &Clamp<float>);
+
+    // -- Sound (BGM only for now) -- //
+    // Initialize (idempotent)
+    LuaState.set_function("Sound_Initialize", []()
+    {
+        USoundManager::GetInstance().InitializeAudio();
+    });
+
+    // Play BGM with overloads
+    LuaState.set_function("Sound_PlayBGM",
+        sol::overload(
+            // path only (loop=true, fade=0.5)
+            [](const std::string& Path)
+            {
+                auto& Manager = USoundManager::GetInstance();
+                Manager.InitializeAudio();
+                Manager.PlayBGM(FString(Path), true, 0.5f);
+            },
+            // path + loop
+            [](const std::string& Path, bool bLoop)
+            {
+                auto& Manager = USoundManager::GetInstance();
+                Manager.InitializeAudio();
+                Manager.PlayBGM(FString(Path), bLoop, 0.5f);
+            },
+            // path + loop + fadeSeconds
+            [](const std::string& Path, bool bLoop, float FadeSeconds)
+            {
+                auto& Manager = USoundManager::GetInstance();
+                Manager.InitializeAudio();
+                Manager.PlayBGM(FString(Path), bLoop, FadeSeconds);
+            }
+        )
+    );
+
+    // Stop BGM with optional fade
+    LuaState.set_function("Sound_StopBGM",
+        sol::overload(
+            []()
+            {
+                USoundManager::GetInstance().StopBGM(0.3f);
+            },
+            [](float FadeSeconds)
+            {
+                USoundManager::GetInstance().StopBGM(FadeSeconds);
+            }
+        )
+    );
+
+    // --- SFX (basic bindings) ---
+    LuaState.set_function("Sound_PreloadSFX",
+        [](const std::string& Name, const std::string& Path, bool bIsThreeDimensional, float MinDistance, float MaxDistance)
+        {
+            auto& Manager = USoundManager::GetInstance();
+            Manager.InitializeAudio();
+            Manager.PreloadSFX(FName(Name.c_str()), FString(Path), bIsThreeDimensional, MinDistance, MaxDistance);
+        }
+    );
+
+    LuaState.set_function("Sound_PlaySFX",
+        sol::overload(
+            [](const std::string& Name)
+            {
+                USoundManager::GetInstance().PlaySFX(FName(Name.c_str()), 1.0f, 1.0f);
+            },
+            [](const std::string& Name, float Volume)
+            {
+                USoundManager::GetInstance().PlaySFX(FName(Name.c_str()), Volume, 1.0f);
+            },
+            [](const std::string& Name, float Volume, float Pitch)
+            {
+                USoundManager::GetInstance().PlaySFX(FName(Name.c_str()), Volume, Pitch);
+            }
+        )
+    );
+
+    LuaState.set_function("Sound_PlaySFXAt",
+        sol::overload(
+            [](const std::string& Name, const FVector& Position)
+            {
+                USoundManager::GetInstance().PlaySFXAt(FName(Name.c_str()), Position, FVector::Zero(), 1.0f, 1.0f);
+            },
+            [](const std::string& Name, const FVector& Position, float Volume)
+            {
+                USoundManager::GetInstance().PlaySFXAt(FName(Name.c_str()), Position, FVector::Zero(), Volume, 1.0f);
+            },
+            [](const std::string& Name, const FVector& Position, float Volume, float Pitch)
+            {
+                USoundManager::GetInstance().PlaySFXAt(FName(Name.c_str()), Position, FVector::Zero(), Volume, Pitch);
+            },
+            [](const std::string& Name, const FVector& Position, const FVector& Velocity, float Volume, float Pitch)
+            {
+                USoundManager::GetInstance().PlaySFXAt(FName(Name.c_str()), Position, Velocity, Volume, Pitch);
+            }
+        )
+    );
+
+    // Looping SFX
+    LuaState.set_function("Sound_PlayLoopingSFX",
+        sol::overload(
+            [](const std::string& Name, const std::string& Path)
+            {
+                auto& Manager = USoundManager::GetInstance();
+                Manager.InitializeAudio();
+                Manager.PlayLoopingSFX(FName(Name.c_str()), FString(Path), 1.0f);
+            },
+            [](const std::string& Name, const std::string& Path, float Volume)
+            {
+                auto& Manager = USoundManager::GetInstance();
+                Manager.InitializeAudio();
+                Manager.PlayLoopingSFX(FName(Name.c_str()), FString(Path), Volume);
+            }
+        )
+    );
+    LuaState.set_function("Sound_StopLoopingSFX",
+        [](const std::string& Name)
+        {
+            USoundManager::GetInstance().StopLoopingSFX(FName(Name.c_str()));
+        }
+    );
+
+    // Stop all sounds (BGM + SFX)
+    LuaState.set_function("Sound_StopAll", []()
+    {
+        USoundManager::GetInstance().StopAllSounds();
+    });
 }
