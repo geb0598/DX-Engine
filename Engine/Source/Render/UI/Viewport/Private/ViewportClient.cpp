@@ -4,6 +4,8 @@
 #include "Render/UI/Viewport/Public/ViewportClient.h"
 #include "Manager/UI/Public/ViewportManager.h"
 #include "Actor/Public/PlayerCameraManager.h"
+#include "Level/Public/Level.h"
+#include "Level/Public/World.h"
 
 FViewportClient::FViewportClient()
 {
@@ -219,4 +221,58 @@ const FCameraConstants& FViewportClient::GetCameraConstants() const
     // Fallback: return empty camera constants
     static const FCameraConstants EmptyCameraConstants;
     return EmptyCameraConstants;
+}
+
+FMinimalViewInfo FViewportClient::GetViewInfo() const
+{
+    // PIE/Game mode: Use player camera manager
+    if (PlayerCameraManager)
+    {
+        return PlayerCameraManager->GetCameraCachePOV();
+    }
+
+    // Editor mode: Build FMinimalViewInfo from editor camera
+    if (ViewportCamera)
+    {
+        FMinimalViewInfo ViewInfo;
+        ViewInfo.Location = ViewportCamera->GetLocation();
+        ViewInfo.Rotation = ViewportCamera->GetRotationQuat();
+        ViewInfo.FOV = ViewportCamera->GetFovY();
+        ViewInfo.AspectRatio = ViewportCamera->GetAspect();
+        ViewInfo.NearClipPlane = ViewportCamera->GetNearZ();
+        ViewInfo.FarClipPlane = ViewportCamera->GetFarZ();
+        ViewInfo.ProjectionMode = (ViewportCamera->GetCameraType() == ECameraType::ECT_Orthographic)
+            ? ECameraProjectionMode::Orthographic
+            : ECameraProjectionMode::Perspective;
+        ViewInfo.OrthoWidth = ViewportCamera->GetOrthoWidth();
+        ViewInfo.CameraConstants = ViewportCamera->GetCameraConstants();
+        return ViewInfo;
+    }
+
+    // Fallback: return default view info
+    return FMinimalViewInfo();
+}
+
+const TArray<UPrimitiveComponent*>& FViewportClient::GetVisiblePrimitives() const
+{
+    return ViewFrustumCuller.GetRenderableObjects();
+}
+
+void FViewportClient::UpdateVisiblePrimitives(UWorld* InWorld)
+{
+    if (!InWorld || !InWorld->GetLevel())
+    {
+        return;
+    }
+
+    // Get camera constants from the appropriate source (PIE or Editor)
+    const FCameraConstants& CameraConst = GetCameraConstants();
+
+    // Perform frustum culling
+    TArray<UPrimitiveComponent*> DynamicPrimitives = InWorld->GetLevel()->GetDynamicPrimitives();
+    ViewFrustumCuller.Cull(
+        InWorld->GetLevel()->GetStaticOctree(),
+        DynamicPrimitives,
+        CameraConst
+    );
 }

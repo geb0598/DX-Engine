@@ -75,7 +75,7 @@ public:
 		const FCameraConstants& ViewProjConstants
 	);
 
-	const TArray<UPrimitiveComponent*>& GetRenderableObjects();
+	const TArray<UPrimitiveComponent*>& GetRenderableObjects() const;
 private:
     void CullOctree(FOctree* Octree);
 

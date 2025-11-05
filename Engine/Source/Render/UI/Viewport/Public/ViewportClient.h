@@ -1,9 +1,11 @@
 #pragma once
 
 #include "Editor/Public/Camera.h"
+#include "Optimization/Public/ViewVolumeCuller.h"
 
 class FViewport;
 class APlayerCameraManager;
+class UWorld;
 
 class FViewportClient
 {
@@ -72,6 +74,27 @@ public:
      */
     const FCameraConstants& GetCameraConstants() const;
 
+    /**
+     * Get complete view information for rendering
+     * Returns FMinimalViewInfo with all camera parameters needed for rendering
+     * @return View info from player camera manager (PIE/Game) or editor camera
+     */
+    FMinimalViewInfo GetViewInfo() const;
+
+    /**
+     * Get visible primitives after frustum culling
+     * Returns the cached result of view frustum culling performed in PrepareCamera()
+     * @return Array of visible primitive components
+     */
+    const TArray<class UPrimitiveComponent*>& GetVisiblePrimitives() const;
+
+    /**
+     * Perform view frustum culling for the current world
+     * Should be called before rendering to update visible primitives
+     * @param InWorld World to cull primitives from
+     */
+    void UpdateVisiblePrimitives(class UWorld* InWorld);
+
 private:
     // 상태
     EViewType       ViewType = EViewType::Perspective;
@@ -96,4 +119,7 @@ private:
 
     // Orthographic 뷰포트의 기준 높이 (픽셀 밀도 유지용)
     mutable float OrthoReferenceHeight = 0.0f;
+
+    // View frustum culling (독립적으로 관리)
+    ViewVolumeCuller ViewFrustumCuller;
 };

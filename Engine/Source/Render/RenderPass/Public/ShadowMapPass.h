@@ -130,7 +130,7 @@ private:
 	void RenderDirectionalShadowMap(
 		UDirectionalLightComponent* Light,
 		const TArray<UStaticMeshComponent*>& Meshes,
-		UCamera* InCamera
+		const FMinimalViewInfo& InViewInfo
 		);
 
 	// --- Spot Light Shadow Rendering ---
@@ -169,7 +169,7 @@ private:
 	 * @param OutProj 출력 projection matrix
 	 */
 	void CalculateDirectionalLightViewProj(UDirectionalLightComponent* Light,
-		const TArray<UStaticMeshComponent*>& Meshes, UCamera* InCamera, FMatrix& OutView, FMatrix& OutProj);
+		const TArray<UStaticMeshComponent*>& Meshes, const FMinimalViewInfo& InViewInfo, FMatrix& OutView, FMatrix& OutProj);
 
 	/**
 	 * @brief Uniform Shadow Map의 view-projection 행렬을 계산합니다 (Sample 버전).

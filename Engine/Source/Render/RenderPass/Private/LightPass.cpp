@@ -215,15 +215,15 @@ void FLightPass::Execute(FRenderingContext& Context)
 	FRenderResourceFactory::UpdateStructuredBuffer(SpotLightStructuredBuffer, SpotLightDatas);
 
 	// Cluster AABB Set
-	FCameraConstants Inv = Context.CurrentCamera->GetFViewProjConstantsInverse();
-	FMatrix ProjectionInv = Inv.Projection;
-	FMatrix ViewInv = Inv.View;
-	FMatrix ViewMatrix = Context.CurrentCamera->GetFViewProjConstants().View;
-	float CamNear = Context.CurrentCamera->GetNearZ();
-	float CamFar = Context.CurrentCamera->GetFarZ();
-	float Aspect = Context.CurrentCamera->GetAspect();
-	float fov = Context.CurrentCamera->GetFovY();
-	uint32 Orthographic = ECameraType::ECT_Orthographic == Context.CurrentCamera->GetCameraType() ? 1 : 0;
+	const FCameraConstants& CameraConst = Context.ViewInfo.CameraConstants;
+	FMatrix ProjectionInv = CameraConst.Projection.Inverse();
+	FMatrix ViewInv = CameraConst.View.Inverse();
+	FMatrix ViewMatrix = CameraConst.View;
+	float CamNear = Context.ViewInfo.NearClipPlane;
+	float CamFar = Context.ViewInfo.FarClipPlane;
+	float Aspect = Context.ViewInfo.AspectRatio;
+	float fov = Context.ViewInfo.FOV;
+	uint32 Orthographic = (Context.ViewInfo.ProjectionMode == ECameraProjectionMode::Orthographic) ? 1 : 0;
 
 	FRenderResourceFactory::UpdateConstantBufferData(ViewClusterInfoConstantBuffer,
 		FViewClusterInfo{ ProjectionInv, ViewInv, ViewMatrix, CamNear,CamFar,Aspect,fov});

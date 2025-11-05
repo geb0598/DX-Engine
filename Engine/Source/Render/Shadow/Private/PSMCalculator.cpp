@@ -1,6 +1,5 @@
 #include "pch.h"
 #include "Render/Shadow/Public/PSMCalculator.h"
-#include "Editor/Public/Camera.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include <algorithm>
 #include <cmath>
@@ -22,14 +21,14 @@ void FPSMCalculator::CalculateShadowProjection(
 	FMatrix& OutViewMatrix,
 	FMatrix& OutProjectionMatrix,
 	const FVector& LightDirection,
-	UCamera* Camera,
+	const FMinimalViewInfo& ViewInfo,
 	const TArray<UStaticMeshComponent*>& Meshes,
 	FPSMParameters& InOutParams)
 {
 	// 그림자 캐스터와 리시버 분류
 	TArray<FPSMBoundingBox> ShadowCasters, ShadowReceivers;
 	ComputeVirtualCameraParameters(
-		LightDirection, Camera, Meshes,
+		LightDirection, ViewInfo, Meshes,
 		ShadowCasters, ShadowReceivers, InOutParams
 	);
 
@@ -37,28 +36,28 @@ void FPSMCalculator::CalculateShadowProjection(
 	switch (Mode)
 	{
 	case EShadowProjectionMode::Uniform:
-		BuildUniformShadowMap(OutViewMatrix, OutProjectionMatrix, LightDirection, Camera,
+		BuildUniformShadowMap(OutViewMatrix, OutProjectionMatrix, LightDirection, ViewInfo,
 			ShadowCasters, ShadowReceivers, InOutParams);
 		break;
 
 	case EShadowProjectionMode::PSM:
-		BuildPSMProjection(OutViewMatrix, OutProjectionMatrix, LightDirection, Camera,
+		BuildPSMProjection(OutViewMatrix, OutProjectionMatrix, LightDirection, ViewInfo,
 			ShadowCasters, ShadowReceivers, InOutParams);
 		break;
 
 	case EShadowProjectionMode::LSPSM:
 		// LiSPSM은 world space 데이터가 필요하므로 Meshes를 직접 전달
-		BuildLSPSMProjection(OutViewMatrix, OutProjectionMatrix, LightDirection, Camera,
+		BuildLSPSMProjection(OutViewMatrix, OutProjectionMatrix, LightDirection, ViewInfo,
 			Meshes, InOutParams);
 		break;
 
 	case EShadowProjectionMode::TSM:
-		BuildTSMProjection(OutViewMatrix, OutProjectionMatrix, LightDirection, Camera,
+		BuildTSMProjection(OutViewMatrix, OutProjectionMatrix, LightDirection, ViewInfo,
 			ShadowCasters, ShadowReceivers, InOutParams);
 		break;
 
 	default:
-		BuildUniformShadowMap(OutViewMatrix, OutProjectionMatrix, LightDirection, Camera,
+		BuildUniformShadowMap(OutViewMatrix, OutProjectionMatrix, LightDirection, ViewInfo,
 			ShadowCasters, ShadowReceivers, InOutParams);
 		break;
 	}
@@ -70,7 +69,7 @@ void FPSMCalculator::CalculateShadowProjection(
 
 void FPSMCalculator::ComputeVirtualCameraParameters(
 	const FVector& LightDirection,
-	UCamera* Camera,
+	const FMinimalViewInfo& ViewInfo,
 	const TArray<UStaticMeshComponent*>& Meshes,
 	TArray<FPSMBoundingBox>& OutShadowCasters,
 	TArray<FPSMBoundingBox>& OutShadowReceivers,
@@ -79,13 +78,8 @@ void FPSMCalculator::ComputeVirtualCameraParameters(
 	OutShadowCasters.Empty();
 	OutShadowReceivers.Empty();
 
-	if (!Camera)
-	{
-		return;
-	}
-
 	// 카메라 행렬 가져오기
-	const FCameraConstants& CamConstants = Camera->GetFViewProjConstants();
+	const FCameraConstants& CamConstants = ViewInfo.CameraConstants;
 	FMatrix ViewMatrix = CamConstants.View;
 	FMatrix ProjMatrix = CamConstants.Projection;
 	FMatrix ViewProj = ViewMatrix * ProjMatrix;
@@ -176,12 +170,12 @@ void FPSMCalculator::BuildUniformShadowMap(
 	FMatrix& OutView,
 	FMatrix& OutProj,
 	const FVector& LightDirection,
-	UCamera* Camera,
+	const FMinimalViewInfo& ViewInfo,
 	const TArray<FPSMBoundingBox>& ShadowCasters,
 	const TArray<FPSMBoundingBox>& ShadowReceivers,
 	FPSMParameters& Params)
 {
-	const FCameraConstants& CamConstants = Camera->GetFViewProjConstants();
+	const FCameraConstants& CamConstants = ViewInfo.CameraConstants;
 	FMatrix CameraView = CamConstants.View;
 
 	// 월드 공간 빛 방향
@@ -196,9 +190,9 @@ void FPSMCalculator::BuildUniformShadowMap(
 	else
 	{
 		// 카메라 프러스텀 범위 사용
-		float Aspect = Camera->GetAspect();
-		float FOV = Camera->GetFovY();
-		float FarDist = Camera->GetFarZ();
+		float Aspect = ViewInfo.AspectRatio;
+		float FOV = ViewInfo.FOV;
+		float FarDist = ViewInfo.FarClipPlane;
 		float Height = std::tan(FOV * 0.5f) * FarDist;
 		float Width = Height * Aspect;
 
@@ -268,12 +262,12 @@ void FPSMCalculator::BuildPSMProjection(
 	FMatrix& OutView,
 	FMatrix& OutProj,
 	const FVector& LightDirection,
-	UCamera* Camera,
+	const FMinimalViewInfo& ViewInfo,
 	const TArray<FPSMBoundingBox>& ShadowCasters,
 	const TArray<FPSMBoundingBox>& ShadowReceivers,
 	FPSMParameters& Params)
 {
-	const FCameraConstants& CamConstants = Camera->GetFViewProjConstants();
+	const FCameraConstants& CamConstants = ViewInfo.CameraConstants;
 	FMatrix CameraView = CamConstants.View;
 	FVector ViewLightDir = CameraView.TransformVector(LightDirection.GetNormalized());
 
@@ -315,11 +309,11 @@ void FPSMCalculator::BuildPSMProjection(
 		else
 		{
 			// 슬라이드 백 조정이 적용된 카메라 FOV 사용
-			float FOV = Camera->GetFovY();
-			float Aspect = Camera->GetAspect();
-			float ViewHeight = std::tan(FOV * 0.5f) * Camera->GetFarZ();
+			float FOV = ViewInfo.FOV;
+			float Aspect = ViewInfo.AspectRatio;
+			float ViewHeight = std::tan(FOV * 0.5f) * ViewInfo.FarClipPlane;
 			float ViewWidth = ViewHeight * Aspect;
-			float FarDist = Camera->GetFarZ();
+			float FarDist = ViewInfo.FarClipPlane;
 
 			float HalfFovY = std::atan(ViewHeight / (FarDist + SlideBack));
 			float HalfFovX = std::atan(ViewWidth / (FarDist + SlideBack));
@@ -331,8 +325,8 @@ void FPSMCalculator::BuildPSMProjection(
 	}
 	else
 	{
-		float FOV = Camera->GetFovY();
-		float Aspect = Camera->GetAspect();
+		float FOV = ViewInfo.FOV;
+		float Aspect = ViewInfo.AspectRatio;
 		VirtualCameraProj = FMatrix::CreatePerspectiveFovLH(FOV, Aspect, ZNear, ZFar);
 	}
 
@@ -349,7 +343,7 @@ void FPSMCalculator::BuildPSMProjection(
 	if (std::abs(PPLight.W) <= W_EPSILON)
 	{
 		// 빛이 무한대에 있음 - 직교 투영 사용
-		BuildUniformShadowMap(OutView, OutProj, LightDirection, Camera,
+		BuildUniformShadowMap(OutView, OutProj, LightDirection, ViewInfo,
 			ShadowCasters, ShadowReceivers, Params);
 		return;
 	}
@@ -466,16 +460,16 @@ void FPSMCalculator::BuildPSMProjection(
  * @param Camera 씬 카메라
  * @return 8개 코너 (near plane 4개 + far plane 4개)
  */
-static std::vector<FVector> GetCameraFrustumCornersInViewSpace(UCamera* Camera)
+static std::vector<FVector> GetCameraFrustumCornersInViewSpace(const FMinimalViewInfo& ViewInfo)
 {
 	std::vector<FVector> Corners;
 	Corners.reserve(8);
 
-	const FCameraConstants& CamConstants = Camera->GetFViewProjConstants();
-	float NearZ = Camera->GetNearZ();
-	float FarZ = Camera->GetFarZ();
-	float FovY = Camera->GetFovY();
-	float Aspect = Camera->GetAspect();
+	const FCameraConstants& CamConstants = ViewInfo.CameraConstants;
+	float NearZ = ViewInfo.NearClipPlane;
+	float FarZ = ViewInfo.FarClipPlane;
+	float FovY = ViewInfo.FOV;
+	float Aspect = ViewInfo.AspectRatio;
 
 	// View space에서 frustum 크기 계산
 	float NearHeight = 2.0f * std::tan(FovY * 0.5f) * NearZ;
@@ -548,13 +542,13 @@ void FPSMCalculator::BuildLSPSMProjection(
 	FMatrix& OutView,
 	FMatrix& OutProj,
 	const FVector& LightDirection,
-	UCamera* Camera,
+	const FMinimalViewInfo& ViewInfo,
 	const TArray<UStaticMeshComponent*>& Meshes,
 	FPSMParameters& Params)
 {
 	// Sample LiSPSM 알고리즘 정확한 재구현 (line 536-607)
 	// World space 데이터 사용
-	const FCameraConstants& CamConstants = Camera->GetFViewProjConstants();
+	const FCameraConstants& CamConstants = ViewInfo.CameraConstants;
 	FMatrix CameraView = CamConstants.View;
 	FMatrix CameraProj = CamConstants.Projection;
 
@@ -643,7 +637,7 @@ void FPSMCalculator::BuildLSPSMProjection(
 
 	// Sample line 574-581: Calculate LSPSM parameters
 	// ViewNear should be camera's actual near plane
-	float ViewNear = Camera->GetNearZ();
+	float ViewNear = ViewInfo.NearClipPlane;
 	float SinGamma = std::sqrt(1.0f - CosGamma * CosGamma);
 	SinGamma = std::max(SinGamma, 0.01f);
 
@@ -715,11 +709,11 @@ void FPSMCalculator::BuildTSMProjection(
 	FMatrix& OutView,
 	FMatrix& OutProj,
 	const FVector& LightDirection,
-	UCamera* Camera,
+	const FMinimalViewInfo& ViewInfo,
 	const TArray<FPSMBoundingBox>& ShadowCasters,
 	const TArray<FPSMBoundingBox>& ShadowReceivers,
 	FPSMParameters& Params)
 {
 	// 현재는 uniform으로 대체
-	BuildUniformShadowMap(OutView, OutProj, LightDirection, Camera, ShadowCasters, ShadowReceivers, Params);
+	BuildUniformShadowMap(OutView, OutProj, LightDirection, ViewInfo, ShadowCasters, ShadowReceivers, Params);
 }
