@@ -264,6 +264,35 @@ end
 -- [Light Exposure] 매 프레임 빛 노출 시간 업데이트
 ---
 function UpdateLightExposure(dt)
+    -- Do nothing if game not running; ensure warning sound stops
+    local isRunning = false
+    do
+        local world = GetWorld()
+        local gm = world and world:GetGameMode() or nil
+        if gm and gm.IsGameRunning then isRunning = true end
+    end
+    if not isRunning then
+        if Sound_StopLoopingSFX ~= nil and __warningLooping then
+            Sound_StopLoopingSFX("Warning")
+            __warningLooping = false
+        end
+        return
+    end
+
+    -- Warning loop SFX toggle at threshold 1.5s (only when running)
+    local threshold = 1.5
+    if CurrentLightExposureTime < threshold then
+        if Sound_PlayLoopingSFX ~= nil and not __warningLooping then
+            Sound_PlayLoopingSFX("Warning", "Asset/Sound/SFX/Warning.wav", 1.0)
+            __warningLooping = true
+        end
+    else
+        if Sound_StopLoopingSFX ~= nil and __warningLooping then
+            Sound_StopLoopingSFX("Warning")
+            __warningLooping = false
+        end
+    end
+
     if CurrentLightLevel >= LightCriticalPoint then
         CurrentLightExposureTime = CurrentLightExposureTime - dt
 

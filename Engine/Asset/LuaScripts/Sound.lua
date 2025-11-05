@@ -24,7 +24,11 @@ gameMode.OnGameStarted = function()
 end
 
 gameMode.OnGameEnded = function()
-    Sound_StopBGM(STOP_FADE)
-    Log("[Sound.lua] BGM stop")
+    -- Stop everything on game end
+    if Sound_StopAll ~= nil then
+        Sound_StopAll()
+    else
+        Sound_StopBGM(STOP_FADE)
+    end
+    Log("[Sound.lua] Stop All Sounds")
 end
-

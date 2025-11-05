@@ -72,12 +72,17 @@ function BeginPlay()
         Sound_PreloadSFX("EnemyHit", "Asset/Sound/SFX/EnemyHit.wav", false, 1.0, 30.0)
     end
 
-    -- Preload & play spawn SFX on creation (OOP: each enemy owns its spawn sound)
-    if Sound_PreloadSFX ~= nil then
-        Sound_PreloadSFX("EnemySpawn", "Asset/Sound/SFX/EnemySpawn.wav", false, 1.0, 30.0)
-    end
-    if Sound_PlaySFX ~= nil then
-        Sound_PlaySFX("EnemySpawn", 1.0, 1.0)
+    -- Preload & play spawn SFX on creation (only when game is running)
+    local world = GetWorld()
+    local gm = world and world:GetGameMode() or nil
+    local isRunning = gm and gm.IsGameRunning or false
+    if isRunning then
+        if Sound_PreloadSFX ~= nil then
+            Sound_PreloadSFX("EnemySpawn", "Asset/Sound/SFX/EnemySpawn.wav", false, 1.0, 30.0)
+        end
+        if Sound_PlaySFX ~= nil then
+            Sound_PlaySFX("EnemySpawn", 1.0, 1.0)
+        end
     end
 end
 

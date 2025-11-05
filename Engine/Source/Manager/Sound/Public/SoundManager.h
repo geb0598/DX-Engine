@@ -41,6 +41,13 @@ public:
     bool PlaySFX(const FName& SoundName, float Volume = 1.0f, float Pitch = 1.0f);
     bool PlaySFXAt(const FName& SoundName, const FVector& Position, const FVector& Velocity, float Volume = 1.0f, float Pitch = 1.0f);
 
+    // 루프 SFX 관리(2D 루프 전용)
+    bool PlayLoopingSFX(const FName& SoundName, const FString& FilePath, float Volume = 1.0f);
+    void StopLoopingSFX(const FName& SoundName);
+
+    // 전체 사운드 정지 및 정리 (BGM + 모든 SFX 채널/루프)
+    void StopAllSounds();
+
 private:
     // 내부 상태와 자원
     FMOD::System* AudioSystem = nullptr;
@@ -57,4 +64,8 @@ private:
     // SFX 캐시와 활성 채널(간단 관리)
     TMap<FName, FMOD::Sound*> SFXCache;
     TArray<FMOD::Channel*> ActiveSFXChannels;
+
+    // 루프 SFX 관리용(이름 기반)
+    TMap<FName, FMOD::Sound*> LoopingSFXSounds;
+    TMap<FName, FMOD::Channel*> LoopingSFXChannels;
 };

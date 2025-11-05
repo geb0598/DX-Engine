@@ -262,3 +262,103 @@ bool USoundManager::PlaySFXAt(const FName& SoundName, const FVector& Position, c
     }
     return true;
 }
+
+bool USoundManager::PlayLoopingSFX(const FName& SoundName, const FString& FilePath, float Volume)
+{
+    if (!AudioSystem) return false;
+
+    if (LoopingSFXChannels.Contains(SoundName))
+    {
+        FMOD::Channel** FoundChannelPtr = LoopingSFXChannels.Find(SoundName);
+        FMOD::Channel* Channel = FoundChannelPtr ? *FoundChannelPtr : nullptr;
+        if (Channel)
+        {
+            bool Paused = false; Channel->getPaused(&Paused);
+            if (Paused) Channel->setPaused(false);
+            Channel->setVolume(Volume);
+            return true;
+        }
+    }
+
+    // Create 2D looping sample
+    FMOD::Sound* LoopSound = nullptr;
+    FMOD_MODE Mode = FMOD_DEFAULT | FMOD_CREATESAMPLE | FMOD_LOOP_NORMAL | FMOD_2D;
+    FMOD_RESULT Result = AudioSystem->createSound(FilePath.c_str(), Mode, nullptr, &LoopSound);
+    if (!CheckFMODResult(Result, "CreateSound(LoopingSFX)")) return false;
+
+    FMOD::Channel* NewChannel = nullptr;
+    Result = AudioSystem->playSound(LoopSound, SFXChannelGroup, false, &NewChannel);
+    if (!CheckFMODResult(Result, "playSound(LoopingSFX)"))
+    {
+        if (LoopSound) LoopSound->release();
+        return false;
+    }
+    if (NewChannel)
+    {
+        NewChannel->setVolume(Volume);
+        LoopingSFXSounds.Add(SoundName, LoopSound);
+        LoopingSFXChannels.Add(SoundName, NewChannel);
+        return true;
+    }
+    if (LoopSound) LoopSound->release();
+    return false;
+}
+
+void USoundManager::StopLoopingSFX(const FName& SoundName)
+{
+    if (LoopingSFXChannels.Contains(SoundName))
+    {
+        FMOD::Channel** FoundChannelPtr = LoopingSFXChannels.Find(SoundName);
+        FMOD::Channel* Channel = FoundChannelPtr ? *FoundChannelPtr : nullptr;
+        if (Channel)
+        {
+            Channel->stop();
+        }
+        LoopingSFXChannels.Remove(SoundName);
+    }
+    if (LoopingSFXSounds.Contains(SoundName))
+    {
+        FMOD::Sound** FoundSoundPtr = LoopingSFXSounds.Find(SoundName);
+        FMOD::Sound* Snd = FoundSoundPtr ? *FoundSoundPtr : nullptr;
+        if (Snd)
+        {
+            Snd->release();
+        }
+        LoopingSFXSounds.Remove(SoundName);
+    }
+}
+
+void USoundManager::StopAllSounds()
+{
+    // Stop BGM
+    if (CurrentBGMChannel)
+    {
+        CurrentBGMChannel->stop();
+        CurrentBGMChannel = nullptr;
+    }
+    if (CurrentBGMSound)
+    {
+        CurrentBGMSound->release();
+        CurrentBGMSound = nullptr;
+    }
+    CurrentBGMPath = FString();
+
+    // Stop active one-shot SFX channels
+    for (auto* Channel : ActiveSFXChannels)
+    {
+        if (Channel) { Channel->stop(); }
+    }
+    ActiveSFXChannels.Empty();
+
+    // Stop and release looping SFX
+    for (auto& Pair : LoopingSFXChannels)
+    {
+        if (Pair.second) { Pair.second->stop(); }
+    }
+    LoopingSFXChannels.Empty();
+    for (auto& Pair : LoopingSFXSounds)
+    {
+        if (Pair.second) { Pair.second->release(); }
+    }
+    LoopingSFXSounds.Empty();
+}

@@ -725,4 +725,34 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
             }
         )
     );
+
+    // Looping SFX
+    LuaState.set_function("Sound_PlayLoopingSFX",
+        sol::overload(
+            [](const std::string& Name, const std::string& Path)
+            {
+                auto& Manager = USoundManager::GetInstance();
+                Manager.InitializeAudio();
+                Manager.PlayLoopingSFX(FName(Name.c_str()), FString(Path), 1.0f);
+            },
+            [](const std::string& Name, const std::string& Path, float Volume)
+            {
+                auto& Manager = USoundManager::GetInstance();
+                Manager.InitializeAudio();
+                Manager.PlayLoopingSFX(FName(Name.c_str()), FString(Path), Volume);
+            }
+        )
+    );
+    LuaState.set_function("Sound_StopLoopingSFX",
+        [](const std::string& Name)
+        {
+            USoundManager::GetInstance().StopLoopingSFX(FName(Name.c_str()));
+        }
+    );
+
+    // Stop all sounds (BGM + SFX)
+    LuaState.set_function("Sound_StopAll", []()
+    {
+        USoundManager::GetInstance().StopAllSounds();
+    });
 }
