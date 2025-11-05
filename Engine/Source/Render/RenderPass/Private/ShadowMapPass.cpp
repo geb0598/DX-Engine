@@ -41,7 +41,10 @@ FShadowMapPass::FShadowMapPass(UPipeline* InPipeline,
 	DSDesc.StencilEnable = FALSE;
 
 	HRESULT hr = Device->CreateDepthStencilState(&DSDesc, &ShadowDepthStencilState);
-	if (FAILED(hr)) { throw std::runtime_error("Failed to create shadow depth stencil state"); }
+	if (FAILED(hr))
+	{
+		throw std::runtime_error("Failed to create shadow depth stencil state");
+	}
 
 	// 2. Shadow rasterizer state (slope-scale depth bias 지원)
 	D3D11_RASTERIZER_DESC RastDesc = {};
@@ -57,7 +60,10 @@ FShadowMapPass::FShadowMapPass(UPipeline* InPipeline,
 	RastDesc.AntialiasedLineEnable = FALSE;
 
 	hr = Device->CreateRasterizerState(&RastDesc, &ShadowRasterizerState);
-	if (FAILED(hr)) { throw std::runtime_error("Failed to create shadow rasterizer state"); }
+	if (FAILED(hr))
+	{
+		throw std::runtime_error("Failed to create shadow rasterizer state");
+	}
 
 	// 3. Shadow view-projection constant buffer 생성 (DepthOnlyVS.hlsl의 PerFrame과 동일)
 	ShadowViewProjConstantBuffer = FRenderResourceFactory::CreateConstantBuffer<FShadowViewProjConstant>();
@@ -79,19 +85,33 @@ FShadowMapPass::FShadowMapPass(UPipeline* InPipeline,
 	BufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	BufferDesc.StructureByteStride = sizeof(FShadowAtlasTilePos);
 
-	hr = URenderer::GetInstance().GetDevice()->CreateBuffer(&BufferDesc, nullptr,
-		&ShadowAtlasDirectionalLightTilePosStructuredBuffer);
+	// 초기 데이터
+
+	hr = URenderer::GetInstance().GetDevice()->CreateBuffer(
+		&BufferDesc,
+		nullptr,
+		&ShadowAtlasDirectionalLightTilePosStructuredBuffer
+		);
+
 	assert(SUCCEEDED(hr));
 
-	hr = URenderer::GetInstance().GetDevice()->CreateBuffer(&BufferDesc, nullptr,
-		&ShadowAtlasSpotLightTilePosStructuredBuffer);
+	hr = URenderer::GetInstance().GetDevice()->CreateBuffer(
+		&BufferDesc,
+		nullptr,
+		&ShadowAtlasSpotLightTilePosStructuredBuffer
+		);
+
 	assert(SUCCEEDED(hr));
 
 	BufferDesc.ByteWidth = (UINT)(8 * sizeof(FShadowAtlasPointLightTilePos));
 	BufferDesc.StructureByteStride = sizeof(FShadowAtlasPointLightTilePos);
 
-	hr = URenderer::GetInstance().GetDevice()->CreateBuffer(&BufferDesc, nullptr,
-		&ShadowAtlasPointLightTilePosStructuredBuffer);
+	hr = URenderer::GetInstance().GetDevice()->CreateBuffer(
+		&BufferDesc,
+		nullptr,
+		&ShadowAtlasPointLightTilePosStructuredBuffer
+		);
+
 	assert(SUCCEEDED(hr));
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
@@ -100,16 +120,28 @@ FShadowMapPass::FShadowMapPass(UPipeline* InPipeline,
 	SRVDesc.Buffer.FirstElement = 0;
 	SRVDesc.Buffer.NumElements = (UINT)8;
 
-	hr = URenderer::GetInstance().GetDevice()->CreateShaderResourceView(ShadowAtlasDirectionalLightTilePosStructuredBuffer,
-		&SRVDesc, &ShadowAtlasDirectionalLightTilePosStructuredSRV);
+	hr = URenderer::GetInstance().GetDevice()->CreateShaderResourceView(
+		ShadowAtlasDirectionalLightTilePosStructuredBuffer,
+		&SRVDesc,
+		&ShadowAtlasDirectionalLightTilePosStructuredSRV
+		);
+
 	assert(SUCCEEDED(hr));
 
-	hr = URenderer::GetInstance().GetDevice()->CreateShaderResourceView(ShadowAtlasSpotLightTilePosStructuredBuffer,
-		&SRVDesc, &ShadowAtlasSpotLightTilePosStructuredSRV);
+	hr = URenderer::GetInstance().GetDevice()->CreateShaderResourceView(
+		ShadowAtlasSpotLightTilePosStructuredBuffer,
+		&SRVDesc,
+		&ShadowAtlasSpotLightTilePosStructuredSRV
+		);
+
 	assert(SUCCEEDED(hr));
 
-	hr = URenderer::GetInstance().GetDevice()->CreateShaderResourceView(ShadowAtlasPointLightTilePosStructuredBuffer,
-		&SRVDesc, &ShadowAtlasPointLightTilePosStructuredSRV);
+	hr = URenderer::GetInstance().GetDevice()->CreateShaderResourceView(
+		ShadowAtlasPointLightTilePosStructuredBuffer,
+		&SRVDesc,
+		&ShadowAtlasPointLightTilePosStructuredSRV
+		);
+
 	assert(SUCCEEDED(hr));
 
 	ShadowAtlasDirectionalLightTilePosArray.SetNum(8);
@@ -211,6 +243,11 @@ void FShadowMapPass::RenderDirectionalShadowMap(
 	ID3D11DeviceContext* DeviceContext = Renderer.GetDeviceContext();
 	const auto& DeviceResources = Renderer.GetDeviceResources();
 
+	// 0. 현재 상태 저장 (복원용)
+	ID3D11RenderTargetView* OriginalRTV = nullptr;
+	ID3D11DepthStencilView* OriginalDSV = nullptr;
+	DeviceContext->OMGetRenderTargets(1, &OriginalRTV, &OriginalDSV);
+
 	D3D11_VIEWPORT OriginalViewport;
 	UINT NumViewports = 1;
 	DeviceContext->RSGetViewports(&NumViewports, &OriginalViewport);
@@ -224,7 +261,11 @@ void FShadowMapPass::RenderDirectionalShadowMap(
 
 	//ID3D11RenderTargetView* NullRTV = nullptr;
 	//Pipeline->SetRenderTargets(1, &NullRTV, ShadowAtlas.ShadowDSV.Get());
-	Pipeline->SetRenderTargets(1, ShadowAtlas.VarianceShadowRTV.GetAddressOf(), ShadowAtlas.ShadowDSV.Get());
+	Pipeline->SetRenderTargets(
+		1,
+		ShadowAtlas.VarianceShadowRTV.GetAddressOf(),
+		ShadowAtlas.ShadowDSV.Get()
+		);
 
 	// 2. Light별 캐싱된 rasterizer state 가져오기 (DepthBias 포함)
 	ID3D11RasterizerState* RastState = GetOrCreateRasterizerState(
@@ -326,10 +367,19 @@ void FShadowMapPass::RenderDirectionalShadowMap(
 	}
 
 	// 6. 상태 복원
-	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV() };
-	Pipeline->SetRenderTargets(1, RTVs, DeviceResources->GetDepthBufferDSV());
+	// RenderTarget과 DepthStencil 복원 (Pipeline API 사용)
+	Pipeline->SetRenderTargets(1, &OriginalRTV, OriginalDSV);
+
 	// Viewport 복원 (DeviceContext 직접 사용)
 	DeviceContext->RSSetViewports(1, &OriginalViewport);
+
+	// 임시 리소스 해제
+	if (OriginalRTV)
+		OriginalRTV->Release();
+	if (OriginalDSV)
+		OriginalDSV->Release();
+
+	// Note: RastState는 캐싱되므로 여기서 해제하지 않음 (Release()에서 일괄 해제)
 }
 
 void FShadowMapPass::RenderSpotShadowMap(
@@ -344,6 +394,11 @@ void FShadowMapPass::RenderSpotShadowMap(
 
 	const auto& Renderer = URenderer::GetInstance();
 	ID3D11DeviceContext* DeviceContext = Renderer.GetDeviceContext();
+
+	// 0. 현재 상태 저장 (복원용)
+	ID3D11RenderTargetView* OriginalRTV = nullptr;
+	ID3D11DepthStencilView* OriginalDSV = nullptr;
+	DeviceContext->OMGetRenderTargets(1, &OriginalRTV, &OriginalDSV);
 
 	D3D11_VIEWPORT OriginalViewport;
 	UINT NumViewports = 1;
@@ -417,11 +472,17 @@ void FShadowMapPass::RenderSpotShadowMap(
 	}
 
 	// 6. 상태 복원
-	ID3D11RenderTargetView* RTVs[] = { Renderer.GetDestinationRTV() };
-	Pipeline->SetRenderTargets(1, RTVs, Renderer.GetDepthBufferDSV());
+	// RenderTarget과 DepthStencil 복원 (Pipeline API 사용)
+	Pipeline->SetRenderTargets(1, &OriginalRTV, OriginalDSV);
 
 	// Viewport 복원 (DeviceContext 직접 사용)
 	DeviceContext->RSSetViewports(1, &OriginalViewport);
+
+	// 임시 리소스 해제
+	if (OriginalRTV)
+		OriginalRTV->Release();
+	if (OriginalDSV)
+		OriginalDSV->Release();
 
 	// Note: RastState는 캐싱되므로 여기서 해제하지 않음 (Release()에서 일괄 해제)
 }
@@ -438,6 +499,11 @@ void FShadowMapPass::RenderPointShadowMap(
 
 	const auto& Renderer = URenderer::GetInstance();
 	ID3D11DeviceContext* DeviceContext = Renderer.GetDeviceContext();
+
+	// 0. 현재 상태 저장 (복원용)
+	ID3D11RenderTargetView* OriginalRTV = nullptr;
+	ID3D11DepthStencilView* OriginalDSV = nullptr;
+	DeviceContext->OMGetRenderTargets(1, &OriginalRTV, &OriginalDSV);
 
 	D3D11_VIEWPORT OriginalViewport;
 	UINT NumViewports = 1;
@@ -488,8 +554,8 @@ void FShadowMapPass::RenderPointShadowMap(
 
 		static const float Y_START = SHADOW_MAP_RESOLUTION * 2.0f;
 
-		ShadowViewport.Width = Light->GetShadowResolutionScale();
-		ShadowViewport.Height = Light->GetShadowResolutionScale();
+		ShadowViewport.Width = Light->GetShadowResolutionScale();;
+		ShadowViewport.Height = Light->GetShadowResolutionScale();;
 		ShadowViewport.MinDepth = 0.0f;
 		ShadowViewport.MaxDepth = 1.0f;
 		ShadowViewport.TopLeftX = X_OFFSET * AtlasIndex;
@@ -533,9 +599,14 @@ void FShadowMapPass::RenderPointShadowMap(
 		}
 	}
 
-	// 6. 상태 복원
-	ID3D11RenderTargetView* RTVs[] = { Renderer.GetDestinationRTV() };
-	Pipeline->SetRenderTargets(1, RTVs, Renderer.GetDepthBufferDSV());
+	// 5. 상태 복원
+	Pipeline->SetRenderTargets(1, &OriginalRTV, OriginalDSV);
+	DeviceContext->RSSetViewports(1, &OriginalViewport);
+
+	if (OriginalRTV)
+		OriginalRTV->Release();
+	if (OriginalDSV)
+		OriginalDSV->Release();
 
 	// Note: 6개 ViewProj를 PointLightComponent에 저장하는 것은 비효율적이므로,
 	// Shader에서 Light position 기반으로 direction을 계산하도록 구현
@@ -769,10 +840,16 @@ void FShadowMapPass::CalculatePointLightViewProj(UPointLightComponent* Light, FM
 	// 2. Near/Far planes
 	float Near = 1.0f;
 	float Far = Light->GetAttenuationRadius();
-	if (Far <= Near) { Far = Near + 10.0f; }
+	if (Far <= Near)
+		Far = Near + 10.0f;
 
 	// 3. Perspective projection (90 degree FOV for cube faces)
-	FMatrix Proj = FMatrix::CreatePerspectiveFovLH(PI / 2.0f, 1.0f, Near, Far);
+	FMatrix Proj = FMatrix::CreatePerspectiveFovLH(
+		PI / 2.0f,  // 90 degrees FOV
+		1.0f,       // Aspect ratio 1:1 (square)
+		Near,
+		Far
+	);
 
 	// 4. 6 directions for cube faces (DirectX cube map order)
 	// Order: +X, -X, +Y, -Y, +Z, -Z
@@ -1061,7 +1138,10 @@ void FShadowMapPass::Release()
 	// Shader와 InputLayout은 Renderer가 소유하므로 여기서 해제하지 않음
 }
 
-ID3D11RasterizerState* FShadowMapPass::GetOrCreateRasterizerState(float InShadowBias, float InShadowSlopBias)
+ID3D11RasterizerState* FShadowMapPass::GetOrCreateRasterizerState(
+	float InShadowBias,
+	float InShadowSlopBias
+	)
 {
 	// Light별 DepthBias 설정
 	// DepthBias: Shadow acne (자기 그림자 아티팩트) 방지
@@ -1084,7 +1164,10 @@ ID3D11RasterizerState* FShadowMapPass::GetOrCreateRasterizerState(float InShadow
 
 	// 이미 생성된 state가 있으면 재사용
 	auto* FoundStatePtr = LightRasterizerStates.Find(RasterizeMapKey);
-	if (FoundStatePtr) { return *FoundStatePtr; }
+	if (FoundStatePtr)
+	{
+		return *FoundStatePtr;
+	}
 
 	// 새로 생성
 	const auto& Renderer = URenderer::GetInstance();
