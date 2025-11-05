@@ -1596,6 +1596,13 @@ void URenderer::RenderLevelForGameInstance(UWorld* InWorld, const FSceneView* In
 		}
 	}
 
+	// CameraPrePass 실행
+	FRenderingContext CameraContext;
+	CameraContext.LocalViewport = D3DViewport;
+	CameraPrePass->SetRenderTargets(DeviceResources);
+	CameraPrePass->Execute(CameraContext);
+	D3DViewport = CameraContext.LocalViewport;
+
 	// Viewport 설정 적용
 	GetDeviceContext()->RSSetViewports(1, &D3DViewport);
 

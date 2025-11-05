@@ -71,7 +71,19 @@ public:
 	void SetAbsoluteRotation(bool bInAbsolute) { bAbsoluteRotation = bInAbsolute; MarkAsDirty(); }
 	void SetAbsoluteScale(bool bInAbsolute) { bAbsoluteScale = bInAbsolute; MarkAsDirty(); }
 
+	bool InheritYaw() const { return bInheritYaw; }
+	bool InheritPitch() const { return bInheritPitch; }
+	bool InheritRoll() const { return bInheritRoll; }
+
+	void SetInheritYaw(bool InbInheritYaw) { bInheritYaw = InbInheritYaw; MarkAsDirty(); }
+	void SetInheritPitch(bool InbInheritPitch) { bInheritPitch = InbInheritPitch; MarkAsDirty(); }
+	void SetInheritRoll(bool InbInheritRoll) { bInheritRoll = InbInheritRoll; MarkAsDirty(); }
+
 private:
+	// 부모(캐릭터 루트)의 회전을 상속받을지 정하는 플래그
+	bool bInheritYaw = true;
+	bool bInheritPitch = true;
+	bool bInheritRoll = true;
 
 	// SceneComponent Hierarchy Section
 public:

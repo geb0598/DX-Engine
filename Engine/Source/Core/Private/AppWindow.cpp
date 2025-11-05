@@ -8,6 +8,7 @@
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/UI/Public/ViewportManager.h"
 #include "Render/Renderer/Public/Renderer.h"
+#include "Render/UI/Viewport/Public/GameViewportClient.h"
 #include "Render/UI/Viewport/Public/Viewport.h"
 
 FAppWindow::FAppWindow(FClientApp* InOwner)
@@ -252,7 +253,21 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 				if (NewWidth > 0 && NewHeight > 0)
 				{
 					URenderer::GetInstance().OnResize(NewWidth, NewHeight);
+#if WITH_EDITOR
 					UUIManager::GetInstance().RepositionImGuiWindows();
+#else
+					// StandAlone: GameInstance Viewport 크기 업데이트
+					if (GameInstance)
+					{
+						FViewport* Viewport = GameInstance->GetViewport();
+						UGameViewportClient* ViewportClient = GameInstance->GetViewportClient();
+						if (Viewport && ViewportClient)
+						{
+							Viewport->SetSize(NewWidth, NewHeight);
+							ViewportClient->SetViewportSize(FPoint(NewWidth, NewHeight));
+						}
+					}
+#endif
 				}
 			}
 			break;
@@ -262,12 +277,26 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 		{
 			if (!URenderer::GetInstance().GetIsResizing())
 			{ // 드래그 X 일때 추가 처리 (최대화 버튼, ...)
-				URenderer::GetInstance().OnResize(LOWORD(InLParam), HIWORD(InLParam));
+				const uint32 NewWidth = LOWORD(InLParam);
+				const uint32 NewHeight = HIWORD(InLParam);
+				URenderer::GetInstance().OnResize(NewWidth, NewHeight);
 #if WITH_EDITOR
 				UUIManager::GetInstance().RepositionImGuiWindows();
 				if (ImGui::GetCurrentContext())
 				{
 					UUIManager::GetInstance().ForceArrangeRightPanels();
+				}
+#else
+				// StandAlone: GameInstance Viewport 크기 업데이트
+				if (GameInstance)
+				{
+					FViewport* Viewport = GameInstance->GetViewport();
+					UGameViewportClient* ViewportClient = GameInstance->GetViewportClient();
+					if (Viewport && ViewportClient)
+					{
+						Viewport->SetSize(NewWidth, NewHeight);
+						ViewportClient->SetViewportSize(FPoint(NewWidth, NewHeight));
+					}
 				}
 #endif
 			}
@@ -277,14 +306,18 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 			// 윈도우가 최소화될 때 입력 비활성화 및 상태 저장
 			UE_LOG("AppWindow: Window 최소화 (WM_SIZE - SIZE_MINIMIZED)");
 			UInputManager::GetInstance().SetWindowFocus(false);
+#if WITH_EDITOR
 			UUIManager::GetInstance().OnWindowMinimized();
+#endif
 		}
 		break;
 
 	case WM_SETFOCUS:
 		// 윈도우가 포커스를 얻었을 때 입력 활성화 및 상태 복원
 		UInputManager::GetInstance().SetWindowFocus(true);
+#if WITH_EDITOR
 		UUIManager::GetInstance().OnWindowRestored();
+#endif
 		break;
 
 	case WM_KILLFOCUS:
@@ -304,7 +337,9 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 		{
 			// 윈도우가 활성화될 때 (WA_ACTIVE 또는 WA_CLICKACTIVE)
 			UInputManager::GetInstance().SetWindowFocus(true);
+#if WITH_EDITOR
 			UUIManager::GetInstance().OnWindowRestored();
+#endif
 		}
 		break;
 
