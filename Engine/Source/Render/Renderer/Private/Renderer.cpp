@@ -988,17 +988,6 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 	const FMinimalViewInfo& ViewInfo = InViewport->GetViewportClient()->GetViewInfo();
 	const FCameraConstants& ViewProj = ViewInfo.CameraConstants;
 
-	// Debug: Log camera constants to verify they're being updated
-	static int LogCounter = 0;
-	if (LogCounter++ % 60 == 0)  // Log every 60 frames to reduce spam
-	{
-		UE_LOG("RenderLevel - Camera Location: (%.2f, %.2f, %.2f)", ViewInfo.Location.X, ViewInfo.Location.Y, ViewInfo.Location.Z);
-		UE_LOG("RenderLevel - FOV: %.2f, Aspect: %.2f, Near: %.2f, Far: %.2f",
-			ViewInfo.FOV, ViewInfo.AspectRatio, ViewInfo.NearClipPlane, ViewInfo.FarClipPlane);
-		UE_LOG("RenderLevel - View.Data[0][0]: %.2f, Proj.Data[0][0]: %.2f",
-			ViewProj.View.Data[0][0], ViewProj.Projection.Data[0][0]);
-	}
-
 	static bool bCullingEnabled = false; // 임시 토글(초기값: 컬링 비활성)
 	TArray<UPrimitiveComponent*> FinalVisiblePrims;
 	if (!bCullingEnabled)

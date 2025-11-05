@@ -465,57 +465,146 @@ FMatrix FMatrix::CreateFromRotator(const FRotator& InRotator)
 
 FMatrix FMatrix::Inverse() const
 {
-    FMatrix Result;
-    const float* m = &Data[0][0];
+    // SIMD-optimized 4x4 matrix inverse
+    // Based on DirectXMath XMMatrixInverse implementation
 
-    // Calculate cofactors for full 4x4 matrix using Laplace expansion
-    float Coef00 = m[5]  * m[10] * m[15] - m[5]  * m[11] * m[14] - m[9]  * m[6]  * m[15] + m[9]  * m[7]  * m[14] + m[13] * m[6]  * m[11] - m[13] * m[7]  * m[10];
-    float Coef04 = -m[4]  * m[10] * m[15] + m[4]  * m[11] * m[14] + m[8]  * m[6]  * m[15] - m[8]  * m[7]  * m[14] - m[12] * m[6]  * m[11] + m[12] * m[7]  * m[10];
-    float Coef08 = m[4]  * m[9]  * m[15] - m[4]  * m[11] * m[13] - m[8]  * m[5]  * m[15] + m[8]  * m[7]  * m[13] + m[12] * m[5]  * m[11] - m[12] * m[7]  * m[9];
-    float Coef12 = -m[4]  * m[9]  * m[14] + m[4]  * m[10] * m[13] + m[8]  * m[5]  * m[14] - m[8]  * m[6]  * m[13] - m[12] * m[5]  * m[10] + m[12] * m[6]  * m[9];
+    FMatrix MT = Transpose();  // Transpose for easier column access
 
-    float Det = m[0] * Coef00 + m[1] * Coef04 + m[2] * Coef08 + m[3] * Coef12;
+    __m128 V00 = _mm_shuffle_ps(MT.V[2], MT.V[2], _MM_SHUFFLE(1, 1, 0, 0));
+    __m128 V10 = _mm_shuffle_ps(MT.V[3], MT.V[3], _MM_SHUFFLE(3, 2, 3, 2));
+    __m128 V01 = _mm_shuffle_ps(MT.V[0], MT.V[0], _MM_SHUFFLE(1, 1, 0, 0));
+    __m128 V11 = _mm_shuffle_ps(MT.V[1], MT.V[1], _MM_SHUFFLE(3, 2, 3, 2));
+    __m128 V02 = _mm_shuffle_ps(MT.V[2], MT.V[0], _MM_SHUFFLE(2, 0, 2, 0));
+    __m128 V12 = _mm_shuffle_ps(MT.V[3], MT.V[1], _MM_SHUFFLE(3, 1, 3, 1));
 
-    if (std::abs(Det) < 1e-8f)
+    __m128 D0 = _mm_mul_ps(V00, V10);
+    __m128 D1 = _mm_mul_ps(V01, V11);
+    __m128 D2 = _mm_mul_ps(V02, V12);
+
+    V00 = _mm_shuffle_ps(MT.V[2], MT.V[2], _MM_SHUFFLE(3, 2, 3, 2));
+    V10 = _mm_shuffle_ps(MT.V[3], MT.V[3], _MM_SHUFFLE(1, 1, 0, 0));
+    V01 = _mm_shuffle_ps(MT.V[0], MT.V[0], _MM_SHUFFLE(3, 2, 3, 2));
+    V11 = _mm_shuffle_ps(MT.V[1], MT.V[1], _MM_SHUFFLE(1, 1, 0, 0));
+    V02 = _mm_shuffle_ps(MT.V[2], MT.V[0], _MM_SHUFFLE(3, 1, 3, 1));
+    V12 = _mm_shuffle_ps(MT.V[3], MT.V[1], _MM_SHUFFLE(2, 0, 2, 0));
+
+    V00 = _mm_mul_ps(V00, V10);
+    V01 = _mm_mul_ps(V01, V11);
+    V02 = _mm_mul_ps(V02, V12);
+    D0 = _mm_sub_ps(D0, V00);
+    D1 = _mm_sub_ps(D1, V01);
+    D2 = _mm_sub_ps(D2, V02);
+
+    // V11 = D0Y,D0W,D2Y,D2Y
+    V11 = _mm_shuffle_ps(D0, D2, _MM_SHUFFLE(1, 1, 3, 1));
+    V00 = _mm_shuffle_ps(MT.V[1], MT.V[1], _MM_SHUFFLE(1, 0, 2, 1));
+    V10 = _mm_shuffle_ps(V11, D0, _MM_SHUFFLE(0, 3, 0, 2));
+    V01 = _mm_shuffle_ps(MT.V[0], MT.V[0], _MM_SHUFFLE(0, 1, 0, 2));
+    V11 = _mm_shuffle_ps(V11, D0, _MM_SHUFFLE(2, 1, 2, 1));
+
+    // V13 = D1Y,D1W,D2W,D2W
+    __m128 V13 = _mm_shuffle_ps(D1, D2, _MM_SHUFFLE(3, 3, 3, 1));
+    V02 = _mm_shuffle_ps(MT.V[3], MT.V[3], _MM_SHUFFLE(1, 0, 2, 1));
+    V12 = _mm_shuffle_ps(V13, D1, _MM_SHUFFLE(0, 3, 0, 2));
+    __m128 V03 = _mm_shuffle_ps(MT.V[2], MT.V[2], _MM_SHUFFLE(0, 1, 0, 2));
+    V13 = _mm_shuffle_ps(V13, D1, _MM_SHUFFLE(2, 1, 2, 1));
+
+    __m128 C0 = _mm_mul_ps(V00, V10);
+    __m128 C2 = _mm_mul_ps(V01, V11);
+    __m128 C4 = _mm_mul_ps(V02, V12);
+    __m128 C6 = _mm_mul_ps(V03, V13);
+
+    // V11 = D0X,D0Y,D2X,D2X
+    V11 = _mm_shuffle_ps(D0, D2, _MM_SHUFFLE(0, 0, 1, 0));
+    V00 = _mm_shuffle_ps(MT.V[1], MT.V[1], _MM_SHUFFLE(2, 1, 3, 2));
+    V10 = _mm_shuffle_ps(D0, V11, _MM_SHUFFLE(2, 1, 0, 3));
+    V01 = _mm_shuffle_ps(MT.V[0], MT.V[0], _MM_SHUFFLE(1, 3, 2, 3));
+    V11 = _mm_shuffle_ps(D0, V11, _MM_SHUFFLE(0, 2, 1, 2));
+
+    // V13 = D1X,D1Y,D2Z,D2Z
+    V13 = _mm_shuffle_ps(D1, D2, _MM_SHUFFLE(2, 2, 1, 0));
+    V02 = _mm_shuffle_ps(MT.V[3], MT.V[3], _MM_SHUFFLE(2, 1, 3, 2));
+    V12 = _mm_shuffle_ps(D1, V13, _MM_SHUFFLE(2, 1, 0, 3));
+    V03 = _mm_shuffle_ps(MT.V[2], MT.V[2], _MM_SHUFFLE(1, 3, 2, 3));
+    V13 = _mm_shuffle_ps(D1, V13, _MM_SHUFFLE(0, 2, 1, 2));
+
+    V00 = _mm_mul_ps(V00, V10);
+    V01 = _mm_mul_ps(V01, V11);
+    V02 = _mm_mul_ps(V02, V12);
+    V03 = _mm_mul_ps(V03, V13);
+    C0 = _mm_sub_ps(C0, V00);
+    C2 = _mm_sub_ps(C2, V01);
+    C4 = _mm_sub_ps(C4, V02);
+    C6 = _mm_sub_ps(C6, V03);
+
+    V00 = _mm_shuffle_ps(MT.V[1], MT.V[1], _MM_SHUFFLE(0, 3, 0, 3));
+
+    // V10 = D0Z,D0Z,D2X,D2Y
+    V10 = _mm_shuffle_ps(D0, D2, _MM_SHUFFLE(1, 0, 2, 2));
+    V10 = _mm_shuffle_ps(V10, V10, _MM_SHUFFLE(0, 2, 3, 0));
+    V01 = _mm_shuffle_ps(MT.V[0], MT.V[0], _MM_SHUFFLE(2, 0, 3, 1));
+
+    // V11 = D0X,D0W,D2X,D2Y
+    V11 = _mm_shuffle_ps(D0, D2, _MM_SHUFFLE(1, 0, 3, 0));
+    V11 = _mm_shuffle_ps(V11, V11, _MM_SHUFFLE(2, 1, 0, 3));
+    V02 = _mm_shuffle_ps(MT.V[3], MT.V[3], _MM_SHUFFLE(0, 3, 0, 3));
+
+    // V12 = D1Z,D1Z,D2Z,D2W
+    V12 = _mm_shuffle_ps(D1, D2, _MM_SHUFFLE(3, 2, 2, 2));
+    V12 = _mm_shuffle_ps(V12, V12, _MM_SHUFFLE(0, 2, 3, 0));
+    V03 = _mm_shuffle_ps(MT.V[2], MT.V[2], _MM_SHUFFLE(2, 0, 3, 1));
+
+    // V13 = D1X,D1W,D2Z,D2W
+    V13 = _mm_shuffle_ps(D1, D2, _MM_SHUFFLE(3, 2, 3, 0));
+    V13 = _mm_shuffle_ps(V13, V13, _MM_SHUFFLE(2, 1, 0, 3));
+
+    V00 = _mm_mul_ps(V00, V10);
+    V01 = _mm_mul_ps(V01, V11);
+    V02 = _mm_mul_ps(V02, V12);
+    V03 = _mm_mul_ps(V03, V13);
+
+    __m128 C1 = _mm_sub_ps(C0, V00);
+    C0 = _mm_add_ps(C0, V00);
+    __m128 C3 = _mm_add_ps(C2, V01);
+    C2 = _mm_sub_ps(C2, V01);
+    __m128 C5 = _mm_sub_ps(C4, V02);
+    C4 = _mm_add_ps(C4, V02);
+    __m128 C7 = _mm_add_ps(C6, V03);
+    C6 = _mm_sub_ps(C6, V03);
+
+    C0 = _mm_shuffle_ps(C0, C1, _MM_SHUFFLE(3, 1, 2, 0));
+    C2 = _mm_shuffle_ps(C2, C3, _MM_SHUFFLE(3, 1, 2, 0));
+    C4 = _mm_shuffle_ps(C4, C5, _MM_SHUFFLE(3, 1, 2, 0));
+    C6 = _mm_shuffle_ps(C6, C7, _MM_SHUFFLE(3, 1, 2, 0));
+    C0 = _mm_shuffle_ps(C0, C0, _MM_SHUFFLE(3, 1, 2, 0));
+    C2 = _mm_shuffle_ps(C2, C2, _MM_SHUFFLE(3, 1, 2, 0));
+    C4 = _mm_shuffle_ps(C4, C4, _MM_SHUFFLE(3, 1, 2, 0));
+    C6 = _mm_shuffle_ps(C6, C6, _MM_SHUFFLE(3, 1, 2, 0));
+
+    // Compute determinant
+    __m128 vTemp = _mm_mul_ps(C0, MT.V[0]);
+    V00 = _mm_shuffle_ps(vTemp, vTemp, _MM_SHUFFLE(2, 3, 0, 1));
+    vTemp = _mm_add_ps(vTemp, V00);
+    V00 = _mm_shuffle_ps(vTemp, vTemp, _MM_SHUFFLE(1, 0, 3, 2));
+    vTemp = _mm_add_ps(vTemp, V00);
+
+    // Check for zero determinant
+    float fDet;
+    _mm_store_ss(&fDet, vTemp);
+    if (std::abs(fDet) < 1e-8f)
     {
         return FMatrix::Identity();
     }
 
-    float Coef01 = -m[1]  * m[10] * m[15] + m[1]  * m[11] * m[14] + m[9]  * m[2]  * m[15] - m[9]  * m[3]  * m[14] - m[13] * m[2]  * m[11] + m[13] * m[3]  * m[10];
-    float Coef05 = m[0]  * m[10] * m[15] - m[0]  * m[11] * m[14] - m[8]  * m[2]  * m[15] + m[8]  * m[3]  * m[14] + m[12] * m[2]  * m[11] - m[12] * m[3]  * m[10];
-    float Coef09 = -m[0]  * m[9]  * m[15] + m[0]  * m[11] * m[13] + m[8]  * m[1]  * m[15] - m[8]  * m[3]  * m[13] - m[12] * m[1]  * m[11] + m[12] * m[3]  * m[9];
-    float Coef13 = m[0]  * m[9]  * m[14] - m[0]  * m[10] * m[13] - m[8]  * m[1]  * m[14] + m[8]  * m[2]  * m[13] + m[12] * m[1]  * m[10] - m[12] * m[2]  * m[9];
+    vTemp = _mm_div_ps(_mm_set1_ps(1.0f), vTemp);
 
-    float Coef02 = m[1]  * m[6]  * m[15] - m[1]  * m[7]  * m[14] - m[5]  * m[2]  * m[15] + m[5]  * m[3]  * m[14] + m[13] * m[2]  * m[7]  - m[13] * m[3]  * m[6];
-    float Coef06 = -m[0]  * m[6]  * m[15] + m[0]  * m[7]  * m[14] + m[4]  * m[2]  * m[15] - m[4]  * m[3]  * m[14] - m[12] * m[2]  * m[7]  + m[12] * m[3]  * m[6];
-    float Coef10 = m[0]  * m[5]  * m[15] - m[0]  * m[7]  * m[13] - m[4]  * m[1]  * m[15] + m[4]  * m[3]  * m[13] + m[12] * m[1]  * m[7]  - m[12] * m[3]  * m[5];
-    float Coef14 = -m[0]  * m[5]  * m[14] + m[0]  * m[6]  * m[13] + m[4]  * m[1]  * m[14] - m[4]  * m[2]  * m[13] - m[12] * m[1]  * m[6]  + m[12] * m[2]  * m[5];
+    FMatrix mResult;
+    mResult.V[0] = _mm_mul_ps(C0, vTemp);
+    mResult.V[1] = _mm_mul_ps(C2, vTemp);
+    mResult.V[2] = _mm_mul_ps(C4, vTemp);
+    mResult.V[3] = _mm_mul_ps(C6, vTemp);
 
-    float Coef03 = -m[1]  * m[6]  * m[11] + m[1]  * m[7]  * m[10] + m[5]  * m[2]  * m[11] - m[5]  * m[3]  * m[10] - m[9]  * m[2]  * m[7]  + m[9]  * m[3]  * m[6];
-    float Coef07 = m[0]  * m[6]  * m[11] - m[0]  * m[7]  * m[10] - m[4]  * m[2]  * m[11] + m[4]  * m[3]  * m[10] + m[8]  * m[2]  * m[7]  - m[8]  * m[3]  * m[6];
-    float Coef11 = -m[0]  * m[5]  * m[11] + m[0]  * m[7]  * m[9]  + m[4]  * m[1]  * m[11] - m[4]  * m[3]  * m[9]  - m[8]  * m[1]  * m[7]  + m[8]  * m[3]  * m[5];
-    float Coef15 = m[0]  * m[5]  * m[10] - m[0]  * m[6]  * m[9]  - m[4]  * m[1]  * m[10] + m[4]  * m[2]  * m[9]  + m[8]  * m[1]  * m[6]  - m[8]  * m[2]  * m[5];
-
-    float InvDet = 1.0f / Det;
-
-    Result.Data[0][0] = Coef00 * InvDet;
-    Result.Data[0][1] = Coef01 * InvDet;
-    Result.Data[0][2] = Coef02 * InvDet;
-    Result.Data[0][3] = Coef03 * InvDet;
-    Result.Data[1][0] = Coef04 * InvDet;
-    Result.Data[1][1] = Coef05 * InvDet;
-    Result.Data[1][2] = Coef06 * InvDet;
-    Result.Data[1][3] = Coef07 * InvDet;
-    Result.Data[2][0] = Coef08 * InvDet;
-    Result.Data[2][1] = Coef09 * InvDet;
-    Result.Data[2][2] = Coef10 * InvDet;
-    Result.Data[2][3] = Coef11 * InvDet;
-    Result.Data[3][0] = Coef12 * InvDet;
-    Result.Data[3][1] = Coef13 * InvDet;
-    Result.Data[3][2] = Coef14 * InvDet;
-    Result.Data[3][3] = Coef15 * InvDet;
-
-    return Result;
+    return mResult;
 }
 
 FQuaternion FMatrix::ToQuaternion() const
