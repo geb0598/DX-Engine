@@ -119,8 +119,8 @@ void UCameraModifier::UpdateAlpha(float DeltaTime)
 
 float UCameraModifier::GetTargetAlpha()
 {
-	// If disabled, target alpha is 0, otherwise 1
-	return bDisabled ? 0.0f : 1.0f;
+	// If disabled or pending disable, target alpha is 0, otherwise 1
+	return (bDisabled || bPendingDisable) ? 0.0f : 1.0f;
 }
 
 void UCameraModifier::DisableModifier(bool bImmediate)
