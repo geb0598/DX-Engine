@@ -1,5 +1,6 @@
 ﻿#include "pch.h"
 #include "Component/Public/SpringArmComponent.h"
+#include "Utility/Public/JsonSerializer.h"
 IMPLEMENT_CLASS(USpringArmComponent, USceneComponent)
 
 
@@ -8,6 +9,9 @@ USpringArmComponent::USpringArmComponent()
 	TargetArmLength = 300.0f;
 	bEnableCameraLag = false;
 	CameraLagSpeed = 10.0f;
+
+	bEnableArmLengthLag = false;
+	ArmLengthLagSpeed = 100.0f;
 
 	PreviousLocation = FVector::ZeroVector();
 	bIsFirstUpdate = true;
@@ -19,6 +23,7 @@ void USpringArmComponent::BeginPlay()
 	Super::BeginPlay();
 
 	// 초기 위치 설정
+	CurrentArmLength = TargetArmLength;
 	PreviousLocation = GetWorldLocation() + FVector(-TargetArmLength, 0.0f, 0.0f);
 	bIsFirstUpdate = true;
 }
@@ -30,18 +35,65 @@ void USpringArmComponent::TickComponent(float DeltaTime)
 	bIsFirstUpdate = false;
 }
 
+UObject* USpringArmComponent::Duplicate()
+{
+	USpringArmComponent* NewSpringArm = Cast<USpringArmComponent>(Super::Duplicate());
+	NewSpringArm->TargetArmLength = TargetArmLength;
+	NewSpringArm->bEnableCameraLag = bEnableCameraLag;
+	NewSpringArm->CameraLagSpeed = CameraLagSpeed;
+	NewSpringArm->bEnableArmLengthLag = bEnableArmLengthLag;
+	NewSpringArm->ArmLengthLagSpeed = ArmLengthLagSpeed;
+	NewSpringArm->CurrentArmLength = CurrentArmLength;
+
+	return NewSpringArm;
+}
+
+void USpringArmComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	// 불러오기
+	if (bInIsLoading)
+	{
+		FJsonSerializer::ReadFloat(InOutHandle, "TargetArmLength", TargetArmLength, 0);
+		FJsonSerializer::ReadBool(InOutHandle, "bEnableCameraLag", bEnableCameraLag, false);
+		FJsonSerializer::ReadFloat(InOutHandle, "CameraLagSpeed", CameraLagSpeed, 10);
+		FJsonSerializer::ReadBool(InOutHandle, "bEnableArmLengthLag", bEnableArmLengthLag, false);
+		FJsonSerializer::ReadFloat(InOutHandle, "ArmLengthLagSpeed", ArmLengthLagSpeed, 100);
+	}
+	// 저장
+	else
+	{
+		InOutHandle["TargetArmLength"] = TargetArmLength;
+		InOutHandle["CameraLagSpeed"] = CameraLagSpeed;
+		InOutHandle["ArmLengthLagSpeed"] = ArmLengthLagSpeed;
+
+		InOutHandle["bEnableCameraLag"] = bEnableCameraLag ? "true" : "false";
+		InOutHandle["bEnableArmLengthLag"] = bEnableArmLengthLag ? "true" : "false";
+	}
+}
+
 void USpringArmComponent::UpdateCamera(float DeltaTime)
 {
-	FVector TargetLocation = GetWorldLocation() - GetForwardVector() * TargetArmLength;
+	if (bEnableArmLengthLag && !bIsFirstUpdate)
+	{
+		float Alpha = Clamp(ArmLengthLagSpeed * DeltaTime, 0.0f, 1.0f);
+		CurrentArmLength = Lerp(CurrentArmLength, TargetArmLength, Alpha);
+	}
+	else
+	{
+		CurrentArmLength = TargetArmLength;
+	}
 
+	FVector TargetLocation = GetWorldLocation() - GetForwardVector() * CurrentArmLength;
 	FVector FinalLocation = TargetLocation;
+
 	if (bEnableCameraLag && !bIsFirstUpdate)
 	{
 		float Alpha = Clamp(CameraLagSpeed * DeltaTime, 0.0f, 1.0f);
 		FinalLocation = FVector::Lerp(PreviousLocation, TargetLocation, Alpha);
 	}
 
-	// 3. 자식 컴포넌트 위치 업데이트
 	const TArray<USceneComponent*>& Children = GetChildren();
 	for (USceneComponent* Child : Children)
 	{

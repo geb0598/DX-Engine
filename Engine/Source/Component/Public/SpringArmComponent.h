@@ -13,12 +13,18 @@ public:
 	virtual void BeginPlay() override;
 	virtual void TickComponent(float DeltaTime) override;
 
+	UObject* Duplicate() override;
+	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;;
+
 	// Settings
 	void SetTargetArmLength(float NewLength) { TargetArmLength = NewLength; }
 	float GetTargetArmLength() const { return TargetArmLength; }
 
 	void SetEnableCameraLag(bool bEnable) { bEnableCameraLag = bEnable; }
 	void SetCameraLagSpeed(float Speed) { CameraLagSpeed = Speed; }
+
+	void SetEnableArmLengthLag(bool bEnable) { bEnableArmLengthLag = bEnable; }
+	void SetArmLengthLagSpeed(float Speed) { ArmLengthLagSpeed = Speed; }
 
 private:
 	void UpdateCamera(float DeltaTime);
@@ -28,12 +34,14 @@ private:
 	bool bEnableCameraLag;      // 기본 false
 	float CameraLagSpeed;       // 기본 10.0f
 
+	bool bEnableArmLengthLag;
+	float ArmLengthLagSpeed;
+
 	// Runtime
 	FVector PreviousLocation;
 	bool bIsFirstUpdate;
-	bool bEnableArmLengthLag;
-	float ArmLengthLagSpeed;
 	FQuaternion LaggedWorldRotation;
 	FVector LaggedWorldLocation;
 	FVector PreviousChildRelativeLocation;
+	float CurrentArmLength;
 };

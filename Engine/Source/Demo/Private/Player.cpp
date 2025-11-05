@@ -29,9 +29,11 @@ void APlayer::InitializeComponents()
 
 	USpringArmComponent* SpringArm = CreateDefaultSubobject<USpringArmComponent>();
 	SpringArm->AttachToComponent(GetRootComponent());
-	SpringArm->SetTargetArmLength(10.0f);
+	SpringArm->SetTargetArmLength(30.0f);
 	SpringArm->SetEnableCameraLag(true);
 	SpringArm->SetCameraLagSpeed(5.0f);
+	SpringArm->SetEnableArmLengthLag(true);
+	SpringArm->SetArmLengthLagSpeed(100.0f);
 
 	UCameraComponent* Camera = CreateDefaultSubobject<UCameraComponent>();
 	Camera->AttachToComponent(SpringArm);
@@ -40,6 +42,10 @@ void APlayer::InitializeComponents()
 	LightSensor->AttachToComponent(GetRootComponent());
 
 	UStaticMeshComponent* StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>();
+	StaticMesh->SetInheritYaw(true);
+	StaticMesh->SetInheritPitch(false);
+	StaticMesh->SetInheritRoll(false);
+
 	StaticMesh->AttachToComponent(GetRootComponent());
 	StaticMesh->SetStaticMesh("Data/Capsule.obj");
 	StaticMesh->SetRelativeLocation(FVector{0, 0, -7});

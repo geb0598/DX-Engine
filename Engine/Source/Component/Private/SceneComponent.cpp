@@ -146,7 +146,23 @@ const FMatrix& USceneComponent::GetWorldTransformMatrix() const
 			// Rotation: Absolute가 아니면 부모 회전 적용
 			if (!bAbsoluteRotation)
 			{
-				WorldRotation = AttachParent->GetWorldRotationAsQuaternion() * RelativeRotation;
+				FQuaternion ParentRotation = AttachParent->GetWorldRotationAsQuaternion();
+				if (bInheritPitch && bInheritYaw && bInheritRoll)
+				{
+					WorldRotation = ParentRotation * RelativeRotation;
+				}
+				else // 하나라도 false이면, 필터링 로직 수행
+				{
+					FRotator ParentRotator = ParentRotation.ToRotator();
+
+					// 상속을 원하지 않는 축을 0으로 초기화
+					if (!bInheritPitch) ParentRotator.Pitch = 0.0f;
+					if (!bInheritYaw)   ParentRotator.Yaw   = 0.0f;
+					if (!bInheritRoll)  ParentRotator.Roll  = 0.0f;
+
+					FQuaternion FilteredParentRotation = ParentRotator.Quaternion();
+					WorldRotation = FilteredParentRotation * RelativeRotation;
+				}
 			}
 
 			// Scale: Absolute가 아니면 부모 스케일 적용
