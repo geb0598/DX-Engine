@@ -237,6 +237,7 @@ void UScriptComponent::UnbindOwnerDelegates()
 
 void UScriptComponent::StartCoroutine(const std::string& FuncName)
 {
+	if (ActiveCoroutines.Num() > 100) { return; } // 현재 계속해서 들어오면 터지는 문제가 있어서 제한
 	sol::function CoroutineFunc = LuaEnv[FuncName];
 	if (!LuaEnv.valid() || !CoroutineFunc.valid())
 	{
