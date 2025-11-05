@@ -3,6 +3,7 @@
 #include "Core/Public/resource.h"
 
 #include "ImGui/imgui.h"
+#include "Level/Public/GameInstance.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/UI/Public/ViewportManager.h"
@@ -154,12 +155,13 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 		// 상단 메뉴바 영역이면 드래그 가능하도록 설정 (30픽셀)
 		if (ScreenPoint.y >= 0 && ScreenPoint.y <= 30)
 		{
+#if WITH_EDITOR
 			if (ImGui::GetIO().WantCaptureMouse && ImGui::IsAnyItemHovered())
 			{
 				// ImGui 요소 위에 있으면 클라이언트 영역으로 처리
 				return HTCLIENT;
 			}
-
+#endif
 			// 빈 공간이면 타이틀바처럼 동작
 			return HTCAPTION;
 		}
@@ -168,6 +170,7 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 		return HTCLIENT;
 	}
 
+#if WITH_EDITOR
 	if (UUIManager::WndProcHandler(InWindowHandle, InMessage, InWParam, InLParam))
 	{
 		if (ImGui::GetIO().WantCaptureMouse)
@@ -180,6 +183,7 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 			return true;
 		}
 	}
+#endif
 
 	UInputManager::GetInstance().ProcessKeyMessage(InMessage, InWParam, InLParam);
 
@@ -193,12 +197,18 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 		}
 		break;
 	case WM_SETCURSOR:
-		// PIE 세션 활성 상태에서 Shift + F1로 Detach하지 않은 경우 커서 강제 숨김
+		// PIE 세션 또는 GameInstance 활성 시 커서 숨김
 		if (LOWORD(InLParam) == HTCLIENT)
 		{
-			if (GEditor->IsPIESessionActive() && !GEditor->IsPIEMouseDetached())
+#if WITH_EDITOR
+			// Editor 모드: PIE 활성 + Detach 안됨
+			bool bShouldHideCursor = GEditor && GEditor->IsPIESessionActive() && !GEditor->IsPIEMouseDetached();
+#else
+			// StandAlone 모드: GameInstance 존재하면 숨김
+			bool bShouldHideCursor = (GameInstance != nullptr);
+#endif
+			if (bShouldHideCursor)
 			{
-				// 커서 완전히 숨김
 				SetCursor(nullptr);
 				return TRUE;
 			}
@@ -253,11 +263,13 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 			if (!URenderer::GetInstance().GetIsResizing())
 			{ // 드래그 X 일때 추가 처리 (최대화 버튼, ...)
 				URenderer::GetInstance().OnResize(LOWORD(InLParam), HIWORD(InLParam));
+#if WITH_EDITOR
 				UUIManager::GetInstance().RepositionImGuiWindows();
 				if (ImGui::GetCurrentContext())
 				{
 					UUIManager::GetInstance().ForceArrangeRightPanels();
 				}
+#endif
 			}
 		}
 		else // SIZE_MINIMIZED

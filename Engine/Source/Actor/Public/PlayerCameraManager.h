@@ -73,6 +73,13 @@ protected:
 	virtual void GetViewTargetPOV(FViewTarget& OutVT);
 
 	/**
+	 * @brief 뷰 타겟 블렌딩 상태를 업데이트하고 CameraCachePOV를 계산합니다.
+	 * @param DeltaTime 프레임 델타 타임
+	 * @param GoalPOV 이번 프레임의 목표 지점 (ViewTarget.POV)
+	 */
+	void UpdateCameraBlending(float DeltaTime, const FMinimalViewInfo& GoalPOV);
+
+	/**
 	 * Apply camera modifiers (to be implemented)
 	 */
 	virtual void ApplyCameraModifiers(float DeltaTime, FMinimalViewInfo& InOutPOV);
@@ -80,6 +87,9 @@ protected:
 private:
 	/** Current view target */
 	FViewTarget ViewTarget;
+
+	/** Cached Camera */
+	UCameraComponent* CachedCameraComponent = nullptr;
 
 	/** Final cached camera POV */
 	FMinimalViewInfo CameraCachePOV;
@@ -154,6 +164,26 @@ public:
 private:
 	/** Whether camera needs update */
 	mutable bool bCameraDirty = true;
+
+
+// ============================================
+// Camera Blend Transition
+// ============================================
+public:
+	/**
+	 * @brief 지정된 시간 동안 부드럽게 뷰 타겟을 변경
+	 * @param NewViewTarget 새 뷰 타겟
+	 * @param BlendTime 블렌딩에 걸리는 시간
+	 * @param BlendFunc 사용할 이징 함수
+	 */
+	void SetViewTargetWithBlend(AActor* NewViewTarget, float BlendTime, EViewTargetBlendFunction BlendFunc = EViewTargetBlendFunction::VTBlend_EaseInOut);
+
+protected:
+	FMinimalViewInfo BlendStartPOV;
+	float TotalBlendTime = 0.0f;
+	float CurrentBlendTime = 0.0f;
+	bool bIsBlending = false;
+	EViewTargetBlendFunction CurrentBlendFunction;
 
 // ============================================
 // Post Process Effects

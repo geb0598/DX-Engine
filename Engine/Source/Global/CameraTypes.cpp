@@ -126,8 +126,5 @@ FMinimalViewInfo FMinimalViewInfo::Blend(
 		A.FadeColor.W + (B.FadeColor.W - A.FadeColor.W) * BlendedAlpha
 	);
 
-	// Update camera constants
-	Result.UpdateCameraConstants();
-
 	return Result;
 }

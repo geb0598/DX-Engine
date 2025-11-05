@@ -579,7 +579,12 @@ void FLuaBinder::BindActorTypes(sol::state& LuaState)
 		"SetVignetteIntensity", &APlayerCameraManager::SetVignetteIntensity,
 		"AddCameraModifier", &APlayerCameraManager::AddCameraModifier,
 		"RemoveCameraModifier", &APlayerCameraManager::RemoveCameraModifier,
-		"ClearCameraModifiers", &APlayerCameraManager::ClearCameraModifiers
+		"ClearCameraModifiers", &APlayerCameraManager::ClearCameraModifiers,
+		"SetViewTargetWithBlend", [](APlayerCameraManager& Self, AActor* NewViewTarget, float BlendTime)
+		{
+			// @TODO - Blend Editor 구현시 String으로 키값 받아서 전달하게 변경
+			Self.SetViewTargetWithBlend(NewViewTarget, BlendTime);
+		}
 	);
 }
 
@@ -665,14 +670,19 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
 			return FVector(0, 0, 0);
 		}
 
-		// PIE 모드에서는 ConsumeMouseDelta 사용
-		// 에디터 모드에서는 일반 GetMouseDelta
+		// PIE와 StandAlone 모두 ConsumeMouseDelta 사용
+		// Editor 모드(WorldType::Editor)에서만 일반 GetMouseDelta 사용
+#if WITH_EDITOR
 		if (GEditor && GEditor->IsPIESessionActive() && !GEditor->IsPIEMouseDetached())
 		{
 			return InputMgr.ConsumeMouseDelta();
 		}
-
+		// Editor 모드 (PIE 아님)
 		return InputMgr.GetMouseDelta();
+#else
+		// StandAlone 모드: PIE와 동일하게 ConsumeMouseDelta 사용
+		return InputMgr.ConsumeMouseDelta();
+#endif
 	});
 
 	// -- D2D Overlay Manager -- //
