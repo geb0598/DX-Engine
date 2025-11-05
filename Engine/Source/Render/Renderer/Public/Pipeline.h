@@ -59,4 +59,8 @@ public:
 private:
 	FPipelineInfo LastPipelineInfo{};
 	ID3D11DeviceContext* DeviceContext;
+
+	// 현재 파이프라인에 바인딩된 RTV, DSV 상태 캐싱
+	TArray<ID3D11RenderTargetView*> CurrentRTVs;
+	ID3D11DepthStencilView* CurrentDSV = nullptr;
 };

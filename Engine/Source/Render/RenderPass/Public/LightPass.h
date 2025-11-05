@@ -3,7 +3,7 @@
 #include "Render/RenderPass/Public/RenderPass.h"
 #include "Render/RenderPass/Public/SharedLightResources.h"
 
-struct FViewClusterInfo 
+struct FViewClusterInfo
 {
 	FMatrix ProjectionInv;
 	FMatrix ViewInv;
@@ -38,9 +38,12 @@ struct FGizmoVertex
 class FLightPass : public FRenderPass
 {
 public:
-	FLightPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera, 
+	FLightPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera,
 		ID3D11InputLayout* InGizmoInputLayout, ID3D11VertexShader* InGizmoVS, ID3D11PixelShader* InGizmoPS,
 		ID3D11DepthStencilState* InGizmoDSS);
+
+	void SetRenderTargets(class UDeviceResources* DeviceResources) override;
+
 	void Execute(FRenderingContext& Context) override;
 	void Release() override;
 
@@ -99,7 +102,7 @@ private:
 	ID3D11UnorderedAccessView* PointLightIndicesRWStructuredBufferUAV = nullptr;
 	ID3D11ShaderResourceView* SpotLightIndicesRWStructuredBufferSRV = nullptr;
 	ID3D11UnorderedAccessView* SpotLightIndicesRWStructuredBufferUAV = nullptr;
-	
+
 	uint32 PointLightBufferCount = 256;
 	uint32 SpotLightBufferCount = 256;
 	uint32 ClusterSliceNumX = 24;

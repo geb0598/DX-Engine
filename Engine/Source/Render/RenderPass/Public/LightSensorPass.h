@@ -38,6 +38,7 @@ class FLightSensorPass : public FRenderPass
 public:
 	FLightSensorPass(UPipeline* InPipeline, ID3D11Buffer* InCameraConstantBuffer);
 
+	void SetRenderTargets(class UDeviceResources* DeviceResources) override;
 	virtual void Execute(FRenderingContext& Context) override;
 	virtual void Release() override;
 

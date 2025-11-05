@@ -18,6 +18,13 @@ FStaticMeshPass::FStaticMeshPass(UPipeline* InPipeline, ID3D11Buffer* InConstant
 	ConstantBufferMaterial = FRenderResourceFactory::CreateConstantBuffer<FMaterialConstants>();
 }
 
+void FStaticMeshPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV(), DeviceResources->GetNormalBufferRTV() };
+	ID3D11DepthStencilView* DSV = DeviceResources->GetDepthBufferDSV();
+	Pipeline->SetRenderTargets(2, RTVs, DSV);
+}
+
 void FStaticMeshPass::Execute(FRenderingContext& Context)
 {
 	const auto& Renderer = URenderer::GetInstance();
@@ -32,7 +39,7 @@ void FStaticMeshPass::Execute(FRenderingContext& Context)
 		VS = Renderer.GetVertexShader(Context.ViewMode);
 		PS = Renderer.GetPixelShader(Context.ViewMode);
 	}
-	
+
 	ID3D11RasterizerState* RS = FRenderResourceFactory::GetRasterizerState(RenderState);
 	FPipelineInfo PipelineInfo = { InputLayout, VS, RS, DS, PS, nullptr, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
 	Pipeline->UpdatePipeline(PipelineInfo);
@@ -76,29 +83,7 @@ void FStaticMeshPass::Execute(FRenderingContext& Context)
 	FStaticMesh* CurrentMeshAsset = nullptr;
 	UMaterial* CurrentMaterial = nullptr;
 
-	// --- RTVs Setup ---
-	
-	/**
-	 * @todo Find a better way to reduce depdency upon Renderer class.
-	 * @note How about introducing methods like BeginPass(), EndPass() to set up and release pass specific state?
-	 */
-	const auto& DeviceResources = Renderer.GetDeviceResources();
-	ID3D11RenderTargetView* RTV = nullptr;
-	if (Renderer.GetFXAA())
-	{
-		RTV = DeviceResources->GetSceneColorRenderTargetView();	
-	}
-	else
-	{
-		RTV = DeviceResources->GetRenderTargetView();	
-	}
-	ID3D11RenderTargetView* RTVs[2] = { RTV, DeviceResources->GetNormalRenderTargetView() };
-	ID3D11DepthStencilView* DSV = DeviceResources->GetDepthStencilView();
-	Pipeline->SetRenderTargets(2, RTVs, DSV);
-
-	// --- RTVs Setup End ---
-
-	for (UStaticMeshComponent* MeshComp : MeshComponents) 
+	for (UStaticMeshComponent* MeshComp : MeshComponents)
 	{
 		if (!MeshComp->IsVisible()) { continue; }
 		if (!MeshComp->GetStaticMesh()) { continue; }
@@ -111,17 +96,17 @@ void FStaticMeshPass::Execute(FRenderingContext& Context)
 			Pipeline->SetIndexBuffer(MeshComp->GetIndexBuffer(), 0);
 			CurrentMeshAsset = MeshAsset;
 		}
-		
+
 		FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferModel, MeshComp->GetWorldTransformMatrix());
 		Pipeline->SetConstantBuffer(0, EShaderType::VS, ConstantBufferModel);
 
-		if (MeshAsset->MaterialInfo.IsEmpty() || MeshComp->GetStaticMesh()->GetNumMaterials() == 0) 
+		if (MeshAsset->MaterialInfo.IsEmpty() || MeshComp->GetStaticMesh()->GetNumMaterials() == 0)
 		{
 			Pipeline->DrawIndexed(static_cast<uint32>(MeshAsset->Indices.Num()), 0, 0);
 			continue;
 		}
 
-		if (MeshComp->IsScrollEnabled()) 
+		if (MeshComp->IsScrollEnabled())
 		{
 			MeshComp->SetElapsedTime(MeshComp->GetElapsedTime() + UTimeManager::GetInstance().GetDeltaTime());
 		}
@@ -174,7 +159,7 @@ void FStaticMeshPass::Execute(FRenderingContext& Context)
 				{
 					Pipeline->SetShaderResourceView(4, EShaderType::PS, AlphaTexture->GetTextureSRV());
 				}
-				if (UTexture* BumpTexture = Material->GetBumpTexture()) 
+				if (UTexture* BumpTexture = Material->GetBumpTexture())
 				{ // 범프 텍스처 추가 그러나 범프 텍스처 사용하지 않아서 없을 것임. 무시 ㄱㄱ
 					Pipeline->SetShaderResourceView(5, EShaderType::PS, BumpTexture->GetTextureSRV());
 					// 필요한 경우 샘플러 지정
@@ -193,16 +178,6 @@ void FStaticMeshPass::Execute(FRenderingContext& Context)
 	Pipeline->SetShaderResourceView(12, EShaderType::PS, nullptr);  // Directional Light Tile Position
 	Pipeline->SetShaderResourceView(13, EShaderType::PS, nullptr);  // Spotlight Tile Position
 	Pipeline->SetShaderResourceView(14, EShaderType::PS, nullptr);  // Point Light Tile Position
-
-	// --- RTVs Reset ---
-	
-	/**
-	 * @todo Find a better way to reduce depdency upon Renderer class.
-	 * @note How about introducing methods like BeginPass(), EndPass() to set up and release pass specific state?
-	 */
-	Pipeline->SetRenderTargets(2, RTVs, DSV);
-
-	// --- RTVs Reset End ---
 }
 
 void FStaticMeshPass::Release()

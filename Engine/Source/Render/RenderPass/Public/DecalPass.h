@@ -24,7 +24,8 @@ public:
         ID3D11Buffer* InConstantBufferViewProj,
         ID3D11VertexShader* InVS, ID3D11PixelShader* InPS, ID3D11InputLayout* InLayout, ID3D11DepthStencilState* InDS_Read, ID3D11BlendState* InBlendState
 );
-    
+
+	void SetRenderTargets(class UDeviceResources* DeviceResources) override;
 	void Execute(FRenderingContext& Context) override;
 	void Release() override;
 

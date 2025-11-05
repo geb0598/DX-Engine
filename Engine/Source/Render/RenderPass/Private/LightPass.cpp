@@ -2,8 +2,8 @@
 #include "Render/RenderPass/Public/LightPass.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Component/Public/AmbientLightComponent.h"
-#include "component/Public/DirectionalLightComponent.h"
-#include "component/Public/PointLightComponent.h"
+#include "Component/Public/DirectionalLightComponent.h"
+#include "Component/Public/PointLightComponent.h"
 #include "Component/Public/SpotLightComponent.h"
 #include "Render/RenderPass/Public/ShadowMapPass.h"
 #include "Source/Editor/Public/Camera.h"
@@ -11,7 +11,7 @@
 
 constexpr uint32 CSNumThread = 128;
 
-FLightPass::FLightPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera, 
+FLightPass::FLightPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera,
 	ID3D11InputLayout* InGizmoInputLayout, ID3D11VertexShader* InGizmoVS, ID3D11PixelShader* InGizmoPS,
 	ID3D11DepthStencilState* InGizmoDSS) :
 	FRenderPass(InPipeline, InConstantBufferCamera, nullptr)
@@ -28,6 +28,14 @@ FLightPass::FLightPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCame
 	CameraConstantBuffer = InConstantBufferCamera;
 
 }
+
+void FLightPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV() };
+	ID3D11DepthStencilView* DSV = DeviceResources->GetDepthBufferDSV();
+	Pipeline->SetRenderTargets(1, RTVs, DSV);
+}
+
 void FLightPass::CreateOptionBuffers()
 {
 	ViewClusterInfoConstantBuffer = FRenderResourceFactory::CreateConstantBuffer<FViewClusterInfo>();
@@ -244,7 +252,7 @@ void FLightPass::Execute(FRenderingContext& Context)
 	Pipeline->SetShaderResourceView(2, EShaderType::CS, nullptr);
 
 	// 클러스터 기즈모 제작
-	if (bClusterGizmoSet == false) 
+	if (bClusterGizmoSet == false)
 	{
 		bClusterGizmoSet = true;
 		Pipeline->SetUnorderedAccessView(0, ClusterGizmoVertexRWStructuredBufferUAV);
@@ -261,8 +269,8 @@ void FLightPass::Execute(FRenderingContext& Context)
 		Pipeline->SetShaderResourceView(3, EShaderType::CS, nullptr);
 		Pipeline->SetShaderResourceView(4, EShaderType::CS, nullptr);
 	}
-	
-	if (bRenderClusterGizmo) 
+
+	if (bRenderClusterGizmo)
 	{
 		//클러스터 기즈모 출력
 		ID3D11RasterizerState* RS = FRenderResourceFactory::GetRasterizerState(FRenderState());
@@ -272,20 +280,6 @@ void FLightPass::Execute(FRenderingContext& Context)
 
 		Pipeline->SetShaderResourceView(0, EShaderType::VS, ClusterGizmoVertexRWStructuredBufferSRV);
 
-		URenderer& Renderer = URenderer::GetInstance();
-		const auto& DeviceResources = Renderer.GetDeviceResources();
-		ID3D11RenderTargetView* RTV = nullptr;
-		if (Renderer.GetFXAA())
-		{
-			RTV = DeviceResources->GetSceneColorRenderTargetView();
-		}
-		else
-		{
-			RTV = DeviceResources->GetRenderTargetView();
-		}
-		ID3D11RenderTargetView* RTVs[] = { RTV };
-		ID3D11DepthStencilView* DSV = DeviceResources->GetDepthStencilView();
-		Pipeline->SetRenderTargets(1, RTVs, DSV);
 		Pipeline->Draw((GetClusterCount() + 1) * 24, 0);
 		Pipeline->SetShaderResourceView(0, EShaderType::VS, nullptr);
 

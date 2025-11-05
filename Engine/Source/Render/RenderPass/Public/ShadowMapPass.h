@@ -34,8 +34,9 @@ public:
 		ID3D11PixelShader* InPointLightShadowPS,
 		ID3D11InputLayout* InPointLightShadowInputLayout);
 
-	virtual ~FShadowMapPass();
+	~FShadowMapPass() override;
 
+	void SetRenderTargets(class UDeviceResources* DeviceResources) override;
 	void Execute(FRenderingContext& Context) override;
 	void Release() override;
 
@@ -45,23 +46,23 @@ public:
 	 * @param Light Directional light component
 	 * @return Shadow map 리소스 포인터 (없으면 nullptr)
 	 */
-	FShadowMapResource* GetDirectionalShadowMap(UDirectionalLightComponent* Light);
+	FShadowMapResource* GetDirectionalShadowMap(UDirectionalLightComponent* Light) { return DirectionalShadowMaps.FindRef(Light); }
 
 	/**
 	 * @brief Spot light의 shadow map 리소스를 가져옵니다.
 	 * @param Light Spot light component
 	 * @return Shadow map 리소스 포인터 (없으면 nullptr)
 	 */
-	FShadowMapResource* GetSpotShadowMap(USpotLightComponent* Light);
+	FShadowMapResource* GetSpotShadowMap(USpotLightComponent* Light) { return SpotShadowMaps.FindRef(Light); }
 
 	/**
 	 * @brief Point light의 cube shadow map 리소스를 가져옵니다.
 	 * @param Light Point light component
 	 * @return Cube shadow map 리소스 포인터 (없으면 nullptr)
 	 */
-	FCubeShadowMapResource* GetPointShadowMap(UPointLightComponent* Light);
+	FCubeShadowMapResource* GetPointShadowMap(UPointLightComponent* Light) { return PointShadowMaps.FindRef(Light); }
 
-	FShadowMapResource* GetShadowAtlas();
+	FShadowMapResource* GetShadowAtlas() { return &ShadowAtlas; }
 
 	// --- Shadow Resources Access ---
 	// TODO: 나중에 FSharedShadowResources 구조체를 만들어 FSharedLightResources와 같은 패턴으로 리팩토링할 것
@@ -96,7 +97,7 @@ public:
 	 * @return Directional Light의 Atlas Tile 위치
 	 * @todo ShadowMapPass에 저장되어있는 인덱스와 외부에서 활용되는 인덱스 일치여부 확인
 	 */
-	FShadowAtlasTilePos GetDirectionalAtlasTilePos(uint32 Index) const;
+	FShadowAtlasTilePos GetDirectionalAtlasTilePos(uint32 Index) const { return ShadowAtlasDirectionalLightTilePosArray[Index]; }
 
 	/**
 	 * @brief Spotlight의 Atlas Tile 위치를 가져옵니다.
@@ -104,7 +105,7 @@ public:
 	 * @return Spotlight의 Atlas Tile 위치
 	 * @todo ShadowMapPass에 저장되어있는 인덱스와 외부에서 활용되는 인덱스 일치여부 확인
 	 */
-	FShadowAtlasTilePos GetSpotAtlasTilePos(uint32 Index) const;
+	FShadowAtlasTilePos GetSpotAtlasTilePos(uint32 Index) const { return ShadowAtlasSpotLightTilePosArray[Index]; }
 
 	// Shadow stat information
 	uint64 GetTotalShadowMapMemory() const;
@@ -117,7 +118,7 @@ public:
 	 * @return Point Light의 Atlas Tile 위치
 	 * @todo ShadowMapPass에 저장되어있는 인덱스와 외부에서 활용되는 인덱스 일치여부 확인
 	 */
-	FShadowAtlasPointLightTilePos GetPointAtlasTilePos(uint32 Index) const;
+	FShadowAtlasPointLightTilePos GetPointAtlasTilePos(uint32 Index) const { return ShadowAtlasPointLightTilePosArray[Index]; }
 
 private:
 	// --- Directional Light Shadow Rendering ---
@@ -296,10 +297,10 @@ private:
 
 	ID3D11Buffer* ShadowAtlasDirectionalLightTilePosStructuredBuffer = nullptr;
 	ID3D11ShaderResourceView* ShadowAtlasDirectionalLightTilePosStructuredSRV = nullptr;
-	
+
 	ID3D11Buffer* ShadowAtlasSpotLightTilePosStructuredBuffer = nullptr;
 	ID3D11ShaderResourceView* ShadowAtlasSpotLightTilePosStructuredSRV = nullptr;
-	
+
 	ID3D11Buffer* ShadowAtlasPointLightTilePosStructuredBuffer = nullptr;
 	ID3D11ShaderResourceView* ShadowAtlasPointLightTilePosStructuredSRV = nullptr;
 

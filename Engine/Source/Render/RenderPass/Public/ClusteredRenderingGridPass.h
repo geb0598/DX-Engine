@@ -13,6 +13,7 @@ public:
         ID3D11DepthStencilState* InDS_Read,
         ID3D11BlendState* InBlendState);
 
+	void SetRenderTargets(class UDeviceResources* DeviceResources) override;
     void Execute(FRenderingContext& Context) override;
     void Release() override;
 

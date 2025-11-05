@@ -12,6 +12,7 @@ class FSceneDepthPass : public FRenderPass
 public:
     FSceneDepthPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera, ID3D11DepthStencilState* InDS);
 
+	void SetRenderTargets(class UDeviceResources* DeviceResources) override;
     void Execute(FRenderingContext& Context) override;
     void Release() override;
 

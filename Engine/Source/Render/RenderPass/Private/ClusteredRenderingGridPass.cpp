@@ -14,6 +14,13 @@ FClusteredRenderingGridPass::FClusteredRenderingGridPass(UPipeline* InPipeline, 
 
 }
 
+void FClusteredRenderingGridPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	//--- Detatch DSV from GPU ---//
+	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV() };
+	Pipeline->SetRenderTargets(1, RTVs, nullptr);
+}
+
 void FClusteredRenderingGridPass::Execute(FRenderingContext& Context)
 {
     if (bClusteredRenderginGridRender == false)
@@ -21,22 +28,6 @@ void FClusteredRenderingGridPass::Execute(FRenderingContext& Context)
         return;
     }
     TIME_PROFILE(FogPass)
-
-    //--- Get Renderer Singleton ---//
-    URenderer& Renderer = URenderer::GetInstance();
-
-    //--- Detatch DSV from GPU ---//
-    ID3D11RenderTargetView* RTV;
-    if (!(Context.ShowFlags & EEngineShowFlags::SF_FXAA))
-    {
-        RTV = Renderer.GetDeviceResources()->GetRenderTargetView();
-    }
-    else
-    {
-        RTV = Renderer.GetDeviceResources()->GetSceneColorRenderTargetView();
-    }
-    auto* DSV = Renderer.GetDeviceResources()->GetDepthStencilView();
-    Renderer.GetDeviceContext()->OMSetRenderTargets(1, &RTV, nullptr);
 
     // --- Set Pipeline State --- //
     FPipelineInfo PipelineInfo = { InputLayout, VS, FRenderResourceFactory::GetRasterizerState({ ECullMode::Back, EFillMode::Solid }),
@@ -51,8 +42,6 @@ void FClusteredRenderingGridPass::Execute(FRenderingContext& Context)
 
     Pipeline->Draw(3, 0);
     Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
-
-    Renderer.GetDeviceContext()->OMSetRenderTargets(1, &RTV, DSV);
 }
 
 void FClusteredRenderingGridPass::Release()

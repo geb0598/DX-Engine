@@ -17,17 +17,19 @@ FSceneDepthPass::FSceneDepthPass(UPipeline* InPipeline, ID3D11Buffer* InConstant
     ConstantBufferPerFrame = FRenderResourceFactory::CreateConstantBuffer<FSceneDepthConstants>();
 }
 
+void FSceneDepthPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV() };
+	Pipeline->SetRenderTargets(1, RTVs, nullptr);
+}
+
 void FSceneDepthPass::Execute(FRenderingContext& Context)
 {
     if (Context.ViewMode != EViewModeIndex::VMI_SceneDepth) { return; }
-    
+
 	const auto& Renderer = URenderer::GetInstance();
     const auto& DeviceResources = Renderer.GetDeviceResources();
-    ID3D11RenderTargetView* RTV = Renderer.GetFXAA() ? DeviceResources->GetSceneColorRenderTargetView() : DeviceResources->GetRenderTargetView();
-    
-    ID3D11RenderTargetView* RTVs[] = { RTV };
-    Pipeline->SetRenderTargets(1, RTVs, nullptr);
-    auto RS = FRenderResourceFactory::GetRasterizerState( { ECullMode::None, EFillMode::Solid }); 
+    auto RS = FRenderResourceFactory::GetRasterizerState( { ECullMode::None, EFillMode::Solid });
 
     FPipelineInfo PipelineInfo = { nullptr, VertexShader, RS, DS, PixelShader, nullptr, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST };
     Pipeline->UpdatePipeline(PipelineInfo);
@@ -38,13 +40,12 @@ void FSceneDepthPass::Execute(FRenderingContext& Context)
     FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferPerFrame, SceneDepthConstants);
     Pipeline->SetConstantBuffer(0, EShaderType::PS, ConstantBufferPerFrame);
     Pipeline->SetConstantBuffer(1, EShaderType::PS, ConstantBufferCamera);
-    Pipeline->SetShaderResourceView(0, EShaderType::PS, DeviceResources->GetDepthSRV());
+    Pipeline->SetShaderResourceView(0, EShaderType::PS, Renderer.GetDepthBufferSRV());
     Pipeline->SetSamplerState(0, EShaderType::PS, SamplerState);
 
     Pipeline->Draw(3, 0);
 
-    ID3D11DepthStencilView* DSV = DeviceResources->GetDepthStencilView();
-    Pipeline->SetRenderTargets(1, RTVs, DSV);
+	Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
 }
 
 void FSceneDepthPass::Release()

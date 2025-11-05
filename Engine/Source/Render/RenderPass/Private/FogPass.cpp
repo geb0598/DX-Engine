@@ -16,6 +16,14 @@ FFogPass::FFogPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferViewProj
     ConstantBufferViewportInfo = FRenderResourceFactory::CreateConstantBuffer<FViewportConstants>();
 }
 
+void FFogPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	// Fog는 원래 그려진 것에 Alpha Blend를 하는 방식이라 Frame Swap 필요 X
+	ID3D11RenderTargetView* RTVs[] = { DeviceResources->GetDestinationRTV() };
+	DepthSRV = DeviceResources->GetDepthBufferSRV();
+	Pipeline->SetRenderTargets(1, RTVs, nullptr);
+}
+
 void FFogPass::Execute(FRenderingContext& Context)
 {
     TIME_PROFILE(FogPass)
@@ -25,24 +33,14 @@ void FFogPass::Execute(FRenderingContext& Context)
     //--- Get Renderer Singleton ---//
     URenderer& Renderer = URenderer::GetInstance();
 
-    //--- Detatch DSV from GPU ---//
-    ID3D11RenderTargetView* RTV;
-    if (!(Context.ShowFlags & EEngineShowFlags::SF_FXAA))
-    {
-        RTV = Renderer.GetDeviceResources()->GetRenderTargetView();
-    }
-    else
-    {
-        RTV = Renderer.GetDeviceResources()->GetSceneColorRenderTargetView();
-    }
-    auto* DSV = Renderer.GetDeviceResources()->GetDepthStencilView();
-    Renderer.GetDeviceContext()->OMSetRenderTargets(1, &RTV, nullptr);
-    
     // --- Set Pipeline State --- //
     FPipelineInfo PipelineInfo = { InputLayout, VS, FRenderResourceFactory::GetRasterizerState({ ECullMode::Back, EFillMode::Solid }),
         DS_Read, PS, BlendState };
     Pipeline->UpdatePipeline(PipelineInfo);
-    
+
+	Pipeline->SetShaderResourceView(0, EShaderType::PS, Renderer.GetDepthBufferSRV());
+	Pipeline->SetSamplerState(0, EShaderType::PS, Renderer.GetDefaultSampler());
+
     // --- Draw Fog --- //
     for (UHeightFogComponent* Fog : Context.Fogs)
     {
@@ -51,7 +49,7 @@ void FFogPass::Execute(FRenderingContext& Context)
         {
             continue;
         }
-        
+
         // Update Fog Constant Buffer (Slot 0)
         FFogConstants FogConstant;
         FVector color3 = Fog->GetFogInscatteringColor();
@@ -79,15 +77,9 @@ void FFogPass::Execute(FRenderingContext& Context)
         FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewportInfo, ViewportConstants);
         Pipeline->SetConstantBuffer(2, EShaderType::PS, ConstantBufferViewportInfo);
 
-        // Set Resources
-        Pipeline->SetShaderResourceView(0, EShaderType::PS, Renderer.GetDepthSRV());
-        Pipeline->SetSamplerState(0, EShaderType::PS, Renderer.GetDefaultSampler());
-
         Pipeline->Draw(3,0);
     }
     Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
-    
-    Renderer.GetDeviceContext()->OMSetRenderTargets(1, &RTV, DSV);
 }
 
 void FFogPass::Release()

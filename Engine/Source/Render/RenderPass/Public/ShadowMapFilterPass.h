@@ -25,6 +25,13 @@ public:
 
     virtual ~FShadowMapFilterPass();
 
+	/**
+	 * @brief 프레임마다 실행할 렌더 타겟 설정 함수
+	 * Execute 전에 호출되어 해당 Pass의 렌더 타겟을 설정함
+	 * @param DeviceResources RTV/DSV/Buffer 등을 담고 있는 DeviceResources 객체
+	 */
+	void SetRenderTargets(class UDeviceResources* DeviceResources) override;
+
     void Execute(FRenderingContext& Context) override;
     void Release() override;
 
@@ -49,9 +56,9 @@ private:
 
     // @todo: 쉐도우 맵 크기 동적조정 기능 추가전까지 사용
     static constexpr uint32 TEXTURE_WIDTH = 1024;
-    
+
     static constexpr uint32 TEXTURE_HEIGHT = 1024;
-    
+
     // 컴퓨트 셰이더의 스레드 그룹 차원(X) 크기.
     // @note HLSL의 [numthreads(X, Y, Z)] 지시자에서 X 값과 반드시 일치해야 한다.
     static constexpr uint32 THREAD_BLOCK_SIZE_X = 16;

@@ -66,6 +66,11 @@ FLightSensorPass::FLightSensorPass(UPipeline* InPipeline, ID3D11Buffer* InCamera
 	}
 }
 
+void FLightSensorPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+	// CS 전용 Pass
+}
+
 void FLightSensorPass::Execute(FRenderingContext& Context)
 {
 	// 1. 이전 프레임 결과 처리

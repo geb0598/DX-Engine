@@ -14,78 +14,6 @@
 #define Y_OFFSET 1024.0f
 #define SHADOW_MAP_RESOLUTION 1024.0f
 
-// Helper functions for matrix operations
-namespace ShadowMatrixHelper
-{
-	// Create a look-at view matrix (Left-Handed)
-	FMatrix CreateLookAtLH(const FVector& Eye, const FVector& Target, const FVector& Up)
-	{
-		FVector ZAxis = (Target - Eye).GetNormalized();
-		FVector XAxis = Up.Cross(ZAxis).GetNormalized();
-		FVector YAxis = ZAxis.Cross(XAxis);
-
-		FMatrix Result;
-		Result.Data[0][0] = XAxis.X;  Result.Data[0][1] = YAxis.X;  Result.Data[0][2] = ZAxis.X;  Result.Data[0][3] = 0.0f;
-		Result.Data[1][0] = XAxis.Y;  Result.Data[1][1] = YAxis.Y;  Result.Data[1][2] = ZAxis.Y;  Result.Data[1][3] = 0.0f;
-		Result.Data[2][0] = XAxis.Z;  Result.Data[2][1] = YAxis.Z;  Result.Data[2][2] = ZAxis.Z;  Result.Data[2][3] = 0.0f;
-		Result.Data[3][0] = -XAxis.Dot(Eye);
-		Result.Data[3][1] = -YAxis.Dot(Eye);
-		Result.Data[3][2] = -ZAxis.Dot(Eye);
-		Result.Data[3][3] = 1.0f;
-
-		return Result;
-	}
-
-	// Create an orthographic projection matrix (Left-Handed)
-	FMatrix CreateOrthoLH(float Left, float Right, float Bottom, float Top, float Near, float Far)
-	{
-		FMatrix Result;
-		Result.Data[0][0] = 2.0f / (Right - Left);
-		Result.Data[0][1] = 0.0f;
-		Result.Data[0][2] = 0.0f;
-		Result.Data[0][3] = 0.0f;
-
-		Result.Data[1][0] = 0.0f;
-		Result.Data[1][1] = 2.0f / (Top - Bottom);
-		Result.Data[1][2] = 0.0f;
-		Result.Data[1][3] = 0.0f;
-
-		Result.Data[2][0] = 0.0f;
-		Result.Data[2][1] = 0.0f;
-		Result.Data[2][2] = 1.0f / (Far - Near);
-		Result.Data[2][3] = 0.0f;
-
-		Result.Data[3][0] = (Left + Right) / (Left - Right);
-		Result.Data[3][1] = (Top + Bottom) / (Bottom - Top);
-		Result.Data[3][2] = Near / (Near - Far);
-		Result.Data[3][3] = 1.0f;
-
-		return Result;
-	}
-
-	// Create a perspective projection matrix (Left-Handed)
-	// Used for spot light shadow mapping
-	FMatrix CreatePerspectiveFovLH(float FovYRadians, float Aspect, float Near, float Far)
-	{
-		// f = 1 / tan(fovY/2)
-		const float F = 1.0f / std::tanf(FovYRadians * 0.5f);
-
-		FMatrix Result = FMatrix::Identity();
-		// | f/aspect   0        0         0 |
-		// |    0       f        0         0 |
-		// |    0       0   zf/(zf-zn)     1 |
-		// |    0       0  -zn*zf/(zf-zn)  0 |
-		Result.Data[0][0] = F / Aspect;
-		Result.Data[1][1] = F;
-		Result.Data[2][2] = Far / (Far - Near);
-		Result.Data[2][3] = 1.0f;
-		Result.Data[3][2] = (-Near * Far) / (Far - Near);
-		Result.Data[3][3] = 0.0f;
-
-		return Result;
-	}
-}
-
 FShadowMapPass::FShadowMapPass(UPipeline* InPipeline,
 	ID3D11Buffer* InConstantBufferCamera,
 	ID3D11Buffer* InConstantBufferModel,
@@ -144,11 +72,11 @@ FShadowMapPass::FShadowMapPass(UPipeline* InPipeline,
 	PointLightShadowParamsBuffer = FRenderResourceFactory::CreateConstantBuffer<FPointLightShadowParams>();
 
 	ConstantCascadeData = FRenderResourceFactory::CreateConstantBuffer<FCascadeShadowMapData>();
-	
+
 	ShadowAtlas.Initialize(Device, 8192);
 
 	D3D11_BUFFER_DESC BufferDesc = {};
-	
+
 	//BufferDesc.Usage = D3D11_USAGE_DEFAULT;
 	BufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 	BufferDesc.ByteWidth = (UINT)(8 * sizeof(FShadowAtlasTilePos));
@@ -156,15 +84,15 @@ FShadowMapPass::FShadowMapPass(UPipeline* InPipeline,
 	BufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	BufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	BufferDesc.StructureByteStride = sizeof(FShadowAtlasTilePos);
-	
+
 	// 초기 데이터
-	
+
 	hr = URenderer::GetInstance().GetDevice()->CreateBuffer(
 		&BufferDesc,
 		nullptr,
 		&ShadowAtlasDirectionalLightTilePosStructuredBuffer
 		);
-	
+
 	assert(SUCCEEDED(hr));
 
 	hr = URenderer::GetInstance().GetDevice()->CreateBuffer(
@@ -172,26 +100,26 @@ FShadowMapPass::FShadowMapPass(UPipeline* InPipeline,
 		nullptr,
 		&ShadowAtlasSpotLightTilePosStructuredBuffer
 		);
-	
+
 	assert(SUCCEEDED(hr));
 
 	BufferDesc.ByteWidth = (UINT)(8 * sizeof(FShadowAtlasPointLightTilePos));
 	BufferDesc.StructureByteStride = sizeof(FShadowAtlasPointLightTilePos);
-	
+
 	hr = URenderer::GetInstance().GetDevice()->CreateBuffer(
 		&BufferDesc,
 		nullptr,
 		&ShadowAtlasPointLightTilePosStructuredBuffer
 		);
-	
+
 	assert(SUCCEEDED(hr));
-	
+
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
 	SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
 	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
 	SRVDesc.Buffer.FirstElement = 0;
 	SRVDesc.Buffer.NumElements = (UINT)8;
-	
+
 	hr = URenderer::GetInstance().GetDevice()->CreateShaderResourceView(
 		ShadowAtlasDirectionalLightTilePosStructuredBuffer,
 		&SRVDesc,
@@ -205,7 +133,7 @@ FShadowMapPass::FShadowMapPass(UPipeline* InPipeline,
 		&SRVDesc,
 		&ShadowAtlasSpotLightTilePosStructuredSRV
 		);
-	
+
 	assert(SUCCEEDED(hr));
 
 	hr = URenderer::GetInstance().GetDevice()->CreateShaderResourceView(
@@ -213,7 +141,7 @@ FShadowMapPass::FShadowMapPass(UPipeline* InPipeline,
 		&SRVDesc,
 		&ShadowAtlasPointLightTilePosStructuredSRV
 		);
-	
+
 	assert(SUCCEEDED(hr));
 
 	ShadowAtlasDirectionalLightTilePosArray.SetNum(8);
@@ -226,6 +154,10 @@ FShadowMapPass::~FShadowMapPass()
 	Release();
 }
 
+void FShadowMapPass::SetRenderTargets(class UDeviceResources* DeviceResources)
+{
+}
+
 void FShadowMapPass::Execute(FRenderingContext& Context)
 {
 	// IMPORTANT: Unbind shadow map SRVs before rendering to them as DSV
@@ -235,7 +167,7 @@ void FShadowMapPass::Execute(FRenderingContext& Context)
 	ID3D11ShaderResourceView* NullSRVs[4] = { nullptr, nullptr, nullptr, nullptr };
 	DeviceContext->PSSetShaderResources(10, 4, NullSRVs);  // Unbind t10-t14
 
-	
+
 	const float ClearColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	DeviceContext->ClearRenderTargetView(ShadowAtlas.VarianceShadowRTV.Get(), ClearColor);
 	DeviceContext->ClearDepthStencilView(ShadowAtlas.ShadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -262,7 +194,7 @@ void FShadowMapPass::Execute(FRenderingContext& Context)
 	{
 		if (ValidSpotLights.Num() >= MAX_LIGHT_NUM)
 			break;
-		
+
 		if (SpotLight->GetCastShadows() && SpotLight->GetLightEnabled())
 		{
 			ValidSpotLights.Add(SpotLight);
@@ -281,7 +213,7 @@ void FShadowMapPass::Execute(FRenderingContext& Context)
 	{
 		if (ValidPointLights.Num() >= MAX_LIGHT_NUM)
 			break;
-		
+
 		if (PointLight->GetCastShadows() && PointLight->GetLightEnabled())
 		{
 			ValidPointLights.Add(PointLight);
@@ -491,9 +423,9 @@ void FShadowMapPass::RenderSpotShadowMap(
 	ShadowViewport.TopLeftY = Y_START;
 
 	ShadowAtlasSpotLightTilePosArray[AtlasIndex] = {{AtlasIndex, 1}};
-	
+
 	DeviceContext->RSSetViewports(1, &ShadowViewport);
-	
+
 	// 2. Light별 캐싱된 rasterizer state 가져오기 (DepthBias 포함)
 	ID3D11RasterizerState* RastState = ShadowRasterizerState;
 	if (Light->GetShadowModeIndex() == EShadowModeIndex::SMI_UnFiltered || Light->GetShadowModeIndex() == EShadowModeIndex::SMI_PCF)
@@ -523,7 +455,7 @@ void FShadowMapPass::RenderSpotShadowMap(
 	// Store the calculated shadow view-projection matrix in the light component
 	FMatrix LightViewProj = LightView * LightProj;
 	Light->SetShadowViewProjection(LightViewProj);  // Will be added to SpotLightComponent in Phase 6
-	
+
 	FPointLightShadowParams Params;
 	Params.LightPosition = Light->GetWorldLocation();
 	Params.LightRange = Light->GetAttenuationRadius();
@@ -613,7 +545,7 @@ void FShadowMapPass::RenderPointShadowMap(
 	// 하나의 Atlas에 모두 작성하므로
 	// RenderTarget은 변경될 일이 없어 먼저 Set한다.
 	Pipeline->SetRenderTargets(1, ShadowAtlas.VarianceShadowRTV.GetAddressOf(), ShadowAtlas.ShadowDSV.Get());
-	
+
 	// 4. 6개 면 렌더링 (+X, -X, +Y, -Y, +Z, -Z)
 	for (int Face = 0; Face < 6; Face++)
 	{
@@ -882,7 +814,7 @@ void FShadowMapPass::CalculateSpotLightViewProj(USpotLightComponent* Light,
 	if (std::abs(LightDir.Z) > 0.99f)  // Light가 거의 수직(Z축과 평행)이면
 		Up = FVector(1, 0, 0);  // X-Forward를 fallback으로
 
-	OutView = ShadowMatrixHelper::CreateLookAtLH(LightPos, Target, Up);
+	OutView = FMatrix::CreateLookAtLH(LightPos, Target, Up);
 
 	// 3. Perspective Projection 생성: Cone 모양의 frustum
 	float FovY = Light->GetOuterConeAngle() * 2.0f;  // Full cone angle
@@ -897,7 +829,7 @@ void FShadowMapPass::CalculateSpotLightViewProj(USpotLightComponent* Light,
 	if (Far <= Near)
 		Far = Near + 10.0f;
 
-	OutProj = ShadowMatrixHelper::CreatePerspectiveFovLH(FovY, Aspect, Near, Far);
+	OutProj = FMatrix::CreatePerspectiveFovLH(FovY, Aspect, Near, Far);
 }
 
 void FShadowMapPass::CalculatePointLightViewProj(UPointLightComponent* Light, FMatrix OutViewProj[6])
@@ -912,7 +844,7 @@ void FShadowMapPass::CalculatePointLightViewProj(UPointLightComponent* Light, FM
 		Far = Near + 10.0f;
 
 	// 3. Perspective projection (90 degree FOV for cube faces)
-	FMatrix Proj = ShadowMatrixHelper::CreatePerspectiveFovLH(
+	FMatrix Proj = FMatrix::CreatePerspectiveFovLH(
 		PI / 2.0f,  // 90 degrees FOV
 		1.0f,       // Aspect ratio 1:1 (square)
 		Near,
@@ -944,7 +876,7 @@ void FShadowMapPass::CalculatePointLightViewProj(UPointLightComponent* Light, FM
 	for (int i = 0; i < 6; i++)
 	{
 		FVector Target = LightPos + Directions[i];
-		FMatrix View = ShadowMatrixHelper::CreateLookAtLH(LightPos, Target, Ups[i]);
+		FMatrix View = FMatrix::CreateLookAtLH(LightPos, Target, Ups[i]);
 		OutViewProj[i] = View * Proj;
 	}
 }
@@ -968,7 +900,7 @@ FShadowMapResource* FShadowMapPass::GetOrCreateShadowMap(ULightComponent* Light)
 		{
 			ShadowMapSlot->Initialize(Device, Resolution);
 		}
-       
+
 		// 4. 로컬 변수에 최종 결과 할당
 		ShadowMap = ShadowMapSlot;
 	}
@@ -985,7 +917,7 @@ FShadowMapResource* FShadowMapPass::GetOrCreateShadowMap(ULightComponent* Light)
 		{
 			ShadowMapSlot->Initialize(Device, Resolution);
 		}
-       
+
 		ShadowMap = ShadowMapSlot;
 	}
 
@@ -1016,31 +948,6 @@ FCubeShadowMapResource* FShadowMapPass::GetOrCreateCubeShadowMap(UPointLightComp
 	ShadowMap = ShadowMapSlot;
 
 	return ShadowMap;
-}
-
-FCubeShadowMapResource* FShadowMapPass::GetPointShadowMap(UPointLightComponent* Light)
-{
-	return PointShadowMaps.FindRef(Light);
-}
-
-FShadowMapResource* FShadowMapPass::GetShadowAtlas()
-{
-	return &ShadowAtlas;
-}
-
-FShadowAtlasTilePos FShadowMapPass::GetDirectionalAtlasTilePos(uint32 Index) const
-{
-	return ShadowAtlasDirectionalLightTilePosArray[Index];
-}
-
-FShadowAtlasTilePos FShadowMapPass::GetSpotAtlasTilePos(uint32 Index) const
-{
-	return ShadowAtlasSpotLightTilePosArray[Index];
-}
-
-FShadowAtlasPointLightTilePos FShadowMapPass::GetPointAtlasTilePos(uint32 Index) const
-{
-	return ShadowAtlasPointLightTilePosArray[Index];
 }
 
 /**
@@ -1222,23 +1129,13 @@ void FShadowMapPass::Release()
 	SafeRelease(ShadowAtlasDirectionalLightTilePosStructuredBuffer);
 	SafeRelease(ShadowAtlasSpotLightTilePosStructuredBuffer);
 	SafeRelease(ShadowAtlasPointLightTilePosStructuredBuffer);
-	
+
 	SafeRelease(ShadowAtlasDirectionalLightTilePosStructuredSRV);
 	SafeRelease(ShadowAtlasSpotLightTilePosStructuredSRV);
 	SafeRelease(ShadowAtlasPointLightTilePosStructuredSRV);
 
 	SafeRelease(ConstantCascadeData);
 	// Shader와 InputLayout은 Renderer가 소유하므로 여기서 해제하지 않음
-}
-
-FShadowMapResource* FShadowMapPass::GetDirectionalShadowMap(UDirectionalLightComponent* Light)
-{
-	return DirectionalShadowMaps.FindRef(Light);
-}
-
-FShadowMapResource* FShadowMapPass::GetSpotShadowMap(USpotLightComponent* Light)
-{
-	return SpotShadowMaps.FindRef(Light);
 }
 
 ID3D11RasterizerState* FShadowMapPass::GetOrCreateRasterizerState(
@@ -1264,7 +1161,7 @@ ID3D11RasterizerState* FShadowMapPass::GetOrCreateRasterizerState(
 	FLOAT SlopeScaledDepthBias = QuantizedSlopeBias;
 
 	FString RasterizeMapKey = to_string(QuantizedShadowBias) + to_string(QuantizedSlopeBias);
-	
+
 	// 이미 생성된 state가 있으면 재사용
 	auto* FoundStatePtr = LightRasterizerStates.Find(RasterizeMapKey);
 	if (FoundStatePtr)
@@ -1276,7 +1173,7 @@ ID3D11RasterizerState* FShadowMapPass::GetOrCreateRasterizerState(
 	const auto& Renderer = URenderer::GetInstance();
 	D3D11_RASTERIZER_DESC RastDesc = {};
 	ShadowRasterizerState->GetDesc(&RastDesc);
-	
+
 	RastDesc.DepthBias = DepthBias;
 	RastDesc.SlopeScaledDepthBias = SlopeScaledDepthBias;
 

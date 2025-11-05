@@ -9,7 +9,7 @@ struct FRenderingContext
     FRenderingContext(const FCameraConstants* InViewProj, class UCamera* InCurrentCamera, EViewModeIndex InViewMode, uint64 InShowFlags, const D3D11_VIEWPORT& InViewport, const FVector2& InRenderTargetSize)
         : ViewProjConstants(InViewProj), CurrentCamera(InCurrentCamera), ViewMode(InViewMode), ShowFlags(InShowFlags), Viewport(InViewport), RenderTargetSize(InRenderTargetSize) {}
 
-    const FCameraConstants* ViewProjConstants= nullptr;
+    const FCameraConstants* ViewProjConstants = nullptr;
     UCamera* CurrentCamera = nullptr;
     EViewModeIndex ViewMode;
     uint64 ShowFlags;

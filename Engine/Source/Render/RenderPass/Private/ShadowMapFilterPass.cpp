@@ -14,10 +14,11 @@ FShadowMapFilterPass::FShadowMapFilterPass(FShadowMapPass* InShadowMapPass, UPip
 	TextureFilterMap[EShadowModeIndex::SMI_VSM_GAUSSIAN] = std::make_unique<FTextureFilter>("Asset/Shader/GaussianTextureFilter.hlsl");
 }
 
-FShadowMapFilterPass::~FShadowMapFilterPass()
+FShadowMapFilterPass::~FShadowMapFilterPass() = default;
+
+void FShadowMapFilterPass::SetRenderTargets(class UDeviceResources* DeviceResources)
 {
-	// TODO: 소멸자에서 가상 함수 호출하지 말아야 함, 다른 렌더패스 확인 필요
-    // Release();
+	// X
 }
 
 void FShadowMapFilterPass::Execute(FRenderingContext& Context)
