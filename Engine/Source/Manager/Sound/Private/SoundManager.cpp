@@ -24,8 +24,6 @@ static FMOD_VECTOR ToFMODVector(const FVector& Vector)
     FMOD_VECTOR Out; Out.x = Vector.X; Out.y = Vector.Y; Out.z = Vector.Z; return Out;
 }
 
-
-
 void USoundManager::InitializeAudio()
 {
     if (AudioSystem)
@@ -135,11 +133,11 @@ bool USoundManager::PlayBGM(const FString& FilePath, bool bLoop, float FadeSecon
     if (bLoop) Mode |= FMOD_LOOP_NORMAL;
 
     FMOD_RESULT Result = AudioSystem->createSound(FilePath.ToString().c_str(), Mode, nullptr, &CurrentBGMSound);
-    if (!CheckFMODResult(Result, "createSound(BGM)")) return false;
+    if (!CheckFMODResult(Result, "CreateSound(BGM)")) return false;
 
     FMOD::Channel* NewChannel = nullptr;
     Result = AudioSystem->playSound(CurrentBGMSound, BGMChannelGroup, false, &NewChannel);
-    if (!CheckFMODResult(Result, "playSound(BGM)")) return false;
+    if (!CheckFMODResult(Result, "PlaySound(BGM)")) return false;
 
     CurrentBGMChannel = NewChannel;
     CurrentBGMPath = FilePath;
@@ -193,7 +191,7 @@ bool USoundManager::PreloadSFX(const FName& SoundName, const FString& FilePath, 
     FMOD_MODE Mode = FMOD_DEFAULT | FMOD_CREATESAMPLE | (bIsThreeDimensional ? FMOD_3D : FMOD_2D);
     FMOD::Sound* NewSound = nullptr;
     FMOD_RESULT Result = AudioSystem->createSound(FilePath.ToString().c_str(), Mode, nullptr, &NewSound);
-    if (!CheckFMODResult(Result, "createSound(SFX)")) return false;
+    if (!CheckFMODResult(Result, "CreateSound(SFX)")) return false;
 
     if (bIsThreeDimensional && NewSound)
     {
@@ -225,7 +223,7 @@ bool USoundManager::PlaySFX(const FName& SoundName, float Volume, float Pitch)
     FMOD::Sound* TargetSound = FoundSoundPtr ? *FoundSoundPtr : nullptr;
     FMOD::Channel* NewChannel = nullptr;
     FMOD_RESULT Result = AudioSystem->playSound(TargetSound, SFXChannelGroup, false, &NewChannel);
-    if (!CheckFMODResult(Result, "playSound(SFX)")) return false;
+    if (!CheckFMODResult(Result, "PlaySound(SFX)")) return false;
 
     if (NewChannel)
     {
