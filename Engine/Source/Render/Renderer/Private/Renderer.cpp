@@ -1372,3 +1372,11 @@ void URenderer::RenderHitProxyPass(UCamera* InCamera, const D3D11_VIEWPORT& InVi
 		Editor->RenderGizmoForHitProxy(InCamera, InViewport);
 	}
 }
+
+/**
+ * @brief StandAlone Mode용 Level 렌더링
+ */
+void URenderer::RenderLevelForGameInstance(UWorld* InWorld, const FSceneView* InSceneView)
+{
+	// TBD
+}
