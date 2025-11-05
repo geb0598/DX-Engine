@@ -1,13 +1,13 @@
 {
   "Actors" : {
-    "160" : {
+    "282" : {
       "ActorName" : "BlueLight",
       "Components" : [{
           "AngleFalloffExponent" : 2.000000,
           "AttenuationAngle" : 0.383972,
           "AttenuationRadius" : 76.500000,
           "DistanceFalloffExponent" : 2.000000,
-          "Intensity" : 4.800000,
+          "Intensity" : 4.000000,
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
           "LightColor" : [0.321569, 0.498039, 1.000000],
@@ -34,7 +34,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_4",
           "ParentName" : "USpotLightComponent",
-          "Rotation" : [75.592918, -46.582214, 39.050716],
+          "Rotation" : [-79.919052, 12.317657, 153.690765],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -56,7 +56,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "164" : {
+    "286" : {
       "ActorName" : "AmbientLight",
       "Components" : [{
           "Intensity" : 0.050000,
@@ -86,7 +86,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_0",
           "ParentName" : "UAmbientLightComponent_0",
-          "Rotation" : [-0.000000, 70.000008, -0.000000],
+          "Rotation" : [-0.000000, -70.000008, 0.000000],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -108,7 +108,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "168" : {
+    "290" : {
       "ActorName" : "Managers",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -128,7 +128,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_17",
           "ParentName" : "USceneComponent_0",
-          "Rotation" : [-0.000000, 70.000008, -0.000000],
+          "Rotation" : [-0.000000, -70.000008, 0.000000],
           "Scale" : [2.000000, 2.000000, 2.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -166,13 +166,6 @@
           "Name" : "UScriptComponent_7",
           "ScriptPath" : "EnemySpawnerB.lua",
           "Type" : "UScriptComponent"
-        }, {
-          "IsEditorOnly" : "false",
-          "IsVisualizationComponent" : "false",
-          "Looping" : true,
-          "Name" : "UAudioComponent_0",
-          "SoundWaveAsset" : "valiant.wav",
-          "Type" : "UAudioComponent"
         }],
       "Location" : [0.000000, 0.000000, 0.000000],
       "Rotation" : [-0.000000, 0.000000, 0.000000],
@@ -181,7 +174,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "176" : {
+    "298" : {
       "ActorName" : "AStaticMeshActor_2",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -218,7 +211,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "180" : {
+    "302" : {
       "ActorName" : "AStaticMeshActor_3",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -255,7 +248,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "184" : {
+    "306" : {
       "ActorName" : "AStaticMeshActor_4",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -292,7 +285,7 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "188" : {
+    "310" : {
       "ActorName" : "AHeightFogActor_0",
       "Components" : [{
           "FogCutoffDistance" : 1000.000000,
@@ -328,7 +321,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UBillBoardComponent",
           "ParentName" : "UHeightFogComponent",
-          "Rotation" : [-0.000000, 70.000008, -0.000000],
+          "Rotation" : [-0.000000, -70.000008, 0.000000],
           "Scale" : [1.000000, 1.000000, 1.000000],
           "Type" : "UBillBoardComponent",
           "bVisible" : "true"
@@ -340,17 +333,17 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "192" : {
+    "314" : {
       "ActorName" : "YellowLight",
       "Components" : [{
           "AngleFalloffExponent" : 2.000000,
           "AttenuationAngle" : 0.488692,
           "AttenuationRadius" : 55.500000,
           "DistanceFalloffExponent" : 2.000000,
-          "Intensity" : 17.799999,
+          "Intensity" : 8.200000,
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
-          "LightColor" : [1.000000, 1.000000, 0.000000],
+          "LightColor" : [0.435294, 0.788235, 0.309804],
           "Location" : [0.000000, 15.000000, 15.000000],
           "Name" : "USpotLightComponent",
           "ParentName" : "",
@@ -374,7 +367,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_3",
           "ParentName" : "USpotLightComponent",
-          "Rotation" : [-76.832176, -15.188912, -41.763283],
+          "Rotation" : [76.832176, -15.188928, -138.236710],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -396,7 +389,7 @@
       "bCanEverTick" : "false",
       "bTickInEditor" : "false"
     },
-    "196" : {
+    "318" : {
       "ActorName" : "AStaticMeshActor_4",
       "Components" : [{
           "IsEditorOnly" : "false",
@@ -433,17 +426,17 @@
       "bCanEverTick" : "true",
       "bTickInEditor" : "false"
     },
-    "200" : {
+    "322" : {
       "ActorName" : "PinkLight",
       "Components" : [{
           "AngleFalloffExponent" : 2.000000,
           "AttenuationAngle" : 0.820305,
           "AttenuationRadius" : 45.000000,
           "DistanceFalloffExponent" : 2.000000,
-          "Intensity" : 20.000000,
+          "Intensity" : 11.600000,
           "IsEditorOnly" : "false",
           "IsVisualizationComponent" : "false",
-          "LightColor" : [0.823529, 0.000000, 0.392157],
+          "LightColor" : [0.870588, 0.000000, 0.454902],
           "Location" : [-4.353238, -9.294653, 19.936108],
           "Name" : "USpotLightComponent",
           "ParentName" : "",
@@ -467,7 +460,7 @@
           "Location" : [0.000000, 0.000000, 0.000000],
           "Name" : "UEditorIconComponent_5",
           "ParentName" : "USpotLightComponent",
-          "Rotation" : [-19.588440, 2.160713, 17.550945],
+          "Rotation" : [175.044495, -39.889664, 156.875107],
           "Scale" : [5.000000, 5.000000, 5.000000],
           "Type" : "UEditorIconComponent",
           "bVisible" : "true"
@@ -517,10 +510,10 @@
       "FarClip" : 100.000000,
       "FocusLocation" : [0.000000, 0.000000, 0.000000],
       "FovY" : 90.000000,
-      "Location" : [-4.188750, 15.000000, 26.508499],
+      "Location" : [-5.000000, 0.000000, 26.000000],
       "NearClip" : 0.100000,
       "OrthoWidth" : 90.000000,
-      "Rotation" : [0.000000, -70.000000, 0.000000]
+      "Rotation" : [0.000000, 70.000000, 0.000000]
     },
     "3" : {
       "CameraType" : 0,
