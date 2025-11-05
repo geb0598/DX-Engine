@@ -1,0 +1,220 @@
+{
+  "Actors" : {
+    "239" : {
+      "ActorName" : "AmbientLight",
+      "Components" : [{
+          "Intensity" : 0.050000,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "LightColor" : [1.000000, 1.000000, 1.000000],
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UAmbientLightComponent",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : 0.005000,
+          "ShadowModeIndex" : 0,
+          "ShadowResolutionScale" : 1024.000000,
+          "ShadowSharpen" : 0.500000,
+          "ShadowSlopeBias" : 1.000000,
+          "Type" : "UAmbientLightComponent",
+          "bCastShadows" : "true",
+          "bLightEnabled" : "true",
+          "bVisible" : "true"
+        }, {
+          "EditorIconScreenSize" : "0.100000",
+          "EditorIconScreenSizeScaled" : "true",
+          "EditorIconSprite" : "Data\\Icons\\SkyLight.PNG",
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UEditorIconComponent_0",
+          "ParentName" : "UAmbientLightComponent",
+          "Rotation" : [9.076085, 12.741669, 35.915394],
+          "Scale" : [5.000000, 5.000000, 5.000000],
+          "Type" : "UEditorIconComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent",
+          "ParentName" : "UAmbientLightComponent",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }],
+      "Location" : [0.000000, 0.000000, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "AAmbientLight",
+      "bCanEverTick" : "false",
+      "bTickInEditor" : "false"
+    },
+    "279" : {
+      "ActorName" : "ACameraTestActor_0",
+      "Components" : [{
+          "AspectRatio" : 1.777778,
+          "FarClipPlane" : 10000.000000,
+          "FieldOfView" : 90.000000,
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UCameraComponent",
+          "NearClipPlane" : 1.000000,
+          "ParentName" : "USceneComponent",
+          "PostProcess" : {
+            "BlendWeight" : 1.000000,
+            "VignetteColor" : {
+              "X" : 1.000000,
+              "Y" : 0.000000,
+              "Z" : 0.000000
+            },
+            "VignetteIntensity" : 0.800000
+          },
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UCameraComponent"
+        }, {
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [0.000000, 0.000000, 12.452530],
+          "Name" : "USceneComponent",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent"
+        }, {
+          "EditorIconScreenSize" : "0.100000",
+          "EditorIconScreenSizeScaled" : "true",
+          "EditorIconSprite" : "Data\\Icons\\Actor_64x.png",
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UEditorIconComponent",
+          "ParentName" : "USceneComponent",
+          "Rotation" : [9.076085, 12.741669, 35.915394],
+          "Scale" : [2.000000, 2.000000, 2.000000],
+          "Type" : "UEditorIconComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent",
+          "ParentName" : "USceneComponent",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }],
+      "Location" : [0.000000, 0.000000, 12.452530],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 1.000000, 1.000000],
+      "Type" : "ACameraTestActor",
+      "bCanEverTick" : "true",
+      "bTickInEditor" : "false"
+    },
+    "295" : {
+      "ActorName" : "AStaticMeshActor_0",
+      "Components" : [{
+          "IsEditorOnly" : "false",
+          "IsVisualizationComponent" : "false",
+          "Location" : [20.680878, 0.000000, 0.000000],
+          "Name" : "UStaticMeshComponent",
+          "ObjStaticMeshAsset" : "Data/Shapes/Cube.obj",
+          "ParentName" : "",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 62.936443, 93.853088],
+          "Type" : "UStaticMeshComponent",
+          "bVisible" : "true"
+        }, {
+          "IsEditorOnly" : "true",
+          "IsVisualizationComponent" : "true",
+          "Location" : [0.000000, 0.000000, 0.000000],
+          "Name" : "UUUIDTextComponent",
+          "ParentName" : "UStaticMeshComponent",
+          "Rotation" : [-0.000000, 0.000000, 0.000000],
+          "Scale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UUUIDTextComponent",
+          "bVisible" : "true"
+        }],
+      "Location" : [20.680878, 0.000000, 0.000000],
+      "Rotation" : [-0.000000, 0.000000, 0.000000],
+      "Scale" : [1.000000, 62.936443, 93.853088],
+      "Type" : "AStaticMeshActor",
+      "bCanEverTick" : "false",
+      "bTickInEditor" : "false"
+    }
+  },
+  "NextUUID" : 0,
+  "PerspectiveCamera" : {
+    "0" : {
+      "CameraType" : 0,
+      "FarClip" : 5000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [0.000000, 0.000000, 100.000000],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, 0.000000, 0.000000]
+    },
+    "1" : {
+      "CameraType" : 0,
+      "FarClip" : 5000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [-100.000000, 0.000000, 0.000000],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, 0.000000, 0.000000]
+    },
+    "2" : {
+      "CameraType" : 0,
+      "FarClip" : 1000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [-15.769363, 5.019540, 21.467497],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, -15.600023, -34.899921]
+    },
+    "3" : {
+      "CameraType" : 0,
+      "FarClip" : 5000.000000,
+      "FocusLocation" : [0.000000, 0.000000, 0.000000],
+      "FovY" : 90.000000,
+      "Location" : [0.000000, -100.000000, 0.000000],
+      "NearClip" : 0.100000,
+      "OrthoWidth" : 90.000000,
+      "Rotation" : [0.000000, 0.000000, 0.000000]
+    }
+  },
+  "ViewportSystem" : {
+    "ActiveIndex" : 2,
+    "Layout" : 0,
+    "RotationSnapAngle" : 10.000000,
+    "RotationSnapEnabled" : 1,
+    "SharedOrthoZoom" : 500.000000,
+    "SplitterH" : 0.500000,
+    "SplitterV" : 0.500000,
+    "Viewports" : [{
+        "Index" : 0,
+        "ViewMode" : 4,
+        "ViewType" : 1
+      }, {
+        "Index" : 1,
+        "ViewMode" : 4,
+        "ViewType" : 5
+      }, {
+        "Index" : 2,
+        "ViewMode" : 3,
+        "ViewType" : 0
+      }, {
+        "Index" : 3,
+        "ViewMode" : 4,
+        "ViewType" : 4
+      }]
+  }
+}
