@@ -145,9 +145,10 @@ function BeginPlay()
         -- gameMode:StartGame()
     end
 
-    -- Preload fail SFX so it plays instantly on death
+    -- Preload result SFX so they play instantly on end
     if Sound_PreloadSFX ~= nil then
         Sound_PreloadSFX("FailOnce", "Asset/Sound/SFX/Fail.wav", false, 1.0, 30.0)
+        Sound_PreloadSFX("SuccessOnce", "Asset/Sound/SFX/Success.wav", false, 1.0, 30.0)
     end
 end
 
@@ -627,6 +628,9 @@ function OnActorBeginOverlap(overlappedActor, otherActor)
         TakeDamage(1)
     elseif otherActor.Tag == CollisionTag.Clear then
         Log("Clear!")
+        if Sound_PlaySFX ~= nil then
+            Sound_PlaySFX("SuccessOnce", 1.0, 1.0)
+        end
         EndGameSequence()
     end
 end
