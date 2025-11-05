@@ -106,6 +106,7 @@ bool FLightPass::IsChangeOption()
 }
 void FLightPass::Execute(FRenderingContext& Context)
 {
+	GPU_EVENT(URenderer::GetInstance().GetDeviceContext(), "LightPass");
 	if (IsChangeOption())
 	{
 		ReleaseOptionBuffers();

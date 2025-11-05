@@ -28,6 +28,7 @@ void FStaticMeshPass::SetRenderTargets(class UDeviceResources* DeviceResources)
 void FStaticMeshPass::Execute(FRenderingContext& Context)
 {
 	const auto& Renderer = URenderer::GetInstance();
+	GPU_EVENT(Renderer.GetDeviceContext(), "StaticMeshPass");
 	FRenderState RenderState = UStaticMeshComponent::GetClassDefaultRenderState();
 	if (Context.ViewMode == EViewModeIndex::VMI_Wireframe)
 	{

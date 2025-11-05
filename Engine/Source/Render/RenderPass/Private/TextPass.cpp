@@ -47,6 +47,7 @@ void FTextPass::SetRenderTargets(class UDeviceResources* DeviceResources)
 
 void FTextPass::Execute(FRenderingContext& Context)
 {
+	GPU_EVENT(URenderer::GetInstance().GetDeviceContext(), "TextPass");
     // Set up pipeline
     FPipelineInfo PipelineInfo = {};
     PipelineInfo.InputLayout = FontInputLayout;

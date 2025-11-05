@@ -147,6 +147,7 @@ void FDecalPass::SetRenderTargets(class UDeviceResources* DeviceResources)
 
 void FDecalPass::Execute(FRenderingContext& Context)
 {
+	GPU_EVENT(URenderer::GetInstance().GetDeviceContext(), "DecalPass");
 	TIME_PROFILE(DecalPass)
 
     if (!(Context.ShowFlags & EEngineShowFlags::SF_Decal) || (Context.ViewMode == EViewModeIndex::VMI_SceneDepth)) return;

@@ -160,6 +160,7 @@ void FShadowMapPass::SetRenderTargets(class UDeviceResources* DeviceResources)
 
 void FShadowMapPass::Execute(FRenderingContext& Context)
 {
+	GPU_EVENT(URenderer::GetInstance().GetDeviceContext(), "ShadowMapPass");
 	// IMPORTANT: Unbind shadow map SRVs before rendering to them as DSV
 	// This prevents D3D11 resource hazard warnings
 	const auto& Renderer = URenderer::GetInstance();

@@ -39,6 +39,7 @@ void FHitProxyPass::Execute(FRenderingContext& Context)
 
 	const auto& Renderer = URenderer::GetInstance();
 	const auto& DeviceResources = Renderer.GetDeviceResources();
+	GPU_EVENT(DeviceResources->GetDeviceContext(), "HitProxyPass");
 
 	// Viewport 설정 (Context에서 전달받은 Viewport 사용)
 	DeviceResources->GetDeviceContext()->RSSetViewports(1, &Context.Viewport);

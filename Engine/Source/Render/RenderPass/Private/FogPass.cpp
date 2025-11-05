@@ -26,6 +26,7 @@ void FFogPass::SetRenderTargets(class UDeviceResources* DeviceResources)
 
 void FFogPass::Execute(FRenderingContext& Context)
 {
+	GPU_EVENT(URenderer::GetInstance().GetDeviceContext(), "FogPass");
     TIME_PROFILE(FogPass)
 
     if (!(Context.ShowFlags & EEngineShowFlags::SF_Fog)) return;

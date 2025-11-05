@@ -24,6 +24,7 @@ void FColorCopyPass::SetRenderTargets(class UDeviceResources* DeviceResources)
 
 void FColorCopyPass::Execute(FRenderingContext& Context)
 {
+	GPU_EVENT(URenderer::GetInstance().GetDeviceContext(), "ColorCopyPass");
 	auto RS = FRenderResourceFactory::GetRasterizerState({ ECullMode::None, EFillMode::Solid });
 	FPipelineInfo PipelineInfo = { nullptr, VertexShader, RS, DS, PixelShader, nullptr };
 	Pipeline->UpdatePipeline(PipelineInfo);

@@ -22,6 +22,7 @@ void FBillboardPass::SetRenderTargets(class UDeviceResources* DeviceResources)
 
 void FBillboardPass::Execute(FRenderingContext& Context)
 {
+	GPU_EVENT(URenderer::GetInstance().GetDeviceContext(), "BillboardPass");
     FRenderState RenderState = UBillBoardComponent::GetClassDefaultRenderState();
     if (Context.ViewMode == EViewModeIndex::VMI_Wireframe)
     {

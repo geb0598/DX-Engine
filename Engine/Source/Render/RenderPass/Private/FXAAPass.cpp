@@ -43,6 +43,7 @@ void FFXAAPass::SetRenderTargets(class UDeviceResources* DeviceResources)
 
 void FFXAAPass::Execute(FRenderingContext& Context)
 {
+	GPU_EVENT(URenderer::GetInstance().GetDeviceContext(), "FXAAPass");
     UpdateConstants();
     SetRenderTargets();
 

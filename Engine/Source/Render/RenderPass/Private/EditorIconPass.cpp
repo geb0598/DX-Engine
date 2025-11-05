@@ -22,6 +22,7 @@ void FEditorIconPass::SetRenderTargets(class UDeviceResources* DeviceResources)
 
 void FEditorIconPass::Execute(FRenderingContext& Context)
 {
+	GPU_EVENT(URenderer::GetInstance().GetDeviceContext(), "EditorIconPass");
 	FRenderState RenderState = UEditorIconComponent::GetClassDefaultRenderState();
 	if (Context.ViewMode == EViewModeIndex::VMI_Wireframe)
 	{
