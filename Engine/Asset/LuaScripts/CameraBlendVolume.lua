@@ -63,7 +63,8 @@ function OnActorBeginOverlap(overlappedActor, otherActor)
     if otherActor.Tag == CollisionTag.Player then
         Log("[CameraBlendVolume] Player entered. Blending to This Actor")
         OriginalViewTarget = otherActor 
-        CameraManager:SetViewTargetWithBlend(Owner, 1.0)
+        local blendCurve = Curve("EaseOutBack")
+        CameraManager:SetViewTargetWithBlend(Owner, 1.0, blendCurve)
         Self:StartCoroutine("EndCinematic")
     end
 end
@@ -76,7 +77,8 @@ function EndCinematic()
     coroutine.yield(2.0)
     if OriginalViewTarget ~= nil then
         Log("[CameraBlendVolume] Blending back")
-        CameraManager:SetViewTargetWithBlend(OriginalViewTarget, 1.0)
+        local blendCurve = Curve("EaseInBack")
+        CameraManager:SetViewTargetWithBlend(OriginalViewTarget, 1.0, blendCurve)
         OriginalViewTarget = nil
     end
 end
