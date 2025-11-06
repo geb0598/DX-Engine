@@ -18,10 +18,10 @@ UClass* ADecalSpotLightActor::GetDefaultRootComponent()
 void ADecalSpotLightActor::InitializeComponents()
 {
 	Super::InitializeComponents();
-	
+
 	UBillBoardComponent* Billboard = CreateDefaultSubobject<UBillBoardComponent>();
 	Billboard->AttachToComponent(GetRootComponent());
 	Billboard->SetIsVisualizationComponent(true);
-	Billboard->SetSprite(UAssetManager::GetInstance().LoadTexture("Data/Icons/S_LightSpot.png"));
+	Billboard->SetSprite(UAssetManager::GetInstance().LoadTexture("Asset/Icon/S_LightSpot.png"));
 	Billboard->SetScreenSizeScaled(true);
 }

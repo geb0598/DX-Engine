@@ -18,10 +18,10 @@ UClass* AHeightFogActor::GetDefaultRootComponent()
 void AHeightFogActor::InitializeComponents()
 {
     Super::InitializeComponents();
-	
+
     UBillBoardComponent* Billboard = CreateDefaultSubobject<UBillBoardComponent>();
     Billboard->AttachToComponent(GetRootComponent());
     Billboard->SetIsVisualizationComponent(true);
-    Billboard->SetSprite(UAssetManager::GetInstance().LoadTexture("Data/Icons/ExponentialHeightFog_64x.png"));
+    Billboard->SetSprite(UAssetManager::GetInstance().LoadTexture("Asset/Icon/ExponentialHeightFog_64x.png"));
     Billboard->SetScreenSizeScaled(true);
 }

@@ -65,7 +65,7 @@ void UPointLightComponent::EnsureVisualizationIcon()
 	}
 	Icon->AttachToComponent(this);
 	Icon->SetIsVisualizationComponent(true);
-	Icon->SetSprite(UAssetManager::GetInstance().LoadTexture("Data/Icons/S_LightPoint.png"));
+	Icon->SetSprite(UAssetManager::GetInstance().LoadTexture("Asset/Icon/S_LightPoint.png"));
 	Icon->SetRelativeScale3D(FVector(5.0f, 5.0f, 5.0f));
 	Icon->SetScreenSizeScaled(true);
 

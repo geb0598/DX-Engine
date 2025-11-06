@@ -13,7 +13,7 @@ void APlayerStart::InitializeComponents()
 	if (!Icon) { return; }
 	Icon->AttachToComponent(GetRootComponent());
 	Icon->SetIsVisualizationComponent(true);
-	Icon->SetSprite(UAssetManager::GetInstance().LoadTexture("Data/Icons/PlayerStart.png"));
+	Icon->SetSprite(UAssetManager::GetInstance().LoadTexture("Asset/Icon/PlayerStart.png"));
 	Icon->SetRelativeScale3D(FVector(2.5f, 2.5f, 2.5f));
 	Icon->SetScreenSizeScaled(true);
 }

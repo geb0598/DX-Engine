@@ -346,7 +346,7 @@ void UDecalComponent::EnsureVisualizationIcon()
 	}
 	Icon->AttachToComponent(this);
 	Icon->SetIsVisualizationComponent(true);
-	Icon->SetSprite(UAssetManager::GetInstance().LoadTexture("Data/Icons/DecalActor_64x.png"));
+	Icon->SetSprite(UAssetManager::GetInstance().LoadTexture("Asset/Icon/DecalActor_64x.png"));
 	Icon->SetScreenSizeScaled(true);
 
 	VisualizationIcon = Icon;

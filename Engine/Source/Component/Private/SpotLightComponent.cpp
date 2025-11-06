@@ -173,7 +173,7 @@ void USpotLightComponent::EnsureVisualizationIcon()
     }
     Icon->AttachToComponent(this);
     Icon->SetIsVisualizationComponent(true);
-    Icon->SetSprite(UAssetManager::GetInstance().LoadTexture("Data/Icons/S_LightSpot.png"));
+    Icon->SetSprite(UAssetManager::GetInstance().LoadTexture("Asset/Icon/S_LightSpot.png"));
     Icon->SetRelativeScale3D(FVector(5.f,5.f,5.f));
     Icon->SetScreenSizeScaled(true);
 

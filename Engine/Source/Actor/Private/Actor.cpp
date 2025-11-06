@@ -313,7 +313,7 @@ void AActor::InitializeComponents()
 		UEditorIconComponent* ActorIcon = CreateDefaultSubobject<UEditorIconComponent>();
 		ActorIcon->AttachToComponent(SceneComp);
 		ActorIcon->SetIsVisualizationComponent(true);
-		ActorIcon->SetSprite(UAssetManager::GetInstance().LoadTexture("Data/Icons/Actor_64x.png"));
+		ActorIcon->SetSprite(UAssetManager::GetInstance().LoadTexture("Asset/Icon/Actor_64x.png"));
 		ActorIcon->SetRelativeScale3D(FVector(2.f, 2.f, 2.f));
 		ActorIcon->SetScreenSizeScaled(true);
 	}

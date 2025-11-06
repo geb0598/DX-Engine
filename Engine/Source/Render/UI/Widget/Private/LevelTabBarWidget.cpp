@@ -38,17 +38,17 @@ ULevelTabBarWidget::ULevelTabBarWidget()
 	// 초기화 시
 	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(),L"Asset/logo/EngineCHLogo.png",nullptr,LeftIconSRV.GetAddressOf());
 
-	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/Load.png", nullptr, LoadIconSRV.GetAddressOf());
-	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/Save.png", nullptr, SaveIconSRV.GetAddressOf());
-	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/New.png", nullptr, NewIconSRV.GetAddressOf());
+	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/Icon/Load.png", nullptr, LoadIconSRV.GetAddressOf());
+	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/Icon/Save.png", nullptr, SaveIconSRV.GetAddressOf());
+	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/Icon/New.png", nullptr, NewIconSRV.GetAddressOf());
 
-	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/CreateActor.png", nullptr, CreateActorIconSRV.GetAddressOf());
-	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/WorldSettings.png", nullptr, WorldSettingsIconSRV.GetAddressOf());
+	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/Icon/CreateActor.png", nullptr, CreateActorIconSRV.GetAddressOf());
+	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/Icon/WorldSettings.png", nullptr, WorldSettingsIconSRV.GetAddressOf());
 
-	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/Play.png", nullptr, PlayPIEIconSRV.GetAddressOf());
-	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/Pause.png", nullptr, PausePIEIconSRV.GetAddressOf());
-	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/Stop.png", nullptr, StopPIEIconSRV.GetAddressOf());
-	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/LevelBarIcon/Cascade.png", nullptr, CascadeIconSRV.GetAddressOf());
+	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/Icon/Play.png", nullptr, PlayPIEIconSRV.GetAddressOf());
+	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/Icon/Pause.png", nullptr, PausePIEIconSRV.GetAddressOf());
+	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/Icon/Stop.png", nullptr, StopPIEIconSRV.GetAddressOf());
+	DirectX::CreateWICTextureFromFile(URenderer::GetInstance().GetDevice(), L"Asset/Icon/Cascade.png", nullptr, CascadeIconSRV.GetAddressOf());
 }
 
 void ULevelTabBarWidget::Initialize()
