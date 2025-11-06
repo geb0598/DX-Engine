@@ -19,6 +19,10 @@
 #include "Render/Camera/Public/CameraModifier.h"
 #include "Render/Camera/Public/CameraModifier_CameraShake.h"
 
+#if WITH_EDITOR
+#include "Editor/Public/EditorEngine.h"
+#endif
+
 void FLuaBinder::BindCoreTypes(sol::state& LuaState)
 {
 	// --- UWorld ---
@@ -987,5 +991,20 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
     LuaState.set_function("Sound_StopAll", []()
     {
         USoundManager::GetInstance().StopAllSounds();
+    });
+
+    // Application Exit
+    LuaState.set_function("ExitApplication", []()
+    {
+#if WITH_EDITOR
+        // PIE 모드에서는 PIE만 종료
+        if (GEditor && GEditor->IsPIESessionActive())
+        {
+            GEditor->EndPIE();
+        }
+#else
+        // StandAlone 모드에서는 애플리케이션 전체 종료
+        PostQuitMessage(0);
+#endif
     });
 }

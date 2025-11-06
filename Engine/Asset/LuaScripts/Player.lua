@@ -5,6 +5,10 @@
 
 local bStarted = false
 local bGameEnded = false
+local bPaused = false  -- 일시정지 상태
+local bEscPressedLastFrame = false  -- ESC 키 중복 입력 방지
+local bRPressedLastFrame = false  -- R 키 중복 입력 방지
+local bQPressedLastFrame = false  -- Q 키 중복 입력 방지
 
 -- [Cached References] - BeginPlay에서 초기화
 local cachedWorld = nil
@@ -183,6 +187,21 @@ function Tick(dt)
         return
     end
 
+    -- ESC 키로 일시정지 및 재개
+    local bEscDown = IsKeyDown(Keys.Esc)
+
+    if bEscDown and not bEscPressedLastFrame then
+        bPaused = not bPaused
+        Log(string.format("Game %s", bPaused and "Paused" or "Resumed"))
+    end
+    bEscPressedLastFrame = bEscDown
+
+    -- 일시정지 중일 때
+    if bPaused then
+        DrawPauseMenu()
+        return
+    end
+
     -- 제한 시간 감소
     remainingTime = remainingTime - dt
     elapsedTime = elapsedTime + dt
@@ -199,12 +218,12 @@ function Tick(dt)
 
     Movement(dt)
     UpdateLightExposure(dt)
-    
+
     -- HP가 0보다 클 때만 빨간 오버레이 표시
     if currentHP > 0 then
         DrawDangerOverlay()
     end
-    
+
     DrawUI()
 end
 
@@ -482,6 +501,30 @@ function DrawUI()
             14.0, true, false, "Arial"
         )
     end
+
+    -- ============ CREDITS (좌하단) ============
+    local screen_w = DebugDraw.GetViewportWidth()
+    local screen_h = DebugDraw.GetViewportHeight()
+
+    local credits_x = 20.0
+    local credits_y = screen_h - 60.0
+    local credits_w = 500.0
+    local credits_h = 45.0
+
+    -- 반투명 배경
+    DebugDraw.Rectangle(
+        credits_x, credits_y, credits_x + credits_w, credits_y + credits_h,
+        0.0, 0.0, 0.0, 0.5,
+        true
+    )
+
+    -- 제작진 텍스트
+    DebugDraw.Text(
+        "제작: Krafton GTL 2nd 국동희 김윤수 김희준 나예찬",
+        credits_x + 8.0, credits_y, credits_x + credits_w - 8.0, credits_y + credits_h,
+        0.8, 0.8, 0.8, 0.95,
+        14.0, false, true, "Malgun Gothic"
+    )
 end
 
 ---
@@ -594,6 +637,10 @@ function RestartGame()
     -- 게임 상태 초기화
     bGameEnded = false
     bStarted = true
+    bPaused = false  -- 일시정지 해제
+    bEscPressedLastFrame = false
+    bRPressedLastFrame = false
+    bQPressedLastFrame = false
     remainingTime = MaxTime
     finalScore = 0
 
@@ -609,6 +656,135 @@ function RestartGame()
     end
 
     Log("Game restarted successfully!")
+end
+
+---
+-- 일시정지 메뉴
+---
+function DrawPauseMenu()
+    -- 화면 크기 가져오기
+    local screen_w = DebugDraw.GetViewportWidth()
+    local screen_h = DebugDraw.GetViewportHeight()
+
+    -- 반투명 배경
+    DebugDraw.Rectangle(
+        0, 0, screen_w, screen_h,
+        0.0, 0.0, 0.0, 0.7,
+        true
+    )
+
+    -- 중앙 메뉴 패널
+    local panel_w = screen_w * 0.4
+    local panel_h = screen_h * 0.6
+    local panel_x = (screen_w - panel_w) / 2.0
+    local panel_y = (screen_h - panel_h) / 2.0
+    local padding = 40.0
+
+    -- 패널 배경
+    DebugDraw.Rectangle(
+        panel_x, panel_y, panel_x + panel_w, panel_y + panel_h,
+        0.1, 0.1, 0.15, 0.95,
+        true
+    )
+
+    -- 패널 테두리
+    local pulse = 0.5 + 0.5 * math.abs(math.sin(remainingTime * 2.0))
+    DebugDraw.Line(panel_x, panel_y, panel_x + panel_w, panel_y, 0.2, 0.8, 1.0, pulse, 4.0)
+    DebugDraw.Line(panel_x, panel_y + panel_h, panel_x + panel_w, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
+    DebugDraw.Line(panel_x, panel_y, panel_x, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
+    DebugDraw.Line(panel_x + panel_w, panel_y, panel_x + panel_w, panel_y + panel_h, 0.2, 0.8, 1.0, pulse, 4.0)
+
+    -- 타이틀
+    local title_y = panel_y + padding
+    DebugDraw.Text(
+        "PAUSED",
+        panel_x + padding, title_y, panel_x + panel_w - padding, title_y + 60.0,
+        1.0, 1.0, 1.0, 1.0,
+        48.0, true, true, "Arial"
+    )
+
+    -- 버튼 크기 및 위치
+    local button_w = panel_w - (padding * 2)
+    local button_h = 60.0
+    local button_spacing = 20.0
+    local button_x = panel_x + padding
+    local first_button_y = panel_y + panel_h / 2.0 - button_h * 1.5 - button_spacing
+
+    -- Resume 버튼 (ESC 키)
+    local resume_y = first_button_y
+    DebugDraw.Rectangle(button_x, resume_y, button_x + button_w, resume_y + button_h, 0.2, 0.3, 0.5, 0.6, true)
+    DebugDraw.Line(button_x, resume_y, button_x + button_w, resume_y, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Line(button_x, resume_y + button_h, button_x + button_w, resume_y + button_h, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Line(button_x, resume_y, button_x, resume_y + button_h, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Line(button_x + button_w, resume_y, button_x + button_w, resume_y + button_h, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Text(
+        "Resume (ESC)",
+        button_x, resume_y, button_x + button_w, resume_y + button_h,
+        1.0, 1.0, 1.0, 1.0,
+        24.0, true, true, "Arial"
+    )
+
+    -- Restart 버튼 (R 키)
+    local restart_y = first_button_y + button_h + button_spacing
+    DebugDraw.Rectangle(button_x, restart_y, button_x + button_w, restart_y + button_h, 0.5, 0.5, 0.2, 0.6, true)
+    DebugDraw.Line(button_x, restart_y, button_x + button_w, restart_y, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Line(button_x, restart_y + button_h, button_x + button_w, restart_y + button_h, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Line(button_x, restart_y, button_x, restart_y + button_h, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Line(button_x + button_w, restart_y, button_x + button_w, restart_y + button_h, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Text(
+        "Restart (R)",
+        button_x, restart_y, button_x + button_w, restart_y + button_h,
+        1.0, 1.0, 1.0, 1.0,
+        24.0, true, true, "Arial"
+    )
+
+    -- Quit 버튼 (Q 키)
+    local quit_y = first_button_y + (button_h + button_spacing) * 2
+    DebugDraw.Rectangle(button_x, quit_y, button_x + button_w, quit_y + button_h, 0.5, 0.2, 0.2, 0.6, true)
+    DebugDraw.Line(button_x, quit_y, button_x + button_w, quit_y, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Line(button_x, quit_y + button_h, button_x + button_w, quit_y + button_h, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Line(button_x, quit_y, button_x, quit_y + button_h, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Line(button_x + button_w, quit_y, button_x + button_w, quit_y + button_h, 1.0, 1.0, 1.0, 1.0, 2.0)
+    DebugDraw.Text(
+        "Quit (Q)",
+        button_x, quit_y, button_x + button_w, quit_y + button_h,
+        1.0, 1.0, 1.0, 1.0,
+        24.0, true, true, "Arial"
+    )
+
+    -- 키 입력 처리
+    local bEscDown = IsKeyDown(Keys.Esc)
+    local bRDown = IsKeyDown(Keys.R)
+    local bQDown = IsKeyDown(Keys.Q)
+
+    -- ESC 키로 Resume (중복 방지는 Tick에서 처리)
+    if bEscDown and not bEscPressedLastFrame then
+        bPaused = false
+        bEscPressedLastFrame = false
+        bRPressedLastFrame = false
+        bQPressedLastFrame = false
+        Log("Game Resumed")
+        return
+    end
+
+    -- R 키로 Restart
+    if bRDown and not bRPressedLastFrame then
+        bPaused = false
+        bEscPressedLastFrame = false
+        bRPressedLastFrame = false
+        bQPressedLastFrame = false
+        Log("Restarting game from pause menu...")
+        RestartGame()
+        return
+    end
+    bRPressedLastFrame = bRDown
+
+    -- Q 키로 종료
+    if bQDown and not bQPressedLastFrame then
+        Log("Quit Game - Q key pressed, exiting...")
+        ExitApplication()
+    end
+    bQPressedLastFrame = bQDown
 end
 
 function StartGame()
