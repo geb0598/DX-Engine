@@ -25,7 +25,7 @@ UClass* APlayer::GetDefaultRootComponent()
 void APlayer::InitializeComponents()
 {
 	Super::InitializeComponents();
-	Cast<UBoxComponent>(GetRootComponent())->SetBoxExtent({4.0f, 4.0f, 4.0f});
+	Cast<UBoxComponent>(GetRootComponent())->SetBoxExtent({1.0f, 1.0f, 1.0f});
 
 	USpringArmComponent* SpringArm = CreateDefaultSubobject<USpringArmComponent>();
 	SpringArm->AttachToComponent(GetRootComponent());

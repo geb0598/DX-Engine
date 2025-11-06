@@ -187,6 +187,7 @@ void UInputManager::UpdateMousePosition(const FAppWindow* InWindow)
 	NDCMousePosition.X = (CurrentMousePosition.X / static_cast<float>(ViewportWidth)) * 2.0f - 1.0f;
 	NDCMousePosition.Y = 1.0f - (CurrentMousePosition.Y / static_cast<float>(ViewportHeight)) * 2.0f;
 
+#if WITH_EDITOR
 	// PIE 세션 활성 상태이고 마우스가 분리되지 않았다면 Raw Input 델타 사용
 	// 그 외에는 일반 마우스 위치 기반 델타 계산
 	if (!(GEditor && GEditor->IsPIESessionActive() && !GEditor->IsPIEMouseDetached()))
@@ -194,6 +195,10 @@ void UInputManager::UpdateMousePosition(const FAppWindow* InWindow)
 		MouseDelta = CurrentMousePosition - PreviousMousePosition;
 	}
 	// PIE 모드에서는 ProcessRawMouseDelta에서 누적된 MouseDelta를 그대로 유지
+#else
+	// StandAlone 모드: ProcessRawMouseDelta에서 누적된 Raw Input MouseDelta를 그대로 유지
+	// 일반 마우스 위치 기반 델타 계산을 하지 않음
+#endif
 }
 
 bool UInputManager::IsKeyDown(EKeyInput InKey) const
