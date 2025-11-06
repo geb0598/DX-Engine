@@ -997,10 +997,10 @@ void FLuaBinder::BindCoreFunctions(sol::state& LuaState)
     LuaState.set_function("ExitApplication", []()
     {
 #if WITH_EDITOR
-        // PIE 모드에서는 PIE만 종료
+        // PIE 모드에서는 PIE만 종료 (다음 프레임에 처리)
         if (GEditor && GEditor->IsPIESessionActive())
         {
-            GEditor->EndPIE();
+            GEditor->RequestEndPIE();
         }
 #else
         // StandAlone 모드에서는 애플리케이션 전체 종료

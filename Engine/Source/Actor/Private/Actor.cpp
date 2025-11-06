@@ -187,7 +187,8 @@ void AActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
     		    FJsonSerializer::ReadVector(InOutHandle, "Scale", Scale, GetActorScale3D());
 
     		    SetActorLocation(Location);
-    		    SetActorRotation(FQuaternion::FromEuler(RotationEuler));	    		SetActorScale3D(Scale);
+    		    SetActorRotation(FQuaternion::FromEuler(RotationEuler));
+        		SetActorScale3D(Scale);
         	}
 
 			FString bCanEverTickString;

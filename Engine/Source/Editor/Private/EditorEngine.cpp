@@ -94,6 +94,13 @@ void UEditorEngine::Tick(float DeltaSeconds)
 
     // Update audio system each frame
     USoundManager::GetInstance().Update(DeltaSeconds);
+
+    // Deferred EndPIE
+    if (bPendingEndPIE)
+    {
+        bPendingEndPIE = false;
+        EndPIE();
+    }
 }
 
 class UCamera* UEditorEngine::GetMainCamera() const
@@ -190,6 +197,19 @@ void UEditorEngine::StartPIE()
 
         // PIE 시작 시 커서 숨김
         while (ShowCursor(FALSE) >= 0);
+    }
+}
+
+/**
+ * @brief PIE 종료 요청 (다음 프레임에 실행)
+ * Tick이나 Lua 콜백 중에 호출해도 안전
+ */
+void UEditorEngine::RequestEndPIE()
+{
+    if (IsPIESessionActive())
+    {
+        UE_LOG("EditorEngine: RequestEndPIE - will end PIE at end of frame");
+        bPendingEndPIE = true;
     }
 }
 

@@ -43,6 +43,7 @@ void UPathManager::GetEssentialPath()
 	DataPath = RootPath / L"Data";
 	AssetPath = RootPath / L"Asset";
 	ShaderPath = AssetPath / L"Shader";
+	CookedPath = DataPath/ L"Cooked";
 	AudioPath = AssetPath / "Audio";
 	ScenePath = AssetPath / L"Scene";
 	FontPath = AssetPath / "Font";
@@ -58,6 +59,7 @@ void UPathManager::ValidateAndCreateDirectories() const
 		DataPath,
 		AssetPath,
 		ShaderPath,
+		CookedPath,
 		AudioPath,
 		ScenePath,
 		FontPath,

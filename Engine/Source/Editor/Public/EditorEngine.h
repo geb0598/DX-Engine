@@ -45,6 +45,7 @@ public:
     // PIE Management
     void StartPIE();
     void EndPIE();
+    void RequestEndPIE();
     void PausePIE();
     void ResumePIE();
 
@@ -85,6 +86,9 @@ private:
 
     // PIE Mouse Detach State (Shift + F1)
     bool bPIEMouseDetached = false;
+
+    // Pending PIE End Request (deferred to avoid crashing during Tick)
+    bool bPendingEndPIE = false;
 };
 
 // UEditorEngine의 전역 인스턴스 포인터
