@@ -1,11 +1,13 @@
 ﻿#include "pch.h"
 #include "Manager/Asset/Public/TextureManager.h"
-#include "Render/Renderer/Public/RenderResourceFactory.h"
-#include "Texture/Public/Texture.h"
+
 #include <DirectXTK/DDSTextureLoader.h>
 #include <DirectXTK/WICTextureLoader.h>
 
+#include "Render/Renderer/Public/RenderResourceFactory.h"
+#include "Texture/Public/Texture.h"
 #include "Manager/Path/Public/PathManager.h"
+#include "Utility/Public/TextureConverter.h"
 
 FTextureManager::FTextureManager() = default;
 
@@ -21,7 +23,7 @@ FTextureManager::~FTextureManager()
     }
 }
 
-UTexture* FTextureManager::LoadTexture(const FName& InFilePath)
+UTexture* FTextureManager::LoadTexture(const FName& InFilePath, bool bSRGB)
 {
     // Path 정규화
     path InputPath(InFilePath.ToString());  // 사용자의 원본 입력
@@ -51,7 +53,7 @@ UTexture* FTextureManager::LoadTexture(const FName& InFilePath)
     }
 
     // Not Cached
-    ComPtr<ID3D11ShaderResourceView> SRV = CreateTextureFromFile(AbsolutePath.string());
+    ComPtr<ID3D11ShaderResourceView> SRV = CreateTextureFromFile(AbsolutePath.string(), bSRGB);
 
     if (!DefaultSampler)
     {
@@ -114,7 +116,7 @@ const TMap<FName, UTexture*>& FTextureManager::GetTextureCache() const
     return TextureCaches;
 }
 
-ComPtr<ID3D11ShaderResourceView> FTextureManager::CreateTextureFromFile(const path& InFilePath)
+ComPtr<ID3D11ShaderResourceView> FTextureManager::CreateTextureFromFile(const path& InFilePath, bool bSRGB)
 {
     URenderer& Renderer = URenderer::GetInstance();
     ID3D11Device* Device = Renderer.GetDevice();
@@ -134,7 +136,51 @@ ComPtr<ID3D11ShaderResourceView> FTextureManager::CreateTextureFromFile(const pa
 
     try
     {
-        // DDS
+#ifdef USE_DDS_CACHE
+        // DDS 캐싱 시스템 사용 (PNG/JPG -> DDS 변환 및 캐싱)
+        if (FileExtension != ".dds" && FTextureConverter::IsSupportedFormat(FileExtension))
+        {
+            std::string SourcePath = InFilePath.string();
+            std::string DDSCachePath = FTextureConverter::GetDDSCachePath(SourcePath);
+
+            // 캐시 재생성 필요한지 확인 (원본이 더 최신이거나 캐시가 없으면)
+            if (FTextureConverter::ShouldRegenerateDDS(SourcePath, DDSCachePath))
+            {
+                // PNG/JPG를 DDS로 변환하여 캐싱
+                DXGI_FORMAT Format = FTextureConverter::GetRecommendedFormat(true, bSRGB);
+                if (FTextureConverter::ConvertToDDS(SourcePath, DDSCachePath, Format))
+                {
+                    // 변환된 DDS 파일 로드
+                    std::wstring WDDSPath = UTF8ToWide(DDSCachePath);
+                    ResultHandle = DirectX::CreateDDSTextureFromFile(Device, DeviceContext,
+                        WDDSPath.c_str(), nullptr, TextureSRV.GetAddressOf());
+
+                    if (SUCCEEDED(ResultHandle))
+                    {
+                        UE_LOG_SUCCESS("TextureManager: DDS 캐시 로드 성공 - %s", DDSCachePath.c_str());
+                        return TextureSRV;
+                    }
+                }
+                // 변환 실패 시 원본 파일을 직접 로드 (fallback)
+            }
+            else
+            {
+                // 캐시가 유효하면 DDS 캐시 로드
+                std::wstring WDDSPath = UTF8ToWide(DDSCachePath);
+                ResultHandle = DirectX::CreateDDSTextureFromFile(Device, DeviceContext,
+                    WDDSPath.c_str(), nullptr, TextureSRV.GetAddressOf());
+
+                if (SUCCEEDED(ResultHandle))
+                {
+                    UE_LOG_SUCCESS("TextureManager: DDS 캐시 로드 성공 - %s", DDSCachePath.c_str());
+                    return TextureSRV;
+                }
+                // 캐시 로드 실패 시 원본 파일을 직접 로드 (fallback)
+            }
+        }
+#endif
+
+        // DDS 파일 직접 로드 또는 fallback 경로
         if (FileExtension == ".dds")
         {
             ResultHandle = DirectX::CreateDDSTextureFromFile(Device, DeviceContext,
@@ -151,7 +197,7 @@ ComPtr<ID3D11ShaderResourceView> FTextureManager::CreateTextureFromFile(const pa
         }
         else
         {
-            // PNG, JPG, BMP, TIFF 등
+            // PNG, JPG, BMP, TIFF 등 (DDS 캐싱 실패 시 fallback 또는 USE_DDS_CACHE 미정의 시)
             ResultHandle = DirectX::CreateWICTextureFromFile(Device, DeviceContext,
                 InFilePath.c_str(), nullptr, &TextureSRV);
 

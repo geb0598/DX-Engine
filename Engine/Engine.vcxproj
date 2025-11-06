@@ -137,10 +137,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_DEVELOP=1;WITH_EDITOR=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_DEVELOP=1;WITH_EDITOR=1;USE_DDS_CACHE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;$(SolutionDir)External\DirectXTex\include</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/utf-8 %(AdditionalOptions) /FS /bigobj</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -150,8 +150,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Debug;$(SolutionDir)External\DirectXTex\lib\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmodL_vc.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificWarnings>4099</IgnoreSpecificWarnings>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -167,10 +168,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_DEVELOP=1;STAND_ALONE=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_DEVELOP=1;STAND_ALONE=1;USE_DDS_CACHE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;$(SolutionDir)External\DirectXTex\include</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/utf-8 %(AdditionalOptions) /FS /bigobj</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -180,8 +181,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Debug;$(SolutionDir)External\DirectXTex\lib\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmodL_vc.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificWarnings>4099</IgnoreSpecificWarnings>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -197,10 +199,10 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_WINDOWS;IS_OBJ_VIEWER=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;IS_OBJ_VIEWER=1;USE_DDS_CACHE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;$(SolutionDir)External\DirectXTex\include</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/utf-8 %(AdditionalOptions) /bigobj</AdditionalOptions>
       <LanguageStandard>stdcpp17</LanguageStandard>
@@ -209,8 +211,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Debug;$(SolutionDir)External\DirectXTex\lib\Debug</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmodL_vc.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificWarnings>4099</IgnoreSpecificWarnings>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -229,10 +232,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;WITH_EDITOR=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;WITH_EDITOR=1;USE_DDS_CACHE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;$(SolutionDir)External\DirectXTex\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/utf-8 %(AdditionalOptions) /bigobj</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -241,8 +244,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Release</AdditionalLibraryDirectories>
-      <AdditionalDependencies>fmod_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Release;$(SolutionDir)External\DirectXTex\lib\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmod_vc.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificWarnings>4099</IgnoreSpecificWarnings>
     </Link>
     <PostBuildEvent>
       <Command>
@@ -261,10 +265,10 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_WINDOWS;STAND_ALONE=1;%(PreprocessorDefinitions);</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;STAND_ALONE=1;USE_DDS_CACHE;%(PreprocessorDefinitions);</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
-      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Source;$(SolutionDir)External\Include;$(SolutionDir)External\DirectXTex\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <AdditionalOptions>/utf-8 %(AdditionalOptions) /bigobj</AdditionalOptions>
       <LanguageStandard>stdcpp20</LanguageStandard>
@@ -273,14 +277,16 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Debug</AdditionalLibraryDirectories>
-      <AdditionalDependencies>fmodL_vc.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>;$(SolutionDir)External\Library;$(SolutionDir)External\Library\fmod;$(SolutionDir)External\Library\fmod\Release;$(SolutionDir)External\DirectXTex\lib\Release</AdditionalLibraryDirectories>
+      <AdditionalDependencies>fmod_vc.lib;DirectXTex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificWarnings>4099</IgnoreSpecificWarnings>
     </Link>
     <PostBuildEvent>
       <Command>
         IF EXIST "$(ProjectDir)Asset" xcopy "$(ProjectDir)Asset" "$(OutDir)Asset" /E /I /Y
         IF EXIST "$(ProjectDir)Data" xcopy "$(ProjectDir)Data" "$(OutDir)Data" /E /I /Y
-        IF EXIST "$(SolutionDir)External\bin\Debug\*" xcopy "$(SolutionDir)External\bin\Debug\*" "$(OutDir)" /E /I /Y
+        IF EXIST "$(SolutionDir)External\bin\Release\*" xcopy "$(SolutionDir)External\bin\Release\*" "$(OutDir)" /E /I /Y
+        IF EXIST "$(SolutionDir)External\Bin\Release\*" xcopy "$(SolutionDir)External\Bin\Release\*" "$(OutDir)" /E /I /Y
         IF EXIST "$(SolutionDir)External\Library\fmod\*.dll" xcopy "$(SolutionDir)External\Library\fmod\*.dll" "$(OutDir)" /E /I /Y
         :VCEnd
       </Command>
@@ -530,6 +536,7 @@
     <ClInclude Include="Source\Utility\Public\JsonSerializer.h" />
     <ClInclude Include="Source\Utility\Public\LogFileWriter.h" />
     <ClInclude Include="Source\Utility\Public\ScopeCycleCounter.h" />
+    <ClInclude Include="Source\Utility\Public\TextureConverter.h" />
     <ClInclude Include="Source\Utility\Public\UELogParser.h" />
   </ItemGroup>
   <ItemGroup>
@@ -743,6 +750,7 @@
     <ClCompile Include="Source\Texture\Private\TextureFilter.cpp" />
     <ClCompile Include="Source\Utility\Private\LogFileWriter.cpp" />
     <ClCompile Include="Source\Utility\Private\ScopeCycleCounter.cpp" />
+    <ClCompile Include="Source\Utility\Private\TextureConverter.cpp" />
     <ClCompile Include="Source\Utility\Private\UELogParser.cpp" />
     <FxCompile Include="Asset\Shader\DepthOnly.hlsl">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
