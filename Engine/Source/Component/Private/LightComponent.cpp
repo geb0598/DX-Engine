@@ -131,6 +131,12 @@ void ULightComponent::RefreshVisualizationIconBinding()
         VisualizationIcon = BoundIcon;
     }
 
+    // Icon이 없으면 생성
+    if (!VisualizationIcon)
+    {
+        EnsureVisualizationIcon();
+    }
+
     if (VisualizationIcon)
     {
         if (VisualizationIcon->GetAttachParent() != this)
