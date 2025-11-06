@@ -162,8 +162,8 @@ function BeginPlay()
 
     -- Preload result SFX so they play instantly on end
     if Sound_PreloadSFX ~= nil then
-        Sound_PreloadSFX("FailOnce", "Asset/Sound/SFX/Fail.wav", false, 1.0, 30.0)
-        Sound_PreloadSFX("SuccessOnce", "Asset/Sound/SFX/Success.wav", false, 1.0, 30.0)
+        Sound_PreloadSFX("FailOnce", "Asset/Audio/SFX/Fail.wav", false, 1.0, 30.0)
+        Sound_PreloadSFX("SuccessOnce", "Asset/Audio/SFX/Success.wav", false, 1.0, 30.0)
     end
 end
 
@@ -346,7 +346,7 @@ function UpdateLightExposure(dt)
     local threshold = 1.5
     if CurrentLightExposureTime < threshold then
         if Sound_PlayLoopingSFX ~= nil and not __warningLooping then
-            Sound_PlayLoopingSFX("Warning", "Asset/Sound/SFX/Warning.wav", 1.0)
+            Sound_PlayLoopingSFX("Warning", "Asset/Audio/SFX/Warning.wav", 1.0)
             __warningLooping = true
         end
     else
@@ -801,7 +801,7 @@ function StartGame()
 
     -- Start BGM on game start (looped)
     if Sound_PlayBGM ~= nil then
-        Sound_PlayBGM("Asset/Sound/BGM/BGM_InGame.wav", true, 0.5)
+        Sound_PlayBGM("Asset/Audio/BGM/BGM_InGame.wav", true, 0.5)
     end
 
     Log(string.format("Player.lua BeginPlay. Owner: %s, HP: %d", Owner.UUID, currentHP))

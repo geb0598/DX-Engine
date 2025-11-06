@@ -3,6 +3,7 @@
 #include "Core/Public/WindowsBinReader.h"
 #include "Core/Public/WindowsBinWriter.h"
 #include "Manager/Asset/Public/ObjImporter.h"
+#include "Manager/Path/Public/PathManager.h"
 
 bool FObjImporter::LoadObj(const std::filesystem::path& FilePath, FObjInfo* OutObjInfo, Configuration Config)
 {
@@ -17,8 +18,9 @@ bool FObjImporter::LoadObj(const std::filesystem::path& FilePath, FObjInfo* OutO
 		return false;
 	}
 
-	std::filesystem::path BinFilePath = FilePath;
-	BinFilePath.replace_extension(".objbin");
+	// objbin 파일 경로를 Data/Cooked 폴더에 생성
+	path CookedPath = UPathManager::GetInstance().GetCookedPath();
+	path BinFilePath = CookedPath / (FilePath.stem().wstring() + L".objbin");
 
 	if (Config.bIsBinaryEnabled && std::filesystem::exists(BinFilePath))
 	{
@@ -27,7 +29,7 @@ bool FObjImporter::LoadObj(const std::filesystem::path& FilePath, FObjInfo* OutO
 
 		if (BinTime >= ObjTime)
 		{
-			UE_LOG("바이너리 파일이 존재합니다: %s", BinFilePath.string().c_str());
+			UE_LOG_SUCCESS("ObjCache: Loaded cached objbin '%ls'", BinFilePath.c_str());
 			FWindowsBinReader WindowsBinReader(BinFilePath);
 			WindowsBinReader << *OutObjInfo;
 
@@ -35,20 +37,20 @@ bool FObjImporter::LoadObj(const std::filesystem::path& FilePath, FObjInfo* OutO
 		}
 		else
 		{
-			UE_LOG("바이너리 파일이 원본보다 오래되었습니다. 무시합니다: %s", BinFilePath.string().c_str());
+			UE_LOG_INFO("ObjCache: objbin outdated, reloading from obj '%ls'", FilePath.c_str());
 		}
 	}
 
 	if (FilePath.extension() != ".obj")
 	{
-		UE_LOG_ERROR("잘못된 파일 확장자입니다: %s", FilePath.string().c_str());
+		UE_LOG_ERROR("잘못된 파일 확장자입니다: %ls", FilePath.c_str());
 		return false;
 	}
 
 	std::ifstream File(FilePath);
 	if (!File)
 	{
-		UE_LOG_ERROR("파일을 열지 못했습니다: %s", FilePath.string().c_str());
+		UE_LOG_ERROR("파일을 열지 못했습니다: %ls", FilePath.c_str());
 		return false;
 	}
 
@@ -259,7 +261,7 @@ bool FObjImporter::LoadObj(const std::filesystem::path& FilePath, FObjInfo* OutO
 
 			if (!LoadMaterial(MaterialFilePath, OutObjInfo))
 			{
-				UE_LOG_ERROR("머티리얼을 불러오는데 실패했습니다: %s", MaterialFilePath.string().c_str());
+				UE_LOG_ERROR("머티리얼을 불러오는데 실패했습니다: %ls", MaterialFilePath.c_str());
 				return false;
 			}
 		}
@@ -285,10 +287,13 @@ bool FObjImporter::LoadObj(const std::filesystem::path& FilePath, FObjInfo* OutO
 		OutObjInfo->ObjectInfoList.Emplace(std::move(*OptObjectInfo));
 	}
 
+	// objbin 저장 (캐싱)
 	if (Config.bIsBinaryEnabled)
 	{
+		// Cooked 폴더가 이미 PathManager에 의해 생성되어 있음
 		FWindowsBinWriter WindowsBinWriter(BinFilePath);
 		WindowsBinWriter << *OutObjInfo;
+		UE_LOG_SUCCESS("ObjCache: Saved objbin '%ls'", BinFilePath.c_str());
 	}
 
 	return true;
@@ -303,20 +308,20 @@ bool FObjImporter::LoadMaterial(const std::filesystem::path& FilePath, FObjInfo*
 
 	if (!std::filesystem::exists(FilePath))
 	{
-		UE_LOG_ERROR("파일을 찾지 못했습니다: %s", FilePath.string().c_str());
+		UE_LOG_ERROR("파일을 찾지 못했습니다: %ls", FilePath.c_str());
 		return false;
 	}
 
 	if (FilePath.extension() != ".mtl")
 	{
-		UE_LOG_ERROR("잘못된 파일 확장자입니다: %s", FilePath.string().c_str());
+		UE_LOG_ERROR("잘못된 파일 확장자입니다: %ls", FilePath.c_str());
 		return false;
 	}
 
 	std::ifstream File(FilePath);
 	if (!File)
 	{
-		UE_LOG_ERROR("파일을 열지 못했습니다: %s", FilePath.string().c_str());
+		UE_LOG_ERROR("파일을 열지 못했습니다: %ls", FilePath.c_str());
 		return false;
 	}
 

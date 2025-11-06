@@ -69,7 +69,7 @@ function BeginPlay()
 
     -- Preload hit SFX so first playback has no delay
     if Sound_PreloadSFX ~= nil then
-        Sound_PreloadSFX("EnemyHit", "Asset/Sound/SFX/EnemyHit.wav", false, 1.0, 30.0)
+        Sound_PreloadSFX("EnemyHit", "Asset/Audio/SFX/EnemyHit.wav", false, 1.0, 30.0)
     end
 
     -- Preload & play spawn SFX on creation (only when game is running)
@@ -78,7 +78,7 @@ function BeginPlay()
     local isRunning = gm and gm.IsGameRunning or false
     if isRunning then
         if Sound_PreloadSFX ~= nil then
-            Sound_PreloadSFX("EnemySpawn", "Asset/Sound/SFX/EnemySpawn.wav", false, 1.0, 30.0)
+            Sound_PreloadSFX("EnemySpawn", "Asset/Audio/SFX/EnemySpawn.wav", false, 1.0, 30.0)
         end
         if Sound_PlaySFX ~= nil then
             Sound_PlaySFX("EnemySpawn", 1.0, 1.0)

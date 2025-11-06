@@ -372,7 +372,7 @@ path UEditorEngine::GenerateLevelFilePath(const FString& InLevelName)
 path UEditorEngine::GetLevelDirectory()
 {
     UPathManager& PathManager = UPathManager::GetInstance();
-    return PathManager.GetWorldPath();
+    return PathManager.GetScenePath();
 }
 
 FWorldContext* UEditorEngine::GetPIEWorldContext()

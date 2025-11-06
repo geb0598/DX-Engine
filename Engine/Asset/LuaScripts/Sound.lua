@@ -1,6 +1,6 @@
 -- Simple BGM controller: starts at game start, stops at game end
 
-local BGM_PATH = "Asset/Sound/BGM/BGM_InGame.wav"
+local BGM_PATH = "Asset/Audio/BGM/BGM_InGame.wav"
 local BGM_LOOP = true
 local BGM_FADE = 0.5
 local STOP_FADE = 0.3

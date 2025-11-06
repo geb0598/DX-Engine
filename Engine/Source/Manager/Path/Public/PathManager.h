@@ -18,11 +18,9 @@ public:
 
 	// Detailed Asset Path
 	const path& GetShaderPath() const { return ShaderPath; }
-	const path& GetTexturePath() const { return TexturePath; }
-	const path& GetModelPath() const { return ModelPath; }
+	const path& GetCookedPath() const { return CookedPath; }
 	const path& GetAudioPath() const { return AudioPath; }
-	const path& GetWorldPath() const { return WorldPath; }
-	const path& GetConfigPath() const { return ConfigPath; }
+	const path& GetScenePath() const { return ScenePath; }
 	const path& GetFontPath() const { return FontPath; }
 	const path& GetLuaScriptPath() const { return LuaScriptPath; }
 
@@ -31,11 +29,9 @@ private:
 	path DataPath;
 	path AssetPath;
 	path ShaderPath;
-	path TexturePath;
-	path ModelPath;
+	path CookedPath;
 	path AudioPath;
-	path WorldPath;
-	path ConfigPath;
+	path ScenePath;
 	path FontPath;
 	path LuaScriptPath;
 

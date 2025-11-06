@@ -61,7 +61,7 @@ void UGameInstance::InitializeWorld(FAppWindow* InWindow, const char* InScenePat
 		// InScenePath가 없으면 Asset/Scene 폴더의 첫 번째 .Scene 파일 찾기
 		const FString SceneFolder = "Asset/Scene";
 		WIN32_FIND_DATAA FindData;
-		HANDLE hFind = FindFirstFileA((SceneFolder + "/*.Scene").c_str(), &FindData);
+		HANDLE hFind = FindFirstFileA((SceneFolder + "/*.scene").c_str(), &FindData);
 
 		if (hFind != INVALID_HANDLE_VALUE)
 		{
