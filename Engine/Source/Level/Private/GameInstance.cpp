@@ -134,6 +134,9 @@ void UGameInstance::InitializeWorld(FAppWindow* InWindow, const char* InScenePat
 	int32 CenterY = (ClipRect.top + ClipRect.bottom) / 2;
 	SetCursorPos(CenterX, CenterY);
 
+	// 커서 숨김 (PIE와 동일한 패턴)
+	while (ShowCursor(FALSE) >= 0) {}
+
 	// 1. Fullscreen Viewport 생성 (캔버스)
 	Viewport = new FViewport();
 	Viewport->SetSize(Width, Height);
@@ -141,7 +144,7 @@ void UGameInstance::InitializeWorld(FAppWindow* InWindow, const char* InScenePat
 
 	// 2. ViewportClient 생성 (화가)
 	ViewportClient = NewObject<UGameViewportClient>();
-	ViewportClient->SetViewportSize(FPoint(Width, Height));
+	ViewportClient->SetViewportSize(FPoint(static_cast<int32>(Width), static_cast<int32>(Height)));
 
 	// 3. ViewportClient에게 자신이 그릴 Viewport 참조 설정
 	// Note: Unreal 패턴에서는 상호 참조지만, FViewport는 FViewportClient*만 받으므로
@@ -157,8 +160,9 @@ void UGameInstance::InitializeWorld(FAppWindow* InWindow, const char* InScenePat
  */
 void UGameInstance::Deinitialize()
 {
-	// StandAlone 모드: 마우스 클리핑 해제
+	// StandAlone 모드: 마우스 클리핑 해제 및 커서 복원
 	ClipCursor(nullptr);
+	while (ShowCursor(TRUE) < 0) {}
 
 	// World 정리
 	if (World)

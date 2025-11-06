@@ -58,6 +58,7 @@ public:
 	{
 		MouseWheelDelta = 0.0f;
 	}
+
 private:
 	// Key Status
 	TMap<EKeyInput, bool> CurrentKeyState;
