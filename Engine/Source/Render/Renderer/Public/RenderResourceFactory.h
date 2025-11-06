@@ -129,6 +129,14 @@ public:
 	}
 
 private:
+	// Shader Caching Helper Functions
+	static wstring GetCompiledShaderPath(const wstring& InHLSLPath, const char* InEntryPoint, const char* InShaderType);
+	static void EnsureCompiledDirectoryExists(const wstring& InCompiledPath);
+	static bool IsShaderUpToDate(const wstring& InHLSLPath, const wstring& InCSOPath);
+	static ID3DBlob* LoadPrecompiledShader(const wstring& InCSOPath);
+	static bool CompileAndSaveShader(const wstring& InHLSLPath, const wstring& InCSOPath, const char* InEntryPoint,
+		const char* InShaderModel, const D3D_SHADER_MACRO* InMacros, UINT InFlags, ID3DBlob** OutBlob);
+
 	struct FRasterKey
 	{
 		D3D11_FILL_MODE FillMode = {};
