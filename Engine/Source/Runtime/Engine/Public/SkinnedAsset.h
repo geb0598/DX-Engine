@@ -1,7 +1,6 @@
 ﻿#pragma once
 
-/** 언리얼 엔진 (BoneIndices.h)에서는 uint16을 사용하지만, 다른 코드와의 호환성을 위해 uint32를 사용한다. */
-typedef uint32 FBoneIndexType;
+typedef uint16 FBoneIndexType;
 
 UCLASS()
 class USkinnedAsset : public UObject
