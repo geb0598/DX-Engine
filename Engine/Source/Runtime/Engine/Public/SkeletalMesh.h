@@ -111,14 +111,21 @@ public:
 	USkeletalMesh() = default;
 	virtual ~USkeletalMesh() = default;
 
-private:
-	/** 런타임에 사용되는 렌더링 리소스 */
-	TUniquePtr<FSkeletalMeshRenderData> SkeletalMeshRenderData;
-
+	/*-----------------------------------------------------------------------------
+		FSkeletalMeshRenderData (런타임에 사용되는 렌더링 리소스)
+	 -----------------------------------------------------------------------------*/
+public:
 	FSkeletalMeshRenderData* GetSkeletalMeshRenderData() const;
 
 	void SetSkeletalMeshRenderData(std::unique_ptr<FSkeletalMeshRenderData>&& InSkeletalMeshRenderData);
 
+private:
+	/** 런타임에 사용되는 렌더링 리소스 */
+	TUniquePtr<FSkeletalMeshRenderData> SkeletalMeshRenderData;
+
+	/*-----------------------------------------------------------------------------
+		FReferenceSkeleton (본 계층 구조)
+	 -----------------------------------------------------------------------------*/
 public:
 	virtual FReferenceSkeleton& GetRefSkeleton() override
 	{
@@ -133,4 +140,28 @@ public:
 private:
 	/** 스켈레탈 메시의 본 계층 구조를 포함하는 데이터 */
 	FReferenceSkeleton RefSkeleton;
+
+	/*-----------------------------------------------------------------------------
+		RefBasesInvMatrix (정점을 본 공간으로 변환하는 행렬)
+	 -----------------------------------------------------------------------------*/
+public:
+	void CalculateInvRefMatrices();
+
+	virtual TArray<FMatrix>& GetRefBasesInvMatrix() override
+	{
+		return RefBasesInvMatrix;
+	}
+
+	virtual const TArray<FMatrix>& GetRefBasesInvMatrix() const override
+	{
+		return RefBasesInvMatrix;
+	}
+
+	void SetRefBasesInvMatrix(const TArray<FMatrix>& InRefBasesInvMatrix)
+	{
+		RefBasesInvMatrix = InRefBasesInvMatrix;
+	}
+
+private:
+	TArray<FMatrix> RefBasesInvMatrix;
 };

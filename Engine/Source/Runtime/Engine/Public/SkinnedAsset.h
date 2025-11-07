@@ -7,6 +7,7 @@ class USkinnedAsset : public UObject
 {
 	GENERATED_BODY()
 	DECLARE_CLASS(USkinnedAsset, UObject)
+
 public:
 	USkinnedAsset() = default;
 	virtual ~USkinnedAsset() = default;
