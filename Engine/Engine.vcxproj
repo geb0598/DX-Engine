@@ -477,6 +477,8 @@
     <ClInclude Include="Source\Runtime\Core\Public\Templates\TemplateUtilities.h" />
     <ClInclude Include="Source\Runtime\Core\Public\Templates\UniquePtr.h" />
     <ClInclude Include="Source\Runtime\Core\Public\Templates\WeakPtr.h" />
+    <ClInclude Include="Source\Runtime\Engine\Public\ReferenceSkeleton.h" />
+    <ClInclude Include="Source\Runtime\Engine\Public\SkinnedAsset.h" />
     <ClInclude Include="Source\Subsystem\Public\EngineSubsystem.h" />
     <ClInclude Include="Source\Subsystem\Public\Subsystem.h" />
     <ClInclude Include="Source\Subsystem\Public\SubsystemCollection.h" />
@@ -696,6 +698,8 @@
     <ClCompile Include="Source\Render\UI\Overlay\Private\D2DOverlayManager.cpp" />
     <ClCompile Include="Source\Render\UI\Overlay\Private\StatOverlay.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\ScriptComponentWidget.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\Private\ReferenceSkeleton.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\Private\SkinnedAsset.cpp" />
     <ClCompile Include="Source\Subsystem\Private\EngineSubsystem.cpp" />
     <ClCompile Include="Source\Subsystem\Private\Subsystem.cpp" />
     <ClCompile Include="Source\Render\UI\Window\Private\CurveEditorWindow.cpp" />
