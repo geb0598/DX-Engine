@@ -57,7 +57,9 @@ static void PrintStackTrace(const FStackTrace* Trace, void* Address, size_t Size
 		return;
 	}
 
-	printf("Memory Leak: %zu bytes at 0x%p\n", Size, Address);
+	char buffer[2048];
+	sprintf_s(buffer, "Memory Leak: %zu bytes at 0x%p\n", Size, Address);
+	OutputDebugStringA(buffer);
 
 	HANDLE Process = GetCurrentProcess();
 	char Buffer[sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR)];
@@ -77,19 +79,22 @@ static void PrintStackTrace(const FStackTrace* Trace, void* Address, size_t Size
 			DWORD Displacement = 0;
 			if (SymGetLineFromAddr64(Process, Address64, &Displacement, &Line))
 			{
-				printf("  %s(%d): %s\n", Line.FileName, Line.LineNumber, Symbol->Name);
+				sprintf_s(buffer, "  %s(%d): %s\n", Line.FileName, Line.LineNumber, Symbol->Name);
+				OutputDebugStringA(buffer);
 			}
 			else
 			{
-				printf("  %s (no line info)\n", Symbol->Name);
+				sprintf_s(buffer, "  %s (no line info)\n", Symbol->Name);
+				OutputDebugStringA(buffer);
 			}
 		}
 		else
 		{
-			printf("  0x%p (no symbol)\n", Trace->Frames[i]);
+			sprintf_s(buffer, "  0x%p (no symbol)\n", Trace->Frames[i]);
+			OutputDebugStringA(buffer);
 		}
 	}
-	printf("\n");
+	OutputDebugStringA("\n");
 }
 
 void InitializeMemoryTracking()
