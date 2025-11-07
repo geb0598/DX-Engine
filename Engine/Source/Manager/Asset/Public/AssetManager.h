@@ -31,6 +31,7 @@ public:
 
 	// StaticMesh 관련 함수
 	void LoadAllObjStaticMesh();
+	void LoadAllFbxStaticMesh();
 	ID3D11Buffer* GetVertexBuffer(FName InObjPath);
 	ID3D11Buffer* GetIndexBuffer(FName InObjPath);
 

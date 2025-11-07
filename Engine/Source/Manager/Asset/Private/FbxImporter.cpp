@@ -60,6 +60,10 @@ bool FFbxImporter::LoadFBX(const std::filesystem::path& FilePath, FFbxMeshInfo* 
 	Importer->Import(Scene);
 	Importer->Destroy();
 
+	// Geometry Converter를 사용하여 모든 지오메트리를 삼각형으로 변환합니다.
+	FbxGeometryConverter GeomConverter(SdkManager);
+	GeomConverter.Triangulate(Scene, /*replace*/true);
+
 	FbxNode* RootNode = Scene->GetRootNode();
 	if (!RootNode)
 	{
@@ -69,12 +73,14 @@ bool FFbxImporter::LoadFBX(const std::filesystem::path& FilePath, FFbxMeshInfo* 
 
 	// 1. 첫 번째 Mesh만 로드 (OBJ 구조와 통일)
 	FbxMesh* FoundMesh = nullptr;
+	FbxNode* FoundNode = nullptr;
 	for (int i = 0; i < RootNode->GetChildCount(); ++i)
 	{
 		FbxNode* Child = RootNode->GetChild(i);
 		if (FbxMesh* Mesh = Child->GetMesh())
 		{
 			FoundMesh = Mesh;
+			FoundNode = Child;
 			break;
 		}
 	}
@@ -92,7 +98,7 @@ bool FFbxImporter::LoadFBX(const std::filesystem::path& FilePath, FFbxMeshInfo* 
 	OutMeshInfo->VertexList.Reserve(ControlPointCount);
 	for (int i = 0; i < ControlPointCount; ++i)
 	{
-		FVector Pos(ControlPoints[i][0], ControlPoints[i][2], ControlPoints[i][1]);
+		FVector Pos(ControlPoints[i][0], ControlPoints[i][1], ControlPoints[i][2]);
 		if (Config.bConvertToUEBasis)
 		{
 			Pos = FVector(Pos.X, -Pos.Y, Pos.Z);
@@ -104,6 +110,7 @@ bool FFbxImporter::LoadFBX(const std::filesystem::path& FilePath, FFbxMeshInfo* 
 	const int PolygonCount = FoundMesh->GetPolygonCount();
 	for (int p = 0; p < PolygonCount; ++p)
 	{
+		// Triangulate를 거쳤기 때문에 PolygonSize는 항상 3입니다.
 		int PolySize = FoundMesh->GetPolygonSize(p);
 		for (int v = 0; v < PolySize; ++v)
 		{
@@ -114,7 +121,7 @@ bool FFbxImporter::LoadFBX(const std::filesystem::path& FilePath, FFbxMeshInfo* 
 			FbxVector4 Normal;
 			if (FoundMesh->GetPolygonVertexNormal(p, v, Normal))
 			{
-				FVector N(Normal[0], Normal[2], Normal[1]);
+				FVector N(Normal[0], Normal[1], Normal[2]);
 				if (Config.bConvertToUEBasis)
 				{
 					N = FVector(N.X, -N.Y, N.Z);
@@ -137,6 +144,39 @@ bool FFbxImporter::LoadFBX(const std::filesystem::path& FilePath, FFbxMeshInfo* 
 			}
 		}
 	}
+
+	// 4. 재질(Material) 및 텍스처 정보 추출
+	if (FoundNode)
+	{
+		FbxSurfaceMaterial* Material = FoundNode->GetMaterial(0);
+		if (Material)
+		{
+			OutMeshInfo->MaterialName = Material->GetName();
+
+			FbxProperty Prop = Material->FindProperty(FbxSurfaceMaterial::sDiffuse);
+			if (Prop.IsValid())
+			{
+				int LayeredTextureCount = Prop.GetSrcObjectCount<FbxLayeredTexture>();
+				if (LayeredTextureCount > 0)
+				{
+					// TODO: Layered Texture 처리
+				}
+				else
+				{
+					int TextureCount = Prop.GetSrcObjectCount<FbxFileTexture>();
+					if (TextureCount > 0)
+					{
+						FbxFileTexture* Texture = Prop.GetSrcObject<FbxFileTexture>(0);
+						if (Texture)
+						{
+							OutMeshInfo->DiffuseTexturePath = Texture->GetFileName();
+						}
+					}
+				}
+			}
+		}
+	}
+
 
 	Scene->Destroy();
 	return true;

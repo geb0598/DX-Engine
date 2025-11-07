@@ -10,6 +10,9 @@ struct FFbxMeshInfo
 	TArray<FVector> NormalList;
 	TArray<FVector2> TexCoordList;
 	TArray<uint32> Indices;
+
+	std::string MaterialName;
+	std::filesystem::path DiffuseTexturePath;
 };
 
 class FFbxImporter

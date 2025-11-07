@@ -6,6 +6,7 @@
 #include "Texture/Public/Texture.h"
 #include "Manager/Asset/Public/ObjManager.h"
 #include "Manager/Path/Public/PathManager.h"
+#include "Manager/Asset/Public/FbxManager.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 
 IMPLEMENT_SINGLETON_CLASS(UAssetManager, UObject)
@@ -21,6 +22,8 @@ void UAssetManager::Initialize()
 	TextureManager->LoadAllTexturesFromDirectory(UPathManager::GetInstance().GetDataPath());
 	// Data 폴더 속 모든 .obj 파일 로드 및 캐싱
 	LoadAllObjStaticMesh();
+	FFbxImporter::Initialize();
+	LoadAllFbxStaticMesh();
 
 	VertexDatas.Emplace(EPrimitiveType::Torus, &VerticesTorus);
 	VertexDatas.Emplace(EPrimitiveType::Arrow, &VerticesArrow);
@@ -118,6 +121,8 @@ void UAssetManager::Release()
 	IndexBuffers.Empty();
 	
 	SafeDelete(TextureManager);
+
+	FFbxImporter::Shutdown();
 }
 
 /**
@@ -169,6 +174,44 @@ void UAssetManager::LoadAllObjStaticMesh()
 		}
 	}
 }
+
+void UAssetManager::LoadAllFbxStaticMesh()
+{
+	TArray<FName> FbxList;
+	const FString DataDirectory = "Data/";
+
+	if (std::filesystem::exists(DataDirectory))
+	{
+		for (const auto& Entry : std::filesystem::recursive_directory_iterator(DataDirectory))
+		{
+			if (Entry.is_regular_file() && Entry.path().extension() == ".fbx")
+			{
+				FbxList.Emplace(FName(Entry.path().generic_string()));
+			}
+		}
+	}
+
+	FFbxImporter::Configuration Config;
+	Config.bConvertToUEBasis = true;
+
+	for (const FName& FbxPath : FbxList)
+	{
+		UStaticMesh* LoadedMesh = FFbxManager::LoadFbxStaticMesh(FbxPath, Config);
+		if (LoadedMesh)
+		{
+			StaticMeshCache.Emplace(FbxPath, LoadedMesh);
+			StaticMeshVertexBuffers.Emplace(FbxPath, this->CreateVertexBuffer(LoadedMesh->GetVertices()));
+			StaticMeshIndexBuffers.Emplace(FbxPath, this->CreateIndexBuffer(LoadedMesh->GetIndices()));
+
+			UE_LOG_SUCCESS("FBX 메시 로드 성공: %s", FbxPath.ToString().c_str());
+		}
+		else
+		{
+			UE_LOG_ERROR("FBX 메시 로드 실패: %s", FbxPath.ToString().c_str());
+		}
+	}
+}
+
 
 ID3D11Buffer* UAssetManager::GetVertexBuffer(FName InObjPath)
 {
