@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "ReferenceSkeleton.h"
 #include "Component/Mesh/Public/StaticMesh.h"
 #include "SkinnedAsset.h"
 
@@ -95,6 +96,11 @@ public:
 	USkeletalMesh
  -----------------------------------------------------------------------------*/
 
+/**
+ * @brief 스켈레탈 메시는 뼈대 계층 구조에 결합되어 변형 애니메이션을 위해 사용할 수 있는 기하학적 형태이다.
+ * 스켈레탈 메시는 메시의 표면을 구성하는 폴리곤 집합과, 이 폴리곤을 애니메이션화하기 위해 사용되는 계층적 골격으로 구성되어 있다.
+ * 3D 모델, 리깅, 그리고 애니메이션은 외부 모델링 및 애니메이션 애플리케이션(3DSMax, Maya, Softimage, etc)에서 제작된다.
+ */
 UCLASS()
 class USkeletalMesh : public USkinnedAsset
 {
@@ -106,9 +112,25 @@ public:
 	virtual ~USkeletalMesh() = default;
 
 private:
-	std::unique_ptr<FSkeletalMeshRenderData> SkeletalMeshRenderData;
+	/** 런타임에 사용되는 렌더링 리소스 */
+	TUniquePtr<FSkeletalMeshRenderData> SkeletalMeshRenderData;
 
 	FSkeletalMeshRenderData* GetSkeletalMeshRenderData() const;
 
 	void SetSkeletalMeshRenderData(std::unique_ptr<FSkeletalMeshRenderData>&& InSkeletalMeshRenderData);
+
+public:
+	virtual FReferenceSkeleton& GetRefSkeleton() override
+	{
+		return RefSkeleton;
+	}
+
+	virtual const FReferenceSkeleton& GetRefSkeleton() const override
+	{
+		return RefSkeleton;
+	}
+
+private:
+	/** 스켈레탈 메시의 본 계층 구조를 포함하는 데이터 */
+	FReferenceSkeleton RefSkeleton;
 };
