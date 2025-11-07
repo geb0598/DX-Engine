@@ -50,7 +50,6 @@ FShadowMapPass::FShadowMapPass(UPipeline* InPipeline,
 	D3D11_RASTERIZER_DESC RastDesc = {};
 	RastDesc.FillMode = D3D11_FILL_SOLID;
 	RastDesc.CullMode = D3D11_CULL_BACK;  // Back-face culling
-	RastDesc.FrontCounterClockwise = FALSE;
 	RastDesc.DepthBias = 0;               // 동적으로 설정
 	RastDesc.DepthBiasClamp = 0.0f;
 	RastDesc.SlopeScaledDepthBias = 0.0f; // 동적으로 설정
