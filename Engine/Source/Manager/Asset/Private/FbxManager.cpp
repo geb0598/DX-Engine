@@ -31,13 +31,15 @@ UStaticMesh* FFbxManager::LoadFbxStaticMesh(const FName& FilePath, const FFbxImp
 	if (!StaticMeshAsset)
 		return nullptr;
 
-	UStaticMesh* StaticMesh = new UStaticMesh();
+	UStaticMesh* StaticMesh = NewObject<UStaticMesh>();
 	StaticMesh->SetStaticMeshAsset(StaticMeshAsset);
 
 	// Materials 생성 및 설정
 	for (int32 i = 0; i < StaticMeshAsset->MaterialInfo.Num(); ++i)
 	{
-		UMaterial* NewMaterial = CreateMaterialFromInfo(StaticMeshAsset->MaterialInfo[i], i);
+		// MaterialInfo를 복사해서 전달 (참조 문제 회피)
+		FMaterial MaterialCopy = StaticMeshAsset->MaterialInfo[i];
+		UMaterial* NewMaterial = CreateMaterialFromInfo(MaterialCopy, i);
 		StaticMesh->SetMaterial(i, NewMaterial);
 	}
 
@@ -68,11 +70,11 @@ void FFbxManager::ConvertFbxToStaticMesh(const FFbxMeshInfo& MeshInfo, FStaticMe
 	// Materials 변환
 	for (const FFbxMaterialInfo& FbxMat : MeshInfo.Materials)
 	{
-		FMaterial Material;
+		FMaterial Material{};  // 모든 멤버 제로 초기화!
 		Material.Name = FbxMat.MaterialName;
 		if (!FbxMat.DiffuseTexturePath.empty())
 		{
-			Material.KdMap = FbxMat.DiffuseTexturePath.string();
+			Material.KdMap = FbxMat.DiffuseTexturePath;
 		}
 		OutStaticMesh->MaterialInfo.Add(Material);
 	}
@@ -90,7 +92,7 @@ void FFbxManager::ConvertFbxToStaticMesh(const FFbxMeshInfo& MeshInfo, FStaticMe
 
 UMaterial* FFbxManager::CreateMaterialFromInfo(const FMaterial& MaterialInfo, int32 MaterialIndex)
 {
-	UMaterial* NewMaterial = new UMaterial();
+	UMaterial* NewMaterial = NewObject<UMaterial>();
 	NewMaterial->SetName(FName(MaterialInfo.Name));
 	NewMaterial->SetMaterialData(MaterialInfo);
 
@@ -103,6 +105,7 @@ UMaterial* FFbxManager::CreateMaterialFromInfo(const FMaterial& MaterialInfo, in
 		if (DiffuseTexture)
 		{
 			NewMaterial->SetDiffuseTexture(DiffuseTexture);
+			UE_LOG_SUCCESS("[FbxManager] Material %d - Texture Loaded Successfully", MaterialIndex);
 		}
 		else
 		{
