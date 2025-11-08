@@ -250,7 +250,8 @@ void FFbxManager::ConvertSkeleton(const TArray<FFbxBoneInfo>& FbxBones, FReferen
 
 void FFbxManager::ConvertSkinWeights(const TArray<FFbxBoneInfluence>& FbxWeights, TArray<FRawSkinWeight>& OutSkinWeights)
 {
-	OutSkinWeights.Reset(FbxWeights.Num());
+	//OutSkinWeights.Reset(FbxWeights.Num());
+	OutSkinWeights.Empty(FbxWeights.Num());
 
 	for (const FFbxBoneInfluence& FbxWeight : FbxWeights)
 	{

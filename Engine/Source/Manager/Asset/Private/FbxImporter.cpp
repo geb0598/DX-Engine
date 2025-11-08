@@ -657,7 +657,7 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 
 	for (int i = 0; i < ControlPointCount; ++i)
 	{
-		ControlPointWeights.Add(FFbxBoneInfluence());
+		ControlPointWeights[i] = FFbxBoneInfluence();
 	}
 
 	for (int ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
@@ -701,12 +701,12 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 		if (CtrlPointIndex >= 0 && CtrlPointIndex < ControlPointCount)
 		{
 			// ControlPoint의 가중치를 복사
-			OutMeshInfo->SkinWeights.Add(ControlPointWeights[CtrlPointIndex]);
+			OutMeshInfo->SkinWeights[i] = ControlPointWeights[CtrlPointIndex];
 		}
 		else
 		{
 			// 잘못된 인덱스인 경우 빈 가중치 추가
-			OutMeshInfo->SkinWeights.Add(FFbxBoneInfluence());
+			OutMeshInfo->SkinWeights[i] = FFbxBoneInfluence();
 		}
 	}
 
