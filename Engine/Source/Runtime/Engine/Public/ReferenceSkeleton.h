@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 /**
  * @brief 언리얼 엔진 'CoreMiscDefines.h'에 정의되어있는 값이다.
@@ -76,6 +76,21 @@ private:
 	void SetParent(const FName InBoneName, const FName InParentName);
 
 public:
+	/**
+	 * @brief 외부 데이터로부터 스켈레톤을 초기화한다.
+	 */
+	void InitializeFromData(const TArray<FMeshBoneInfo>& BoneInfos, const TArray<FTransform>& BonePoses)
+	{
+		RawRefBoneInfo = BoneInfos;
+		RawRefBonePose = BonePoses;
+
+		RawNameToIndexMap.Empty();
+		for (int32 i = 0; i < RawRefBoneInfo.Num(); ++i)
+		{
+			RawNameToIndexMap.Add(RawRefBoneInfo[i].Name, i);
+		}
+	}
+
 	/** 스켈레톤의 raw 본 개수를 반환한다. 에셋의 원래 본 개수를 나타낸다. */
 	int32 GetRawBoneNum() const
 	{
