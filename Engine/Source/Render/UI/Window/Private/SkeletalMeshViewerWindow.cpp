@@ -7,8 +7,11 @@
 #include "Render/Renderer/Public/SceneView.h"
 #include "Render/Renderer/Public/SceneViewFamily.h"
 #include "Render/Renderer/Public/SceneRenderer.h"
+#include "Render/Renderer/Public/Pipeline.h"
+#include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Level/Public/World.h"
 #include "Core/Public/NewObject.h"
+#include "Editor/Public/BatchLines.h"
 
 IMPLEMENT_CLASS(USkeletalMeshViewerWindow, UUIWindow)
 
@@ -19,7 +22,7 @@ IMPLEMENT_CLASS(USkeletalMeshViewerWindow, UUIWindow)
 USkeletalMeshViewerWindow::USkeletalMeshViewerWindow()
 {
 	FUIWindowConfig Config;
-	Config.WindowTitle = "SkeletalMesh Viewer";
+	Config.WindowTitle = "SkeletalMeshViewer";
 	Config.DefaultSize = ImVec2(1400, 800);
 	Config.DefaultPosition = ImVec2(100, 100);
 	Config.DockDirection = EUIDockDirection::None; // 독립적인 플로팅 윈도우
@@ -50,6 +53,12 @@ USkeletalMeshViewerWindow::~USkeletalMeshViewerWindow()
  */
 void USkeletalMeshViewerWindow::Initialize()
 {
+	if (bIsInitialized)
+	{
+		UE_LOG_WARNING("SkeletalMeshViewerWindow: 이미 초기화됨 - 중복 초기화 방지");
+		return;
+	}
+
 	// Viewport 생성
 	ViewerViewport = new FViewport();
 	ViewerViewport->SetSize(ViewerWidth, ViewerHeight);
@@ -59,12 +68,23 @@ void USkeletalMeshViewerWindow::Initialize()
 	ViewerViewportClient = new FViewportClient();
 	ViewerViewportClient->SetOwningViewport(ViewerViewport);
 	ViewerViewportClient->SetViewType(EViewType::Perspective);
-	ViewerViewportClient->SetViewMode(EViewModeIndex::VMI_Gouraud);
+	ViewerViewportClient->SetViewMode(EViewModeIndex::VMI_BlinnPhong);
 
 	ViewerViewport->SetViewportClient(ViewerViewportClient);
 
 	// 렌더 타겟 생성
 	CreateRenderTarget(ViewerWidth, ViewerHeight);
+
+	// BatchLines 생성 및 Grid 초기화
+	ViewerBatchLines = new UBatchLines();
+	if (ViewerBatchLines)
+	{
+		ViewerBatchLines->UpdateUGridVertices(100.0f); // 100 unit 간격으로 그리드 생성
+		ViewerBatchLines->UpdateVertexBuffer();
+	}
+
+	bIsInitialized = true;
+	bIsCleanedUp = false;
 
 	UE_LOG("SkeletalMeshViewerWindow: 독립적인 뷰포트 및 카메라 초기화 완료");
 }
@@ -74,22 +94,42 @@ void USkeletalMeshViewerWindow::Initialize()
  */
 void USkeletalMeshViewerWindow::Cleanup()
 {
+	if (bIsCleanedUp)
+	{
+		UE_LOG_WARNING("SkeletalMeshViewerWindow: 이미 정리됨 - 중복 정리 방지");
+		return;
+	}
+
 	// 렌더 타겟 해제
 	ReleaseRenderTarget();
 
-	// ViewportClient를 먼저 삭제 (Viewport를 참조하고 있으므로)
+	// BatchLines 삭제
+	if (ViewerBatchLines)
+	{
+		SafeDelete(ViewerBatchLines);
+	}
+
+	// ViewportClient와 Viewport의 연결을 먼저 끊음
+	if (ViewerViewportClient && ViewerViewport)
+	{
+		ViewerViewportClient->SetOwningViewport(nullptr);
+		ViewerViewport->SetViewportClient(nullptr);
+	}
+
+	// ViewportClient 삭제
 	if (ViewerViewportClient)
 	{
-		delete ViewerViewportClient;
-		ViewerViewportClient = nullptr;
+		SafeDelete(ViewerViewportClient);
 	}
 
 	// 그 다음 Viewport 삭제
 	if (ViewerViewport)
 	{
-		delete ViewerViewport;
-		ViewerViewport = nullptr;
+		SafeDelete(ViewerViewport);
 	}
+
+	bIsCleanedUp = true;
+	bIsInitialized = false;
 
 	UE_LOG("SkeletalMeshViewerWindow: 정리 완료");
 }
@@ -430,6 +470,26 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 					delete SceneRenderer;
 				}
 
+				// Grid 렌더링 (SceneRenderer 후, 메인 렌더 타겟 복구 전)
+				if (ViewerBatchLines)
+				{
+					// 카메라 상수 버퍼 업데이트
+					URenderer& Renderer = URenderer::GetInstance();
+					ID3D11Buffer* ConstantBufferViewProj = Renderer.GetConstantBufferViewProj();
+					UPipeline* Pipeline = Renderer.GetPipeline();
+
+					if (ConstantBufferViewProj && Pipeline)
+					{
+						// 카메라 상수 업데이트
+						FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, CameraConst);
+
+						// 파이프라인에 바인딩
+						Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferViewProj);
+					}
+
+					ViewerBatchLines->Render();
+				}
+
 				// View 정리
 				delete View;
 			}
@@ -451,13 +511,88 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 		ImTextureID TextureID = reinterpret_cast<ImTextureID>(ViewerShaderResourceView);
 		ImGui::Image(TextureID, ViewportSize);
 
+		// 뷰포트 위에 마우스가 있을 때 카메라 조작 처리
+		if (ImGui::IsItemHovered() && ViewerViewportClient)
+		{
+			UCamera* Camera = ViewerViewportClient->GetCamera();
+			if (Camera)
+			{
+				ImGuiIO& IO = ImGui::GetIO();
+
+				// 우클릭 드래그: 카메라 회전 (Perspective) 또는 패닝 (Orthographic)
+				if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
+				{
+					FVector MouseDelta = FVector(IO.MouseDelta.x, IO.MouseDelta.y, 0);
+
+					if (Camera->GetCameraType() == ECameraType::ECT_Perspective)
+					{
+						// Perspective: 마우스 드래그로 회전
+						const float YawDelta = MouseDelta.X * KeySensitivityDegPerPixel * 2;
+						const float PitchDelta = -MouseDelta.Y * KeySensitivityDegPerPixel * 2;
+
+						FRotator CurrentRot = Camera->GetRotationRotator();
+						CurrentRot.Yaw += YawDelta;
+						CurrentRot.Pitch += PitchDelta;
+						CurrentRot.Roll = 0.0f;
+
+						// Pitch 클램핑
+						constexpr float MaxPitch = 89.9f;
+						CurrentRot.Pitch = clamp(CurrentRot.Pitch, -MaxPitch, MaxPitch);
+
+						Camera->SetRotation(CurrentRot);
+
+						// WASD 키로 이동
+						FVector Direction = FVector::Zero();
+						if (ImGui::IsKeyDown(ImGuiKey_A)) { Direction += -Camera->GetRight() * 2; }
+						if (ImGui::IsKeyDown(ImGuiKey_D)) { Direction += Camera->GetRight() * 2; }
+						if (ImGui::IsKeyDown(ImGuiKey_W)) { Direction += Camera->GetForward() * 2; }
+						if (ImGui::IsKeyDown(ImGuiKey_S)) { Direction += -Camera->GetForward() * 2; }
+						if (ImGui::IsKeyDown(ImGuiKey_Q)) { Direction += FVector(0, 0, -2); }
+						if (ImGui::IsKeyDown(ImGuiKey_E)) { Direction += FVector(0, 0, 2); }
+
+						if (Direction.LengthSquared() > MATH_EPSILON)
+						{
+							Direction.Normalize();
+							Camera->SetLocation(Camera->GetLocation() + Direction * Camera->GetMoveSpeed() * DT);
+						}
+					}
+					else if (Camera->GetCameraType() == ECameraType::ECT_Orthographic)
+					{
+						// Orthographic: 마우스 드래그로 패닝
+						const float PanSpeed = 0.1f;
+						FVector PanDelta = Camera->GetRight() * -MouseDelta.X * PanSpeed + Camera->GetUp() * MouseDelta.Y * PanSpeed;
+						Camera->SetLocation(Camera->GetLocation() + PanDelta);
+					}
+				}
+
+				// 마우스 휠: 줌
+				if (IO.MouseWheel != 0.0f)
+				{
+					if (Camera->GetCameraType() == ECameraType::ECT_Perspective)
+					{
+						// Perspective: FOV 조절
+						float NewFOV = Camera->GetFovY() - IO.MouseWheel * 5.0f;
+						NewFOV = clamp(NewFOV, 10.0f, 120.0f);
+						Camera->SetFovY(NewFOV);
+					}
+					else if (Camera->GetCameraType() == ECameraType::ECT_Orthographic)
+					{
+						// Orthographic: Zoom 조절
+						float NewZoom = Camera->GetOrthoZoom() * (1.0f - IO.MouseWheel * 0.1f);
+						NewZoom = clamp(NewZoom, 10.0f, 10000.0f);
+						Camera->SetOrthoZoom(NewZoom);
+					}
+				}
+			}
+		}
+
 		// 뷰포트 상태 표시 (디버그 정보) - 좌측 상단 오버레이
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 		ImVec2 WindowPos = ImGui::GetCursorScreenPos();
 		WindowPos.y -= ViewportSize.y; // Image가 그려진 위치로 이동
 
 		ImVec2 InfoPos = ImVec2(WindowPos.x + 10, WindowPos.y + 10);
-		ImVec2 InfoSize = ImVec2(200, 80);
+		ImVec2 InfoSize = ImVec2(280, 180);
 
 		// 반투명 배경
 		DrawList->AddRectFilled(InfoPos, ImVec2(InfoPos.x + InfoSize.x, InfoPos.y + InfoSize.y),
@@ -467,8 +602,41 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 		DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 10), IM_COL32(80, 200, 200, 255), "3D Viewport");
 		DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 30), IM_COL32(200, 200, 200, 255),
 		                  (FString("Size: ") + std::to_string(ViewerWidth) + " x " + std::to_string(ViewerHeight)).c_str());
-		DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 50), IM_COL32(200, 200, 200, 255), "Camera: Active");
-		DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 65), IM_COL32(200, 200, 200, 255), "Mode: Perspective");
+
+		// 카메라 정보 표시
+		if (ViewerViewportClient)
+		{
+			UCamera* Camera = ViewerViewportClient->GetCamera();
+			if (Camera)
+			{
+				FVector CameraPos = Camera->GetLocation();
+				FVector CameraRot = Camera->GetRotation();
+				float CameraFOV = Camera->GetFovY();
+				float CameraAspect = Camera->GetAspect();
+
+				// 카메라 위치
+				char CameraInfoText[256];
+				sprintf_s(CameraInfoText, "Pos: %.1f, %.1f, %.1f", CameraPos.X, CameraPos.Y, CameraPos.Z);
+				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 55), IM_COL32(200, 200, 100, 255), CameraInfoText);
+
+				// 카메라 회전
+				sprintf_s(CameraInfoText, "Rot: %.1f, %.1f, %.1f", CameraRot.X, CameraRot.Y, CameraRot.Z);
+				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 75), IM_COL32(200, 200, 100, 255), CameraInfoText);
+
+				// FOV와 종횡비
+				sprintf_s(CameraInfoText, "FOV: %.1f | Aspect: %.2f", CameraFOV, CameraAspect);
+				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 95), IM_COL32(200, 200, 100, 255), CameraInfoText);
+
+				// 컨트롤 힌트
+				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 120), IM_COL32(150, 150, 150, 255), "RMB: Rotate | MMB: Pan");
+				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 140), IM_COL32(150, 150, 150, 255), "Wheel: Zoom | Q/W/E/R: Gizmo");
+				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 160), IM_COL32(150, 150, 150, 255), "F: Focus | Alt+G: Toggle Grid");
+			}
+			else
+			{
+				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 50), IM_COL32(200, 200, 200, 255), "Camera: Not Available");
+			}
+		}
 	}
 	else
 	{

@@ -102,6 +102,9 @@ private:
 	// 렌더링할 SkeletalMeshComponent
 	USkeletalMeshComponent* SkeletalMeshComponent = nullptr;
 
+	// 독립적인 BatchLines (Grid 렌더링용)
+	class UBatchLines* ViewerBatchLines = nullptr;
+
 	/**
 	 * @brief 렌더 타겟 생성
 	 */

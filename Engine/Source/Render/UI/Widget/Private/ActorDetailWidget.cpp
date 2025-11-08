@@ -430,10 +430,18 @@ void UActorDetailWidget::RenderSceneComponents(USceneComponent* InSceneComponent
 					UIManager.FindUIWindow(FName("SkeletalMeshViewer"))
 				);
 
-				assert(ViewerWindow && "SkeletalMeshViewerWindow not found!");
+				if (ViewerWindow)
+				{
+					// 윈도우가 아직 초기화되지 않았다면 초기화
+					ViewerWindow->Initialize();
 
-				ViewerWindow->SetWindowState(EUIWindowState::Visible);
-				ViewerWindow->SetSkeletalMeshComponent(SkeletalMeshComp);
+					ViewerWindow->SetWindowState(EUIWindowState::Visible);
+					ViewerWindow->SetSkeletalMeshComponent(SkeletalMeshComp);
+				}
+				else
+				{
+					UE_LOG_ERROR("ActorDetailWidget: SkeletalMeshViewerWindow을 찾을 수 없습니다!");
+				}
 			}
 		}
 		ImGui::EndPopup();
