@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 #include "Component/Mesh/Public/SkeletalMeshComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
@@ -96,7 +96,8 @@ void FSkeletalMeshPass::Execute(FRenderingContext& Context)
 
 		if (CurrentMeshAsset != MeshAsset)
 		{
-			Pipeline->SetVertexBuffer(MeshComp->GetVertexBuffer(), sizeof(FSkeletalVertex));
+			// 스켈레탈 메시도 FNormalVertex를 사용
+			Pipeline->SetVertexBuffer(MeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
 			Pipeline->SetIndexBuffer(MeshComp->GetIndexBuffer(), 0);
 			CurrentMeshAsset = MeshAsset;
 		}
@@ -104,8 +105,8 @@ void FSkeletalMeshPass::Execute(FRenderingContext& Context)
 		FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferModel, MeshComp->GetWorldTransformMatrix());
 		Pipeline->SetConstantBuffer(0, EShaderType::VS, ConstantBufferModel);
 
-		FSkeletalMeshRenderData* SkeletalMeshRenderData = MeshAsset->GetSkeletalMeshRenderData();
-		Pipeline->DrawIndexed(static_cast<uint32>(SkeletalMeshRenderData->StaticMesh.Indices.Num()), 0, 0);
+		// USkeletalMesh가 가지고 있는 UStaticMesh에서 인덱스 개수 가져오기
+		Pipeline->DrawIndexed(static_cast<uint32>(MeshAsset->GetIndices().Num()), 0, 0);
 		/** @todo 머티리얼 도입 */
 	}
 }

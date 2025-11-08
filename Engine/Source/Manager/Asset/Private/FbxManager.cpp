@@ -189,25 +189,38 @@ bool FFbxManager::ConvertFbxToSkeletalMesh(const FFbxSkeletalMeshInfo& FbxData, 
 	// 1. 스켈레톤 변환
 	ConvertSkeleton(FbxData.Bones, OutSkeletalMesh->GetRefSkeleton());
 
-	// 2. 렌더 데이터 생성 및 변환
-	// Static assert로 인하여 어쩔 수 없이 new 할당
+	// 2. UStaticMesh 생성 및 설정 (지오메트리 데이터)
+	FStaticMesh* StaticMeshAsset = new FStaticMesh();
+	ConvertFbxSkeletalToStaticMesh(FbxData, StaticMeshAsset);
+
+	UStaticMesh* StaticMesh = NewObject<UStaticMesh>();
+	StaticMesh->SetStaticMeshAsset(StaticMeshAsset);
+
+	// Materials 생성 및 설정
+	for (int32 i = 0; i < StaticMeshAsset->MaterialInfo.Num(); ++i)
+	{
+		FMaterial MaterialCopy = StaticMeshAsset->MaterialInfo[i];
+		UMaterial* NewMaterial = CreateMaterialFromInfo(MaterialCopy, i);
+		StaticMesh->SetMaterial(i, NewMaterial);
+	}
+
+	OutSkeletalMesh->SetStaticMesh(StaticMesh);
+
+	// 3. 렌더 데이터 생성 (스킨 가중치만)
 	FSkeletalMeshRenderData* RenderData = new FSkeletalMeshRenderData();
 	if (!RenderData)
 	{
-		// RenderData가 없으면 새로 생성 (필요시)
 		UE_LOG_ERROR("SkeletalMeshRenderData가 없습니다.");
 		return false;
 	}
 
-	ConvertRenderData(FbxData, RenderData);
-
-	// 3. 스킨 가중치 변환
+	// 4. 스킨 가중치 변환
 	ConvertSkinWeights(FbxData.SkinWeights, RenderData->SkinWeightVertices);
 
-	// 4. RenderData를 SkeletalMesh에 설정
+	// 5. RenderData를 SkeletalMesh에 설정
 	OutSkeletalMesh->SetSkeletalMeshRenderData(RenderData);
 
-	// 5. Inverse Reference Matrices 계산
+	// 6. Inverse Reference Matrices 계산
 	OutSkeletalMesh->CalculateInvRefMatrices();
 
 	UE_LOG_SUCCESS("[FbxManager] SkeletalMesh 변환 완료 - Bones: %d, Vertices: %d",
@@ -269,67 +282,25 @@ void FFbxManager::ConvertSkinWeights(const TArray<FFbxBoneInfluence>& FbxWeights
 	UE_LOG("[FbxManager] 스킨 가중치 변환 완료: %d 정점", OutSkinWeights.Num());
 }
 
-void FFbxManager::ConvertRenderData(const FFbxSkeletalMeshInfo& FbxData, FSkeletalMeshRenderData* OutRenderData)
+void FFbxManager::ConvertFbxSkeletalToStaticMesh(const FFbxSkeletalMeshInfo& FbxData, FStaticMesh* OutStaticMesh)
 {
-	if (!OutRenderData)
+	if (!OutStaticMesh)
 	{
-		UE_LOG_ERROR("유효하지 않은 RenderData입니다.");
+		UE_LOG_ERROR("유효하지 않은 StaticMesh입니다.");
 		return;
 	}
 
-	// StaticMesh 데이터 설정 (지오메트리, 호환성 유지)
-	FStaticMesh& StaticMesh = OutRenderData->StaticMesh;
-
-	// Vertices 변환 (기존 FNormalVertex)
+	// Vertices 변환
 	for (int i = 0; i < FbxData.VertexList.Num(); ++i)
 	{
 		FNormalVertex Vertex{};
 		Vertex.Position = FbxData.VertexList[i];
 		Vertex.Normal = FbxData.NormalList.IsValidIndex(i) ? FbxData.NormalList[i] : FVector(0, 1, 0);
 		Vertex.TexCoord = FbxData.TexCoordList.IsValidIndex(i) ? FbxData.TexCoordList[i] : FVector2(0, 0);
-		StaticMesh.Vertices.Add(Vertex);
+		OutStaticMesh->Vertices.Add(Vertex);
 	}
 
-	StaticMesh.Indices = FbxData.Indices;
-
-	// SkeletalVertices 생성 (본 인덱스/가중치 포함)
-	OutRenderData->SkeletalVertices.Reset();
-	OutRenderData->SkeletalVertices.Reserve(FbxData.VertexList.Num());
-
-	for (int i = 0; i < FbxData.VertexList.Num(); ++i)
-	{
-		FSkeletalVertex SkeletalVert{};
-		SkeletalVert.Position = FbxData.VertexList[i];
-		SkeletalVert.Normal = FbxData.NormalList.IsValidIndex(i) ? FbxData.NormalList[i] : FVector(0, 1, 0);
-		SkeletalVert.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-		SkeletalVert.TexCoord = FbxData.TexCoordList.IsValidIndex(i) ? FbxData.TexCoordList[i] : FVector2(0, 0);
-		SkeletalVert.Tangent = FVector4(1.0f, 0.0f, 0.0f, 1.0f);
-
-		// 본 인덱스와 가중치 설정 (최대 4개)
-		if (FbxData.SkinWeights.IsValidIndex(i))
-		{
-			const FFbxBoneInfluence& SkinWeight = FbxData.SkinWeights[i];
-			for (int j = 0; j < 4; ++j)
-			{
-				SkeletalVert.BoneIndices[j] = static_cast<uint16>(SkinWeight.BoneIndices[j]);
-				SkeletalVert.BoneWeights[j] = SkinWeight.BoneWeights[j];
-			}
-		}
-		else
-		{
-			// 스킨 가중치가 없는 경우 기본값
-			for (int j = 0; j < 4; ++j)
-			{
-				SkeletalVert.BoneIndices[j] = 0;
-				SkeletalVert.BoneWeights[j] = 0;
-			}
-		}
-
-		OutRenderData->SkeletalVertices.Add(SkeletalVert);
-	}
-
-	// 인덱스 복사
-	OutRenderData->Indices = FbxData.Indices;
+	OutStaticMesh->Indices = FbxData.Indices;
 
 	// Materials 변환
 	for (const FFbxMaterialInfo& FbxMat : FbxData.Materials)
@@ -346,7 +317,7 @@ void FFbxManager::ConvertRenderData(const FFbxSkeletalMeshInfo& FbxData, FSkelet
 		{
 			Material.KdMap = FbxMat.DiffuseTexturePath.generic_string();
 		}
-		StaticMesh.MaterialInfo.Add(Material);
+		OutStaticMesh->MaterialInfo.Add(Material);
 	}
 
 	// Sections 변환
@@ -356,23 +327,9 @@ void FFbxManager::ConvertRenderData(const FFbxSkeletalMeshInfo& FbxData, FSkelet
 		Section.StartIndex = FbxSection.StartIndex;
 		Section.IndexCount = FbxSection.IndexCount;
 		Section.MaterialSlot = FbxSection.MaterialIndex;
-		StaticMesh.Sections.Add(Section);
+		OutStaticMesh->Sections.Add(Section);
 	}
 
-	// Render Sections 설정
-	OutRenderData->RenderSections.Reset();
-	for (const FFbxMeshSection& FbxSection : FbxData.Sections)
-	{
-		FSkeletalMeshRenderSection RenderSection;
-		RenderSection.MaterialIndex = FbxSection.MaterialIndex;
-		RenderSection.NumTriangles = FbxSection.IndexCount / 3;
-		RenderSection.BaseVertexIndex = FbxSection.StartIndex;
-		RenderSection.NumVertices = FbxSection.IndexCount; // 단순화
-		RenderSection.MaxBoneInfluences = 4; // 기본값
-
-		OutRenderData->RenderSections.Add(RenderSection);
-	}
-
-	UE_LOG("[FbxManager] RenderData 변환 완료 - Vertices: %d, Indices: %d, Sections: %d",
-		StaticMesh.Vertices.Num(), StaticMesh.Indices.Num(), StaticMesh.Sections.Num());
+	UE_LOG("[FbxManager] StaticMesh 변환 완료 - Vertices: %d, Indices: %d, Sections: %d",
+		OutStaticMesh->Vertices.Num(), OutStaticMesh->Indices.Num(), OutStaticMesh->Sections.Num());
 }

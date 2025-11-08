@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 #include "Runtime/Engine/Public/SkeletalMesh.h"
 
@@ -14,14 +14,14 @@ void USkeletalMesh::SetSkeletalMeshRenderData(FSkeletalMeshRenderData* InRenderD
 	SkeletalMeshRenderData.Reset(InRenderData);
 }
 
-const TArray<FSkeletalVertex>& USkeletalMesh::GetVertices() const
+const TArray<FNormalVertex>& USkeletalMesh::GetVertices() const
 {
-	return SkeletalMeshRenderData->SkeletalVertices;
+	return StaticMesh->GetVertices();
 }
 
 const TArray<uint32>& USkeletalMesh::GetIndices() const
 {
-	return SkeletalMeshRenderData->Indices;
+	return StaticMesh->GetIndices();
 }
 
 void USkeletalMesh::CalculateInvRefMatrices()

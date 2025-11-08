@@ -68,8 +68,8 @@ private:
 		const TArray<FFbxBoneInfluence>& FbxWeights,
 		TArray<FRawSkinWeight>& OutSkinWeights);
 
-	/** FFbxSkeletalMeshInfo를 FSkeletalMeshRenderData로 변환 */
-	static void ConvertRenderData(
+	/** FFbxSkeletalMeshInfo를 FStaticMesh로 변환 (지오메트리 데이터만) */
+	static void ConvertFbxSkeletalToStaticMesh(
 		const FFbxSkeletalMeshInfo& FbxData,
-		FSkeletalMeshRenderData* OutRenderData);
+		FStaticMesh* OutStaticMesh);
 };
