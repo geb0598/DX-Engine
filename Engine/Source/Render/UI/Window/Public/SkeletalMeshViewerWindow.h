@@ -1,6 +1,7 @@
 #pragma once
 #include "Render/UI/Window/Public/UIWindow.h"
 #include "Component/Mesh/Public/SkeletalMeshComponent.h"
+#include "Editor/Public/GizmoTypes.h"
 
 class FViewport;
 class FViewportClient;
@@ -71,6 +72,22 @@ protected:
 	 */
 	void RenderVerticalSplitter(const char* SplitterID, float& Ratio, float MinRatio, float MaxRatio, bool bInvertDirection = false);
 
+	/**
+	 * @brief 뷰포트 메뉴바 렌더링
+	 */
+	void RenderViewportMenuBar();
+
+	/**
+	 * @brief 카메라 컨트롤 UI 렌더링
+	 * @param InCamera 카메라 객체
+	 */
+	void RenderCameraControls(UCamera& InCamera);
+
+	/**
+	 * @brief 뷰 아이콘 로드
+	 */
+	void LoadViewIcons();
+
 private:
 	// 패널 크기 비율 (드래그 가능)
 	float LeftPanelWidthRatio = 0.25f;
@@ -104,6 +121,35 @@ private:
 
 	// 독립적인 BatchLines (Grid 렌더링용)
 	class UBatchLines* ViewerBatchLines = nullptr;
+
+	// View Type 아이콘들
+	class UTexture* IconPerspective = nullptr;
+	class UTexture* IconTop = nullptr;
+	class UTexture* IconBottom = nullptr;
+	class UTexture* IconLeft = nullptr;
+	class UTexture* IconRight = nullptr;
+	class UTexture* IconFront = nullptr;
+	class UTexture* IconBack = nullptr;
+
+	// Gizmo Mode 아이콘들
+	class UTexture* IconSelect = nullptr;
+	class UTexture* IconTranslate = nullptr;
+	class UTexture* IconRotate = nullptr;
+	class UTexture* IconScale = nullptr;
+
+	// Other 아이콘들
+	class UTexture* IconLitCube = nullptr;
+	class UTexture* IconCamera = nullptr;
+
+	bool bIconsLoaded = false;
+
+	// Gizmo Mode 상태
+	EGizmoMode CurrentGizmoMode = EGizmoMode::Translate;
+	bool bSelectModeActive = false; // Q 버튼 - Select 모드
+
+	// Rotation Snap 상태
+	bool bRotationSnapEnabled = false;
+	float RotationSnapAngle = 45.0f;
 
 	/**
 	 * @brief 렌더 타겟 생성

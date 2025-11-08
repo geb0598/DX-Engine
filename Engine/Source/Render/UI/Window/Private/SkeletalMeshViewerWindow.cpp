@@ -12,6 +12,10 @@
 #include "Level/Public/World.h"
 #include "Core/Public/NewObject.h"
 #include "Editor/Public/BatchLines.h"
+#include "Manager/Asset/Public/AssetManager.h"
+#include "Manager/Path/Public/PathManager.h"
+#include "Texture/Public/Texture.h"
+#include "Manager/UI/Public/ViewportManager.h"
 
 IMPLEMENT_CLASS(USkeletalMeshViewerWindow, UUIWindow)
 
@@ -307,7 +311,7 @@ void USkeletalMeshViewerWindow::RenderLayout()
 	ImGui::SameLine();
 
 	// === 중앙 패널: 3D Viewport ===
-	if (ImGui::BeginChild("3DViewportPanel", ImVec2(CenterPanelWidth - SplitterWidth, PanelHeight), true))
+	if (ImGui::BeginChild("3DViewportPanel", ImVec2(CenterPanelWidth - SplitterWidth, PanelHeight), true, ImGuiWindowFlags_MenuBar))
 	{
 		Render3DViewportPanel();
 	}
@@ -380,6 +384,9 @@ void USkeletalMeshViewerWindow::RenderSkeletonTreePanel()
  */
 void USkeletalMeshViewerWindow::Render3DViewportPanel()
 {
+	// 메뉴바 렌더링 (맨 처음)
+	RenderViewportMenuBar();
+
 	const ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
 
 	// 뷰포트 크기가 변경되면 렌더 타겟 재생성
@@ -402,7 +409,7 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 		ID3D11DeviceContext* Context = Renderer.GetDeviceContext();
 
 		// 렌더 타겟 클리어
-		const float ClearColor[4] = { 0.2f, 0.2f, 0.25f, 1.0f }; // 어두운 회색 배경
+		const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // 검정 배경
 		Context->ClearRenderTargetView(ViewerRenderTargetView, ClearColor);
 		Context->ClearDepthStencilView(ViewerDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
 
@@ -565,23 +572,72 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 					}
 				}
 
-				// 마우스 휠: 줌
+				// 마우스 휠 클릭 (중간 버튼) 드래그: 패닝
+				if (ImGui::IsMouseDown(ImGuiMouseButton_Middle))
+				{
+					FVector MouseDelta = FVector(IO.MouseDelta.x, IO.MouseDelta.y, 0);
+
+					// 모든 카메라 타입에서 패닝 동작
+					const float PanSpeed = 0.5f;
+					FVector PanDelta = Camera->GetRight() * -MouseDelta.X * PanSpeed + Camera->GetUp() * MouseDelta.Y * PanSpeed;
+					Camera->SetLocation(Camera->GetLocation() + PanDelta);
+				}
+
+				// 마우스 휠: 줌 또는 카메라 속도 조절
 				if (IO.MouseWheel != 0.0f)
 				{
-					if (Camera->GetCameraType() == ECameraType::ECT_Perspective)
+					// 우클릭 + 마우스 휠: 카메라 이동 속도 조절
+					if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
 					{
-						// Perspective: FOV 조절
-						float NewFOV = Camera->GetFovY() - IO.MouseWheel * 5.0f;
-						NewFOV = clamp(NewFOV, 10.0f, 120.0f);
-						Camera->SetFovY(NewFOV);
+						float CurrentSpeed = Camera->GetMoveSpeed();
+						float NewSpeed = CurrentSpeed + IO.MouseWheel * 1.0f;
+						NewSpeed = clamp(NewSpeed, 0.1f, 100.0f);
+						Camera->SetMoveSpeed(NewSpeed);
 					}
-					else if (Camera->GetCameraType() == ECameraType::ECT_Orthographic)
+					else
 					{
-						// Orthographic: Zoom 조절
-						float NewZoom = Camera->GetOrthoZoom() * (1.0f - IO.MouseWheel * 0.1f);
-						NewZoom = clamp(NewZoom, 10.0f, 10000.0f);
-						Camera->SetOrthoZoom(NewZoom);
+						// 일반 마우스 휠: 줌
+						if (Camera->GetCameraType() == ECameraType::ECT_Perspective)
+						{
+							// Perspective: FOV 조절
+							float NewFOV = Camera->GetFovY() - IO.MouseWheel * 5.0f;
+							NewFOV = clamp(NewFOV, 10.0f, 120.0f);
+							Camera->SetFovY(NewFOV);
+						}
+						else if (Camera->GetCameraType() == ECameraType::ECT_Orthographic)
+						{
+							// Orthographic: Zoom 조절
+							float NewZoom = Camera->GetOrthoZoom() * (1.0f - IO.MouseWheel * 0.1f);
+							NewZoom = clamp(NewZoom, 10.0f, 10000.0f);
+							Camera->SetOrthoZoom(NewZoom);
+						}
 					}
+				}
+			}
+
+			// QWER 키보드 단축키 처리 (뷰어 윈도우가 포커스되어 있을 때)
+			// 우클릭이 눌러져 있지 않을 때만 동작 (카메라 이동과 충돌 방지)
+			if (ImGui::IsWindowFocused() && !ImGui::IsMouseDown(ImGuiMouseButton_Right))
+			{
+				if (ImGui::IsKeyPressed(ImGuiKey_Q))
+				{
+					bSelectModeActive = true;
+					CurrentGizmoMode = EGizmoMode::Translate; // Select 모드 활성화 시 기본 변환 모드
+				}
+				else if (ImGui::IsKeyPressed(ImGuiKey_W))
+				{
+					bSelectModeActive = false;
+					CurrentGizmoMode = EGizmoMode::Translate;
+				}
+				else if (ImGui::IsKeyPressed(ImGuiKey_E))
+				{
+					bSelectModeActive = false;
+					CurrentGizmoMode = EGizmoMode::Rotate;
+				}
+				else if (ImGui::IsKeyPressed(ImGuiKey_R))
+				{
+					bSelectModeActive = false;
+					CurrentGizmoMode = EGizmoMode::Scale;
 				}
 			}
 		}
@@ -780,33 +836,6 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel()
 
 	ImGui::Spacing();
 
-	// Gizmo 설정 섹션
-	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-
-	if (ImGui::CollapsingHeader("Gizmo Settings"))
-	{
-		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-
-		static int GizmoMode = 0;
-		ImGui::RadioButton("Translate", &GizmoMode, 0);
-		ImGui::RadioButton("Rotate", &GizmoMode, 1);
-		ImGui::RadioButton("Scale", &GizmoMode, 2);
-
-		ImGui::Spacing();
-		static bool bLocalSpace = false;
-		ImGui::Checkbox("Local Space", &bLocalSpace);
-
-		ImGui::PopStyleColor(4);
-	}
-
-	ImGui::PopStyleColor(3);
-	ImGui::Spacing();
-
 	// Mesh 정보 섹션
 	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
@@ -829,6 +858,676 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel()
 	ImGui::BulletText("애니메이션 프리뷰");
 	ImGui::BulletText("소켓 편집");
 	ImGui::BulletText("LOD 설정");
+}
+
+/**
+ * @brief 뷰 아이콘 로드
+ */
+void USkeletalMeshViewerWindow::LoadViewIcons()
+{
+	if (bIconsLoaded)
+	{
+		return;
+	}
+
+	UAssetManager& AssetManager = UAssetManager::GetInstance();
+	UPathManager& PathManager = UPathManager::GetInstance();
+
+	// 아이콘 경로 (에디터 아이콘 폴더)
+	FString IconBasePath = PathManager.GetAssetPath().string() + "\\Icon\\";
+
+	// 각 뷰 타입별 아이콘 로드
+	IconPerspective = AssetManager.LoadTexture((IconBasePath + "ViewPerspective.png").data());
+	IconTop = AssetManager.LoadTexture((IconBasePath + "ViewTop.png").data());
+	IconBottom = AssetManager.LoadTexture((IconBasePath + "ViewBottom.png").data());
+	IconLeft = AssetManager.LoadTexture((IconBasePath + "ViewLeft.png").data());
+	IconRight = AssetManager.LoadTexture((IconBasePath + "ViewRight.png").data());
+	IconFront = AssetManager.LoadTexture((IconBasePath + "ViewFront.png").data());
+	IconBack = AssetManager.LoadTexture((IconBasePath + "ViewBack.png").data());
+
+	// Gizmo Mode 아이콘 로드
+	IconSelect = AssetManager.LoadTexture((IconBasePath + "Select.png").data());
+	IconTranslate = AssetManager.LoadTexture((IconBasePath + "Translate.png").data());
+	IconRotate = AssetManager.LoadTexture((IconBasePath + "Rotate.png").data());
+	IconScale = AssetManager.LoadTexture((IconBasePath + "Scale.png").data());
+
+	// Other 아이콘 로드
+	IconLitCube = AssetManager.LoadTexture((IconBasePath + "LitCube.png").data());
+	IconCamera = AssetManager.LoadTexture((IconBasePath + "Camera.png").data());
+
+	bIconsLoaded = true;
+}
+
+/**
+ * @brief 뷰포트 툴바 렌더링 (메인 에디터 뷰포트와 동일한 디자인)
+ * 좌측: Gizmo Mode 아이콘 (비활성화) + Rotation Snap (비활성화)
+ * 우측: ViewType + Camera Settings + View Mode
+ */
+void USkeletalMeshViewerWindow::RenderViewportMenuBar()
+{
+	if (!ViewerViewportClient)
+	{
+		return;
+	}
+
+	// 아이콘 로드 (처음 한 번만)
+	LoadViewIcons();
+
+	UCamera* Camera = ViewerViewportClient->GetCamera();
+	if (!Camera)
+	{
+		return;
+	}
+
+	// 툴바는 메뉴바 영역 위에 별도로 렌더링 (ImGui::BeginMenuBar 사용하지 않음)
+	// 대신 ImGui::BeginChild 안에서 커스텀 버튼들로 구성
+
+	constexpr float ToolbarHeight = 32.0f;
+	constexpr float GizmoButtonSize = 24.0f;
+	constexpr float GizmoIconSize = 16.0f;
+	constexpr float GizmoButtonSpacing = 4.0f;
+
+	// ViewMode labels
+	const char* ViewModeLabels[] = {
+		"Gouraud", "Lambert", "BlinnPhong", "Unlit", "Wireframe", "SceneDepth", "WorldNormal"
+	};
+
+	// ViewType labels
+	const char* ViewTypeLabels[] = {
+		"Perspective", "Top", "Bottom", "Left", "Right", "Front", "Back"
+	};
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.f, 3.f));
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.f, 3.f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.f, 0.f));
+
+	// ========================================
+	// Left Side: Gizmo Mode Buttons
+	// ========================================
+
+	// Select 버튼 (Q)
+	if (IconSelect && IconSelect->GetTextureSRV())
+	{
+		bool bActive = bSelectModeActive;
+		ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##GizmoSelect", ImVec2(GizmoButtonSize, GizmoButtonSize));
+		bool bClicked = ImGui::IsItemClicked();
+		bool bHovered = ImGui::IsItemHovered();
+
+		ImDrawList* DL = ImGui::GetWindowDrawList();
+		ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
+		if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+
+		DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
+		ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
+		DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
+
+		// 아이콘 (활성화 시 파란색 틴트)
+		ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
+		ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
+		DL->AddImage(IconSelect->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
+
+		if (bClicked) bSelectModeActive = true;
+		if (bHovered) ImGui::SetTooltip("Select (Q)");
+	}
+
+	ImGui::SameLine(0.0f, GizmoButtonSpacing);
+
+	// Translate 버튼
+	if (IconTranslate && IconTranslate->GetTextureSRV())
+	{
+		bool bActive = (CurrentGizmoMode == EGizmoMode::Translate && !bSelectModeActive);
+		ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##GizmoTranslate", ImVec2(GizmoButtonSize, GizmoButtonSize));
+		bool bClicked = ImGui::IsItemClicked();
+		bool bHovered = ImGui::IsItemHovered();
+
+		ImDrawList* DL = ImGui::GetWindowDrawList();
+		ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
+		if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+
+		DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
+		ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
+		DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
+
+		// 아이콘 (활성화 시 파란색 틴트)
+		ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
+		ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
+		DL->AddImage(IconTranslate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
+
+		if (bClicked)
+		{
+			CurrentGizmoMode = EGizmoMode::Translate;
+			bSelectModeActive = false;
+		}
+		if (bHovered) ImGui::SetTooltip("Translate (W)");
+	}
+
+	ImGui::SameLine(0.0f, GizmoButtonSpacing);
+
+	// Rotate 버튼
+	if (IconRotate && IconRotate->GetTextureSRV())
+	{
+		bool bActive = (CurrentGizmoMode == EGizmoMode::Rotate && !bSelectModeActive);
+		ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##GizmoRotate", ImVec2(GizmoButtonSize, GizmoButtonSize));
+		bool bClicked = ImGui::IsItemClicked();
+		bool bHovered = ImGui::IsItemHovered();
+
+		ImDrawList* DL = ImGui::GetWindowDrawList();
+		ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
+		if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+
+		DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
+		ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
+		DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
+
+		ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
+		ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
+		DL->AddImage(IconRotate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
+
+		if (bClicked)
+		{
+			CurrentGizmoMode = EGizmoMode::Rotate;
+			bSelectModeActive = false;
+		}
+		if (bHovered) ImGui::SetTooltip("Rotate (E)");
+	}
+
+	ImGui::SameLine(0.0f, GizmoButtonSpacing);
+
+	// Scale 버튼
+	if (IconScale && IconScale->GetTextureSRV())
+	{
+		bool bActive = (CurrentGizmoMode == EGizmoMode::Scale && !bSelectModeActive);
+		ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##GizmoScale", ImVec2(GizmoButtonSize, GizmoButtonSize));
+		bool bClicked = ImGui::IsItemClicked();
+		bool bHovered = ImGui::IsItemHovered();
+
+		ImDrawList* DL = ImGui::GetWindowDrawList();
+		ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
+		if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+
+		DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
+		ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
+		DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
+
+		ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
+		ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
+		DL->AddImage(IconScale->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
+
+		if (bClicked)
+		{
+			CurrentGizmoMode = EGizmoMode::Scale;
+			bSelectModeActive = false;
+		}
+		if (bHovered) ImGui::SetTooltip("Scale (R)");
+	}
+
+	// ========================================
+	// Rotation Snap
+	// ========================================
+	ImGui::SameLine(0.0f, 8.0f);
+
+	// 회전 스냅 토글 버튼
+	{
+		constexpr float SnapToggleButtonSize = 24.0f;
+		constexpr float SnapToggleIconSize = 16.0f;
+
+		ImVec2 SnapToggleButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##RotationSnapToggle", ImVec2(SnapToggleButtonSize, SnapToggleButtonSize));
+		bool bSnapToggleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+		bool bSnapToggleHovered = ImGui::IsItemHovered();
+
+		ImDrawList* SnapToggleDrawList = ImGui::GetWindowDrawList();
+		ImU32 SnapToggleBgColor;
+		if (bRotationSnapEnabled)
+		{
+			SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(40, 40, 40, 255) : IM_COL32(20, 20, 20, 255);
+		}
+		else
+		{
+			SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+		}
+		if (ImGui::IsItemActive())
+		{
+			SnapToggleBgColor = IM_COL32(50, 50, 50, 255);
+		}
+		SnapToggleDrawList->AddRectFilled(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBgColor, 4.0f);
+
+		// 테두리
+		ImU32 SnapToggleBorderColor = bRotationSnapEnabled ? IM_COL32(150, 150, 150, 255) : IM_COL32(96, 96, 96, 255);
+		SnapToggleDrawList->AddRect(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBorderColor, 4.0f);
+
+		// 회전 아이콘 (중앙 정렬)
+		ImVec2 SnapToggleIconCenter = ImVec2(
+			SnapToggleButtonPos.x + SnapToggleButtonSize * 0.5f,
+			SnapToggleButtonPos.y + SnapToggleButtonSize * 0.5f
+		);
+		float SnapToggleIconRadius = SnapToggleIconSize * 0.4f;
+		ImU32 SnapToggleIconColor = bRotationSnapEnabled ? IM_COL32(220, 220, 220, 255) : IM_COL32(120, 120, 120, 255);
+		SnapToggleDrawList->AddCircle(SnapToggleIconCenter, SnapToggleIconRadius, SnapToggleIconColor, 12, 1.5f);
+		SnapToggleDrawList->PathArcTo(SnapToggleIconCenter, SnapToggleIconRadius + 2.0f, 0.0f, 1.5f, 8);
+		SnapToggleDrawList->PathStroke(SnapToggleIconColor, 0, 1.5f);
+
+		if (bSnapToggleClicked)
+		{
+			bRotationSnapEnabled = !bRotationSnapEnabled;
+		}
+
+		if (bSnapToggleHovered)
+		{
+			ImGui::SetTooltip("Toggle rotation snap");
+		}
+	}
+
+	ImGui::SameLine(0.0f, 4.0f);
+
+	// 회전 스냅 각도 선택 버튼
+	{
+		char SnapAngleText[16];
+		(void)snprintf(SnapAngleText, sizeof(SnapAngleText), "%.0f°", RotationSnapAngle);
+
+		constexpr float SnapAngleButtonHeight = 24.0f;
+		constexpr float SnapAnglePadding = 8.0f;
+		const ImVec2 SnapAngleTextSize = ImGui::CalcTextSize(SnapAngleText);
+		const float SnapAngleButtonWidth = SnapAngleTextSize.x + SnapAnglePadding * 2;
+
+		ImVec2 SnapAngleButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##RotationSnapAngle", ImVec2(SnapAngleButtonWidth, SnapAngleButtonHeight));
+		bool bSnapAngleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+		bool bSnapAngleHovered = ImGui::IsItemHovered();
+
+		// 버튼 배경 그리기
+		ImDrawList* SnapAngleDrawList = ImGui::GetWindowDrawList();
+		ImU32 SnapAngleBgColor = bSnapAngleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+		if (ImGui::IsItemActive())
+		{
+			SnapAngleBgColor = IM_COL32(38, 38, 38, 255);
+		}
+		SnapAngleDrawList->AddRectFilled(SnapAngleButtonPos, ImVec2(SnapAngleButtonPos.x + SnapAngleButtonWidth, SnapAngleButtonPos.y + SnapAngleButtonHeight), SnapAngleBgColor, 4.0f);
+		SnapAngleDrawList->AddRect(SnapAngleButtonPos, ImVec2(SnapAngleButtonPos.x + SnapAngleButtonWidth, SnapAngleButtonPos.y + SnapAngleButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
+
+		// 텍스트 그리기
+		ImVec2 SnapAngleTextPos = ImVec2(
+			SnapAngleButtonPos.x + SnapAnglePadding,
+			SnapAngleButtonPos.y + (SnapAngleButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
+		);
+		SnapAngleDrawList->AddText(SnapAngleTextPos, IM_COL32(220, 220, 220, 255), SnapAngleText);
+
+		if (bSnapAngleClicked)
+		{
+			ImGui::OpenPopup("##RotationSnapAnglePopup");
+		}
+
+		// 각도 선택 팝업
+		if (ImGui::BeginPopup("##RotationSnapAnglePopup"))
+		{
+			ImGui::Text("Rotation Snap Angle");
+			ImGui::Separator();
+
+			constexpr float SnapAngles[] = { 5.0f, 10.0f, 15.0f, 22.5f, 30.0f, 45.0f, 60.0f, 90.0f };
+			constexpr const char* SnapAngleLabels[] = { "5°", "10°", "15°", "22.5°", "30°", "45°", "60°", "90°" };
+
+			for (int i = 0; i < IM_ARRAYSIZE(SnapAngles); ++i)
+			{
+				const bool bIsSelected = (std::abs(RotationSnapAngle - SnapAngles[i]) < 0.1f);
+				if (ImGui::MenuItem(SnapAngleLabels[i], nullptr, bIsSelected))
+				{
+					RotationSnapAngle = SnapAngles[i];
+				}
+			}
+
+			ImGui::EndPopup();
+		}
+
+		if (bSnapAngleHovered)
+		{
+			ImGui::SetTooltip("Choose rotation snap angle");
+		}
+	}
+
+	// ========================================
+	// Right Side: ViewType, Camera Settings, ViewMode
+	// ========================================
+
+	// Calculate right-aligned position
+	EViewType CurrentViewType = ViewerViewportClient->GetViewType();
+	int32 CurrentViewTypeIndex = static_cast<int32>(CurrentViewType);
+	constexpr float RightViewTypeButtonWidthDefault = 110.0f;
+	constexpr float RightViewTypeIconSize = 16.0f;
+	constexpr float RightViewTypePadding = 4.0f;
+
+	EViewModeIndex CurrentMode = ViewerViewportClient->GetViewMode();
+	int32 CurrentModeIndex = static_cast<int32>(CurrentMode);
+	constexpr float ViewModeButtonHeight = 24.0f;
+	constexpr float ViewModeIconSize = 16.0f;
+	constexpr float ViewModePadding = 4.0f;
+	const ImVec2 ViewModeTextSize = ImGui::CalcTextSize(ViewModeLabels[CurrentModeIndex]);
+	const float ViewModeButtonWidth = ViewModePadding + ViewModeIconSize + ViewModePadding + ViewModeTextSize.x + ViewModePadding;
+
+	constexpr float CameraSpeedButtonWidth = 70.0f;
+	constexpr float RightButtonSpacing = 6.0f;
+	const float TotalRightButtonsWidth = RightViewTypeButtonWidthDefault + RightButtonSpacing + CameraSpeedButtonWidth + RightButtonSpacing + ViewModeButtonWidth;
+
+	{
+		const float ContentRegionRight = ImGui::GetWindowContentRegionMax().x;
+		float RightAlignedX = ContentRegionRight - TotalRightButtonsWidth - 6.0f;
+		RightAlignedX = std::max(RightAlignedX, ImGui::GetCursorPosX());
+
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(RightAlignedX);
+	}
+
+	// 우측 버튼 1: ViewType
+	{
+		UTexture* ViewTypeIcons[7] = { IconPerspective, IconTop, IconBottom, IconLeft, IconRight, IconFront, IconBack };
+		UTexture* RightViewTypeIcon = ViewTypeIcons[CurrentViewTypeIndex];
+
+		constexpr float RightViewTypeButtonHeight = 24.0f;
+
+		ImVec2 RightViewTypeButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##RightViewTypeButton", ImVec2(RightViewTypeButtonWidthDefault, RightViewTypeButtonHeight));
+		bool bRightViewTypeClicked = ImGui::IsItemClicked();
+		bool bRightViewTypeHovered = ImGui::IsItemHovered();
+
+		ImDrawList* RightViewTypeDrawList = ImGui::GetWindowDrawList();
+		ImU32 RightViewTypeBgColor = bRightViewTypeHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+		if (ImGui::IsItemActive())
+		{
+			RightViewTypeBgColor = IM_COL32(38, 38, 38, 255);
+		}
+		RightViewTypeDrawList->AddRectFilled(RightViewTypeButtonPos, ImVec2(RightViewTypeButtonPos.x + RightViewTypeButtonWidthDefault, RightViewTypeButtonPos.y + RightViewTypeButtonHeight), RightViewTypeBgColor, 4.0f);
+		RightViewTypeDrawList->AddRect(RightViewTypeButtonPos, ImVec2(RightViewTypeButtonPos.x + RightViewTypeButtonWidthDefault, RightViewTypeButtonPos.y + RightViewTypeButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
+
+		// 아이콘
+		if (RightViewTypeIcon && RightViewTypeIcon->GetTextureSRV())
+		{
+			const ImVec2 RightViewTypeIconPos = ImVec2(RightViewTypeButtonPos.x + RightViewTypePadding, RightViewTypeButtonPos.y + (RightViewTypeButtonHeight - RightViewTypeIconSize) * 0.5f);
+			RightViewTypeDrawList->AddImage(
+				RightViewTypeIcon->GetTextureSRV(),
+				RightViewTypeIconPos,
+				ImVec2(RightViewTypeIconPos.x + RightViewTypeIconSize, RightViewTypeIconPos.y + RightViewTypeIconSize)
+			);
+		}
+
+		// 텍스트
+		const ImVec2 RightViewTypeTextPos = ImVec2(RightViewTypeButtonPos.x + RightViewTypePadding + RightViewTypeIconSize + RightViewTypePadding, RightViewTypeButtonPos.y + (RightViewTypeButtonHeight - ImGui::GetTextLineHeight()) * 0.5f);
+		RightViewTypeDrawList->AddText(RightViewTypeTextPos, IM_COL32(220, 220, 220, 255), ViewTypeLabels[CurrentViewTypeIndex]);
+
+		if (bRightViewTypeClicked)
+		{
+			ImGui::OpenPopup("##RightViewTypeDropdown");
+		}
+
+		// ViewType 드롭다운
+		if (ImGui::BeginPopup("##RightViewTypeDropdown"))
+		{
+			ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+
+			for (int i = 0; i < 7; ++i)
+			{
+				if (ViewTypeIcons[i] && ViewTypeIcons[i]->GetTextureSRV())
+				{
+					ImGui::Image((ImTextureID)ViewTypeIcons[i]->GetTextureSRV(), ImVec2(16, 16));
+					ImGui::SameLine();
+				}
+
+				bool bIsCurrentViewType = (i == CurrentViewTypeIndex);
+				if (ImGui::MenuItem(ViewTypeLabels[i], nullptr, bIsCurrentViewType))
+				{
+					EViewType NewType = static_cast<EViewType>(i);
+					ViewerViewportClient->SetViewType(NewType);
+
+					// Update camera type
+					if (NewType == EViewType::Perspective)
+					{
+						Camera->SetCameraType(ECameraType::ECT_Perspective);
+					}
+					else
+					{
+						Camera->SetCameraType(ECameraType::ECT_Orthographic);
+					}
+				}
+			}
+
+			ImGui::PopStyleColor();
+			ImGui::EndPopup();
+		}
+	}
+
+	ImGui::SameLine(0.0f, RightButtonSpacing);
+
+	// 우측 버튼 2: Camera Settings (아이콘 + 속도 표시)
+	if (IconCamera && IconCamera->GetTextureSRV())
+	{
+		// 카메라 속도 텍스트
+		float CameraMoveSpeed = Camera->GetMoveSpeed();
+		char CameraSpeedText[16];
+		(void)snprintf(CameraSpeedText, sizeof(CameraSpeedText), "%.1f", CameraMoveSpeed);
+
+		constexpr float CameraSpeedButtonHeight = 24.0f;
+		constexpr float CameraSpeedPadding = 8.0f;
+		constexpr float CameraSpeedIconSize = 16.0f;
+
+		ImVec2 CameraSpeedButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##CameraSpeedButton", ImVec2(CameraSpeedButtonWidth, CameraSpeedButtonHeight));
+		bool bCameraSpeedClicked = ImGui::IsItemClicked();
+		bool bCameraSpeedHovered = ImGui::IsItemHovered();
+
+		ImDrawList* CameraSpeedDrawList = ImGui::GetWindowDrawList();
+		ImU32 CameraSpeedBgColor = bCameraSpeedHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+		if (ImGui::IsItemActive())
+		{
+			CameraSpeedBgColor = IM_COL32(38, 38, 38, 255);
+		}
+		CameraSpeedDrawList->AddRectFilled(CameraSpeedButtonPos, ImVec2(CameraSpeedButtonPos.x + CameraSpeedButtonWidth, CameraSpeedButtonPos.y + CameraSpeedButtonHeight), CameraSpeedBgColor, 4.0f);
+		CameraSpeedDrawList->AddRect(CameraSpeedButtonPos, ImVec2(CameraSpeedButtonPos.x + CameraSpeedButtonWidth, CameraSpeedButtonPos.y + CameraSpeedButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
+
+		// 아이콘 (왼쪽)
+		const ImVec2 CameraSpeedIconPos = ImVec2(
+			CameraSpeedButtonPos.x + CameraSpeedPadding,
+			CameraSpeedButtonPos.y + (CameraSpeedButtonHeight - CameraSpeedIconSize) * 0.5f
+		);
+		CameraSpeedDrawList->AddImage(
+			IconCamera->GetTextureSRV(),
+			CameraSpeedIconPos,
+			ImVec2(CameraSpeedIconPos.x + CameraSpeedIconSize, CameraSpeedIconPos.y + CameraSpeedIconSize)
+		);
+
+		// 텍스트 (오른쪽 정렬)
+		const ImVec2 CameraSpeedTextSize = ImGui::CalcTextSize(CameraSpeedText);
+		const ImVec2 CameraSpeedTextPos = ImVec2(
+			CameraSpeedButtonPos.x + CameraSpeedButtonWidth - CameraSpeedTextSize.x - CameraSpeedPadding,
+			CameraSpeedButtonPos.y + (CameraSpeedButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
+		);
+		CameraSpeedDrawList->AddText(CameraSpeedTextPos, IM_COL32(220, 220, 220, 255), CameraSpeedText);
+
+		if (bCameraSpeedClicked)
+		{
+			ImGui::OpenPopup("##CameraSettingsPopup");
+		}
+
+		// 카메라 설정 팝업
+		if (ImGui::BeginPopup("##CameraSettingsPopup"))
+		{
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+
+			RenderCameraControls(*Camera);
+
+			ImGui::PopStyleColor(4);
+			ImGui::EndPopup();
+		}
+
+		if (bCameraSpeedHovered)
+		{
+			ImGui::SetTooltip("Camera Settings");
+		}
+	}
+
+	ImGui::SameLine(0.0f, RightButtonSpacing);
+
+	// 우측 버튼 3: ViewMode
+	{
+		ImVec2 ViewModeButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##ViewModeButton", ImVec2(ViewModeButtonWidth, ViewModeButtonHeight));
+		bool bViewModeClicked = ImGui::IsItemClicked();
+		bool bViewModeHovered = ImGui::IsItemHovered();
+
+		ImDrawList* ViewModeDrawList = ImGui::GetWindowDrawList();
+		ImU32 ViewModeBgColor = bViewModeHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+		if (ImGui::IsItemActive())
+		{
+			ViewModeBgColor = IM_COL32(38, 38, 38, 255);
+		}
+		ViewModeDrawList->AddRectFilled(ViewModeButtonPos, ImVec2(ViewModeButtonPos.x + ViewModeButtonWidth, ViewModeButtonPos.y + ViewModeButtonHeight), ViewModeBgColor, 4.0f);
+		ViewModeDrawList->AddRect(ViewModeButtonPos, ImVec2(ViewModeButtonPos.x + ViewModeButtonWidth, ViewModeButtonPos.y + ViewModeButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
+
+		// LitCube 아이콘
+		if (IconLitCube && IconLitCube->GetTextureSRV())
+		{
+			const ImVec2 ViewModeIconPos = ImVec2(ViewModeButtonPos.x + ViewModePadding, ViewModeButtonPos.y + (ViewModeButtonHeight - ViewModeIconSize) * 0.5f);
+			ViewModeDrawList->AddImage(
+				IconLitCube->GetTextureSRV(),
+				ViewModeIconPos,
+				ImVec2(ViewModeIconPos.x + ViewModeIconSize, ViewModeIconPos.y + ViewModeIconSize)
+			);
+		}
+
+		// 텍스트
+		const ImVec2 ViewModeTextPos = ImVec2(ViewModeButtonPos.x + ViewModePadding + ViewModeIconSize + ViewModePadding, ViewModeButtonPos.y + (ViewModeButtonHeight - ImGui::GetTextLineHeight()) * 0.5f);
+		ViewModeDrawList->AddText(ViewModeTextPos, IM_COL32(220, 220, 220, 255), ViewModeLabels[CurrentModeIndex]);
+
+		if (bViewModeClicked)
+		{
+			ImGui::OpenPopup("##ViewModePopup");
+		}
+
+		// ViewMode 팝업
+		if (ImGui::BeginPopup("##ViewModePopup"))
+		{
+			for (int i = 0; i < 7; ++i)
+			{
+				if (IconLitCube && IconLitCube->GetTextureSRV())
+				{
+					ImGui::Image(IconLitCube->GetTextureSRV(), ImVec2(16, 16));
+					ImGui::SameLine();
+				}
+
+				if (ImGui::MenuItem(ViewModeLabels[i], nullptr, i == CurrentModeIndex))
+				{
+					ViewerViewportClient->SetViewMode(static_cast<EViewModeIndex>(i));
+				}
+			}
+			ImGui::EndPopup();
+		}
+
+		if (bViewModeHovered)
+		{
+			ImGui::SetTooltip("View Mode");
+		}
+	}
+
+	ImGui::PopStyleVar(3);
+}
+
+/**
+ * @brief 카메라 컨트롤 UI 렌더링
+ */
+void USkeletalMeshViewerWindow::RenderCameraControls(UCamera& InCamera)
+{
+	ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Camera Settings");
+	ImGui::Separator();
+	ImGui::Spacing();
+
+	// 카메라 타입
+	ECameraType CameraType = InCamera.GetCameraType();
+	const char* CameraTypeNames[] = { "Perspective", "Orthographic" };
+	int CurrentType = static_cast<int>(CameraType);
+
+	if (ImGui::Combo("Camera Type", &CurrentType, CameraTypeNames, 2))
+	{
+		InCamera.SetCameraType(static_cast<ECameraType>(CurrentType));
+	}
+
+	ImGui::Spacing();
+
+	// 위치
+	FVector Location = InCamera.GetLocation();
+	float Loc[3] = { Location.X, Location.Y, Location.Z };
+	if (ImGui::DragFloat3("Location", Loc, 1.0f))
+	{
+		InCamera.SetLocation(FVector(Loc[0], Loc[1], Loc[2]));
+	}
+
+	// 회전
+	FVector Rotation = InCamera.GetRotation();
+	float Rot[3] = { Rotation.X, Rotation.Y, Rotation.Z };
+	if (ImGui::DragFloat3("Rotation", Rot, 1.0f))
+	{
+		InCamera.SetRotation(FVector(Rot[0], Rot[1], Rot[2]));
+	}
+
+	ImGui::Spacing();
+
+	// Perspective 전용 설정
+	if (CameraType == ECameraType::ECT_Perspective)
+	{
+		float FOV = InCamera.GetFovY();
+		if (ImGui::SliderFloat("FOV", &FOV, 10.0f, 120.0f, "%.1f"))
+		{
+			InCamera.SetFovY(FOV);
+		}
+	}
+	// Orthographic 전용 설정
+	else
+	{
+		float OrthoZoom = InCamera.GetOrthoZoom();
+		if (ImGui::SliderFloat("Ortho Zoom", &OrthoZoom, 10.0f, 10000.0f, "%.1f"))
+		{
+			InCamera.SetOrthoZoom(OrthoZoom);
+		}
+	}
+
+	// Near/Far Clip
+	float NearZ = InCamera.GetNearZ();
+	float FarZ = InCamera.GetFarZ();
+
+	if (ImGui::DragFloat("Near Clip", &NearZ, 0.1f, 0.1f, 100.0f, "%.2f"))
+	{
+		InCamera.SetNearZ(NearZ);
+	}
+
+	if (ImGui::DragFloat("Far Clip", &FarZ, 10.0f, 100.0f, 100000.0f, "%.1f"))
+	{
+		InCamera.SetFarZ(FarZ);
+	}
+
+	ImGui::Spacing();
+
+	// 이동 속도
+	float MoveSpeed = InCamera.GetMoveSpeed();
+	if (ImGui::SliderFloat("Move Speed", &MoveSpeed, 1.0f, 100.0f, "%.1f"))
+	{
+		InCamera.SetMoveSpeed(MoveSpeed);
+	}
+
+	ImGui::Spacing();
+	ImGui::Separator();
+
+	// 카메라 리셋 버튼
+	if (ImGui::Button("Reset Camera", ImVec2(-1, 0)))
+	{
+		InCamera.SetLocation(FVector(0, -500, 300));
+		InCamera.SetRotation(FVector(0, 0, 0));
+		InCamera.SetFovY(90.0f);
+		InCamera.SetOrthoZoom(1000.0f);
+		InCamera.SetMoveSpeed(10.0f);
+	}
 }
 
 /**
