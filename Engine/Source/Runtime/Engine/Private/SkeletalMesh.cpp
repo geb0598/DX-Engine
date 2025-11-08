@@ -32,9 +32,9 @@ void USkeletalMesh::CalculateInvRefMatrices()
 
 	if (GetRefBasesInvMatrix().Num() != NumRealBones)
 	{
-		GetRefBasesInvMatrix().Empty(NumRealBones);
+		GetRefBasesInvMatrix().SetNum(NumRealBones);
 
-		ComposedRefPoseMatrices.Empty(NumRealBones);
+		ComposedRefPoseMatrices.SetNum(NumRealBones);
 
 		for (int32 b = 0; b < NumRealBones; ++b)
 		{
