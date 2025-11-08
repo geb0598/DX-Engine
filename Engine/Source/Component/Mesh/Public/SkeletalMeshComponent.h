@@ -1,8 +1,9 @@
 ﻿#pragma once
 
+#include "Runtime/Engine/Public/SkeletalMesh.h"
 #include "SkinnedMeshComponent.h"
 
-class USkeletalMesh;
+// class USkeletalMesh;
 
 UCLASS()
 class USkeletalMeshComponent : public USkinnedMeshComponent
@@ -52,10 +53,27 @@ public:
 		USkeletalMeshComponent 인터페이스
 	 -----------------------------------------------------------------------------*/
 public:
-	/**
-	 * @brief 이 메쉬를 위해 렌더링되는 SkeletalMesh를 반환한다.
-	 */
+	/** @brief 이 메쉬를 위해 렌더링되는 SkeletalMesh를 반환한다. */
 	USkeletalMesh* GetSkeletalMeshAsset() const;
 
-	// void SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
+	/** @brief 이 메쉬를 위해 렌더링되는 SkeletalMesh를 설정한다. */
+	void SetSkeletalMeshAsset(USkeletalMesh* NewMesh);
+
+	/** @brief 외부(e.g., 에디터)에서 현재 본의 위치를 확인하기 위해 제공되는 함수이다. */
+	FTransform GetBoneTransformLocal(int32 BoneIndex)
+	{
+		return BoneSpaceTransforms[BoneIndex];
+	}
+
+	/** @brief 애니메이션이 아닌 외부(e.g., 에디터, 기즈모, etc)에서 포즈를 조작하기 위해 제공되는 함수이다. */
+	void SetBoneTransformLocal(int32 BoneIndex, const FTransform& NewLocalTransform)
+	{
+		if (BoneSpaceTransforms.IsValidIndex(BoneIndex))
+		{
+			BoneSpaceTransforms[BoneIndex] = NewLocalTransform;
+		}
+	}
+
+private:
+	TArray<FTransform> BoneSpaceTransforms;
 };

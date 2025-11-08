@@ -117,8 +117,6 @@ public:
 public:
 	FSkeletalMeshRenderData* GetSkeletalMeshRenderData() const;
 
-	void SetSkeletalMeshRenderData(std::unique_ptr<FSkeletalMeshRenderData>&& InSkeletalMeshRenderData);
-
 private:
 	/** 런타임에 사용되는 렌더링 리소스 */
 	TUniquePtr<FSkeletalMeshRenderData> SkeletalMeshRenderData;
