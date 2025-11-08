@@ -255,6 +255,15 @@ void FFbxImporter::ExtractGeometryData(
 		UE_LOG("[FbxImporter] Material Mapping Mode: %d", (int)MaterialMappingMode);
 	}
 
+	// 기존 ControlPoint 기반 VertexList를 백업
+	TArray<FVector> ControlPointPositions = OutMeshInfo->VertexList;
+
+	// 새로운 Polygon Vertex 기반 데이터로 재구성
+	OutMeshInfo->VertexList.Empty();
+	OutMeshInfo->NormalList.Empty();
+	OutMeshInfo->TexCoordList.Empty();
+	OutMeshInfo->Indices.Empty();
+
 	// Material별 인덱스 그룹 초기화
 	TArray<TArray<uint32>> IndicesPerMaterial;
 	IndicesPerMaterial.Reset(OutMeshInfo->Materials.Num());
@@ -263,7 +272,9 @@ void FFbxImporter::ExtractGeometryData(
 		IndicesPerMaterial.Add(TArray<uint32>());
 	}
 
-	// 폴리곤별로 인덱스, 노멀, UV 추출
+	uint32 VertexCounter = 0;
+
+	// 폴리곤별로 버텍스 데이터 생성
 	const int PolygonCount = Mesh->GetPolygonCount();
 	for (int p = 0; p < PolygonCount; ++p)
 	{
@@ -296,8 +307,16 @@ void FFbxImporter::ExtractGeometryData(
 		for (int v = 0; v < PolySize; ++v)
 		{
 			int CtrlPointIndex = Mesh->GetPolygonVertex(p, v);
-			OutMeshInfo->Indices.Add(CtrlPointIndex);
-			IndicesPerMaterial[MaterialIndex].Add(CtrlPointIndex);
+
+			// Position: ControlPoint에서 가져오기
+			if (CtrlPointIndex >= 0 && CtrlPointIndex < ControlPointPositions.Num())
+			{
+				OutMeshInfo->VertexList.Add(ControlPointPositions[CtrlPointIndex]);
+			}
+			else
+			{
+				OutMeshInfo->VertexList.Add(FVector(0, 0, 0));
+			}
 
 			// Normal 추출
 			FbxVector4 Normal;
@@ -309,6 +328,10 @@ void FFbxImporter::ExtractGeometryData(
 					N = FVector(N.X, -N.Y, N.Z);
 				}
 				OutMeshInfo->NormalList.Add(N);
+			}
+			else
+			{
+				OutMeshInfo->NormalList.Add(FVector(0, 1, 0));
 			}
 
 			// UV 추출
@@ -323,9 +346,26 @@ void FFbxImporter::ExtractGeometryData(
 					FVector2 UVConv(UV[0], 1.0f - UV[1]);
 					OutMeshInfo->TexCoordList.Add(UVConv);
 				}
+				else
+				{
+					OutMeshInfo->TexCoordList.Add(FVector2(0, 0));
+				}
 			}
+			else
+			{
+				OutMeshInfo->TexCoordList.Add(FVector2(0, 0));
+			}
+
+			// 인덱스는 순차적으로
+			OutMeshInfo->Indices.Add(VertexCounter);
+			IndicesPerMaterial[MaterialIndex].Add(VertexCounter);
+			VertexCounter++;
 		}
 	}
+
+	UE_LOG("[FbxImporter] Total Vertices: %d, Normals: %d, UVs: %d, Indices: %d",
+		OutMeshInfo->VertexList.Num(), OutMeshInfo->NormalList.Num(),
+		OutMeshInfo->TexCoordList.Num(), OutMeshInfo->Indices.Num());
 
 	// Mesh Section 정보 생성
 	BuildMeshSections(IndicesPerMaterial, OutMeshInfo);

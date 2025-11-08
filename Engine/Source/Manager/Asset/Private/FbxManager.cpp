@@ -70,11 +70,17 @@ void FFbxManager::ConvertFbxToStaticMesh(const FFbxMeshInfo& MeshInfo, FStaticMe
 	// Materials 변환
 	for (const FFbxMaterialInfo& FbxMat : MeshInfo.Materials)
 	{
-		FMaterial Material{};  // 모든 멤버 제로 초기화!
+		FMaterial Material{};
 		Material.Name = FbxMat.MaterialName;
+		Material.Kd = FVector(0.9f, 0.9f, 0.9f);
+		Material.Ka = FVector(0.2f, 0.2f, 0.2f);
+		Material.Ks = FVector(0.5f, 0.5f, 0.5f);
+		Material.Ns = 32.0f;
+		Material.D = 1.0f;
+
 		if (!FbxMat.DiffuseTexturePath.empty())
 		{
-			Material.KdMap = FbxMat.DiffuseTexturePath;
+			Material.KdMap = FbxMat.DiffuseTexturePath.generic_string();
 		}
 		OutStaticMesh->MaterialInfo.Add(Material);
 	}
