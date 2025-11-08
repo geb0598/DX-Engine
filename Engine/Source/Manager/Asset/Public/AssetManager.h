@@ -4,6 +4,7 @@
 #include "TextureManager.h"
 #include "Component/Mesh/Public/StaticMesh.h"
 
+class USkeletalMesh;
 struct FAABB;
 
 /**
