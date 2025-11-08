@@ -44,7 +44,7 @@ protected:
 
 	/**
 	 * @brief 좌측 패널: Skeleton Tree 영역 렌더링 (Placeholder)
-	 * TODO: 실제 본 계층 구조 트리 위젯 구현
+	 * RenderBoneTreeNode 호출	
 	 */
 	void RenderSkeletonTreePanel();
 
@@ -110,6 +110,12 @@ private:
 
 	// 렌더링할 SkeletalMeshComponent
 	USkeletalMeshComponent* SkeletalMeshComponent = nullptr;
+
+	// 선택된 본 인덱스
+	int32 SelectedBoneIndex = INDEX_NONE;
+
+	// 임시 본 트랜스폼 (편집용)
+	TArray<FTransform> TempBoneSpaceTransforms;
 
 	/**
 	 * @brief 렌더 타겟 생성

@@ -9,6 +9,7 @@
 #include "Render/Renderer/Public/SceneRenderer.h"
 #include "Level/Public/World.h"
 #include "Core/Public/NewObject.h"
+#include "Global/Quaternion.h"
 
 IMPLEMENT_CLASS(USkeletalMeshViewerWindow, UUIWindow)
 
@@ -366,7 +367,7 @@ void USkeletalMeshViewerWindow::RenderSkeletonTreePanel()
 void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FReferenceSkeleton& RefSkeleton, const FString& SearchFilter, bool bHasSearchFilter)
 {
 	const TArray<FMeshBoneInfo>& BoneInfoArray = RefSkeleton.GetRawRefBoneInfo();
-	const TArray<FTransform>& BonePoseArray = RefSkeleton.GetRawRefBonePose();
+	//const TArray<FTransform>& BonePoseArray = RefSkeleton.GetRawRefBonePose();
 	const FMeshBoneInfo& BoneInfo = BoneInfoArray[BoneIndex];
 
 	FString BoneName = BoneInfo.Name.ToString();
@@ -415,11 +416,11 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 		NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 	}
 
-	// 선택 상태 표시 (TODO: 선택 기능 구현 시)
-	// if (SelectedBoneIndex == BoneIndex)
-	// {
-	//     NodeFlags |= ImGuiTreeNodeFlags_Selected;
-	// }
+	 // 선택 상태 표시
+	 if (SelectedBoneIndex == BoneIndex)
+	 {
+	     NodeFlags |= ImGuiTreeNodeFlags_Selected;
+	 }
 
 	// 검색 필터에 매칭되면 하이라이트
 	bool bIsMatching = false;
@@ -458,14 +459,14 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 			ImGui::Text("Parent Name: (Root)");
 		}
 
-		ImGui::Separator();
+		/*ImGui::Separator();
 		ImGui::Text("Local Transform:");
 		const FTransform& BonePose = BonePoseArray[BoneIndex];
 		ImGui::Text("  Location: (%.2f, %.2f, %.2f)", BonePose.Translation.X, BonePose.Translation.Y, BonePose.Translation.Z);
 
 		FVector EulerRot = BonePose.Rotation.ToEuler();
 		ImGui::Text("  Rotation: (%.2f, %.2f, %.2f)", EulerRot.X, EulerRot.Y, EulerRot.Z);
-		ImGui::Text("  Scale: (%.2f, %.2f, %.2f)", BonePose.Scale.X, BonePose.Scale.Y, BonePose.Scale.Z);
+		ImGui::Text("  Scale: (%.2f, %.2f, %.2f)", BonePose.Scale.X, BonePose.Scale.Y, BonePose.Scale.Z);*/
 
 		ImGui::EndTooltip();
 	}
@@ -475,6 +476,23 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 	// {
 	//     SelectedBoneIndex = BoneIndex;
 	// }
+
+	// 클릭 시 본 선택
+	if (ImGui::IsItemClicked())
+	{
+		SelectedBoneIndex = BoneIndex;
+
+		// TempBoneSpaceTransforms 초기화 (처음 선택 시)
+		if (TempBoneSpaceTransforms.IsEmpty() && SkeletalMeshComponent)
+		{
+			const int32 NumBones = RefSkeleton.GetRawBoneNum();
+			TempBoneSpaceTransforms.SetNum(NumBones);
+			for (int32 i = 0; i < NumBones; ++i)
+			{
+				TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
+			}
+		}
+	}
 
 	// 자식 본들 재귀적으로 렌더링
 	if (bNodeOpen && !ChildBoneIndices.IsEmpty())
@@ -649,123 +667,251 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel()
 	ImGui::Separator();
 	ImGui::Spacing();
 
-	ImGui::TextWrapped("TODO: 편집 도구 UI를 여기에 구현");
+	if (!SkeletalMeshComponent)
+	{
+		ImGui::TextWrapped("No SkeletalMeshComponent assigned");
+		ImGui::Spacing();
+		ImGui::TextDisabled("Please assign a component to view bone information.");
+		return;
+	}
+
+	USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+	if (!SkeletalMesh)
+	{
+		ImGui::TextWrapped("No SkeletalMesh found");
+		ImGui::Spacing();
+		ImGui::TextDisabled("The component has no mesh asset assigned.");
+		return;
+	}
+
+	const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
+	const int32 NumBones = RefSkeleton.GetRawBoneNum();
+
+	if (NumBones == 0)
+	{
+		ImGui::TextWrapped("No bones in skeleton");
+		return;
+	}
+
+	// TempBoneSpaceTransforms 초기화 확인
+	/*if (TempBoneSpaceTransforms.IsEmpty())
+	{
+		TempBoneSpaceTransforms.SetNum(NumBones);
+		for (int32 i = 0; i < NumBones; ++i)
+		{
+			TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
+		}
+	}*/
+
+	// 선택된 본이 없는 경우
+	if (SelectedBoneIndex == INDEX_NONE)
+	{
+		ImGui::TextDisabled("No bone selected");
+		ImGui::Spacing();
+		ImGui::TextWrapped("Select a bone from the Skeleton Tree to view and edit its properties.");
+		return;
+	}
+
+	// 선택된 본 인덱스 유효성 검사
+	assert((SelectedBoneIndex < 0 || SelectedBoneIndex >= NumBones) && "Invalid bone index selected");
+
+	const TArray<FMeshBoneInfo>& BoneInfoArray = RefSkeleton.GetRawRefBoneInfo();
+	const TArray<FTransform>& RefBonePoses = RefSkeleton.GetRawRefBonePose();
+	const FMeshBoneInfo& BoneInfo = BoneInfoArray[SelectedBoneIndex];
+
+	// ===================================================================
+	// Reference Pose (읽기 전용)
+	// ===================================================================
+	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.2f, 0.3f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.3f, 0.3f, 0.4f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.25f, 0.25f, 0.35f, 1.0f));
+
+	if (ImGui::CollapsingHeader("Reference Pose (Read Only)", ImGuiTreeNodeFlags_DefaultOpen))
+	{
+		const FTransform& RefPose = RefBonePoses[SelectedBoneIndex];
+
+		ImGui::Indent();
+
+		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Translation:");
+		ImGui::Text("  X: %.3f", RefPose.Translation.X);
+		ImGui::Text("  Y: %.3f", RefPose.Translation.Y);
+		ImGui::Text("  Z: %.3f", RefPose.Translation.Z);
+
+		ImGui::Spacing();
+
+		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Rotation (Quaternion):");
+		ImGui::Text("  X: %.3f", RefPose.Rotation.X);
+		ImGui::Text("  Y: %.3f", RefPose.Rotation.Y);
+		ImGui::Text("  Z: %.3f", RefPose.Rotation.Z);
+		ImGui::Text("  W: %.3f", RefPose.Rotation.W);
+
+		ImGui::Spacing();
+
+		FVector EulerRot = RefPose.Rotation.ToEuler();
+		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Rotation (Euler):");
+		ImGui::Text("  Pitch: %.3f", EulerRot.X);
+		ImGui::Text("  Yaw: %.3f", EulerRot.Y);
+		ImGui::Text("  Roll: %.3f", EulerRot.Z);
+
+		ImGui::Spacing();
+
+		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Scale:");
+		ImGui::Text("  X: %.3f", RefPose.Scale.X);
+		ImGui::Text("  Y: %.3f", RefPose.Scale.Y);
+		ImGui::Text("  Z: %.3f", RefPose.Scale.Z);
+
+		ImGui::Unindent();
+	}
+
+	ImGui::PopStyleColor(3);
 	ImGui::Spacing();
 
-	// Transform 섹션 (검정 테마 적용)
-	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+	// ===================================================================
+	// Bone Space Transform (편집 가능)
+	// ===================================================================
+	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.2f, 0.3f, 0.2f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.3f, 0.4f, 0.3f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.25f, 0.35f, 0.25f, 1.0f));
 
-	if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+	if (ImGui::CollapsingHeader("Bone Space Transform (Editable)", ImGuiTreeNodeFlags_DefaultOpen))
 	{
-		ImGui::TextDisabled("선택된 본: (없음)");
-		ImGui::Spacing();
+		FTransform& TempTransform = TempBoneSpaceTransforms[SelectedBoneIndex];
 
-		// Drag 필드 색상을 검은색으로 설정
-		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+		ImGui::Indent();
+
+		// Translation
+		ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "Translation:");
+
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
 
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-		float DummyTransform[3] = { 0.0f, 0.0f, 0.0f };
 
-		// Position
-		ImGui::Text("Position");
+		// X
 		ImVec2 PosX = ImGui::GetCursorScreenPos();
-		ImGui::SetNextItemWidth(75.0f);
-		ImGui::DragFloat("##PosX", &DummyTransform[0], 0.1f, 0.0f, 0.0f, "%.3f");
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::DragFloat("##TransX", &TempTransform.Translation.X, 0.1f, 0.0f, 0.0f, "%.3f");
 		ImVec2 SizeX = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(PosX.x + 5, PosX.y + 2), ImVec2(PosX.x + 5, PosX.y + SizeX.y - 2),
-		                  IM_COL32(255, 0, 0, 255), 2.0f);
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("X: %.3f", DummyTransform[0]); }
+			IM_COL32(255, 0, 0, 255), 2.0f);
 		ImGui::SameLine();
 
+		// Y
 		ImVec2 PosY = ImGui::GetCursorScreenPos();
-		ImGui::SetNextItemWidth(75.0f);
-		ImGui::DragFloat("##PosY", &DummyTransform[1], 0.1f, 0.0f, 0.0f, "%.3f");
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::DragFloat("##TransY", &TempTransform.Translation.Y, 0.1f, 0.0f, 0.0f, "%.3f");
 		ImVec2 SizeY = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(PosY.x + 5, PosY.y + 2), ImVec2(PosY.x + 5, PosY.y + SizeY.y - 2),
-		                  IM_COL32(0, 255, 0, 255), 2.0f);
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Y: %.3f", DummyTransform[1]); }
+			IM_COL32(0, 255, 0, 255), 2.0f);
 		ImGui::SameLine();
 
+		// Z
 		ImVec2 PosZ = ImGui::GetCursorScreenPos();
-		ImGui::SetNextItemWidth(75.0f);
-		ImGui::DragFloat("##PosZ", &DummyTransform[2], 0.1f, 0.0f, 0.0f, "%.3f");
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::DragFloat("##TransZ", &TempTransform.Translation.Z, 0.1f, 0.0f, 0.0f, "%.3f");
 		ImVec2 SizeZ = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(PosZ.x + 5, PosZ.y + 2), ImVec2(PosZ.x + 5, PosZ.y + SizeZ.y - 2),
-		                  IM_COL32(0, 0, 255, 255), 2.0f);
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Z: %.3f", DummyTransform[2]); }
+			IM_COL32(0, 0, 255, 255), 2.0f);
 
 		ImGui::Spacing();
 
-		// Rotation
-		ImGui::Text("Rotation");
+		// Rotation (Euler)
+		ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "Rotation (Euler):");
+
+		FVector EulerAngles = TempTransform.Rotation.ToEuler();
+
+		// Pitch (X)
 		ImVec2 RotX = ImGui::GetCursorScreenPos();
-		ImGui::SetNextItemWidth(75.0f);
-		ImGui::DragFloat("##RotX", &DummyTransform[0], 1.0f, 0.0f, 0.0f, "%.3f");
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::DragFloat("##RotX", &EulerAngles.X, 1.0f, 0.0f, 0.0f, "%.3f");
 		ImVec2 SizeRotX = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(RotX.x + 5, RotX.y + 2), ImVec2(RotX.x + 5, RotX.y + SizeRotX.y - 2),
-		                  IM_COL32(255, 0, 0, 255), 2.0f);
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("X: %.3f", DummyTransform[0]); }
+			IM_COL32(255, 0, 0, 255), 2.0f);
 		ImGui::SameLine();
 
+		// Yaw (Y)
 		ImVec2 RotY = ImGui::GetCursorScreenPos();
-		ImGui::SetNextItemWidth(75.0f);
-		ImGui::DragFloat("##RotY", &DummyTransform[1], 1.0f, 0.0f, 0.0f, "%.3f");
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::DragFloat("##RotY", &EulerAngles.Y, 1.0f, 0.0f, 0.0f, "%.3f");
 		ImVec2 SizeRotY = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(RotY.x + 5, RotY.y + 2), ImVec2(RotY.x + 5, RotY.y + SizeRotY.y - 2),
-		                  IM_COL32(0, 255, 0, 255), 2.0f);
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Y: %.3f", DummyTransform[1]); }
+			IM_COL32(0, 255, 0, 255), 2.0f);
 		ImGui::SameLine();
 
+		// Roll (Z)
 		ImVec2 RotZ = ImGui::GetCursorScreenPos();
-		ImGui::SetNextItemWidth(75.0f);
-		ImGui::DragFloat("##RotZ", &DummyTransform[2], 1.0f, 0.0f, 0.0f, "%.3f");
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::DragFloat("##RotZ", &EulerAngles.Z, 1.0f, 0.0f, 0.0f, "%.3f");
 		ImVec2 SizeRotZ = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(RotZ.x + 5, RotZ.y + 2), ImVec2(RotZ.x + 5, RotZ.y + SizeRotZ.y - 2),
-		                  IM_COL32(0, 0, 255, 255), 2.0f);
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Z: %.3f", DummyTransform[2]); }
+			IM_COL32(0, 0, 255, 255), 2.0f);
+
+		// Euler를 Quaternion으로 변환
+		TempTransform.Rotation = FQuaternion::FromEuler(EulerAngles);
 
 		ImGui::Spacing();
 
 		// Scale
-		ImGui::Text("Scale");
+		ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "Scale:");
+
+		// Scale X
 		ImVec2 ScaleX = ImGui::GetCursorScreenPos();
-		ImGui::SetNextItemWidth(75.0f);
-		ImGui::DragFloat("##ScaleX", &DummyTransform[0], 0.01f, 0.0f, 0.0f, "%.3f");
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::DragFloat("##ScaleX", &TempTransform.Scale.X, 0.01f, 0.0f, 0.0f, "%.3f");
 		ImVec2 SizeScaleX = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(ScaleX.x + 5, ScaleX.y + 2), ImVec2(ScaleX.x + 5, ScaleX.y + SizeScaleX.y - 2),
-		                  IM_COL32(255, 0, 0, 255), 2.0f);
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("X: %.3f", DummyTransform[0]); }
+			IM_COL32(255, 0, 0, 255), 2.0f);
 		ImGui::SameLine();
 
+		// Scale Y
 		ImVec2 ScaleY = ImGui::GetCursorScreenPos();
-		ImGui::SetNextItemWidth(75.0f);
-		ImGui::DragFloat("##ScaleY", &DummyTransform[1], 0.01f, 0.0f, 0.0f, "%.3f");
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::DragFloat("##ScaleY", &TempTransform.Scale.Y, 0.01f, 0.0f, 0.0f, "%.3f");
 		ImVec2 SizeScaleY = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(ScaleY.x + 5, ScaleY.y + 2), ImVec2(ScaleY.x + 5, ScaleY.y + SizeScaleY.y - 2),
-		                  IM_COL32(0, 255, 0, 255), 2.0f);
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Y: %.3f", DummyTransform[1]); }
+			IM_COL32(0, 255, 0, 255), 2.0f);
 		ImGui::SameLine();
 
+		// Scale Z
 		ImVec2 ScaleZ = ImGui::GetCursorScreenPos();
-		ImGui::SetNextItemWidth(75.0f);
-		ImGui::DragFloat("##ScaleZ", &DummyTransform[2], 0.01f, 0.0f, 0.0f, "%.3f");
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::DragFloat("##ScaleZ", &TempTransform.Scale.Z, 0.01f, 0.0f, 0.0f, "%.3f");
 		ImVec2 SizeScaleZ = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(ScaleZ.x + 5, ScaleZ.y + 2), ImVec2(ScaleZ.x + 5, ScaleZ.y + SizeScaleZ.y - 2),
-		                  IM_COL32(0, 0, 255, 255), 2.0f);
-		if (ImGui::IsItemHovered()) { ImGui::SetTooltip("Z: %.3f", DummyTransform[2]); }
+			IM_COL32(0, 0, 255, 255), 2.0f);
 
 		ImGui::PopStyleColor(3);
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		//Reset 버튼
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.3f, 0.2f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.4f, 0.3f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.45f, 0.25f, 0.15f, 1.0f));
+
+		if (ImGui::Button("Reset to Current", ImVec2(-1, 30)))
+		{
+			// 현재 컴포넌트의 값으로 리셋
+			for (int32 i = 0; i < NumBones; ++i)
+			{
+				TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
+			}
+			UE_LOG("SkeletalMeshViewerWindow: Reset temp bone transforms to current values");
+		}
+		ImGui::PopStyleColor(3);
+
+		ImGui::Unindent();
 	}
 
 	ImGui::PopStyleColor(3);
-
 	ImGui::Spacing();
 
-	// Gizmo 설정 섹션
+	// ===================================================================
+	// Gizmo Settings
+	// ===================================================================
 	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
@@ -792,17 +938,25 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel()
 	ImGui::PopStyleColor(3);
 	ImGui::Spacing();
 
-	// Mesh 정보 섹션
+	// ===================================================================
+	// Mesh Info
+	// ===================================================================
 	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
 
 	if (ImGui::CollapsingHeader("Mesh Info"))
 	{
-		ImGui::TextDisabled("Loaded Mesh: (없음)");
-		ImGui::TextDisabled("Bones: 0");
-		ImGui::TextDisabled("Vertices: 0");
-		ImGui::TextDisabled("Triangles: 0");
+		if (SkeletalMesh)
+		{
+			ImGui::Text("Loaded Mesh: %s", SkeletalMesh->GetName().ToString().c_str());
+			ImGui::Text("Bones: %d", NumBones);
+		}
+		else
+		{
+			ImGui::TextDisabled("Loaded Mesh: (없음)");
+			ImGui::TextDisabled("Bones: 0");
+		}
 	}
 
 	ImGui::PopStyleColor(3);
@@ -814,6 +968,22 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel()
 	ImGui::BulletText("애니메이션 프리뷰");
 	ImGui::BulletText("소켓 편집");
 	ImGui::BulletText("LOD 설정");
+
+	// Apply Changes 버튼 - 우측 하단에 고정
+	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.2f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.6f, 0.3f, 1.0f));
+	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.45f, 0.15f, 1.0f));
+
+	if (ImGui::Button("Apply All Changes", ImVec2(-1, ViewerHeight)))
+	{
+		// TempBoneSpaceTransforms를 실제 BoneSpaceTransforms에 적용
+		for (int32 i = 0; i < NumBones; ++i)
+		{
+			SkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
+		}
+		UE_LOG("SkeletalMeshViewerWindow: Applied bone transform changes");
+	}
+	ImGui::PopStyleColor(3);
 }
 
 /**
