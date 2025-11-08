@@ -4,6 +4,7 @@
 class FViewport;
 class FViewportClient;
 class UCamera;
+class USkeletalMeshComponent;
 
 /**
  * @brief SkeletalMesh 뷰어 윈도우
@@ -28,6 +29,8 @@ public:
 
 	void Initialize() override;
 	void Cleanup() override;
+
+	void SetSkeletalMeshComponent(USkeletalMeshComponent* InSkeletalMeshComponent) { SkeletalMeshComponent = InSkeletalMeshComponent; }
 
 protected:
 	void OnPreRenderWindow(float MenuBarOffset) override;
@@ -94,6 +97,9 @@ private:
 	// 초기화 및 정리 상태 플래그
 	bool bIsInitialized = false;
 	bool bIsCleanedUp = false;
+
+	// 렌더링할 SkeletalMeshComponent
+	TObjectPtr<USkeletalMeshComponent> SkeletalMeshComponent = nullptr;
 
 	/**
 	 * @brief 렌더 타겟 생성
