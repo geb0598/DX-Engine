@@ -101,12 +101,11 @@ struct FMatrix
 	*/
 	static FMatrix RotationZ(float Radian);
 
-	    static FMatrix GetModelMatrix(const FVector& Location, const FVector& Rotation, const FVector& Scale);
-	
-	    static FMatrix GetModelMatrix(const FVector& Location, const FQuaternion& Rotation, const FVector& Scale);
-	    static FMatrix GetModelMatrixInverse(const FVector& Location, const FVector& Rotation, const FVector& Scale);
-	
-		static FMatrix GetModelMatrixInverse(const FVector& Location, const FQuaternion& Rotation, const FVector& Scale);
+	static FMatrix GetModelMatrix(const FVector& Location, const FVector& Rotation, const FVector& Scale);
+	static FMatrix GetModelMatrix(const FVector& Location, const FQuaternion& Rotation, const FVector& Scale);
+	static FMatrix GetModelMatrixInverse(const FVector& Location, const FVector& Rotation, const FVector& Scale);
+
+	static FMatrix GetModelMatrixInverse(const FVector& Location, const FQuaternion& Rotation, const FVector& Scale);
 	static FVector4 VectorMultiply(const FVector4&, const FMatrix&);
 
 	static FVector VectorMultiply(const FVector& v, const FMatrix& m);
@@ -114,7 +113,7 @@ struct FMatrix
 	// Create an orthographic projection matrix (Left-Handed)
 	static FMatrix CreateOrthoLH(float Left, float Right, float Bottom, float Top, float Near, float Far);
 	static FMatrix CreateLookAtLH(const FVector& Eye, const FVector& Target, const FVector& Up);
-	
+
 	FMatrix Transpose() const;
 	FMatrix Inverse() const;
 

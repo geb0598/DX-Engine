@@ -36,7 +36,9 @@ public:
 	 *
 	 * @param InBoneSpaceTransforms 본의 로컬 공간 기준 변환 (부모 본에 상대적인 변환)
 	 * @param InFillComponentSpaceTransformsRequiredBones 처리해야 할 본들의 인덱스 목록 (부모 본이 자식 본보다 먼저 오도록 정렬되어야 함, 언리얼 엔진에서는 LOD 등의 최적화를 위해 모든 본을 사용하지 않을 수도 있음)
-	 * @param OutComponentSpaceTransform 출력용 본의 컴포넌트 공간 기준 변환
+	 * @param OutComponentSpaceTransforms 출력용 본의 컴포넌트 공간 기준 변환
 	 */
-	void FillComponentSpaceTransforms(const TArray<FTransform>& InBoneSpaceTransforms, const TArray<FBoneIndexType>& InFillComponentSpaceTransformsRequiredBones, TArray<FTransform>& OutComponentSpaceTransform) const;
+	void FillComponentSpaceTransforms(const TArray<FTransform>& InBoneSpaceTransforms,
+	                                  const TArray<FBoneIndexType>& InFillComponentSpaceTransformsRequiredBones,
+	                                  TArray<FTransform>& OutComponentSpaceTransforms) const;
 };

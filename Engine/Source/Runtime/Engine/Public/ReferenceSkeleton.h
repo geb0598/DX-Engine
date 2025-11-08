@@ -34,8 +34,9 @@ public:
 	FReferenceSkeleton(/** bool bInOnlyOneRootAllowed = true */)
 		/** : bOnlyOneRootAllowed(bInOnlyOneRootAllowed) */
 	{}
+
 private:
-	/** 직렬화될 레퍼런스 본 정보 */
+	/** 직렬화할 레퍼런스 본 정보 */
 	TArray<FMeshBoneInfo> RawRefBoneInfo;
 
 	/**
