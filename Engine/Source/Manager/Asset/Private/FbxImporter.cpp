@@ -106,16 +106,166 @@ bool FFbxImporter::LoadFBX(const std::filesystem::path& FilePath, FFbxMeshInfo* 
 		OutMeshInfo->VertexList.Add(Pos);
 	}
 
-	// 3. 인덱스 및 노멀 / UV 추출
+	// 3. 모든 Material 정보 추출
+	const int MaterialCount = FoundNode->GetMaterialCount();
+	UE_LOG("[FbxImporter] Material Count: %d", MaterialCount);
+
+	for (int m = 0; m < MaterialCount; ++m)
+	{
+		FbxSurfaceMaterial* Material = FoundNode->GetMaterial(m);
+		if (!Material) continue;
+
+		FFbxMaterialInfo MatInfo;
+		const char* MaterialName = Material->GetName();
+		if (MaterialName && strlen(MaterialName) > 0)
+		{
+			MatInfo.MaterialName = MaterialName;
+		}
+		else
+		{
+			MatInfo.MaterialName = "Material_" + std::to_string(m);
+		}
+		UE_LOG("[FbxImporter] Material %d: %s", m, MatInfo.MaterialName.c_str());
+
+		// Diffuse 텍스처 추출
+		FbxProperty Prop = Material->FindProperty(FbxSurfaceMaterial::sDiffuse);
+		if (Prop.IsValid())
+		{
+			int LayeredTextureCount = Prop.GetSrcObjectCount<FbxLayeredTexture>();
+			if (LayeredTextureCount > 0)
+			{
+				UE_LOG_WARNING("[FbxImporter] Layered Texture는 아직 지원하지 않습니다.");
+			}
+			else
+			{
+				int TextureCount = Prop.GetSrcObjectCount<FbxFileTexture>();
+				if (TextureCount > 0)
+				{
+					FbxFileTexture* Texture = Prop.GetSrcObject<FbxFileTexture>(0);
+					if (Texture)
+					{
+						std::string OriginalTexturePath = Texture->GetFileName();
+						UE_LOG("[FbxImporter] Material %d - Texture Path: %s", m, OriginalTexturePath.c_str());
+
+						// 텍스처 경로 처리
+						std::filesystem::path ResolvedTexturePath;
+						std::filesystem::path OriginalPath(OriginalTexturePath);
+						std::filesystem::path FbxDirectory = FilePath.parent_path();
+
+						// 방법 1: 원본 경로가 유효한지 확인
+						if (std::filesystem::exists(OriginalPath))
+						{
+							ResolvedTexturePath = OriginalPath;
+							UE_LOG_SUCCESS("[FbxImporter] 텍스처 찾음 (원본 경로): %s", ResolvedTexturePath.string().c_str());
+						}
+						// 방법 2: FBX 파일과 같은 디렉토리에서 파일명만으로 찾기
+						else
+						{
+							std::filesystem::path FilenameOnly = OriginalPath.filename();
+							std::filesystem::path LocalTexturePath = FbxDirectory / FilenameOnly;
+
+							if (std::filesystem::exists(LocalTexturePath))
+							{
+								ResolvedTexturePath = LocalTexturePath;
+								UE_LOG_SUCCESS("[FbxImporter] 텍스처 찾음 (FBX 디렉토리): %s", ResolvedTexturePath.string().c_str());
+							}
+							// 방법 3: .fbm 폴더에서 찾기 (FBX SDK 기본 텍스처 저장 위치)
+							else
+							{
+								std::filesystem::path FbxFilename = FilePath.stem();  // 확장자 제외한 파일명
+								std::filesystem::path FbmFolder = FbxDirectory / (FbxFilename.string() + ".fbm");
+								std::filesystem::path FbmTexturePath = FbmFolder / FilenameOnly;
+
+								if (std::filesystem::exists(FbmTexturePath))
+								{
+									ResolvedTexturePath = FbmTexturePath;
+									UE_LOG_SUCCESS("[FbxImporter] 텍스처 찾음 (.fbm 폴더): %s", ResolvedTexturePath.string().c_str());
+								}
+								else
+								{
+									UE_LOG_WARNING("[FbxImporter] 텍스처를 찾을 수 없습니다: %s", OriginalTexturePath.c_str());
+									UE_LOG_WARNING("[FbxImporter] 시도한 경로: %s", FbmTexturePath.string().c_str());
+								}
+							}
+						}
+
+						if (!ResolvedTexturePath.empty())
+						{
+							MatInfo.DiffuseTexturePath = ResolvedTexturePath;
+						}
+					}
+				}
+			}
+		}
+
+		OutMeshInfo->Materials.Add(MatInfo);
+	}
+
+	// Material이 없으면 기본 Material 추가
+	if (OutMeshInfo->Materials.Num() == 0)
+	{
+		FFbxMaterialInfo DefaultMat;
+		DefaultMat.MaterialName = "Default";
+		OutMeshInfo->Materials.Add(DefaultMat);
+		UE_LOG_WARNING("[FbxImporter] Material이 없어 기본 Material을 추가했습니다.");
+	}
+
+	// 4. Material Mapping 정보 가져오기
+	FbxLayerElementMaterial* MaterialElement = FoundMesh->GetElementMaterial();
+	FbxGeometryElement::EMappingMode MaterialMappingMode = FbxGeometryElement::eNone;
+	if (MaterialElement)
+	{
+		MaterialMappingMode = MaterialElement->GetMappingMode();
+		UE_LOG("[FbxImporter] Material Mapping Mode: %d", (int)MaterialMappingMode);
+	}
+
+	// 5. 인덱스 및 노멀 / UV 추출 (Material별로 분리)
+	struct FTempSection
+	{
+		TArray<uint32> Indices;
+		uint32 MaterialIndex;
+	};
+	TArray<FTempSection> TempSections;
+	TempSections.Reset(OutMeshInfo->Materials.Num());
+	for (int i = 0; i < TempSections.Num(); ++i)
+	{
+		TempSections[i].MaterialIndex = i;
+	}
+
 	const int PolygonCount = FoundMesh->GetPolygonCount();
 	for (int p = 0; p < PolygonCount; ++p)
 	{
+		// 이 Polygon이 사용하는 Material Index 확인
+		int MaterialIndex = 0;
+		if (MaterialElement)
+		{
+			switch (MaterialMappingMode)
+			{
+			case FbxGeometryElement::eByPolygon:
+				MaterialIndex = MaterialElement->GetIndexArray().GetAt(p);
+				break;
+			case FbxGeometryElement::eAllSame:
+				MaterialIndex = 0;
+				break;
+			default:
+				MaterialIndex = 0;
+				break;
+			}
+		}
+
+		// Material Index가 유효한 범위인지 확인
+		if (MaterialIndex < 0 || MaterialIndex >= OutMeshInfo->Materials.Num())
+		{
+			MaterialIndex = 0;
+		}
+
 		// Triangulate를 거쳤기 때문에 PolygonSize는 항상 3입니다.
 		int PolySize = FoundMesh->GetPolygonSize(p);
 		for (int v = 0; v < PolySize; ++v)
 		{
 			int CtrlPointIndex = FoundMesh->GetPolygonVertex(p, v);
 			OutMeshInfo->Indices.Add(CtrlPointIndex);
+			TempSections[MaterialIndex].Indices.Add(CtrlPointIndex);
 
 			// --- Normal ---
 			FbxVector4 Normal;
@@ -145,35 +295,22 @@ bool FFbxImporter::LoadFBX(const std::filesystem::path& FilePath, FFbxMeshInfo* 
 		}
 	}
 
-	// 4. 재질(Material) 및 텍스처 정보 추출
-	if (FoundNode)
+	// 6. Section 정보 생성
+	uint32 CurrentIndexOffset = 0;
+	for (int i = 0; i < TempSections.Num(); ++i)
 	{
-		FbxSurfaceMaterial* Material = FoundNode->GetMaterial(0);
-		if (Material)
+		if (TempSections[i].Indices.Num() > 0)
 		{
-			OutMeshInfo->MaterialName = Material->GetName();
+			FFbxMeshSection Section;
+			Section.StartIndex = CurrentIndexOffset;
+			Section.IndexCount = TempSections[i].Indices.Num();
+			Section.MaterialIndex = TempSections[i].MaterialIndex;
+			OutMeshInfo->Sections.Add(Section);
 
-			FbxProperty Prop = Material->FindProperty(FbxSurfaceMaterial::sDiffuse);
-			if (Prop.IsValid())
-			{
-				int LayeredTextureCount = Prop.GetSrcObjectCount<FbxLayeredTexture>();
-				if (LayeredTextureCount > 0)
-				{
-					// TODO: Layered Texture 처리
-				}
-				else
-				{
-					int TextureCount = Prop.GetSrcObjectCount<FbxFileTexture>();
-					if (TextureCount > 0)
-					{
-						FbxFileTexture* Texture = Prop.GetSrcObject<FbxFileTexture>(0);
-						if (Texture)
-						{
-							OutMeshInfo->DiffuseTexturePath = Texture->GetFileName();
-						}
-					}
-				}
-			}
+			UE_LOG("[FbxImporter] Section %d: StartIndex=%d, Count=%d, MaterialIndex=%d",
+				i, Section.StartIndex, Section.IndexCount, Section.MaterialIndex);
+
+			CurrentIndexOffset += Section.IndexCount;
 		}
 	}
 

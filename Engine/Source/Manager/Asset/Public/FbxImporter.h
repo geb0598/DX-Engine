@@ -4,6 +4,19 @@
 #include "Global/Vector.h"
 #include "Global/Types.h"
 
+struct FFbxMaterialInfo
+{
+	std::string MaterialName;
+	std::filesystem::path DiffuseTexturePath;
+};
+
+struct FFbxMeshSection
+{
+	uint32 StartIndex;
+	uint32 IndexCount;
+	uint32 MaterialIndex;
+};
+
 struct FFbxMeshInfo
 {
 	TArray<FVector> VertexList;
@@ -11,8 +24,8 @@ struct FFbxMeshInfo
 	TArray<FVector2> TexCoordList;
 	TArray<uint32> Indices;
 
-	std::string MaterialName;
-	std::filesystem::path DiffuseTexturePath;
+	TArray<FFbxMaterialInfo> Materials;
+	TArray<FFbxMeshSection> Sections;
 };
 
 class FFbxImporter

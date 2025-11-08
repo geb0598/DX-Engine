@@ -27,20 +27,27 @@ FStaticMesh* FFbxManager::LoadFbxStaticMeshAsset(const FName& FilePath, const FF
 
 	StaticMesh->Indices = MeshInfo.Indices;
 
-	FMaterial Material;
-	Material.Name = MeshInfo.MaterialName;
-	if (!MeshInfo.DiffuseTexturePath.empty())
+	// 모든 Material 추가
+	for (const FFbxMaterialInfo& FbxMat : MeshInfo.Materials)
 	{
-		Material.KdMap = MeshInfo.DiffuseTexturePath.string();
+		FMaterial Material;
+		Material.Name = FbxMat.MaterialName;
+		if (!FbxMat.DiffuseTexturePath.empty())
+		{
+			Material.KdMap = FbxMat.DiffuseTexturePath.string();
+		}
+		StaticMesh->MaterialInfo.Add(Material);
 	}
-	
-	StaticMesh->MaterialInfo.Add(Material);
 
-	FMeshSection Section{};
-	Section.StartIndex = 0;
-	Section.IndexCount = static_cast<uint32>(StaticMesh->Indices.Num());
-	Section.MaterialSlot = 0;
-	StaticMesh->Sections.Add(Section);
+	// 모든 Section 추가
+	for (const FFbxMeshSection& FbxSection : MeshInfo.Sections)
+	{
+		FMeshSection Section{};
+		Section.StartIndex = FbxSection.StartIndex;
+		Section.IndexCount = FbxSection.IndexCount;
+		Section.MaterialSlot = FbxSection.MaterialIndex;
+		StaticMesh->Sections.Add(Section);
+	}
 
 	UE_LOG_SUCCESS("FBX StaticMesh 변환 완료: %s", FilePath.ToString().c_str());
 	return StaticMesh.release();
@@ -59,12 +66,25 @@ UStaticMesh* FFbxManager::LoadFbxStaticMesh(const FName& FilePath, const FFbxImp
 	{
 		const FMaterial& MaterialInfo = StaticMeshAsset->MaterialInfo[i];
 		UMaterial* NewMaterial = new UMaterial();
+		NewMaterial->SetName(FName(MaterialInfo.Name));
 		NewMaterial->SetMaterialData(MaterialInfo);
 
 		if (!MaterialInfo.KdMap.empty())
 		{
+			UE_LOG("[FbxManager] Material %d - Texture Path: %s", i, MaterialInfo.KdMap.c_str());
 			UTexture* DiffuseTexture = UAssetManager::GetInstance().LoadTexture(FName(MaterialInfo.KdMap));
-			NewMaterial->SetDiffuseTexture(DiffuseTexture);
+			if (DiffuseTexture)
+			{
+				NewMaterial->SetDiffuseTexture(DiffuseTexture);
+			}
+			else
+			{
+				UE_LOG_ERROR("[FbxManager] Material %d - Texture Load Failed: %s", i, MaterialInfo.KdMap.c_str());
+			}
+		}
+		else
+		{
+			UE_LOG_WARNING("[FbxManager] Material %d - No Texture Path", i);
 		}
 		StaticMesh->SetMaterial(i, NewMaterial);
 	}
