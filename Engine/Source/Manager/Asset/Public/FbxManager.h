@@ -4,9 +4,23 @@
 #include "Runtime/Engine/Public/SkeletalMesh.h"
 #include "Runtime/Engine/Public/ReferenceSkeleton.h"
 
+class UObject; // Forward declaration
+
 class FFbxManager
 {
 public:
+	// ========================================
+	// 🔸 통합 메시 로드 (자동 타입 판단)
+	// ========================================
+
+	/**
+	 * FBX 파일을 로드하여 자동으로 Static/Skeletal 타입을 판단하여 반환
+	 * @return UStaticMesh 또는 USkeletalMesh (UObject*로 반환, 캐스팅 필요)
+	 */
+	static UObject* LoadFbxMesh(
+		const FName& FilePath,
+		const FFbxImporter::Configuration& Config = {});
+
 	// ========================================
 	// 🔸 Static Mesh
 	// ========================================

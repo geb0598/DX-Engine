@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Global/CoreTypes.h"
 #include "ReferenceSkeleton.h"
 #include "Component/Mesh/Public/StaticMesh.h"
 #include "SkinnedAsset.h"
@@ -84,9 +85,15 @@ public:
 	 */
 	FStaticMesh StaticMesh;
 
+	/** 스켈레탈 메시용 정점 데이터 (본 인덱스와 가중치 포함) */
+	TArray<FSkeletalVertex> SkeletalVertices;
+
+	/** 인덱스 데이터 */
+	TArray<uint32> Indices;
+
 	/**
-	 * @note 이 배열의 인덱스는 FStaticMesh::Vertices의 정점과 일대일로 대응되어야 한다.
-	 *		 즉, SkinWeightVertices[i]는 FStaticMesh::Vertices의 i번째 정점에 대한 정보이다.
+	 * @note 이 배열의 인덱스는 SkeletalVertices의 정점과 일대일로 대응되어야 한다.
+	 *		 즉, SkinWeightVertices[i]는 SkeletalVertices의 i번째 정점에 대한 정보이다.
 	 *		 언리얼 엔진에서는 이 정보를 압축해서 GPU로 전달하지만, 여기에서는 직접 전달한다.
 	 */
 	TArray<FRawSkinWeight> SkinWeightVertices;
@@ -116,6 +123,15 @@ public:
 	 -----------------------------------------------------------------------------*/
 public:
 	FSkeletalMeshRenderData* GetSkeletalMeshRenderData() const;
+
+	/** 스켈레탈 메시의 렌더 데이터 설정 */
+	void SetSkeletalMeshRenderData(FSkeletalMeshRenderData* InRenderData);
+
+	/** 스켈레탈 메시의 정점 데이터 접근 */
+	const TArray<FSkeletalVertex>& GetVertices() const;
+
+	/** 스켈레탈 메시의 인덱스 데이터 접근 */
+	const TArray<uint32>& GetIndices() const;
 
 private:
 	/** 런타임에 사용되는 렌더링 리소스 */

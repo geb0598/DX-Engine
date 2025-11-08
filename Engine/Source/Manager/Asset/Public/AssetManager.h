@@ -31,13 +31,21 @@ public:
 
 	// StaticMesh 관련 함수
 	void LoadAllObjStaticMesh();
-	void LoadAllFbxStaticMesh();
+	void LoadAllFbxMesh();  // FBX 통합 로드 (Static + Skeletal)
 	ID3D11Buffer* GetVertexBuffer(FName InObjPath);
 	ID3D11Buffer* GetIndexBuffer(FName InObjPath);
 
 	// StaticMesh Cache Accessors
 	UStaticMesh* GetStaticMeshFromCache(const FName& InObjPath);
 	void AddStaticMeshToCache(const FName& InObjPath, UStaticMesh* InStaticMesh);
+
+	// SkeletalMesh Cache Accessors
+	class USkeletalMesh* GetSkeletalMeshFromCache(const FName& InFbxPath);
+	void AddSkeletalMeshToCache(const FName& InFbxPath, class USkeletalMesh* InSkeletalMesh);
+
+	// SkeletalMesh Buffer Accessors
+	ID3D11Buffer* GetSkeletalMeshVertexBuffer(const FName& InFbxPath);
+	ID3D11Buffer* GetSkeletalMeshIndexBuffer(const FName& InFbxPath);
 
 	// Bounding Box
 	FAABB& GetAABB(EPrimitiveType InType);
@@ -61,10 +69,16 @@ private:
 	TMap<FName, ID3D11Buffer*> StaticMeshVertexBuffers;
 	TMap<FName, ID3D11Buffer*> StaticMeshIndexBuffers;
 
+	// SkeletalMesh Resource
+	TMap<FName, class USkeletalMesh*> SkeletalMeshCache;
+	TMap<FName, ID3D11Buffer*> SkeletalMeshVertexBuffers;
+	TMap<FName, ID3D11Buffer*> SkeletalMeshIndexBuffers;
+
 	// Helper Functions
 	ID3D11Buffer* CreateVertexBuffer(TArray<FNormalVertex> InVertices);
 	ID3D11Buffer* CreateIndexBuffer(TArray<uint32> InIndices);
 	FAABB CalculateAABB(const TArray<FNormalVertex>& Vertices);
+	ID3D11Buffer* CreateSkeletalVertexBuffer(TArray<FSkeletalVertex> InVertices);
 
 	// AABB Resource
 	TMap<EPrimitiveType, FAABB> AABBs;		// 각 타입별 AABB 저장

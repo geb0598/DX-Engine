@@ -23,7 +23,7 @@ void UAssetManager::Initialize()
 	// Data 폴더 속 모든 .obj 파일 로드 및 캐싱
 	LoadAllObjStaticMesh();
 	FFbxImporter::Initialize();
-	LoadAllFbxStaticMesh();
+	LoadAllFbxMesh();  // FBX 통합 로드 (Static + Skeletal)
 
 	VertexDatas.Emplace(EPrimitiveType::Torus, &VerticesTorus);
 	VertexDatas.Emplace(EPrimitiveType::Arrow, &VerticesArrow);
@@ -112,14 +112,27 @@ void UAssetManager::Release()
 		SafeRelease(Pair.second);
 	}
 
-	StaticMeshCache.Empty();	// unique ptr 이라서 자동으로 해제됨
+	for (auto& Pair : SkeletalMeshVertexBuffers)
+	{
+		SafeRelease(Pair.second);
+	}
+	for (auto& Pair : SkeletalMeshIndexBuffers)
+	{
+		SafeRelease(Pair.second);
+	}
+
+	StaticMeshCache.Empty();
 	StaticMeshVertexBuffers.Empty();
 	StaticMeshIndexBuffers.Empty();
+
+	SkeletalMeshCache.Empty();
+	SkeletalMeshVertexBuffers.Empty();
+	SkeletalMeshIndexBuffers.Empty();
 
 	// TMap.Empty()
 	VertexBuffers.Empty();
 	IndexBuffers.Empty();
-	
+
 	SafeDelete(TextureManager);
 
 	FFbxImporter::Shutdown();
@@ -175,7 +188,7 @@ void UAssetManager::LoadAllObjStaticMesh()
 	}
 }
 
-void UAssetManager::LoadAllFbxStaticMesh()
+void UAssetManager::LoadAllFbxMesh()
 {
 	TArray<FName> FbxList;
 	const FString DataDirectory = "Data/";
@@ -196,14 +209,30 @@ void UAssetManager::LoadAllFbxStaticMesh()
 
 	for (const FName& FbxPath : FbxList)
 	{
-		UStaticMesh* LoadedMesh = FFbxManager::LoadFbxStaticMesh(FbxPath, Config);
+		// 통합 로더를 통해 자동으로 타입 판단 후 로드
+		UObject* LoadedMesh = FFbxManager::LoadFbxMesh(FbxPath, Config);
+
 		if (LoadedMesh)
 		{
-			StaticMeshCache.Emplace(FbxPath, LoadedMesh);
-			StaticMeshVertexBuffers.Emplace(FbxPath, this->CreateVertexBuffer(LoadedMesh->GetVertices()));
-			StaticMeshIndexBuffers.Emplace(FbxPath, this->CreateIndexBuffer(LoadedMesh->GetIndices()));
-
-			UE_LOG_SUCCESS("FBX 메시 로드 성공: %s", FbxPath.ToString().c_str());
+			// UStaticMesh인지 USkeletalMesh인지 판단하여 적절한 캐시에 저장
+			if (UStaticMesh* StaticMesh = dynamic_cast<UStaticMesh*>(LoadedMesh))
+			{
+				StaticMeshCache.Emplace(FbxPath, StaticMesh);
+				StaticMeshVertexBuffers.Emplace(FbxPath, this->CreateVertexBuffer(StaticMesh->GetVertices()));
+				StaticMeshIndexBuffers.Emplace(FbxPath, this->CreateIndexBuffer(StaticMesh->GetIndices()));
+				UE_LOG_SUCCESS("FBX Static Mesh 로드 성공: %s", FbxPath.ToString().c_str());
+			}
+			else if (USkeletalMesh* SkeletalMesh = dynamic_cast<USkeletalMesh*>(LoadedMesh))
+			{
+				SkeletalMeshCache.Emplace(FbxPath, SkeletalMesh);
+				SkeletalMeshVertexBuffers.Emplace(FbxPath, this->CreateSkeletalVertexBuffer(SkeletalMesh->GetVertices()));
+				SkeletalMeshIndexBuffers.Emplace(FbxPath, this->CreateIndexBuffer(SkeletalMesh->GetIndices()));
+				UE_LOG_SUCCESS("FBX Skeletal Mesh 로드 성공: %s", FbxPath.ToString().c_str());
+			}
+			else
+			{
+				UE_LOG_ERROR("FBX 메시 타입을 알 수 없습니다: %s", FbxPath.ToString().c_str());
+			}
 		}
 		else
 		{
@@ -296,6 +325,29 @@ void UAssetManager::AddStaticMeshToCache(const FName& InObjPath, UStaticMesh* In
 	}
 }
 
+// SkeletalMesh Cache Accessors
+USkeletalMesh* UAssetManager::GetSkeletalMeshFromCache(const FName& InFbxPath)
+{
+	if (auto* FoundPtr = SkeletalMeshCache.Find(InFbxPath))
+	{
+		return *FoundPtr;
+	}
+	return nullptr;
+}
+
+void UAssetManager::AddSkeletalMeshToCache(const FName& InFbxPath, USkeletalMesh* InSkeletalMesh)
+{
+	if (!InSkeletalMesh)
+	{
+		return;
+	}
+
+	if (!SkeletalMeshCache.Contains(InFbxPath))
+	{
+		SkeletalMeshCache.Add(InFbxPath, InSkeletalMesh);
+	}
+}
+
 /**
  * @brief Vertex 배열로부터 AABB(Axis-Aligned Bounding Box)를 계산하는 헬퍼 함수
  * @param Vertices 정점 데이터 배열
@@ -318,6 +370,22 @@ FAABB UAssetManager::CalculateAABB(const TArray<FNormalVertex>& Vertices)
 	}
 
 	return FAABB(MinPoint, MaxPoint);
+}
+
+ID3D11Buffer* UAssetManager::CreateSkeletalVertexBuffer(TArray<FSkeletalVertex> InVertices)
+{
+	return FRenderResourceFactory::CreateVertexBuffer(InVertices.GetData(),
+		static_cast<int>(InVertices.Num()) * sizeof(FSkeletalVertex));
+}
+
+ID3D11Buffer* UAssetManager::GetSkeletalMeshVertexBuffer(const FName& InFbxPath)
+{
+	return SkeletalMeshVertexBuffers.FindRef(InFbxPath);
+}
+
+ID3D11Buffer* UAssetManager::GetSkeletalMeshIndexBuffer(const FName& InFbxPath)
+{
+	return SkeletalMeshIndexBuffers.FindRef(InFbxPath);
 }
 
 /**

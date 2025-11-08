@@ -29,6 +29,58 @@ void FFbxImporter::Shutdown()
 	UE_LOG_SUCCESS("FBX SDK Shut down.");
 }
 
+EFbxMeshType FFbxImporter::DetermineMeshType(const std::filesystem::path& FilePath)
+{
+	if (!SdkManager)
+	{
+		UE_LOG_ERROR("FBX SDK Manager가 초기화되지 않았습니다.");
+		return EFbxMeshType::Unknown;
+	}
+
+	if (!std::filesystem::exists(FilePath))
+	{
+		UE_LOG_ERROR("FBX 파일이 존재하지 않습니다: %s", FilePath.string().c_str());
+		return EFbxMeshType::Unknown;
+	}
+
+	// FBX Scene 임포트
+	FbxScene* Scene = ImportFbxScene(FilePath);
+	if (!Scene)
+	{
+		return EFbxMeshType::Unknown;
+	}
+
+	FbxNode* RootNode = Scene->GetRootNode();
+	if (!RootNode)
+	{
+		Scene->Destroy();
+		return EFbxMeshType::Unknown;
+	}
+
+	// 첫 번째 스킨 메시가 있는지 확인
+	FbxNode* SkinnedMeshNode = nullptr;
+	FbxMesh* SkinnedMesh = FindFirstSkinnedMesh(RootNode, &SkinnedMeshNode);
+
+	if (SkinnedMesh)
+	{
+		Scene->Destroy();
+		return EFbxMeshType::Skeletal;
+	}
+
+	// 일반 메시가 있는지 확인
+	FbxNode* MeshNode = nullptr;
+	FbxMesh* Mesh = FindFirstMesh(RootNode, &MeshNode);
+
+	Scene->Destroy();
+
+	if (Mesh)
+	{
+		return EFbxMeshType::Static;
+	}
+
+	return EFbxMeshType::Unknown;
+}
+
 bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxStaticMeshInfo* OutMeshInfo, Configuration Config)
 {
 	// 입력 검증
@@ -596,16 +648,17 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 		return false;
 	}
 
-	int VertexCount = OutMeshInfo->VertexList.Num();
-	OutMeshInfo->SkinWeights.Reset(VertexCount);
-
-	// 초기화
-	for (int i = 0; i < VertexCount; ++i)
-	{
-		OutMeshInfo->SkinWeights.Add(FFbxBoneInfluence());
-	}
-
+	const int ControlPointCount = Mesh->GetControlPointsCount();
 	int ClusterCount = Skin->GetClusterCount();
+
+	// 1단계: ControlPoint 기반으로 가중치 추출
+	TArray<FFbxBoneInfluence> ControlPointWeights;
+	ControlPointWeights.Reset(ControlPointCount);
+
+	for (int i = 0; i < ControlPointCount; ++i)
+	{
+		ControlPointWeights.Add(FFbxBoneInfluence());
+	}
 
 	for (int ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
 	{
@@ -616,12 +669,12 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 
 		for (int i = 0; i < IndexCount; ++i)
 		{
-			int VertexIndex = Indices[i];
+			int CtrlPointIndex = Indices[i];
 			double Weight = Weights[i];
 
-			if (VertexIndex >= 0 && VertexIndex < VertexCount && Weight > 0.0001)
+			if (CtrlPointIndex >= 0 && CtrlPointIndex < ControlPointCount && Weight > 0.0001)
 			{
-				FFbxBoneInfluence& Influence = OutMeshInfo->SkinWeights[VertexIndex];
+				FFbxBoneInfluence& Influence = ControlPointWeights[CtrlPointIndex];
 
 				// 빈 슬롯 찾기
 				for (int j = 0; j < FFbxBoneInfluence::MAX_INFLUENCES; ++j)
@@ -637,7 +690,28 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 		}
 	}
 
-	UE_LOG_SUCCESS("[FbxImporter] 스킨 가중치 추출 완료: %d 정점", VertexCount);
+	// 2단계: ControlPoint 가중치를 Polygon Vertex로 확장
+	const int PolygonVertexCount = OutMeshInfo->VertexList.Num();
+	OutMeshInfo->SkinWeights.Reset(PolygonVertexCount);
+
+	for (int i = 0; i < PolygonVertexCount; ++i)
+	{
+		int CtrlPointIndex = OutMeshInfo->ControlPointIndices[i];
+
+		if (CtrlPointIndex >= 0 && CtrlPointIndex < ControlPointCount)
+		{
+			// ControlPoint의 가중치를 복사
+			OutMeshInfo->SkinWeights.Add(ControlPointWeights[CtrlPointIndex]);
+		}
+		else
+		{
+			// 잘못된 인덱스인 경우 빈 가중치 추가
+			OutMeshInfo->SkinWeights.Add(FFbxBoneInfluence());
+		}
+	}
+
+	UE_LOG_SUCCESS("[FbxImporter] 스킨 가중치 추출 완료: ControlPoints=%d, PolygonVertices=%d",
+		ControlPointCount, PolygonVertexCount);
 	return true;
 }
 
@@ -676,6 +750,9 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 		IndicesPerMaterial.Add(TArray<uint32>());
 	}
 
+	// ControlPoint -> PolygonVertex 매핑 저장
+	TArray<int32> ControlPointIndices;
+
 	uint32 VertexCounter = 0;
 
 	// 폴리곤별 처리
@@ -705,6 +782,9 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 		for (int v = 0; v < PolySize; ++v)
 		{
 			int CtrlPointIndex = Mesh->GetPolygonVertex(p, v);
+
+			// ControlPoint 인덱스 저장 (나중에 스킨 가중치 매핑에 사용)
+			ControlPointIndices.Add(CtrlPointIndex);
 
 			// Position
 			if (CtrlPointIndex >= 0 && CtrlPointIndex < ControlPointPositions.Num())
@@ -758,6 +838,9 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 			VertexCounter++;
 		}
 	}
+
+	// ControlPointIndices를 OutMeshInfo에 저장
+	OutMeshInfo->ControlPointIndices = std::move(ControlPointIndices);
 
 	BuildSkeletalMeshSections(IndicesPerMaterial, OutMeshInfo);
 }

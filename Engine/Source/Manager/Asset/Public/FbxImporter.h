@@ -82,6 +82,14 @@ struct FFbxSkeletalMeshInfo
 	// 스켈레탈 전용 데이터 (FBX 전용 타입 사용)
 	TArray<FFbxBoneInfo> Bones;              // 본 계층 구조
 	TArray<FFbxBoneInfluence> SkinWeights;   // 정점별 스킨 가중치 (VertexList와 1:1 대응)
+	TArray<int32> ControlPointIndices;       // 각 PolygonVertex가 어떤 ControlPoint에서 왔는지 매핑 (VertexList와 1:1 대응)
+};
+
+enum class EFbxMeshType
+{
+	Static,
+	Skeletal,
+	Unknown
 };
 
 class FFbxImporter
@@ -97,6 +105,9 @@ public:
 	static void Shutdown();
 
 	// 🔸 Public API - 타입별 로드 함수
+
+	/** FBX 파일에서 메시 타입 판단 */
+	static EFbxMeshType DetermineMeshType(const std::filesystem::path& FilePath);
 
 	/** 스태틱 메시 임포트 */
 	static bool LoadStaticMesh(
