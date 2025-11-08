@@ -68,16 +68,69 @@ struct FRenderState
  */
 struct FTransform
 {
-	FVector Location = FVector(0.0f, 0.0f, 0.0f);
-	FVector Rotation = FVector(0.0f, 0.0f, 0.0f);
-	FVector Scale = FVector(1.0f, 1.0f, 1.0f);
+	/** 변환의 벡터 이동 */
+	FVector Translation;
 
-	FTransform() = default;
+	/** 변환의 쿼터니언 회전 */
+	FQuaternion Rotation;
 
-	FTransform(const FVector& InLocation, const FVector& InRotation = FVector::ZeroVector(),
-		const FVector& InScale = FVector::OneVector())
-		: Location(InLocation), Rotation(InRotation), Scale(InScale)
+	/** 3D 벡터 스케일 (로컬 공간에서만 적용됨) */
+	FVector Scale;
+
+	FTransform()
+		: Translation(FVector::ZeroVector())
+		, Rotation(FQuaternion::Identity())
+		, Scale(FVector::OneVector())
 	{
+	}
+
+	/**
+	 * @brief 트랜스폼을 스케일을 포함하여 4x4 행렬로 변환한다. (S * R * T)
+	 */
+	FMatrix ToMatrixWithScale() const
+	{
+		FMatrix T = FMatrix::TranslationMatrix(Translation);
+		FMatrix R = Rotation.ToRotationMatrix();
+		FMatrix S = FMatrix::ScaleMatrix(Scale);
+
+		// S * R * T (Row-major 기준)
+		return S * R * T;
+	}
+
+	FMatrix ToInverseMatrixWithScale() const
+	{
+		return ToMatrixWithScale().Inverse();
+	}
+
+	/**
+	 * @brief 트랜스폼을 스케일을 제외한 4x4 행렬로 변환한다. (R * T)
+	 */
+	FMatrix ToMatrixNoScale() const
+	{
+		FMatrix T = FMatrix::TranslationMatrix(Translation);
+		FMatrix R = Rotation.ToRotationMatrix();
+
+		// R * T (Row-major 기준)
+		return R * T;
+	}
+
+	FMatrix ToInverseMatrixNoScale() const
+	{
+		return ToMatrixNoScale().Inverse();
+	}
+
+	FTransform operator*(const FTransform& Other) const
+	{
+		FTransform Result;
+
+		Result.Scale = Scale * Other.Scale;
+
+		Result.Rotation = Rotation * Other.Rotation;
+
+		FVector ScaledTranslation = Scale * Other.Translation;
+		Result.Translation = Translation + Rotation.RotateVector(ScaledTranslation);
+
+		return Result;
 	}
 };
 
