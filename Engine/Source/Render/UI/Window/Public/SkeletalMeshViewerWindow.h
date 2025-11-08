@@ -1,12 +1,12 @@
 #pragma once
 #include "Render/UI/Window/Public/UIWindow.h"
 #include "Component/Mesh/Public/SkeletalMeshComponent.h"
-#include "Editor/Public/GizmoTypes.h"
 
 class FViewport;
 class FViewportClient;
 class UCamera;
 class USkeletalMeshComponent;
+class USkeletalMeshViewerToolbarWidget;
 
 /**
  * @brief SkeletalMesh 뷰어 윈도우
@@ -73,62 +73,10 @@ protected:
 	void RenderVerticalSplitter(const char* SplitterID, float& Ratio, float MinRatio, float MaxRatio, bool bInvertDirection = false);
 
 	/**
-	 * @brief 뷰포트 메뉴바 렌더링
-	 */
-	void RenderViewportMenuBar();
-
-	/**
 	 * @brief 카메라 컨트롤 UI 렌더링
 	 * @param InCamera 카메라 객체
 	 */
 	void RenderCameraControls(UCamera& InCamera);
-
-	/**
-	 * @brief 뷰 아이콘 로드
-	 */
-	void LoadViewIcons();
-
-private:
-	// ========================================
-	// Viewport MenuBar Helper Functions
-	// ========================================
-
-	/**
-	 * @brief 아이콘 버튼 렌더링 (공통 로직)
-	 * @param ID 버튼 고유 ID
-	 * @param Icon 아이콘 텍스처
-	 * @param bActive 활성화 상태
-	 * @param Tooltip 툴팁 텍스트
-	 * @param ButtonSize 버튼 크기
-	 * @param IconSize 아이콘 크기
-	 * @return true면 클릭됨
-	 */
-	bool DrawIconButton(const char* ID, class UTexture* Icon, bool bActive, const char* Tooltip, float ButtonSize = 24.0f, float IconSize = 16.0f);
-
-	/**
-	 * @brief Gizmo Mode 버튼들 렌더링 (QWER)
-	 */
-	void RenderGizmoModeButtons();
-
-	/**
-	 * @brief Rotation Snap 컨트롤 렌더링
-	 */
-	void RenderRotationSnapControls();
-
-	/**
-	 * @brief View Type 버튼 렌더링 (Perspective/Orthographic)
-	 */
-	void RenderViewTypeButton();
-
-	/**
-	 * @brief Camera Speed 버튼 렌더링
-	 */
-	void RenderCameraSpeedButton();
-
-	/**
-	 * @brief View Mode 버튼 렌더링 (Lighting Mode)
-	 */
-	void RenderViewModeButton();
 
 private:
 	// 패널 크기 비율 (드래그 가능)
@@ -164,34 +112,12 @@ private:
 	// 독립적인 BatchLines (Grid 렌더링용)
 	class UBatchLines* ViewerBatchLines = nullptr;
 
-	// View Type 아이콘들
-	class UTexture* IconPerspective = nullptr;
-	class UTexture* IconTop = nullptr;
-	class UTexture* IconBottom = nullptr;
-	class UTexture* IconLeft = nullptr;
-	class UTexture* IconRight = nullptr;
-	class UTexture* IconFront = nullptr;
-	class UTexture* IconBack = nullptr;
+	// 툴바 위젯
+	USkeletalMeshViewerToolbarWidget* ToolbarWidget = nullptr;
 
-	// Gizmo Mode 아이콘들
-	class UTexture* IconSelect = nullptr;
-	class UTexture* IconTranslate = nullptr;
-	class UTexture* IconRotate = nullptr;
-	class UTexture* IconScale = nullptr;
-
-	// Other 아이콘들
-	class UTexture* IconLitCube = nullptr;
-	class UTexture* IconCamera = nullptr;
-
-	bool bIconsLoaded = false;
-
-	// Gizmo Mode 상태
-	EGizmoMode CurrentGizmoMode = EGizmoMode::Translate;
-	bool bSelectModeActive = false; // Q 버튼 - Select 모드
-
-	// Rotation Snap 상태
-	bool bRotationSnapEnabled = false;
-	float RotationSnapAngle = 45.0f;
+	// 마우스 드래그 상태 플래그
+	bool bIsDraggingRightButton = false;
+	bool bIsDraggingMiddleButton = false;
 
 	/**
 	 * @brief 렌더 타겟 생성
