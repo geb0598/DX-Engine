@@ -14,6 +14,7 @@
 #include "Render/UI/Window/Public/ViewportClientWindow.h"
 #include "Render/UI/Widget/Public/StatusBarWidget.h"
 #include "Render/UI/Window/Public/CurveEditorWindow.h"
+#include "Render/UI/Window/Public/SkeletalMeshViewerWindow.h"
 
 UMainMenuWindow& UUIWindowFactory::CreateMainMenuWindow()
 {
@@ -89,6 +90,13 @@ UCurveEditorWindow* UUIWindowFactory::CreateCurveEditorWindow(EUIDockDirection I
 	return Window;
 }
 
+USkeletalMeshViewerWindow* UUIWindowFactory::CreateSkeletalMeshViewerWindow(EUIDockDirection InDockDirection)
+{
+	auto* Window = NewObject<USkeletalMeshViewerWindow>();
+	Window->GetMutableConfig().DockDirection = InDockDirection;
+	return Window;
+}
+
 
 void UUIWindowFactory::CreateDefaultUILayout()
 {
@@ -117,5 +125,6 @@ void UUIWindowFactory::CreateDefaultUILayout()
 	UIManager.RegisterUIWindow(CreateEditorWindow(EUIDockDirection::None));
 	UIManager.RegisterUIWindow(CreateViewportClientWindow(EUIDockDirection::None));
 	UIManager.RegisterUIWindow(CreateCurveEditorWindow(EUIDockDirection::None));
+	UIManager.RegisterUIWindow(CreateSkeletalMeshViewerWindow(EUIDockDirection::None));
 	UE_LOG_SUCCESS("UIWindowFactory: UI 생성이 성공적으로 완료되었습니다");
 }
