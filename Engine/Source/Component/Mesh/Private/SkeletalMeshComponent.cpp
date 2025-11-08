@@ -5,6 +5,8 @@
 #include "Component/Mesh/Public/SkeletalMeshComponent.h"
 #include "Runtime/Engine/Public/SkeletalMesh.h"
 
+IMPLEMENT_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
+
 UObject* USkeletalMeshComponent::Duplicate()
 {
 	/** @todo */
@@ -106,7 +108,7 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 	{
 		const FReferenceSkeleton& RefSkeleton = SkeletalMeshAsset->GetRefSkeleton();
 		const int32 NumBones = RefSkeleton.GetRawBoneNum();
-		const int32 NumVertices = SkeletalMeshAsset->GetSkeletalMeshRenderData()->StaticMesh.Vertices.Num();
+		const int32 NumVertices = SkeletalMeshAsset->GetStaticMesh()->GetVertices().Num();
 
 		BoneSpaceTransforms = RefSkeleton.GetRawRefBonePose();
 		SkinnedVertices.SetNum(NumVertices);
@@ -152,7 +154,7 @@ void USkeletalMeshComponent::UpdateSkinnedVertices()
 	}
 
 	FSkeletalMeshRenderData* RenderData = SkeletalMeshAsset->GetSkeletalMeshRenderData();
-	const TArray<FNormalVertex>& Vertices = RenderData->StaticMesh.Vertices;
+	const TArray<FNormalVertex>& Vertices = GetSkeletalMeshAsset()->GetStaticMesh()->GetVertices();
 	const TArray<FRawSkinWeight>& SkinWeights = RenderData->SkinWeightVertices;
 
 	for (int32 VertexIndex = 0; VertexIndex < Vertices.Num(); ++VertexIndex)
@@ -192,4 +194,19 @@ void USkeletalMeshComponent::UpdateSkinnedVertices()
 	}
 
 	bSkinningDirty = false;
+}
+
+void USkeletalMeshComponent::EnableNormalMap()
+{
+	bNormalMapEnabled = true;
+}
+
+void USkeletalMeshComponent::DisableNormalMap()
+{
+	bNormalMapEnabled = false;
+}
+
+bool USkeletalMeshComponent::IsNormalMapEnabled() const
+{
+	return bNormalMapEnabled;
 }

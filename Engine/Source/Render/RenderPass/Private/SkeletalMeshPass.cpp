@@ -8,6 +8,7 @@
 #include "Render/Renderer/Public/Pipeline.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Render/Renderer/Public/Renderer.h"
+#include "Texture/Public/Texture.h"
 
 struct FShadowMapResource;
 
@@ -85,15 +86,14 @@ void FSkeletalMeshPass::Execute(FRenderingContext& Context)
 			return MeshA < MeshB;
 		});
 
-	USkeletalMesh* CurrentMeshAsset = nullptr;
+	FStaticMesh* CurrentMeshAsset = nullptr;
 	UMaterial* CurrentMaterial = nullptr;
 
 	for (USkeletalMeshComponent* MeshComp : Context.SkeletalMeshes)
 	{
 		if (!MeshComp->IsVisible()) { continue; }
 		if (!MeshComp->GetSkeletalMeshAsset()) { continue; }
-		/** @todo 이 부분 수정 필요 */
-		UStaticMesh* MeshAsset = MeshComp->GetSkeletalMeshAsset();
+		FStaticMesh* MeshAsset = MeshComp->GetSkeletalMeshAsset()->GetStaticMesh()->GetStaticMeshAsset();
 
 		if (CurrentMeshAsset != MeshAsset)
 		{
@@ -106,20 +106,15 @@ void FSkeletalMeshPass::Execute(FRenderingContext& Context)
 		FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferModel, MeshComp->GetWorldTransformMatrix());
 		Pipeline->SetConstantBuffer(0, EShaderType::VS, ConstantBufferModel);
 
-		if (MeshAsset->MaterialInfo.IsEmpty() || MeshComp->GetStaticMesh()->GetNumMaterials() == 0)
+		if (MeshAsset->MaterialInfo.IsEmpty() || MeshComp->GetSkeletalMeshAsset()->GetStaticMesh()->GetNumMaterials() == 0)
 		{
 			Pipeline->DrawIndexed(static_cast<uint32>(MeshAsset->Indices.Num()), 0, 0);
 			continue;
 		}
 
-		if (MeshComp->IsScrollEnabled())
-		{
-			MeshComp->SetElapsedTime(MeshComp->GetElapsedTime() + UTimeManager::GetInstance().GetDeltaTime());
-		}
-
 		for (const FMeshSection& Section : MeshAsset->Sections)
 		{
-			UMaterial* Material = MeshComp->GetMaterial(Section.MaterialSlot);
+			UMaterial* Material = MeshComp->GetSkeletalMeshAsset()->GetStaticMesh()->GetMaterial(Section.MaterialSlot);
 			if (CurrentMaterial != Material) {
 				FMaterialConstants MaterialConstants = {};
 				FVector AmbientColor = Material->GetAmbientColor(); MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);
@@ -139,7 +134,7 @@ void FSkeletalMeshPass::Execute(FRenderingContext& Context)
 				}
 				if (Material->GetAlphaTexture())    { MaterialConstants.MaterialFlags |= HAS_ALPHA_MAP; }
 				if (Material->GetBumpTexture())     { MaterialConstants.MaterialFlags |= HAS_BUMP_MAP; }
-				MaterialConstants.Time = MeshComp->GetElapsedTime();
+				MaterialConstants.Time = UTimeManager::GetInstance().GetGameTime();
 
 				FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferMaterial, MaterialConstants);
 				Pipeline->SetConstantBuffer(2, EShaderType::VS | EShaderType::PS, ConstantBufferMaterial);

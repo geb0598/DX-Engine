@@ -215,14 +215,14 @@ void UAssetManager::LoadAllFbxMesh()
 		if (LoadedMesh)
 		{
 			// UStaticMesh인지 USkeletalMesh인지 판단하여 적절한 캐시에 저장
-			if (UStaticMesh* StaticMesh = dynamic_cast<UStaticMesh*>(LoadedMesh))
+			if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(LoadedMesh))
 			{
 				StaticMeshCache.Emplace(FbxPath, StaticMesh);
 				StaticMeshVertexBuffers.Emplace(FbxPath, this->CreateVertexBuffer(StaticMesh->GetVertices()));
 				StaticMeshIndexBuffers.Emplace(FbxPath, this->CreateIndexBuffer(StaticMesh->GetIndices()));
 				UE_LOG_SUCCESS("FBX Static Mesh 로드 성공: %s", FbxPath.ToString().c_str());
 			}
-			else if (USkeletalMesh* SkeletalMesh = dynamic_cast<USkeletalMesh*>(LoadedMesh))
+			else if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(LoadedMesh))
 			{
 				SkeletalMeshCache.Emplace(FbxPath, SkeletalMesh);
 				SkeletalMeshVertexBuffers.Emplace(FbxPath, this->CreateVertexBuffer(SkeletalMesh->GetVertices()));

@@ -68,6 +68,12 @@ public:
 	/** @brief CPU 스키닝을 수행한다. */
 	void UpdateSkinnedVertices();
 
+	void EnableNormalMap();
+
+	void DisableNormalMap();
+
+	bool IsNormalMapEnabled() const;
+
 private:
 	/** 포즈 및 애니메이션이 적용된 이후의 본 로컬 트랜스폼 */
 	TArray<FTransform> BoneSpaceTransforms;
@@ -83,4 +89,7 @@ private:
 
 	/** SkinnedVertices 갱신 필요여부를 알리는 플래그 */
 	bool bSkinningDirty;
+
+	/** 노말맵 활성화 여부 */
+	bool bNormalMapEnabled;
 };
