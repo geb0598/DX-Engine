@@ -87,7 +87,7 @@ void USkeletalMeshViewerWindow::Initialize()
 	ViewerBatchLines = new UBatchLines();
 	if (ViewerBatchLines)
 	{
-		ViewerBatchLines->UpdateUGridVertices(100.0f); // 100 unit 간격으로 그리드 생성
+		ViewerBatchLines->UpdateUGridVertices(GridCellSize); // 그리드 생성
 		ViewerBatchLines->UpdateVertexBuffer();
 	}
 
@@ -97,6 +97,7 @@ void USkeletalMeshViewerWindow::Initialize()
 	{
 		ToolbarWidget->Initialize();
 		ToolbarWidget->SetViewportClient(ViewerViewportClient);
+		ToolbarWidget->SetOwningWindow(this);
 	}
 
 	bIsInitialized = true;
@@ -1380,5 +1381,20 @@ void USkeletalMeshViewerWindow::RenderVerticalSplitter(const char* SplitterID, f
 
 		// 비율 제한
 		Ratio = ImClamp(Ratio, MinRatio, MaxRatio);
+	}
+}
+
+/**
+ * @brief 그리드 셀 크기 설정
+ */
+void USkeletalMeshViewerWindow::SetGridCellSize(float NewCellSize)
+{
+	GridCellSize = NewCellSize;
+
+	// ViewerBatchLines가 존재하면 그리드 업데이트
+	if (ViewerBatchLines)
+	{
+		ViewerBatchLines->UpdateUGridVertices(GridCellSize);
+		ViewerBatchLines->UpdateVertexBuffer();
 	}
 }

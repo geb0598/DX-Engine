@@ -134,6 +134,15 @@ private:
 	bool bIsDraggingRightButton = false;
 	bool bIsDraggingMiddleButton = false;
 
+	// 그리드 설정
+	float GridCellSize = 1.0f;
+
+public:
+	// 그리드 설정 접근자
+	float GetGridCellSize() const { return GridCellSize; }
+	void SetGridCellSize(float NewCellSize);
+
+private:
 	/**
 	 * @brief 렌더 타겟 생성
 	 */

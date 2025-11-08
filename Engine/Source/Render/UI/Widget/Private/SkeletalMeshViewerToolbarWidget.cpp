@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Render/UI/Widget/Public/SkeletalMeshViewerToolbarWidget.h"
+#include "Render/UI/Window/Public/SkeletalMeshViewerWindow.h"
 #include "ImGui/imgui_internal.h"
 #include "Render/UI/Viewport/Public/ViewportClient.h"
 #include "Editor/Public/Camera.h"
@@ -384,8 +385,9 @@ void USkeletalMeshViewerToolbarWidget::RenderWidget()
 	const float ViewModeButtonWidth = ViewModePadding + ViewModeIconSize + ViewModePadding + ViewModeTextSize.x + ViewModePadding;
 
 	constexpr float CameraSpeedButtonWidth = 70.0f;
+	constexpr float GridSettingsButtonWidth = 100.0f;
 	constexpr float RightButtonSpacing = 6.0f;
-	const float TotalRightButtonsWidth = RightViewTypeButtonWidthDefault + RightButtonSpacing + CameraSpeedButtonWidth + RightButtonSpacing + ViewModeButtonWidth;
+	const float TotalRightButtonsWidth = RightViewTypeButtonWidthDefault + RightButtonSpacing + CameraSpeedButtonWidth + RightButtonSpacing + GridSettingsButtonWidth + RightButtonSpacing + ViewModeButtonWidth;
 
 	{
 		const float ContentRegionRight = ImGui::GetWindowContentRegionMax().x;
@@ -547,7 +549,12 @@ void USkeletalMeshViewerToolbarWidget::RenderWidget()
 
 	ImGui::SameLine(0.0f, RightButtonSpacing);
 
-	// 우측 버튼 3: ViewMode
+	// 우측 버튼 3: Grid Settings
+	RenderGridSettingsButton();
+
+	ImGui::SameLine(0.0f, RightButtonSpacing);
+
+	// 우측 버튼 4: ViewMode
 	{
 		ImVec2 ViewModeButtonPos = ImGui::GetCursorScreenPos();
 		ImGui::InvisibleButton("##ViewModeButton", ImVec2(ViewModeButtonWidth, ViewModeButtonHeight));
@@ -701,4 +708,92 @@ void USkeletalMeshViewerToolbarWidget::RenderViewModeButton()
 {
 	// This function is declared in header but not used in the extracted code
 	// Implementation can be added later if needed
+}
+
+void USkeletalMeshViewerToolbarWidget::RenderGridSettingsButton()
+{
+	if (!OwningWindow)
+	{
+		return;
+	}
+
+	// 버튼 크기 및 스타일 설정
+	constexpr float GridButtonWidth = 100.0f;
+	constexpr float GridButtonHeight = 24.0f;
+	constexpr float GridPadding = 8.0f;
+	constexpr float GridIconSize = 16.0f;
+
+	const char* GridText = "Grid";
+
+	ImVec2 GridButtonPos = ImGui::GetCursorScreenPos();
+	ImGui::InvisibleButton("##GridButton", ImVec2(GridButtonWidth, GridButtonHeight));
+	bool bGridClicked = ImGui::IsItemClicked();
+	bool bGridHovered = ImGui::IsItemHovered();
+
+	ImDrawList* GridDrawList = ImGui::GetWindowDrawList();
+	ImU32 GridBgColor = bGridHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+	if (ImGui::IsItemActive())
+	{
+		GridBgColor = IM_COL32(38, 38, 38, 255);
+	}
+	GridDrawList->AddRectFilled(GridButtonPos, ImVec2(GridButtonPos.x + GridButtonWidth, GridButtonPos.y + GridButtonHeight), GridBgColor, 4.0f);
+	GridDrawList->AddRect(GridButtonPos, ImVec2(GridButtonPos.x + GridButtonWidth, GridButtonPos.y + GridButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
+
+	// 그리드 아이콘 (간단한 그리드 패턴)
+	const ImVec2 GridIconPos = ImVec2(
+		GridButtonPos.x + GridPadding,
+		GridButtonPos.y + (GridButtonHeight - GridIconSize) * 0.5f
+	);
+
+	// 작은 그리드 패턴 그리기
+	const float CellSize = GridIconSize / 3.0f;
+	for (int x = 0; x < 3; ++x)
+	{
+		for (int y = 0; y < 3; ++y)
+		{
+			ImVec2 CellMin = ImVec2(GridIconPos.x + x * CellSize, GridIconPos.y + y * CellSize);
+			ImVec2 CellMax = ImVec2(CellMin.x + CellSize, CellMin.y + CellSize);
+			GridDrawList->AddRect(CellMin, CellMax, IM_COL32(180, 180, 180, 255), 0.0f, 0, 1.0f);
+		}
+	}
+
+	// 텍스트 (오른쪽 정렬)
+	const ImVec2 GridTextSize = ImGui::CalcTextSize(GridText);
+	const ImVec2 GridTextPos = ImVec2(
+		GridButtonPos.x + GridButtonWidth - GridTextSize.x - GridPadding,
+		GridButtonPos.y + (GridButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
+	);
+	GridDrawList->AddText(GridTextPos, IM_COL32(220, 220, 220, 255), GridText);
+
+	if (bGridClicked)
+	{
+		ImGui::OpenPopup("##GridSettingsPopup");
+	}
+
+	// 그리드 설정 팝업
+	if (ImGui::BeginPopup("##GridSettingsPopup"))
+	{
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+
+		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Grid Settings");
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		float GridCellSize = OwningWindow->GetGridCellSize();
+		if (ImGui::DragFloat("Cell Size", &GridCellSize, 0.01f, 0.1f, 10.f, "%.1f"))
+		{
+			OwningWindow->SetGridCellSize(GridCellSize);
+		}
+
+		ImGui::PopStyleColor(4);
+		ImGui::EndPopup();
+	}
+
+	if (bGridHovered)
+	{
+		ImGui::SetTooltip("Grid Settings");
+	}
 }

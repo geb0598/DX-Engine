@@ -30,6 +30,11 @@ public:
 	void SetViewportClient(FViewportClient* InViewportClient) { ViewportClient = InViewportClient; }
 
 	/**
+	 * @brief Owning Window 설정 (그리드 설정 접근용)
+	 */
+	void SetOwningWindow(class USkeletalMeshViewerWindow* InOwningWindow) { OwningWindow = InOwningWindow; }
+
+	/**
 	 * @brief 현재 Gizmo Mode 가져오기
 	 */
 	EGizmoMode GetCurrentGizmoMode() const { return CurrentGizmoMode; }
@@ -89,9 +94,17 @@ private:
 	 */
 	void RenderViewModeButton();
 
+	/**
+	 * @brief Grid Settings 버튼 렌더링
+	 */
+	void RenderGridSettingsButton();
+
 private:
 	// ViewportClient (카메라 및 뷰 정보 접근용)
 	FViewportClient* ViewportClient = nullptr;
+
+	// Owning Window (그리드 설정 접근용)
+	class USkeletalMeshViewerWindow* OwningWindow = nullptr;
 
 	// View Type 아이콘들
 	UTexture* IconPerspective = nullptr;
