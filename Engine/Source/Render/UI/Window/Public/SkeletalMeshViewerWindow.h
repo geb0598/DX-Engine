@@ -89,6 +89,48 @@ protected:
 	void LoadViewIcons();
 
 private:
+	// ========================================
+	// Viewport MenuBar Helper Functions
+	// ========================================
+
+	/**
+	 * @brief 아이콘 버튼 렌더링 (공통 로직)
+	 * @param ID 버튼 고유 ID
+	 * @param Icon 아이콘 텍스처
+	 * @param bActive 활성화 상태
+	 * @param Tooltip 툴팁 텍스트
+	 * @param ButtonSize 버튼 크기
+	 * @param IconSize 아이콘 크기
+	 * @return true면 클릭됨
+	 */
+	bool DrawIconButton(const char* ID, class UTexture* Icon, bool bActive, const char* Tooltip, float ButtonSize = 24.0f, float IconSize = 16.0f);
+
+	/**
+	 * @brief Gizmo Mode 버튼들 렌더링 (QWER)
+	 */
+	void RenderGizmoModeButtons();
+
+	/**
+	 * @brief Rotation Snap 컨트롤 렌더링
+	 */
+	void RenderRotationSnapControls();
+
+	/**
+	 * @brief View Type 버튼 렌더링 (Perspective/Orthographic)
+	 */
+	void RenderViewTypeButton();
+
+	/**
+	 * @brief Camera Speed 버튼 렌더링
+	 */
+	void RenderCameraSpeedButton();
+
+	/**
+	 * @brief View Mode 버튼 렌더링 (Lighting Mode)
+	 */
+	void RenderViewModeButton();
+
+private:
 	// 패널 크기 비율 (드래그 가능)
 	float LeftPanelWidthRatio = 0.25f;
 	float RightPanelWidthRatio = 0.25f;

@@ -898,176 +898,94 @@ void USkeletalMeshViewerWindow::LoadViewIcons()
 	bIconsLoaded = true;
 }
 
-/**
- * @brief 뷰포트 툴바 렌더링 (메인 에디터 뷰포트와 동일한 디자인)
- * 좌측: Gizmo Mode 아이콘 (비활성화) + Rotation Snap (비활성화)
- * 우측: ViewType + Camera Settings + View Mode
- */
-void USkeletalMeshViewerWindow::RenderViewportMenuBar()
+// ========================================
+// Viewport MenuBar Helper Functions
+// ========================================
+
+bool USkeletalMeshViewerWindow::DrawIconButton(const char* ID, UTexture* Icon, bool bActive, const char* Tooltip, float ButtonSize, float IconSize)
 {
-	if (!ViewerViewportClient)
+	if (!Icon || !Icon->GetTextureSRV())
 	{
-		return;
+		return false;
 	}
 
-	// 아이콘 로드 (처음 한 번만)
-	LoadViewIcons();
+	ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+	ImGui::InvisibleButton(ID, ImVec2(ButtonSize, ButtonSize));
+	bool bClicked = ImGui::IsItemClicked();
+	bool bHovered = ImGui::IsItemHovered();
 
-	UCamera* Camera = ViewerViewportClient->GetCamera();
-	if (!Camera)
+	ImDrawList* DL = ImGui::GetWindowDrawList();
+
+	// 배경색
+	ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
+	if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+
+	// 배경 렌더링
+	DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + ButtonSize, ButtonPos.y + ButtonSize), BgColor, 4.0f);
+
+	// 테두리
+	ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
+	DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + ButtonSize, ButtonPos.y + ButtonSize), BorderColor, 4.0f);
+
+	// 아이콘 (활성화 시 파란색 틴트)
+	ImVec2 IconPos = ImVec2(ButtonPos.x + (ButtonSize - IconSize) * 0.5f, ButtonPos.y + (ButtonSize - IconSize) * 0.5f);
+	ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
+	DL->AddImage(Icon->GetTextureSRV(), IconPos, ImVec2(IconPos.x + IconSize, IconPos.y + IconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
+
+	// 툴팁
+	if (bHovered && Tooltip)
 	{
-		return;
+		ImGui::SetTooltip("%s", Tooltip);
 	}
 
-	// 툴바는 메뉴바 영역 위에 별도로 렌더링 (ImGui::BeginMenuBar 사용하지 않음)
-	// 대신 ImGui::BeginChild 안에서 커스텀 버튼들로 구성
+	return bClicked;
+}
 
-	constexpr float ToolbarHeight = 32.0f;
+void USkeletalMeshViewerWindow::RenderGizmoModeButtons()
+{
 	constexpr float GizmoButtonSize = 24.0f;
 	constexpr float GizmoIconSize = 16.0f;
 	constexpr float GizmoButtonSpacing = 4.0f;
 
-	// ViewMode labels
-	const char* ViewModeLabels[] = {
-		"Gouraud", "Lambert", "BlinnPhong", "Unlit", "Wireframe", "SceneDepth", "WorldNormal"
-	};
-
-	// ViewType labels
-	const char* ViewTypeLabels[] = {
-		"Perspective", "Top", "Bottom", "Left", "Right", "Front", "Back"
-	};
-
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.f, 3.f));
-	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.f, 3.f));
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.f, 0.f));
-
-	// ========================================
-	// Left Side: Gizmo Mode Buttons
-	// ========================================
-
 	// Select 버튼 (Q)
-	if (IconSelect && IconSelect->GetTextureSRV())
+	if (DrawIconButton("##GizmoSelect", IconSelect, bSelectModeActive, "Select (Q)", GizmoButtonSize, GizmoIconSize))
 	{
-		bool bActive = bSelectModeActive;
-		ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-		ImGui::InvisibleButton("##GizmoSelect", ImVec2(GizmoButtonSize, GizmoButtonSize));
-		bool bClicked = ImGui::IsItemClicked();
-		bool bHovered = ImGui::IsItemHovered();
-
-		ImDrawList* DL = ImGui::GetWindowDrawList();
-		ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-		if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-		DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-		ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-		DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-		// 아이콘 (활성화 시 파란색 틴트)
-		ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-		ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-		DL->AddImage(IconSelect->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-		if (bClicked) bSelectModeActive = true;
-		if (bHovered) ImGui::SetTooltip("Select (Q)");
+		bSelectModeActive = true;
 	}
 
 	ImGui::SameLine(0.0f, GizmoButtonSpacing);
 
-	// Translate 버튼
-	if (IconTranslate && IconTranslate->GetTextureSRV())
+	// Translate 버튼 (W)
+	bool bTranslateActive = (CurrentGizmoMode == EGizmoMode::Translate && !bSelectModeActive);
+	if (DrawIconButton("##GizmoTranslate", IconTranslate, bTranslateActive, "Translate (W)", GizmoButtonSize, GizmoIconSize))
 	{
-		bool bActive = (CurrentGizmoMode == EGizmoMode::Translate && !bSelectModeActive);
-		ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-		ImGui::InvisibleButton("##GizmoTranslate", ImVec2(GizmoButtonSize, GizmoButtonSize));
-		bool bClicked = ImGui::IsItemClicked();
-		bool bHovered = ImGui::IsItemHovered();
-
-		ImDrawList* DL = ImGui::GetWindowDrawList();
-		ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-		if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-		DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-		ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-		DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-		// 아이콘 (활성화 시 파란색 틴트)
-		ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-		ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-		DL->AddImage(IconTranslate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-		if (bClicked)
-		{
-			CurrentGizmoMode = EGizmoMode::Translate;
-			bSelectModeActive = false;
-		}
-		if (bHovered) ImGui::SetTooltip("Translate (W)");
+		CurrentGizmoMode = EGizmoMode::Translate;
+		bSelectModeActive = false;
 	}
 
 	ImGui::SameLine(0.0f, GizmoButtonSpacing);
 
-	// Rotate 버튼
-	if (IconRotate && IconRotate->GetTextureSRV())
+	// Rotate 버튼 (E)
+	bool bRotateActive = (CurrentGizmoMode == EGizmoMode::Rotate && !bSelectModeActive);
+	if (DrawIconButton("##GizmoRotate", IconRotate, bRotateActive, "Rotate (E)", GizmoButtonSize, GizmoIconSize))
 	{
-		bool bActive = (CurrentGizmoMode == EGizmoMode::Rotate && !bSelectModeActive);
-		ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-		ImGui::InvisibleButton("##GizmoRotate", ImVec2(GizmoButtonSize, GizmoButtonSize));
-		bool bClicked = ImGui::IsItemClicked();
-		bool bHovered = ImGui::IsItemHovered();
-
-		ImDrawList* DL = ImGui::GetWindowDrawList();
-		ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-		if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-		DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-		ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-		DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-		ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-		ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-		DL->AddImage(IconRotate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-		if (bClicked)
-		{
-			CurrentGizmoMode = EGizmoMode::Rotate;
-			bSelectModeActive = false;
-		}
-		if (bHovered) ImGui::SetTooltip("Rotate (E)");
+		CurrentGizmoMode = EGizmoMode::Rotate;
+		bSelectModeActive = false;
 	}
 
 	ImGui::SameLine(0.0f, GizmoButtonSpacing);
 
-	// Scale 버튼
-	if (IconScale && IconScale->GetTextureSRV())
+	// Scale 버튼 (R)
+	bool bScaleActive = (CurrentGizmoMode == EGizmoMode::Scale && !bSelectModeActive);
+	if (DrawIconButton("##GizmoScale", IconScale, bScaleActive, "Scale (R)", GizmoButtonSize, GizmoIconSize))
 	{
-		bool bActive = (CurrentGizmoMode == EGizmoMode::Scale && !bSelectModeActive);
-		ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-		ImGui::InvisibleButton("##GizmoScale", ImVec2(GizmoButtonSize, GizmoButtonSize));
-		bool bClicked = ImGui::IsItemClicked();
-		bool bHovered = ImGui::IsItemHovered();
-
-		ImDrawList* DL = ImGui::GetWindowDrawList();
-		ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-		if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-		DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-		ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-		DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-		ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-		ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-		DL->AddImage(IconScale->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-		if (bClicked)
-		{
-			CurrentGizmoMode = EGizmoMode::Scale;
-			bSelectModeActive = false;
-		}
-		if (bHovered) ImGui::SetTooltip("Scale (R)");
+		CurrentGizmoMode = EGizmoMode::Scale;
+		bSelectModeActive = false;
 	}
+}
 
-	// ========================================
-	// Rotation Snap
-	// ========================================
+void USkeletalMeshViewerWindow::RenderRotationSnapControls()
+{
 	ImGui::SameLine(0.0f, 8.0f);
 
 	// 회전 스냅 토글 버튼
@@ -1187,6 +1105,62 @@ void USkeletalMeshViewerWindow::RenderViewportMenuBar()
 			ImGui::SetTooltip("Choose rotation snap angle");
 		}
 	}
+}
+
+/**
+ * @brief 뷰포트 툴바 렌더링 (메인 에디터 뷰포트와 동일한 디자인)
+ * 좌측: Gizmo Mode 아이콘 (비활성화) + Rotation Snap (비활성화)
+ * 우측: ViewType + Camera Settings + View Mode
+ */
+void USkeletalMeshViewerWindow::RenderViewportMenuBar()
+{
+	if (!ViewerViewportClient)
+	{
+		return;
+	}
+
+	// 아이콘 로드 (처음 한 번만)
+	LoadViewIcons();
+
+	UCamera* Camera = ViewerViewportClient->GetCamera();
+	if (!Camera)
+	{
+		return;
+	}
+
+	// 툴바는 메뉴바 영역 위에 별도로 렌더링 (ImGui::BeginMenuBar 사용하지 않음)
+	// 대신 ImGui::BeginChild 안에서 커스텀 버튼들로 구성
+
+	constexpr float ToolbarHeight = 32.0f;
+	constexpr float GizmoButtonSize = 24.0f;
+	constexpr float GizmoIconSize = 16.0f;
+	constexpr float GizmoButtonSpacing = 4.0f;
+
+	// ViewMode labels
+	const char* ViewModeLabels[] = {
+		"Gouraud", "Lambert", "BlinnPhong", "Unlit", "Wireframe", "SceneDepth", "WorldNormal"
+	};
+
+	// ViewType labels
+	const char* ViewTypeLabels[] = {
+		"Perspective", "Top", "Bottom", "Left", "Right", "Front", "Back"
+	};
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(6.f, 3.f));
+	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(6.f, 3.f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(6.f, 0.f));
+
+	// ========================================
+	// Left Side: Gizmo Mode Buttons
+	// ========================================
+
+	RenderGizmoModeButtons();
+
+	// ========================================
+	// Rotation Snap
+	// ========================================
+
+	RenderRotationSnapControls();
 
 	// ========================================
 	// Right Side: ViewType, Camera Settings, ViewMode
