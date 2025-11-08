@@ -155,11 +155,28 @@ public:
 		return RefBasesInvMatrix;
 	}
 
+	TArray<FMatrix>& GetCachedComposedRefPoseMatrices()
+	{
+		return CachedComposedRefPoseMatrices;
+	}
+
+	const TArray<FMatrix>& GetCachedComposedRefPoseMatrices() const
+	{
+		return CachedComposedRefPoseMatrices;
+	}
+
+	FMatrix GetRefPoseMatrix(int32 BoneIndex) const;
+
+	FMatrix GetComposedRefPoseMatrix(FName InBoneName);
+	FMatrix GetComposedRefPoseMatrix(int32 InBoneIndex);
+
 	void SetRefBasesInvMatrix(const TArray<FMatrix>& InRefBasesInvMatrix)
 	{
 		RefBasesInvMatrix = InRefBasesInvMatrix;
 	}
 
 private:
+	TArray<FMatrix> CachedComposedRefPoseMatrices;
+
 	TArray<FMatrix> RefBasesInvMatrix;
 };

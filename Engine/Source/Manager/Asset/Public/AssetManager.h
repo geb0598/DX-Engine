@@ -4,6 +4,7 @@
 #include "TextureManager.h"
 #include "Component/Mesh/Public/StaticMesh.h"
 
+class USkeletalMesh;
 struct FAABB;
 
 /**
@@ -38,6 +39,11 @@ public:
 	UStaticMesh* GetStaticMeshFromCache(const FName& InObjPath);
 	void AddStaticMeshToCache(const FName& InObjPath, UStaticMesh* InStaticMesh);
 
+	// SkeletalMesh 관련 함수
+	void LoadAllFbxSkeletalMesh();
+	ID3D11Buffer* GetSkeletalVertexBuffer(FName InFbxPath);
+	ID3D11Buffer* GetSkeletalIndexBuffer(FName InFbxPath);
+
 	// Bounding Box
 	FAABB& GetAABB(EPrimitiveType InType);
 	FAABB& GetStaticMeshAABB(FName InName);
@@ -59,6 +65,11 @@ private:
 	TMap<FName, UStaticMesh*> StaticMeshCache;
 	TMap<FName, ID3D11Buffer*> StaticMeshVertexBuffers;
 	TMap<FName, ID3D11Buffer*> StaticMeshIndexBuffers;
+
+	// SkeletalMesh Resource
+	TMap<FName, USkeletalMesh*> SkeletalMeshCache;
+	TMap<FName, ID3D11Buffer*> SkeletalMeshVertexBuffers;
+	TMap<FName, ID3D11Buffer*> SkeletalMeshIndexBuffers;
 
 	// Helper Functions
 	ID3D11Buffer* CreateVertexBuffer(TArray<FNormalVertex> InVertices);

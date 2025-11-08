@@ -34,7 +34,7 @@ void UAssetManager::Initialize()
 		FRenderResourceFactory::CreateIndexBuffer(IndicesVerticalSquare.GetData(), static_cast<int>(IndicesVerticalSquare.Num()) * sizeof(uint32)));
 
 	NumIndices.Emplace(EPrimitiveType::Sprite, static_cast<uint32>(IndicesVerticalSquare.Num()));
-	
+
 	VertexBuffers.Emplace(EPrimitiveType::Torus, FRenderResourceFactory::CreateVertexBuffer(
 		VerticesTorus.GetData(), static_cast<int>(VerticesTorus.Num() * sizeof(FNormalVertex))));
 	VertexBuffers.Emplace(EPrimitiveType::Arrow, FRenderResourceFactory::CreateVertexBuffer(
@@ -54,7 +54,7 @@ void UAssetManager::Initialize()
 	NumVertices.Emplace(EPrimitiveType::Ring, static_cast<uint32>(VerticesRing.Num()));
 	NumVertices.Emplace(EPrimitiveType::Line, static_cast<uint32>(VerticesLine.Num()));
 	NumVertices.Emplace(EPrimitiveType::Sprite, static_cast<uint32>(VerticesVerticalSquare.Num()));
-	
+
 	// Calculate AABB for all primitive types (excluding StaticMesh)
 	for (const auto& Pair : VertexDatas)
 	{
@@ -116,7 +116,7 @@ void UAssetManager::Release()
 	// TMap.Empty()
 	VertexBuffers.Empty();
 	IndexBuffers.Empty();
-	
+
 	SafeDelete(TextureManager);
 }
 
@@ -251,6 +251,20 @@ void UAssetManager::AddStaticMeshToCache(const FName& InObjPath, UStaticMesh* In
 	{
 		StaticMeshCache.Add(InObjPath, InStaticMesh);
 	}
+}
+
+void UAssetManager::LoadAllFbxSkeletalMesh()
+{
+}
+
+ID3D11Buffer* UAssetManager::GetSkeletalVertexBuffer(FName InFbxPath)
+{
+	return nullptr;
+}
+
+ID3D11Buffer* UAssetManager::GetSkeletalIndexBuffer(FName InFbxPath)
+{
+	return nullptr;
 }
 
 /**
