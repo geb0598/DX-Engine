@@ -15,6 +15,6 @@ public:
 
 private:
 	// Helper functions
-	static void ConvertFbxToStaticMesh(const FFbxMeshInfo& MeshInfo, FStaticMesh* OutStaticMesh);
+	static void ConvertFbxToStaticMesh(const FFbxStaticMeshInfo& MeshInfo, FStaticMesh* OutStaticMesh);
 	static UMaterial* CreateMaterialFromInfo(const FMaterial& MaterialInfo, int32 MaterialIndex);
 };

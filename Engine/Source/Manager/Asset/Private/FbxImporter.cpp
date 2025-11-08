@@ -29,12 +29,12 @@ void FFbxImporter::Shutdown()
 	UE_LOG_SUCCESS("FBX SDK Shut down.");
 }
 
-bool FFbxImporter::LoadFBX(const std::filesystem::path& FilePath, FFbxMeshInfo* OutMeshInfo, Configuration Config)
+bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxStaticMeshInfo* OutMeshInfo, Configuration Config)
 {
 	// 입력 검증
 	if (!OutMeshInfo)
 	{
-		UE_LOG_ERROR("유효하지 않은 FBXMeshInfo입니다.");
+		UE_LOG_ERROR("유효하지 않은 FBXStaticMeshInfo입니다.");
 		return false;
 	}
 
@@ -123,7 +123,7 @@ FbxMesh* FFbxImporter::FindFirstMesh(FbxNode* RootNode, FbxNode** OutNode)
 	return nullptr;
 }
 
-void FFbxImporter::ExtractVertices(FbxMesh* Mesh, FFbxMeshInfo* OutMeshInfo, const Configuration& Config)
+void FFbxImporter::ExtractVertices(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInfo, const Configuration& Config)
 {
 	const int ControlPointCount = Mesh->GetControlPointsCount();
 	FbxVector4* ControlPoints = Mesh->GetControlPoints();
@@ -140,7 +140,7 @@ void FFbxImporter::ExtractVertices(FbxMesh* Mesh, FFbxMeshInfo* OutMeshInfo, con
 	}
 }
 
-void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxMeshInfo* OutMeshInfo)
+void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxStaticMeshInfo* OutMeshInfo)
 {
 	const int MaterialCount = Node->GetMaterialCount();
 	UE_LOG("[FbxImporter] Material Count: %d", MaterialCount);
@@ -243,7 +243,7 @@ std::filesystem::path FFbxImporter::ResolveTexturePath(
 
 void FFbxImporter::ExtractGeometryData(
 	FbxMesh* Mesh,
-	FFbxMeshInfo* OutMeshInfo,
+	FFbxStaticMeshInfo* OutMeshInfo,
 	const Configuration& Config)
 {
 	// Material Mapping 정보 가져오기
@@ -371,7 +371,7 @@ void FFbxImporter::ExtractGeometryData(
 	BuildMeshSections(IndicesPerMaterial, OutMeshInfo);
 }
 
-void FFbxImporter::BuildMeshSections(const TArray<TArray<uint32>>& IndicesPerMaterial, FFbxMeshInfo* OutMeshInfo)
+void FFbxImporter::BuildMeshSections(const TArray<TArray<uint32>>& IndicesPerMaterial, FFbxStaticMeshInfo* OutMeshInfo)
 {
 	uint32 CurrentIndexOffset = 0;
 	for (int i = 0; i < IndicesPerMaterial.Num(); ++i)

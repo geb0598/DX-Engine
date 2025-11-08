@@ -9,8 +9,8 @@
 
 FStaticMesh* FFbxManager::LoadFbxStaticMeshAsset(const FName& FilePath, const FFbxImporter::Configuration& Config)
 {
-	FFbxMeshInfo MeshInfo;
-	if (!FFbxImporter::LoadFBX(FilePath.ToString(), &MeshInfo, Config))
+	FFbxStaticMeshInfo MeshInfo;
+	if (!FFbxImporter::LoadStaticMesh(FilePath.ToString(), &MeshInfo, Config))
 	{
 		UE_LOG_ERROR("FBX 로드 실패: %s", FilePath.ToString().c_str());
 		return nullptr;
@@ -53,7 +53,7 @@ UStaticMesh* FFbxManager::LoadFbxStaticMesh(const FName& FilePath, const FFbxImp
 // 🔸 Private Helper Functions
 // ========================================
 
-void FFbxManager::ConvertFbxToStaticMesh(const FFbxMeshInfo& MeshInfo, FStaticMesh* OutStaticMesh)
+void FFbxManager::ConvertFbxToStaticMesh(const FFbxStaticMeshInfo& MeshInfo, FStaticMesh* OutStaticMesh)
 {
 	// Vertices 변환
 	for (int i = 0; i < MeshInfo.VertexList.Num(); ++i)

@@ -17,7 +17,7 @@ struct FFbxMeshSection
 	uint32 MaterialIndex;
 };
 
-struct FFbxMeshInfo
+struct FFbxStaticMeshInfo
 {
 	TArray<FVector> VertexList;
 	TArray<FVector> NormalList;
@@ -40,20 +40,20 @@ public:
 	static bool Initialize();
 	static void Shutdown();
 
-	static bool LoadFBX(
+	static bool LoadStaticMesh(
 		const std::filesystem::path& FilePath,
-		FFbxMeshInfo* OutMeshInfo,
+		FFbxStaticMeshInfo* OutMeshInfo,
 		Configuration Config = {});
 
 private:
 	// Helper functions
 	static FbxScene* ImportFbxScene(const std::filesystem::path& FilePath);
 	static FbxMesh* FindFirstMesh(FbxNode* RootNode, FbxNode** OutNode);
-	static void ExtractVertices(FbxMesh* Mesh, FFbxMeshInfo* OutMeshInfo, const Configuration& Config);
-	static void ExtractMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxMeshInfo* OutMeshInfo);
+	static void ExtractVertices(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInfo, const Configuration& Config);
+	static void ExtractMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxStaticMeshInfo* OutMeshInfo);
 	static std::filesystem::path ResolveTexturePath(const std::string& OriginalPath, const std::filesystem::path& FbxDirectory, const std::filesystem::path& FbxFilePath);
-	static void ExtractGeometryData(FbxMesh* Mesh, FFbxMeshInfo* OutMeshInfo, const Configuration& Config);
-	static void BuildMeshSections(const TArray<TArray<uint32>>& IndicesPerMaterial, FFbxMeshInfo* OutMeshInfo);
+	static void ExtractGeometryData(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInfo, const Configuration& Config);
+	static void BuildMeshSections(const TArray<TArray<uint32>>& IndicesPerMaterial, FFbxStaticMeshInfo* OutMeshInfo);
 
 	static inline FbxManager* SdkManager = nullptr;
 	static inline FbxIOSettings* IoSettings = nullptr;
