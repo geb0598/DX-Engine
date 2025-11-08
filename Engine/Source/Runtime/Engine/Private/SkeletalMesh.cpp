@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 #include "Runtime/Engine/Public/SkeletalMesh.h"
 
@@ -9,6 +9,21 @@ FSkeletalMeshRenderData* USkeletalMesh::GetSkeletalMeshRenderData() const
 	return SkeletalMeshRenderData.Get();
 }
 
+void USkeletalMesh::SetSkeletalMeshRenderData(FSkeletalMeshRenderData* InRenderData)
+{
+	SkeletalMeshRenderData.Reset(InRenderData);
+}
+
+const TArray<FNormalVertex>& USkeletalMesh::GetVertices() const
+{
+	return StaticMesh->GetVertices();
+}
+
+const TArray<uint32>& USkeletalMesh::GetIndices() const
+{
+	return StaticMesh->GetIndices();
+}
+
 void USkeletalMesh::CalculateInvRefMatrices()
 {
 	const int32 NumRealBones = GetRefSkeleton().GetRawBoneNum();
@@ -17,9 +32,9 @@ void USkeletalMesh::CalculateInvRefMatrices()
 
 	if (GetRefBasesInvMatrix().Num() != NumRealBones)
 	{
-		GetRefBasesInvMatrix().Empty(NumRealBones);
+		GetRefBasesInvMatrix().SetNum(NumRealBones);
 
-		ComposedRefPoseMatrices.Empty(NumRealBones);
+		ComposedRefPoseMatrices.SetNum(NumRealBones);
 
 		for (int32 b = 0; b < NumRealBones; ++b)
 		{

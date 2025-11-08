@@ -32,6 +32,7 @@ public:
 
 	// StaticMesh 관련 함수
 	void LoadAllObjStaticMesh();
+	void LoadAllFbxMesh();  // FBX 통합 로드 (Static + Skeletal)
 	ID3D11Buffer* GetVertexBuffer(FName InObjPath);
 	ID3D11Buffer* GetIndexBuffer(FName InObjPath);
 
@@ -39,10 +40,13 @@ public:
 	UStaticMesh* GetStaticMeshFromCache(const FName& InObjPath);
 	void AddStaticMeshToCache(const FName& InObjPath, UStaticMesh* InStaticMesh);
 
-	// SkeletalMesh 관련 함수
-	void LoadAllFbxSkeletalMesh();
-	ID3D11Buffer* GetSkeletalVertexBuffer(FName InFbxPath);
-	ID3D11Buffer* GetSkeletalIndexBuffer(FName InFbxPath);
+	// SkeletalMesh Cache Accessors
+	class USkeletalMesh* GetSkeletalMeshFromCache(const FName& InFbxPath);
+	void AddSkeletalMeshToCache(const FName& InFbxPath, class USkeletalMesh* InSkeletalMesh);
+
+	// SkeletalMesh Buffer Accessors
+	ID3D11Buffer* GetSkeletalMeshVertexBuffer(const FName& InFbxPath);
+	ID3D11Buffer* GetSkeletalMeshIndexBuffer(const FName& InFbxPath);
 
 	// Bounding Box
 	FAABB& GetAABB(EPrimitiveType InType);

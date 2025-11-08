@@ -6,6 +6,7 @@
 #include "Texture/Public/Texture.h"
 #include "Manager/Asset/Public/ObjManager.h"
 #include "Manager/Path/Public/PathManager.h"
+#include "Manager/Asset/Public/FbxManager.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 
 IMPLEMENT_SINGLETON_CLASS(UAssetManager, UObject)
@@ -21,6 +22,8 @@ void UAssetManager::Initialize()
 	TextureManager->LoadAllTexturesFromDirectory(UPathManager::GetInstance().GetDataPath());
 	// Data 폴더 속 모든 .obj 파일 로드 및 캐싱
 	LoadAllObjStaticMesh();
+	FFbxImporter::Initialize();
+	LoadAllFbxMesh();  // FBX 통합 로드 (Static + Skeletal)
 
 	VertexDatas.Emplace(EPrimitiveType::Torus, &VerticesTorus);
 	VertexDatas.Emplace(EPrimitiveType::Arrow, &VerticesArrow);
@@ -109,15 +112,30 @@ void UAssetManager::Release()
 		SafeRelease(Pair.second);
 	}
 
-	StaticMeshCache.Empty();	// unique ptr 이라서 자동으로 해제됨
+	for (auto& Pair : SkeletalMeshVertexBuffers)
+	{
+		SafeRelease(Pair.second);
+	}
+	for (auto& Pair : SkeletalMeshIndexBuffers)
+	{
+		SafeRelease(Pair.second);
+	}
+
+	StaticMeshCache.Empty();
 	StaticMeshVertexBuffers.Empty();
 	StaticMeshIndexBuffers.Empty();
+
+	SkeletalMeshCache.Empty();
+	SkeletalMeshVertexBuffers.Empty();
+	SkeletalMeshIndexBuffers.Empty();
 
 	// TMap.Empty()
 	VertexBuffers.Empty();
 	IndexBuffers.Empty();
 
 	SafeDelete(TextureManager);
+
+	FFbxImporter::Shutdown();
 }
 
 /**
@@ -166,6 +184,59 @@ void UAssetManager::LoadAllObjStaticMesh()
 
 			StaticMeshVertexBuffers.Emplace(ObjPath, this->CreateVertexBuffer(LoadedMesh->GetVertices()));
 			StaticMeshIndexBuffers.Emplace(ObjPath, this->CreateIndexBuffer(LoadedMesh->GetIndices()));
+		}
+	}
+}
+
+void UAssetManager::LoadAllFbxMesh()
+{
+	TArray<FName> FbxList;
+	const FString DataDirectory = "Data/";
+
+	if (std::filesystem::exists(DataDirectory))
+	{
+		for (const auto& Entry : std::filesystem::recursive_directory_iterator(DataDirectory))
+		{
+			if (Entry.is_regular_file() && Entry.path().extension() == ".fbx")
+			{
+				FbxList.Emplace(FName(Entry.path().generic_string()));
+			}
+		}
+	}
+
+	FFbxImporter::Configuration Config;
+	Config.bConvertToUEBasis = true;
+
+	for (const FName& FbxPath : FbxList)
+	{
+		// 통합 로더를 통해 자동으로 타입 판단 후 로드
+		UObject* LoadedMesh = FFbxManager::LoadFbxMesh(FbxPath, Config);
+
+		if (LoadedMesh)
+		{
+			// UStaticMesh인지 USkeletalMesh인지 판단하여 적절한 캐시에 저장
+			if (UStaticMesh* StaticMesh = dynamic_cast<UStaticMesh*>(LoadedMesh))
+			{
+				StaticMeshCache.Emplace(FbxPath, StaticMesh);
+				StaticMeshVertexBuffers.Emplace(FbxPath, this->CreateVertexBuffer(StaticMesh->GetVertices()));
+				StaticMeshIndexBuffers.Emplace(FbxPath, this->CreateIndexBuffer(StaticMesh->GetIndices()));
+				UE_LOG_SUCCESS("FBX Static Mesh 로드 성공: %s", FbxPath.ToString().c_str());
+			}
+			else if (USkeletalMesh* SkeletalMesh = dynamic_cast<USkeletalMesh*>(LoadedMesh))
+			{
+				SkeletalMeshCache.Emplace(FbxPath, SkeletalMesh);
+				SkeletalMeshVertexBuffers.Emplace(FbxPath, this->CreateVertexBuffer(SkeletalMesh->GetVertices()));
+				SkeletalMeshIndexBuffers.Emplace(FbxPath, this->CreateIndexBuffer(SkeletalMesh->GetIndices()));
+				UE_LOG_SUCCESS("FBX Skeletal Mesh 로드 성공: %s", FbxPath.ToString().c_str());
+			}
+			else
+			{
+				UE_LOG_ERROR("FBX 메시 타입을 알 수 없습니다: %s", FbxPath.ToString().c_str());
+			}
+		}
+		else
+		{
+			UE_LOG_ERROR("FBX 메시 로드 실패: %s", FbxPath.ToString().c_str());
 		}
 	}
 }
@@ -253,18 +324,27 @@ void UAssetManager::AddStaticMeshToCache(const FName& InObjPath, UStaticMesh* In
 	}
 }
 
-void UAssetManager::LoadAllFbxSkeletalMesh()
+// SkeletalMesh Cache Accessors
+USkeletalMesh* UAssetManager::GetSkeletalMeshFromCache(const FName& InFbxPath)
 {
-}
-
-ID3D11Buffer* UAssetManager::GetSkeletalVertexBuffer(FName InFbxPath)
-{
+	if (auto* FoundPtr = SkeletalMeshCache.Find(InFbxPath))
+	{
+		return *FoundPtr;
+	}
 	return nullptr;
 }
 
-ID3D11Buffer* UAssetManager::GetSkeletalIndexBuffer(FName InFbxPath)
+void UAssetManager::AddSkeletalMeshToCache(const FName& InFbxPath, USkeletalMesh* InSkeletalMesh)
 {
-	return nullptr;
+	if (!InSkeletalMesh)
+	{
+		return;
+	}
+
+	if (!SkeletalMeshCache.Contains(InFbxPath))
+	{
+		SkeletalMeshCache.Add(InFbxPath, InSkeletalMesh);
+	}
 }
 
 /**
@@ -289,6 +369,16 @@ FAABB UAssetManager::CalculateAABB(const TArray<FNormalVertex>& Vertices)
 	}
 
 	return FAABB(MinPoint, MaxPoint);
+}
+
+ID3D11Buffer* UAssetManager::GetSkeletalMeshVertexBuffer(const FName& InFbxPath)
+{
+	return SkeletalMeshVertexBuffers.FindRef(InFbxPath);
+}
+
+ID3D11Buffer* UAssetManager::GetSkeletalMeshIndexBuffer(const FName& InFbxPath)
+{
+	return SkeletalMeshIndexBuffers.FindRef(InFbxPath);
 }
 
 /**

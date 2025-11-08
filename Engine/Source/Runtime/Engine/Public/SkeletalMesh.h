@@ -1,5 +1,6 @@
-﻿#pragma once
+#pragma once
 
+#include "Global/CoreTypes.h"
 #include "ReferenceSkeleton.h"
 #include "Component/Mesh/Public/StaticMesh.h"
 #include "SkinnedAsset.h"
@@ -21,41 +22,6 @@ class FSkeletalMeshSourceModel
 	/** @todo 필요시 구현해서 사용한다. */
 };
 
-/*-----------------------------------------------------------------------------
-	FSkeletalMeshRenderData
- -----------------------------------------------------------------------------*/
-
-struct FSkeletalMeshRenderSection
-{
-	/** 이 섹션에 사용되는 머티리얼 (텍스쳐) */
-	uint32 MaterialIndex;
-
-	/** 이 섹션에 포함되어있는 삼각형 수 */
-	uint32 NumTriangles;
-
-	/** 이 섹션의 정점 버퍼 오프셋 */
-	uint32 BaseVertexIndex;
-
-	/** 이 섹션에 포함되어있는 정점 수 */
-	uint32 NumVertices;
-
-	/** 이 섹션내에 있는 정점을 스키닝 하는데 사용되는 최대 정점 수 */
-	int32 MaxBoneInfluences;
-
-	FSkeletalMeshRenderSection()
-		: MaterialIndex(0)
-		, NumTriangles(0)
-		, BaseVertexIndex(0)
-		, NumVertices(0)
-		, MaxBoneInfluences(4)
-	{}
-
-	bool IsValid() const
-	{
-		return NumTriangles > 0;
-	}
-};
-
 /**
  * @brief 정점 하나에 대한 원본 스킨 가중치 정보
  */
@@ -74,19 +40,9 @@ struct FRawSkinWeight
 class FSkeletalMeshRenderData
 {
 public:
-	/** 렌더링을 위한 각 섹션에 대한 정보 */
-	TArray<FSkeletalMeshRenderSection> RenderSections;
-
 	/**
-	 * @note 언리얼 엔진에서는 'FStaticMeshVertexBuffers'와 같은 자료구조를 활용한다.
-	 *		 하지만, 퓨처 엔진에서는 기존 코드를 재활용하기 위해 'FStaticMesh'를 그대로 사용한다.
-	 * @todo 필요에 따라서 FStaticMesh와 공통으로 활용할 데이터를 정의해서 리팩토링한다.
-	 */
-	FStaticMesh StaticMesh;
-
-	/**
-	 * @note 이 배열의 인덱스는 FStaticMesh::Vertices의 정점과 일대일로 대응되어야 한다.
-	 *		 즉, SkinWeightVertices[i]는 FStaticMesh::Vertices의 i번째 정점에 대한 정보이다.
+	 * @note 이 배열의 인덱스는 SkeletalVertices의 정점과 일대일로 대응되어야 한다.
+	 *		 즉, SkinWeightVertices[i]는 SkeletalVertices의 i번째 정점에 대한 정보이다.
 	 *		 언리얼 엔진에서는 이 정보를 압축해서 GPU로 전달하지만, 여기에서는 직접 전달한다.
 	 */
 	TArray<FRawSkinWeight> SkinWeightVertices;
@@ -117,10 +73,27 @@ public:
 public:
 	FSkeletalMeshRenderData* GetSkeletalMeshRenderData() const;
 
+	/** 스켈레탈 메시의 렌더 데이터 설정 */
+	void SetSkeletalMeshRenderData(FSkeletalMeshRenderData* InRenderData);
+
+	/** 스켈레탈 메시의 정점 데이터 접근 (StaticMesh->GetVertices()를 반환) */
+	const TArray<FNormalVertex>& GetVertices() const;
+
+	/** 스켈레탈 메시의 인덱스 데이터 접근 (StaticMesh->GetIndices()를 반환) */
+	const TArray<uint32>& GetIndices() const;
+
+	/** 스켈레탈 메시의 StaticMesh 접근 */
+	UStaticMesh* GetStaticMesh() const { return StaticMesh; }
+
+	/** 스켈레탈 메시의 StaticMesh 설정 */
+	void SetStaticMesh(UStaticMesh* InStaticMesh) { StaticMesh = InStaticMesh; }
+
 private:
 	/** 런타임에 사용되는 렌더링 리소스 */
 	TUniquePtr<FSkeletalMeshRenderData> SkeletalMeshRenderData;
 
+	/** 지오메트리 데이터를 담고 있는 StaticMesh */
+	UStaticMesh* StaticMesh = nullptr;
 	/*-----------------------------------------------------------------------------
 		FReferenceSkeleton (본 계층 구조)
 	 -----------------------------------------------------------------------------*/
