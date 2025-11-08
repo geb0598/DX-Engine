@@ -6,6 +6,7 @@ class FViewport;
 class FViewportClient;
 class UCamera;
 class USkeletalMeshComponent;
+class USkeletalMeshViewerToolbarWidget;
 
 /**
  * @brief SkeletalMesh 뷰어 윈도우
@@ -80,6 +81,12 @@ protected:
 	 */
 	void RenderVerticalSplitter(const char* SplitterID, float& Ratio, float MinRatio, float MaxRatio, bool bInvertDirection = false);
 
+	/**
+	 * @brief 카메라 컨트롤 UI 렌더링
+	 * @param InCamera 카메라 객체
+	 */
+	void RenderCameraControls(UCamera& InCamera);
+
 private:
 	// 패널 크기 비율 (드래그 가능)
 	float LeftPanelWidthRatio = 0.25f;
@@ -116,6 +123,16 @@ private:
 
 	// 임시 본 트랜스폼 (편집용)
 	TArray<FTransform> TempBoneSpaceTransforms;
+
+	// 독립적인 BatchLines (Grid 렌더링용)
+	class UBatchLines* ViewerBatchLines = nullptr;
+
+	// 툴바 위젯
+	USkeletalMeshViewerToolbarWidget* ToolbarWidget = nullptr;
+
+	// 마우스 드래그 상태 플래그
+	bool bIsDraggingRightButton = false;
+	bool bIsDraggingMiddleButton = false;
 
 	/**
 	 * @brief 렌더 타겟 생성
