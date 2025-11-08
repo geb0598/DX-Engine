@@ -85,9 +85,9 @@ struct FTransform
 	}
 
 	/**
-	 * @brief 트랜스폼을 4x4 행렬로 변환한다. (S * R * T)
+	 * @brief 트랜스폼을 스케일을 포함하여 4x4 행렬로 변환한다. (S * R * T)
 	 */
-	FMatrix ToMatrix() const
+	FMatrix ToMatrixWithScale() const
 	{
 		FMatrix T = FMatrix::TranslationMatrix(Translation);
 		FMatrix R = Rotation.ToRotationMatrix();
@@ -95,6 +95,28 @@ struct FTransform
 
 		// S * R * T (Row-major 기준)
 		return S * R * T;
+	}
+
+	FMatrix ToInverseMatrixWithScale() const
+	{
+		return ToMatrixWithScale().Inverse();
+	}
+
+	/**
+	 * @brief 트랜스폼을 스케일을 제외한 4x4 행렬로 변환한다. (R * T)
+	 */
+	FMatrix ToMatrixNoScale() const
+	{
+		FMatrix T = FMatrix::TranslationMatrix(Translation);
+		FMatrix R = Rotation.ToRotationMatrix();
+
+		// R * T (Row-major 기준)
+		return R * T;
+	}
+
+	FMatrix ToInverseMatrixNoScale() const
+	{
+		return ToMatrixNoScale().Inverse();
 	}
 
 	FTransform operator*(const FTransform& Other) const

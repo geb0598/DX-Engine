@@ -13,8 +13,8 @@ public:
 	virtual ~USkinnedAsset() = default;
 
 	/** 레퍼런스 스켈레톤을 반환한다. */
-	virtual struct FReferenceSkeleton& GetRefSkeleton() = 0;
-	virtual const struct FReferenceSkeleton& GetRefSkeleton() const = 0;
+	virtual FReferenceSkeleton& GetRefSkeleton() = 0;
+	virtual const FReferenceSkeleton& GetRefSkeleton() const = 0;
 
 	/** 사전 계산된 레퍼런스 스켈레톤의 기저를 반환한다. */
 	virtual TArray<FMatrix>& GetRefBasesInvMatrix() = 0;

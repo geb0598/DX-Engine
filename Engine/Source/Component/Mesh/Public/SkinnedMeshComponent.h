@@ -67,90 +67,64 @@ public:
 		USkinnedMeshComponent 인터페이스
 	 -----------------------------------------------------------------------------*/
 public:
-	/**
-	 * 이 메쉬를 위해 렌더링되는 SkinnedAsset을 반환한다.
-	 */
+	/** @brief 이 메쉬를 위해 렌더링되는 SkinnedAsset을 반환한다. */
 	USkinnedAsset* GetSkinnedAsset() const
 	{
 		return SkinnedAsset;
 	}
 
-	/**
-	 * 이 컴포넌트를 초기화하지 않고 SkinnedAsset을 바꾼다.
-	 */
+	/** @brief 이 컴포넌트를 초기화하지 않고 SkinnedAsset을 바꾼다. */
 	void SetSkinnedAsset(class USkinnedAsset* InSkinnedAsset)
 	{
 		SkinnedAsset = InSkinnedAsset;
 	}
 
-	/**
-	 * @brief 본 트랜스폼을 갱신한다. 각 클래스들은 이 함수를 구현해야한다.
-	 */
+	/**  @brief 본 트랜스폼을 갱신한다. 각 클래스들은 이 함수를 구현해야한다. */
 	virtual void RefreshBoneTransforms() = 0;
 
-	/**
-	 * @brief 틱 동안 수행해야하는 동작들을 수행한다(e.g., 애니메이션). RefreshBoneTransforms 이전에 호출되어야 한다.
-	 */
+	/** @brief 틱 동안 수행해야하는 동작들을 수행한다(e.g., 애니메이션). RefreshBoneTransforms 이전에 호출되어야 한다. */
 	virtual void TickPose(float DeltaTime);
 
-	/**
-	 * @brief 컴포넌트 공간 변환의 수를 반환한다.
-	 */
+	/** @brief 컴포넌트 공간 변환의 수를 반환한다. */
 	int32 GetNumComponentSpaceTransforms() const
 	{
 		return GetComponentSpaceTransforms().Num();
 	}
 
-	/**
-	 * @brief 읽기 전용으로 ComponentSpaceTransformArray를 반환한다.
-	 */
+	/** @brief 읽기 전용으로 ComponentSpaceTransformArray를 반환한다. */
 	const TArray<FTransform>& GetComponentSpaceTransforms() const
 	{
 		return ComponentSpaceTransformArray;
 	}
 
-	/**
-	 * @brief 수정 가능한 형태로 ComponentSpaceTransformArray를 반환한다.
-	 */
+	/** @brief 수정 가능한 형태로 ComponentSpaceTransformArray를 반환한다. */
 	TArray<FTransform>& GetEditableComponentSpaceTransform()
 	{
 		return ComponentSpaceTransformArray;
 	}
 
-	/**
-	 * @brief 지정된 본을 숨긴다.
-	 */
-	virtual void HideBone(int32 BoneIndex);
-
-	/**
-	 * @brief 지정된 본 숨김을 해제한다.
-	 */
-	virtual void UnHideBone(int32 BoneIndex);
-
-	/**
-	 * @brief 지정된 본이 숨겨져있는지 결정한다.
-	 */
-	bool IsBoneHidden(int32 BoneIndex);
-
-	/**
-	 * @brief 스켈레톤의 본 수를 반환한다.
-	 */
+	/** @brief 스켈레톤의 본 수를 반환한다. */
 	int32 GetNumBones() const
 	{
 		return GetSkinnedAsset() ? GetSkinnedAsset()->GetRefSkeleton().GetRawBoneNum() : 0;
 	}
 
-	/**
-	 * @brief 읽기 전용으로 BoneVisibilityStates를 반환한다.
-	 */
+	/** @brief 지정된 본을 숨긴다. */
+	virtual void HideBone(int32 BoneIndex);
+
+	/** @brief 지정된 본 숨김을 해제한다. */
+	virtual void UnHideBone(int32 BoneIndex);
+
+	/** @brief 지정된 본이 숨겨져있는지 결정한다. */
+	bool IsBoneHidden(int32 BoneIndex);
+
+	/** @brief 읽기 전용으로 BoneVisibilityStates를 반환한다. */
 	const TArray<uint8>& GetBoneVisibilityStates() const
 	{
 		return BoneVisibilityStates;
 	}
 
-	/**
-	 * @brief 수정가능한 형태로 BoneVisibilityStates를 반환한다.
-	 */
+	/** @brief 수정가능한 형태로 BoneVisibilityStates를 반환한다. */
 	TArray<uint8>& GetEditableBoneVisibilityStates()
 	{
 		return BoneVisibilityStates;
