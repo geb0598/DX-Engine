@@ -10,10 +10,13 @@
 #include "Render/Renderer/Public/Pipeline.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Level/Public/World.h"
+#include "Level/Public/Level.h"
 #include "Core/Public/NewObject.h"
 #include "Global/Quaternion.h"
 #include "Editor/Public/BatchLines.h"
 #include "Render/UI/Widget/Public/SkeletalMeshViewerToolbarWidget.h"
+#include "Component/Public/AmbientLightComponent.h"
+#include "Component/Public/DirectionalLightComponent.h"
 
 IMPLEMENT_CLASS(USkeletalMeshViewerWindow, UUIWindow)
 
@@ -100,10 +103,27 @@ void USkeletalMeshViewerWindow::Initialize()
 		ToolbarWidget->SetOwningWindow(this);
 	}
 
+	// 뷰어 전용 라이트 컴포넌트 생성 (World에 추가하지 않음)
+	ViewerAmbientLight = NewObject<UAmbientLightComponent>();
+	if (ViewerAmbientLight)
+	{
+		ViewerAmbientLight->SetLightColor(FVector(0.3f, 0.3f, 0.3f)); // 부드러운 앰비언트 라이트
+		ViewerAmbientLight->SetIntensity(1.0f);
+	}
+
+	ViewerDirectionalLight = NewObject<UDirectionalLightComponent>();
+	if (ViewerDirectionalLight)
+	{
+		ViewerDirectionalLight->SetWorldLocation(FVector(0, 0, 100));
+		ViewerDirectionalLight->SetWorldRotation(FVector(-45.0f, 45.0f, 0.0f)); // 대각선 위에서 비추는 라이트
+		ViewerDirectionalLight->SetLightColor(FVector(1.0f, 1.0f, 1.0f)); // 흰색 라이트
+		ViewerDirectionalLight->SetIntensity(0.8f);
+	}
+
 	bIsInitialized = true;
 	bIsCleanedUp = false;
 
-	UE_LOG("SkeletalMeshViewerWindow: 독립적인 뷰포트 및 카메라 초기화 완료");
+	UE_LOG("SkeletalMeshViewerWindow: 독립적인 뷰포트 및 카메라 초기화 완료 (라이트 포함)");
 }
 
 /**
@@ -131,6 +151,19 @@ void USkeletalMeshViewerWindow::Cleanup()
 	{
 		delete ToolbarWidget;
 		ToolbarWidget = nullptr;
+	}
+
+	// 뷰어 전용 라이트 삭제
+	if (ViewerAmbientLight)
+	{
+		delete ViewerAmbientLight;
+		ViewerAmbientLight = nullptr;
+	}
+
+	if (ViewerDirectionalLight)
+	{
+		delete ViewerDirectionalLight;
+		ViewerDirectionalLight = nullptr;
 	}
 
 	// ViewportClient와 Viewport의 연결을 먼저 끊음
@@ -626,6 +659,20 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 		// World 확인
 		if (GWorld)
 		{
+			// 뷰어 전용 라이트를 Level에 임시 등록
+			ULevel* CurrentLevel = GWorld->GetLevel();
+			if (CurrentLevel)
+			{
+				if (ViewerAmbientLight)
+				{
+					CurrentLevel->RegisterComponent(ViewerAmbientLight);
+				}
+				if (ViewerDirectionalLight)
+				{
+					CurrentLevel->RegisterComponent(ViewerDirectionalLight);
+				}
+			}
+
 			// 카메라 준비
 			ViewerViewportClient->PrepareCamera(D3DViewport);
 
@@ -693,6 +740,19 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 
 				// View 정리
 				delete View;
+			}
+
+			// 뷰어 전용 라이트를 Level에서 등록 해제
+			if (CurrentLevel)
+			{
+				if (ViewerAmbientLight)
+				{
+					CurrentLevel->UnregisterComponent(ViewerAmbientLight);
+				}
+				if (ViewerDirectionalLight)
+				{
+					CurrentLevel->UnregisterComponent(ViewerDirectionalLight);
+				}
 			}
 		}
 
@@ -894,6 +954,84 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 120), IM_COL32(150, 150, 150, 255), "RMB: Rotate | MMB: Pan");
 				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 140), IM_COL32(150, 150, 150, 255), "Wheel: Zoom | Q/W/E/R: Gizmo");
 				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 160), IM_COL32(150, 150, 150, 255), "F: Focus | Alt+G: Toggle Grid");
+
+				// 축 방향 표시기 렌더링 (좌측 하단)
+				const float AxisCenterX = WindowPos.x + 70.0f;
+				const float AxisCenterY = WindowPos.y + ViewportSize.y - 70.0f;
+				const float AxisSize = 40.0f;
+				const float LineThickness = 3.0f;
+
+				// 카메라의 View 행렬 가져오기
+				const FMatrix& ViewMatrix = Camera->GetFViewProjConstants().View;
+
+				// 월드 축 벡터 (X, Y, Z)
+				FVector4 WorldX(1, 0, 0, 0);
+				FVector4 WorldY(0, 1, 0, 0);
+				FVector4 WorldZ(0, 0, 1, 0);
+
+				// View 공간으로 변환
+				FVector4 ViewAxisX(
+					WorldX.X * ViewMatrix.Data[0][0] + WorldX.Y * ViewMatrix.Data[1][0] + WorldX.Z * ViewMatrix.Data[2][0],
+					WorldX.X * ViewMatrix.Data[0][1] + WorldX.Y * ViewMatrix.Data[1][1] + WorldX.Z * ViewMatrix.Data[2][1],
+					WorldX.X * ViewMatrix.Data[0][2] + WorldX.Y * ViewMatrix.Data[1][2] + WorldX.Z * ViewMatrix.Data[2][2],
+					0.f
+				);
+
+				FVector4 ViewAxisY(
+					WorldY.X * ViewMatrix.Data[0][0] + WorldY.Y * ViewMatrix.Data[1][0] + WorldY.Z * ViewMatrix.Data[2][0],
+					WorldY.X * ViewMatrix.Data[0][1] + WorldY.Y * ViewMatrix.Data[1][1] + WorldY.Z * ViewMatrix.Data[2][1],
+					WorldY.X * ViewMatrix.Data[0][2] + WorldY.Y * ViewMatrix.Data[1][2] + WorldY.Z * ViewMatrix.Data[2][2],
+					0.f
+				);
+
+				FVector4 ViewAxisZ(
+					WorldZ.X * ViewMatrix.Data[0][0] + WorldZ.Y * ViewMatrix.Data[1][0] + WorldZ.Z * ViewMatrix.Data[2][0],
+					WorldZ.X * ViewMatrix.Data[0][1] + WorldZ.Y * ViewMatrix.Data[1][1] + WorldZ.Z * ViewMatrix.Data[2][1],
+					WorldZ.X * ViewMatrix.Data[0][2] + WorldZ.Y * ViewMatrix.Data[1][2] + WorldZ.Z * ViewMatrix.Data[2][2],
+					0.f
+				);
+
+				// 2D 스크린 좌표로 변환
+				ImVec2 AxisEndX(AxisCenterX + ViewAxisX.X * AxisSize, AxisCenterY - ViewAxisX.Y * AxisSize);
+				ImVec2 AxisEndY(AxisCenterX + ViewAxisY.X * AxisSize, AxisCenterY - ViewAxisY.Y * AxisSize);
+				ImVec2 AxisEndZ(AxisCenterX + ViewAxisZ.X * AxisSize, AxisCenterY - ViewAxisZ.Y * AxisSize);
+
+				// 텍스트 위치 (1.25배 더 멀리)
+				const float TextOffset = 1.25f;
+				ImVec2 TextPosX(AxisCenterX + ViewAxisX.X * AxisSize * TextOffset, AxisCenterY - ViewAxisX.Y * AxisSize * TextOffset);
+				ImVec2 TextPosY(AxisCenterX + ViewAxisY.X * AxisSize * TextOffset, AxisCenterY - ViewAxisY.Y * AxisSize * TextOffset);
+				ImVec2 TextPosZ(AxisCenterX + ViewAxisZ.X * AxisSize * TextOffset, AxisCenterY - ViewAxisZ.Y * AxisSize * TextOffset);
+
+				// 축 라인 그리기
+				DrawList->AddLine(ImVec2(AxisCenterX, AxisCenterY), AxisEndX, IM_COL32(255, 0, 0, 255), LineThickness); // X축 (빨강)
+				DrawList->AddLine(ImVec2(AxisCenterX, AxisCenterY), AxisEndY, IM_COL32(0, 255, 0, 255), LineThickness); // Y축 (초록)
+				DrawList->AddLine(ImVec2(AxisCenterX, AxisCenterY), AxisEndZ, IM_COL32(0, 102, 255, 255), LineThickness); // Z축 (파랑)
+
+				// 중심점 그리기
+				DrawList->AddCircleFilled(ImVec2(AxisCenterX, AxisCenterY), 3.0f, IM_COL32(51, 51, 51, 255));
+				DrawList->AddCircleFilled(ImVec2(AxisCenterX, AxisCenterY), 1.5f, IM_COL32(51, 51, 51, 255));
+
+				// 축 레이블 텍스트
+				const bool bIsOrtho = (Camera->GetCameraType() == ECameraType::ECT_Orthographic);
+				const float VisibilityThreshold = 0.98f;
+
+				// X축 텍스트
+				if (!bIsOrtho || std::abs(ViewAxisX.Z) < VisibilityThreshold)
+				{
+					DrawList->AddText(ImVec2(TextPosX.x - 8, TextPosX.y - 8), IM_COL32(255, 0, 0, 255), "X");
+				}
+
+				// Y축 텍스트
+				if (!bIsOrtho || std::abs(ViewAxisY.Z) < VisibilityThreshold)
+				{
+					DrawList->AddText(ImVec2(TextPosY.x - 8, TextPosY.y - 8), IM_COL32(0, 255, 0, 255), "Y");
+				}
+
+				// Z축 텍스트
+				if (!bIsOrtho || std::abs(ViewAxisZ.Z) < VisibilityThreshold)
+				{
+					DrawList->AddText(ImVec2(TextPosZ.x - 8, TextPosZ.y - 8), IM_COL32(0, 102, 255, 255), "Z");
+				}
 			}
 			else
 			{
