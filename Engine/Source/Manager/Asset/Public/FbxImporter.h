@@ -46,6 +46,15 @@ public:
 		Configuration Config = {});
 
 private:
+	// Helper functions
+	static FbxScene* ImportFbxScene(const std::filesystem::path& FilePath);
+	static FbxMesh* FindFirstMesh(FbxNode* RootNode, FbxNode** OutNode);
+	static void ExtractVertices(FbxMesh* Mesh, FFbxMeshInfo* OutMeshInfo, const Configuration& Config);
+	static void ExtractMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxMeshInfo* OutMeshInfo);
+	static std::filesystem::path ResolveTexturePath(const std::string& OriginalPath, const std::filesystem::path& FbxDirectory, const std::filesystem::path& FbxFilePath);
+	static void ExtractGeometryData(FbxMesh* Mesh, FFbxMeshInfo* OutMeshInfo, const Configuration& Config);
+	static void BuildMeshSections(const TArray<TArray<uint32>>& IndicesPerMaterial, FFbxMeshInfo* OutMeshInfo);
+
 	static inline FbxManager* SdkManager = nullptr;
 	static inline FbxIOSettings* IoSettings = nullptr;
 };
