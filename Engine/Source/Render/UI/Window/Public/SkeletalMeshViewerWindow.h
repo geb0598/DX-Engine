@@ -1,5 +1,6 @@
 #pragma once
 #include "Render/UI/Window/Public/UIWindow.h"
+#include "Component/Mesh/Public/SkeletalMeshComponent.h"
 
 class FViewport;
 class FViewportClient;
@@ -99,7 +100,7 @@ private:
 	bool bIsCleanedUp = false;
 
 	// 렌더링할 SkeletalMeshComponent
-	TObjectPtr<USkeletalMeshComponent> SkeletalMeshComponent = nullptr;
+	USkeletalMeshComponent* SkeletalMeshComponent = nullptr;
 
 	/**
 	 * @brief 렌더 타겟 생성

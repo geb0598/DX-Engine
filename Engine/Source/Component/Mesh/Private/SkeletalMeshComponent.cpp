@@ -1,10 +1,12 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 #include "Component/Mesh/Public/SkeletalMeshComponent.h"
 
 #include <numeric>
 
 #include "Runtime/Engine/Public/SkeletalMesh.h"
+
+IMPLEMENT_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 
 UObject* USkeletalMeshComponent::Duplicate()
 {
