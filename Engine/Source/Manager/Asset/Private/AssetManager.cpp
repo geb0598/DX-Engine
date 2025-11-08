@@ -225,7 +225,7 @@ void UAssetManager::LoadAllFbxMesh()
 			else if (USkeletalMesh* SkeletalMesh = dynamic_cast<USkeletalMesh*>(LoadedMesh))
 			{
 				SkeletalMeshCache.Emplace(FbxPath, SkeletalMesh);
-				SkeletalMeshVertexBuffers.Emplace(FbxPath, this->CreateSkeletalVertexBuffer(SkeletalMesh->GetVertices()));
+				SkeletalMeshVertexBuffers.Emplace(FbxPath, this->CreateVertexBuffer(SkeletalMesh->GetVertices()));
 				SkeletalMeshIndexBuffers.Emplace(FbxPath, this->CreateIndexBuffer(SkeletalMesh->GetIndices()));
 				UE_LOG_SUCCESS("FBX Skeletal Mesh 로드 성공: %s", FbxPath.ToString().c_str());
 			}
@@ -240,7 +240,6 @@ void UAssetManager::LoadAllFbxMesh()
 		}
 	}
 }
-
 
 ID3D11Buffer* UAssetManager::GetVertexBuffer(FName InObjPath)
 {
@@ -370,12 +369,6 @@ FAABB UAssetManager::CalculateAABB(const TArray<FNormalVertex>& Vertices)
 	}
 
 	return FAABB(MinPoint, MaxPoint);
-}
-
-ID3D11Buffer* UAssetManager::CreateSkeletalVertexBuffer(TArray<FSkeletalVertex> InVertices)
-{
-	return FRenderResourceFactory::CreateVertexBuffer(InVertices.GetData(),
-		static_cast<int>(InVertices.Num()) * sizeof(FSkeletalVertex));
 }
 
 ID3D11Buffer* UAssetManager::GetSkeletalMeshVertexBuffer(const FName& InFbxPath)

@@ -48,19 +48,6 @@ struct FNormalVertex
 	FVector4 Tangent;  // XYZ: Tangent, W: Handedness(+1/-1)
 };
 
-struct FSkeletalVertex
-{
-	FVector Position;        // 위치
-	FVector Normal;          // 노멀
-	FVector4 Color;          // Vertex Color (선택 사항)
-	FVector2 TexCoord;       // 텍스처 좌표
-	FVector4 Tangent;        // XYZ: Tangent, W: Handedness(+1/-1)
-
-	/** @todo 최대 영향 본 개수 확인 */
-	uint16 BoneIndices[4];   // 영향을 주는 본 인덱스
-	uint8 BoneWeights[4];    // 각 본의 가중치 (합이 1.0)
-};
-
 struct FRay
 {
 	FVector4 Origin;

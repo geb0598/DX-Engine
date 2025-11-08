@@ -71,7 +71,7 @@ private:
 	TMap<FName, ID3D11Buffer*> StaticMeshIndexBuffers;
 
 	// SkeletalMesh Resource
-	TMap<FName, class USkeletalMesh*> SkeletalMeshCache;
+	TMap<FName, USkeletalMesh*> SkeletalMeshCache;
 	TMap<FName, ID3D11Buffer*> SkeletalMeshVertexBuffers;
 	TMap<FName, ID3D11Buffer*> SkeletalMeshIndexBuffers;
 
@@ -79,7 +79,6 @@ private:
 	ID3D11Buffer* CreateVertexBuffer(TArray<FNormalVertex> InVertices);
 	ID3D11Buffer* CreateIndexBuffer(TArray<uint32> InIndices);
 	FAABB CalculateAABB(const TArray<FNormalVertex>& Vertices);
-	ID3D11Buffer* CreateSkeletalVertexBuffer(TArray<FSkeletalVertex> InVertices);
 
 	// AABB Resource
 	TMap<EPrimitiveType, FAABB> AABBs;		// 각 타입별 AABB 저장
