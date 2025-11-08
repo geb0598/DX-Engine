@@ -49,6 +49,15 @@ protected:
 	void RenderSkeletonTreePanel();
 
 	/**
+	 * @brief 개별 본 노드를 재귀적으로 렌더링하는 헬퍼 함수
+	 * @param BoneIndex 렌더링할 본의 인덱스
+	 * @param RefSkeleton 레퍼런스 스켈레톤
+	 * @param SearchFilter 검색 필터 문자열
+	 * @param bHasSearchFilter 검색 필터가 활성화되어 있는지 여부
+	 */
+	void RenderBoneTreeNode(int32 BoneIndex, const FReferenceSkeleton& RefSkeleton, const FString& SearchFilter, bool bHasSearchFilter);
+
+	/**
 	 * @brief 중앙 패널: 3D Viewport 영역 렌더링 (Placeholder)
 	 * TODO: 독립적인 카메라를 가진 3D 렌더링 뷰포트 구현
 	 * TODO: 선택된 본의 Transform Gizmo 렌더링

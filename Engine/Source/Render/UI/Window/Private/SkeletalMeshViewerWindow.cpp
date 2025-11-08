@@ -297,38 +297,191 @@ void USkeletalMeshViewerWindow::RenderSkeletonTreePanel()
 	ImGui::Separator();
 	ImGui::Spacing();
 
-	ImGui::TextWrapped("TODO: 본 계층 구조 트리를 여기에 구현");
-	ImGui::Spacing();
-	ImGui::BulletText("본 선택 기능");
-	ImGui::BulletText("계층 구조 표시");
-	ImGui::BulletText("본 검색 기능");
-	ImGui::BulletText("본 필터링 옵션");
+	// SkeletalMeshComponent 유효성 검사
+	if (!SkeletalMeshComponent)
+	{
+		ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No SkeletalMeshComponent assigned");
+		ImGui::Spacing();
+		ImGui::TextWrapped("Select a SkeletalMeshComponent from the Detail panel to view its skeleton.");
+		return;
+	}
 
+	// SkeletalMesh 가져오기
+	USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+	if (!SkeletalMesh)
+	{
+		ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.4f, 1.0f), "No SkeletalMesh found");
+		ImGui::Spacing();
+		ImGui::TextDisabled("The component has no mesh asset assigned.");
+		return;
+	}
+
+	// ReferenceSkeleton 가져오기
+	const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
+	const int32 NumBones = RefSkeleton.GetRawBoneNum();
+
+	if (NumBones == 0)
+	{
+		ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.4f, 1.0f), "No bones in skeleton");
+		return;
+	}
+
+	// 본 정보 표시
+	ImGui::Text("Total Bones: %d", NumBones);
 	ImGui::Spacing();
 	ImGui::Separator();
-	ImGui::TextDisabled("예시 구조:");
+	ImGui::Spacing();
 
-	// 예시 트리 구조 (더미)
-	if (ImGui::TreeNode("Root"))
+	// 검색 기능
+	static char SearchBuffer[128] = "";
+	ImGui::SetNextItemWidth(-1);
+	ImGui::InputTextWithHint("##BoneSearch", "Search bones...", SearchBuffer, IM_ARRAYSIZE(SearchBuffer));
+	ImGui::Spacing();
+
+	// 스크롤 가능한 영역
+	if (ImGui::BeginChild("BoneTreeScroll", ImVec2(0, 0), false))
 	{
-		if (ImGui::TreeNode("Spine"))
+		const TArray<FMeshBoneInfo>& BoneInfoArray = RefSkeleton.GetRawRefBoneInfo();
+		const TArray<FTransform>& BonePoseArray = RefSkeleton.GetRawRefBonePose();
+
+		// 검색 필터링
+		FString SearchStr = SearchBuffer;
+		bool bHasSearchFilter = !SearchStr.empty();
+
+		// 루트 본들을 찾아서 재귀적으로 렌더링
+		for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
 		{
-			if (ImGui::TreeNode("Chest"))
+			const FMeshBoneInfo& BoneInfo = BoneInfoArray[BoneIndex];
+
+			// 루트 본만 처리 (부모가 없는 본)
+			if (BoneInfo.ParentIndex == INDEX_NONE)
 			{
-				ImGui::TreeNode("Neck");
-				ImGui::TreePop();
+				RenderBoneTreeNode(BoneIndex, RefSkeleton, SearchStr, bHasSearchFilter);
 			}
-			ImGui::TreePop();
 		}
-		if (ImGui::TreeNode("L_Leg"))
+	}
+	ImGui::EndChild();
+}
+
+void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FReferenceSkeleton& RefSkeleton, const FString& SearchFilter, bool bHasSearchFilter)
+{
+	const TArray<FMeshBoneInfo>& BoneInfoArray = RefSkeleton.GetRawRefBoneInfo();
+	const TArray<FTransform>& BonePoseArray = RefSkeleton.GetRawRefBonePose();
+	const FMeshBoneInfo& BoneInfo = BoneInfoArray[BoneIndex];
+
+	FString BoneName = BoneInfo.Name.ToString();
+
+	// 검색 필터 적용: 본인은 매칭되지 않지만 자식 본들 중에 매칭되는 것이 있는지 확인
+	if (bHasSearchFilter && !BoneName.Contains(SearchFilter))
+	{
+		// 자식 본들 중에 매칭되는 것이 있는지 확인
+		bool bHasMatchingChild = false;
+		for (int32 ChildIndex = 0; ChildIndex < BoneInfoArray.Num(); ++ChildIndex)
 		{
-			ImGui::TreeNode("L_Foot");
-			ImGui::TreePop();
+			if (BoneInfoArray[ChildIndex].ParentIndex == BoneIndex)
+			{
+				FString ChildName = BoneInfoArray[ChildIndex].Name.ToString();
+				if (ChildName.Contains(SearchFilter))
+				{
+					bHasMatchingChild = true;
+					break;
+				}
+			}
 		}
-		if (ImGui::TreeNode("R_Leg"))
+
+		// 본인도 매칭 안되고 자식도 매칭 안되면 렌더링 안함
+		if (!bHasMatchingChild)
 		{
-			ImGui::TreeNode("R_Foot");
-			ImGui::TreePop();
+			return;
+		}
+	}
+
+	// 자식 본들 찾기
+	TArray<int32> ChildBoneIndices;
+	for (int32 ChildIndex = 0; ChildIndex < BoneInfoArray.Num(); ++ChildIndex)
+	{
+		if (BoneInfoArray[ChildIndex].ParentIndex == BoneIndex)
+		{
+			ChildBoneIndices.Add(ChildIndex);
+		}
+	}
+
+	// 트리 노드 플래그 설정
+	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+	// 자식이 없으면 Leaf 플래그 추가
+	if (ChildBoneIndices.IsEmpty())
+	{
+		NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	}
+
+	// 선택 상태 표시 (TODO: 선택 기능 구현 시)
+	// if (SelectedBoneIndex == BoneIndex)
+	// {
+	//     NodeFlags |= ImGuiTreeNodeFlags_Selected;
+	// }
+
+	// 검색 필터에 매칭되면 하이라이트
+	bool bIsMatching = false;
+	if (bHasSearchFilter && BoneName.Contains(SearchFilter))
+	{
+		bIsMatching = true;
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.4f, 1.0f)); // 노란색
+	}
+
+	// 트리 노드 렌더링
+	bool bNodeOpen = ImGui::TreeNodeEx(
+		(void*)(intptr_t)BoneIndex,
+		NodeFlags,
+		"[%d] %s",
+		BoneIndex,
+		BoneName.c_str()
+	);
+
+	if (bIsMatching)
+	{
+		ImGui::PopStyleColor();
+	}
+
+	// 툴팁: 본 정보 표시
+	if (ImGui::IsItemHovered())
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text("Parent Index: %d", BoneInfo.ParentIndex);
+
+		if (BoneInfo.ParentIndex != INDEX_NONE)
+		{
+			ImGui::Text("Parent Name: %s", BoneInfoArray[BoneInfo.ParentIndex].Name.ToString().c_str());
+		}
+		else
+		{
+			ImGui::Text("Parent Name: (Root)");
+		}
+
+		ImGui::Separator();
+		ImGui::Text("Local Transform:");
+		const FTransform& BonePose = BonePoseArray[BoneIndex];
+		ImGui::Text("  Location: (%.2f, %.2f, %.2f)", BonePose.Translation.X, BonePose.Translation.Y, BonePose.Translation.Z);
+
+		FVector EulerRot = BonePose.Rotation.ToEuler();
+		ImGui::Text("  Rotation: (%.2f, %.2f, %.2f)", EulerRot.X, EulerRot.Y, EulerRot.Z);
+		ImGui::Text("  Scale: (%.2f, %.2f, %.2f)", BonePose.Scale.X, BonePose.Scale.Y, BonePose.Scale.Z);
+
+		ImGui::EndTooltip();
+	}
+
+	// 클릭 시 본 선택 (TODO: 선택 기능 구현)
+	// if (ImGui::IsItemClicked())
+	// {
+	//     SelectedBoneIndex = BoneIndex;
+	// }
+
+	// 자식 본들 재귀적으로 렌더링
+	if (bNodeOpen && !ChildBoneIndices.IsEmpty())
+	{
+		for (int32 ChildBoneIndex : ChildBoneIndices)
+		{
+			RenderBoneTreeNode(ChildBoneIndex, RefSkeleton, SearchFilter, bHasSearchFilter);
 		}
 		ImGui::TreePop();
 	}
