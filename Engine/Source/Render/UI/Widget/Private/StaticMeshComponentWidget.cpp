@@ -105,6 +105,14 @@ void UStaticMeshComponentWidget::RenderMaterialSections()
 	{
 		// 현재 할당된 Material 가져오기 (OverrideMaterials 우선)
 		UMaterial* CurrentMaterial = StaticMeshComponent->GetMaterial(SlotIndex);
+
+		if (!CurrentMaterial)
+		{
+			ImGui::TextColored(ImVec4(1, 0.3f, 0.3f, 1), "Material Slot %d: (None)", SlotIndex);
+			ImGui::Dummy(ImVec2(1.0f, 10.0f)); 
+			continue;
+		}
+
 		FString PreviewName = CurrentMaterial ? GetMaterialDisplayName(CurrentMaterial) : "None";
 		// Material 정보 표시
 		ImGui::PushID(SlotIndex);

@@ -60,20 +60,36 @@ public:
 	void SetSkeletalMeshAsset(USkeletalMesh* NewMesh);
 
 	/** @brief 외부(e.g., 에디터)에서 현재 본의 위치를 확인하기 위해 제공되는 함수이다. */
-	FTransform GetBoneTransformLocal(int32 BoneIndex)
-	{
-		return BoneSpaceTransforms[BoneIndex];
-	}
+	FTransform GetBoneTransformLocal(int32 BoneIndex);
 
 	/** @brief 애니메이션이 아닌 외부(e.g., 에디터, 기즈모, etc)에서 포즈를 조작하기 위해 제공되는 함수이다. */
-	void SetBoneTransformLocal(int32 BoneIndex, const FTransform& NewLocalTransform)
-	{
-		if (BoneSpaceTransforms.IsValidIndex(BoneIndex))
-		{
-			BoneSpaceTransforms[BoneIndex] = NewLocalTransform;
-		}
-	}
+	void SetBoneTransformLocal(int32 BoneIndex, const FTransform& NewLocalTransform);
+
+	/** @brief CPU 스키닝을 수행한다. */
+	void UpdateSkinnedVertices();
+
+	void EnableNormalMap();
+
+	void DisableNormalMap();
+
+	bool IsNormalMapEnabled() const;
 
 private:
+	/** 포즈 및 애니메이션이 적용된 이후의 본 로컬 트랜스폼 */
 	TArray<FTransform> BoneSpaceTransforms;
+
+	/** 스키닝용 행렬 (InvBindMatrix * ComponentSpaceTransform) */
+	TArray<FMatrix> SkinningMatrices;
+
+	/** CPU 스키닝을 적용한 이후의 정점 정보 */
+	TArray<FNormalVertex> SkinnedVertices;
+
+	/** 포즈가 변경되었음을 알리는 플래그 */
+	bool bPoseDirty;
+
+	/** SkinnedVertices 갱신 필요여부를 알리는 플래그 */
+	bool bSkinningDirty;
+
+	/** 노말맵 활성화 여부 */
+	bool bNormalMapEnabled;
 };

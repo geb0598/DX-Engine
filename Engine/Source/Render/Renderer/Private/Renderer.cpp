@@ -1,6 +1,6 @@
 #include "pch.h"
 #include <algorithm>
-#include "Component/Mesh/Public/StaticMesh.h"
+#include "Component/Mesh/Public/SkeletalMeshComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Component/Public/AmbientLightComponent.h"
 #include "Component/Public/DecalComponent.h"
@@ -14,13 +14,16 @@
 #include "Editor/Public/Camera.h"
 #include "Editor/Public/Editor.h"
 #include "Global/Octree.h"
+#include "Level/Public/GameInstance.h"
 #include "Level/Public/Level.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Manager/UI/Public/ViewportManager.h"
 #include "Render/RenderPass/Public/BillboardPass.h"
-#include "Render/RenderPass/Public/EditorIconPass.h"
+#include "Render/RenderPass/Public/CameraPostProcessPass.h"
 #include "Render/RenderPass/Public/ClusteredRenderingGridPass.h"
+#include "Render/RenderPass/Public/ColorCopyPass.h"
 #include "Render/RenderPass/Public/DecalPass.h"
+#include "Render/RenderPass/Public/EditorIconPass.h"
 #include "Render/RenderPass/Public/FXAAPass.h"
 #include "Render/RenderPass/Public/FogPass.h"
 #include "Render/RenderPass/Public/HitProxyPass.h"
@@ -30,14 +33,12 @@
 #include "Render/RenderPass/Public/SceneDepthPass.h"
 #include "Render/RenderPass/Public/ShadowMapFilterPass.h"
 #include "Render/RenderPass/Public/ShadowMapPass.h"
+#include "Render/RenderPass/Public/SkeletalMeshPass.h"
 #include "Render/RenderPass/Public/StaticMeshPass.h"
 #include "Render/RenderPass/Public/TextPass.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Render/Renderer/Public/Renderer.h"
-#include "Level/Public/GameInstance.h"
 #include "Render/Renderer/Public/SceneView.h"
-#include "Render/RenderPass/Public/CameraPostProcessPass.h"
-#include "Render/RenderPass/Public/ColorCopyPass.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
 #include "Render/UI/Viewport/Public/GameViewportClient.h"
 #include "Render/UI/Viewport/Public/Viewport.h"
@@ -93,6 +94,10 @@ void URenderer::Init(HWND InWindowHandle)
 	FStaticMeshPass* StaticMeshPass = new FStaticMeshPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
 		UberLitVertexShader, UberLitPixelShader, UberLitInputLayout, DefaultDepthStencilState);
 	RenderPasses.Add(StaticMeshPass);
+
+	FSkeletalMeshPass* SkeletalMeshPass = new FSkeletalMeshPass(Pipeline, ConstantBufferViewProj, ConstantBufferModels,
+		UberLitVertexShader, UberLitPixelShader, UberLitInputLayout, DefaultDepthStencilState);
+	RenderPasses.Add(SkeletalMeshPass);
 
 	FDecalPass* DecalPass = new FDecalPass(Pipeline, ConstantBufferViewProj,
 		DecalVertexShader, DecalPixelShader, DecalInputLayout, DecalDepthStencilState, AlphaBlendState);
@@ -1040,6 +1045,10 @@ void URenderer::RenderLevel(FViewport* InViewport, int32 ViewportIndex)
 		if (auto StaticMesh = Cast<UStaticMeshComponent>(Prim))
 		{
 			RenderingContext.StaticMeshes.Add(StaticMesh);
+		}
+		else if (auto SkeletalMesh = Cast<USkeletalMeshComponent>(Prim))
+		{
+			RenderingContext.SkeletalMeshes.Add(SkeletalMesh);
 		}
 		else if (auto BillBoard = Cast<UBillBoardComponent>(Prim))
 		{

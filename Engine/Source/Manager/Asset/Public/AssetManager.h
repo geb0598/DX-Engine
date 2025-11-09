@@ -4,6 +4,7 @@
 #include "TextureManager.h"
 #include "Component/Mesh/Public/StaticMesh.h"
 
+class USkeletalMesh;
 struct FAABB;
 
 /**
@@ -31,12 +32,21 @@ public:
 
 	// StaticMesh 관련 함수
 	void LoadAllObjStaticMesh();
+	void LoadAllFbxMesh();  // FBX 통합 로드 (Static + Skeletal)
 	ID3D11Buffer* GetVertexBuffer(FName InObjPath);
 	ID3D11Buffer* GetIndexBuffer(FName InObjPath);
 
 	// StaticMesh Cache Accessors
 	UStaticMesh* GetStaticMeshFromCache(const FName& InObjPath);
 	void AddStaticMeshToCache(const FName& InObjPath, UStaticMesh* InStaticMesh);
+
+	// SkeletalMesh Cache Accessors
+	class USkeletalMesh* GetSkeletalMeshFromCache(const FName& InFbxPath);
+	void AddSkeletalMeshToCache(const FName& InFbxPath, class USkeletalMesh* InSkeletalMesh);
+
+	// SkeletalMesh Buffer Accessors
+	ID3D11Buffer* GetSkeletalMeshVertexBuffer(const FName& InFbxPath);
+	ID3D11Buffer* GetSkeletalMeshIndexBuffer(const FName& InFbxPath);
 
 	// Bounding Box
 	FAABB& GetAABB(EPrimitiveType InType);
@@ -59,6 +69,11 @@ private:
 	TMap<FName, UStaticMesh*> StaticMeshCache;
 	TMap<FName, ID3D11Buffer*> StaticMeshVertexBuffers;
 	TMap<FName, ID3D11Buffer*> StaticMeshIndexBuffers;
+
+	// SkeletalMesh Resource
+	TMap<FName, USkeletalMesh*> SkeletalMeshCache;
+	TMap<FName, ID3D11Buffer*> SkeletalMeshVertexBuffers;
+	TMap<FName, ID3D11Buffer*> SkeletalMeshIndexBuffers;
 
 	// Helper Functions
 	ID3D11Buffer* CreateVertexBuffer(TArray<FNormalVertex> InVertices);
