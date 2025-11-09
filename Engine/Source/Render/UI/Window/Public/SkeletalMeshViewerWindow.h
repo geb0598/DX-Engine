@@ -49,7 +49,7 @@ protected:
 	 * @brief 좌측 패널: Skeleton Tree 영역 렌더링 (Placeholder)
 	 * RenderBoneTreeNode 호출	
 	 */
-	void RenderSkeletonTreePanel();
+	void RenderSkeletonTreePanel(const USkeletalMesh* InSkeletalMesh, const FReferenceSkeleton& InRefSkeleton, const int32 InNumBones);
 
 	/**
 	 * @brief 개별 본 노드를 재귀적으로 렌더링하는 헬퍼 함수
@@ -71,7 +71,7 @@ protected:
 	 * @brief 우측 패널: Edit Tools 영역 렌더링 (Placeholder)
 	 * TODO: Transform 편집 UI, Gizmo 설정, 본 프로퍼티 등 구현
 	 */
-	void RenderEditToolsPanel();
+	void RenderEditToolsPanel(const USkeletalMesh* InSkeletalMesh, const FReferenceSkeleton& InRefSkeleton, const int32 InNumBones);
 
 	/**
 	 * @brief 수직 Splitter (구분선) 렌더링 및 드래그 처리
@@ -88,6 +88,12 @@ protected:
 	 * @param InCamera 카메라 객체
 	 */
 	void RenderCameraControls(UCamera& InCamera);
+
+	/**
+	 * @brief SkeletalMeshComponent 유효성 검사 및 로그 출력
+	 * @return 유효한 경우 true, 그렇지 않으면 false
+	 */
+	bool CheckAndLogSkeletalValidity(USkeletalMesh* OutSkeletalMesh, FReferenceSkeleton& OutRefSkeleton, int32& OutNumBones) const;
 
 private:
 	// 패널 크기 비율 (드래그 가능)

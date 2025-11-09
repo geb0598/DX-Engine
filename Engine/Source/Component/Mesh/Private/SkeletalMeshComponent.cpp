@@ -44,6 +44,11 @@ void USkeletalMeshComponent::EndPlay()
 
 void USkeletalMeshComponent::RefreshBoneTransforms()
 {
+	RefreshBoneTransformsCustom(BoneSpaceTransforms);
+}
+
+void USkeletalMeshComponent::RefreshBoneTransformsCustom(const TArray<FTransform>& InBoneSpaceTransforms)
+{
 	if (!GetSkeletalMeshAsset() || GetNumComponentSpaceTransforms() == 0)
 	{
 		return;
@@ -61,7 +66,7 @@ void USkeletalMeshComponent::RefreshBoneTransforms()
 
 	/** 현재는 애니메이션 시스템이 없으므로 FillComponentSpaceTransforms를 직접 호출한다. */
 	SkeletalMeshAsset->FillComponentSpaceTransforms(
-		BoneSpaceTransforms,
+		InBoneSpaceTransforms,
 		FillComponentSpaceTransformsRequiredBones,
 		EditableSpaceBases
 	);

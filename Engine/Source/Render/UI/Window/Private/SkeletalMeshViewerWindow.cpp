@@ -349,10 +349,35 @@ void USkeletalMeshViewerWindow::RenderLayout()
 	const float CenterPanelWidth = TotalWidth * CenterPanelWidthRatio;
 	const float RightPanelWidth = TotalWidth * RightPanelWidthRatio;
 
+
+	// SkeletalMesh 유효성 검사 및 변수 할당
+	USkeletalMesh* SkeletalMesh = nullptr;
+	FReferenceSkeleton RefSkeleton;
+	int32 NumBones = 0;
+	bool bValid = CheckAndLogSkeletalValidity(SkeletalMesh, RefSkeleton, NumBones);
+	if(!bValid)
+	{
+		return;
+	}
+
+	// TempBoneSpaceTransforms 초기화
+	if (TempBoneSpaceTransforms.IsEmpty() && SkeletalMeshComponent)
+	{
+		const int32 NumBones = RefSkeleton.GetRawBoneNum();
+		TempBoneSpaceTransforms.SetNum(NumBones);
+		for (int32 i = 0; i < NumBones; ++i)
+		{
+			TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
+		}
+	}
+
+	// SkeletalMeshComponent에 임시 본 트랜스폼 적용
+	SkeletalMeshComponent->RefreshBoneTransformsCustom(TempBoneSpaceTransforms);
+
 	// === 좌측 패널: Skeleton Tree ===
 	if (ImGui::BeginChild("SkeletonTreePanel", ImVec2(LeftPanelWidth - SplitterWidth * 0.5f, PanelHeight), true))
 	{
-		RenderSkeletonTreePanel();
+		RenderSkeletonTreePanel(SkeletalMesh, RefSkeleton, NumBones);
 	}
 	ImGui::EndChild();
 
@@ -380,7 +405,7 @@ void USkeletalMeshViewerWindow::RenderLayout()
 	// === 우측 패널: Edit Tools ===
 	if (ImGui::BeginChild("EditToolsPanel", ImVec2(RightPanelWidth - SplitterWidth * 0.5f, PanelHeight), true))
 	{
-		RenderEditToolsPanel();
+		RenderEditToolsPanel(SkeletalMesh, RefSkeleton, NumBones);
 	}
 	ImGui::EndChild();
 }
@@ -388,43 +413,17 @@ void USkeletalMeshViewerWindow::RenderLayout()
 /**
  * @brief 좌측 패널: Skeleton Tree (Placeholder)
  */
-void USkeletalMeshViewerWindow::RenderSkeletonTreePanel()
+void USkeletalMeshViewerWindow::RenderSkeletonTreePanel(const USkeletalMesh* InSkeletalMesh, const FReferenceSkeleton& InRefSkeleton, const int32 InNumBones)
 {
+	assert(InSkeletalMesh);
+	assert(InNumBones > 0);
+
 	ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Skeleton Tree");
 	ImGui::Separator();
 	ImGui::Spacing();
 
-	// SkeletalMeshComponent 유효성 검사
-	if (!SkeletalMeshComponent)
-	{
-		ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No SkeletalMeshComponent assigned");
-		ImGui::Spacing();
-		ImGui::TextWrapped("Select a SkeletalMeshComponent from the Detail panel to view its skeleton.");
-		return;
-	}
-
-	// SkeletalMesh 가져오기
-	USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
-	if (!SkeletalMesh)
-	{
-		ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.4f, 1.0f), "No SkeletalMesh found");
-		ImGui::Spacing();
-		ImGui::TextDisabled("The component has no mesh asset assigned.");
-		return;
-	}
-
-	// ReferenceSkeleton 가져오기
-	const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
-	const int32 NumBones = RefSkeleton.GetRawBoneNum();
-
-	if (NumBones == 0)
-	{
-		ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.4f, 1.0f), "No bones in skeleton");
-		return;
-	}
-
 	// 본 정보 표시
-	ImGui::Text("Total Bones: %d", NumBones);
+	ImGui::Text("Total Bones: %d", InNumBones);
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
@@ -438,22 +437,22 @@ void USkeletalMeshViewerWindow::RenderSkeletonTreePanel()
 	// 스크롤 가능한 영역
 	if (ImGui::BeginChild("BoneTreeScroll", ImVec2(0, 0), false))
 	{
-		const TArray<FMeshBoneInfo>& BoneInfoArray = RefSkeleton.GetRawRefBoneInfo();
-		const TArray<FTransform>& BonePoseArray = RefSkeleton.GetRawRefBonePose();
+		const TArray<FMeshBoneInfo>& BoneInfoArray = InRefSkeleton.GetRawRefBoneInfo();
+		const TArray<FTransform>& BonePoseArray = InRefSkeleton.GetRawRefBonePose();
 
 		// 검색 필터링
 		FString SearchStr = SearchBuffer;
 		bool bHasSearchFilter = !SearchStr.empty();
 
 		// 루트 본들을 찾아서 재귀적으로 렌더링
-		for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+		for (int32 BoneIndex = 0; BoneIndex < InNumBones; ++BoneIndex)
 		{
 			const FMeshBoneInfo& BoneInfo = BoneInfoArray[BoneIndex];
 
 			// 루트 본만 처리 (부모가 없는 본)
 			if (BoneInfo.ParentIndex == INDEX_NONE)
 			{
-				RenderBoneTreeNode(BoneIndex, RefSkeleton, SearchStr, bHasSearchFilter);
+				RenderBoneTreeNode(BoneIndex, InRefSkeleton, SearchStr, bHasSearchFilter);
 			}
 		}
 	}
@@ -577,17 +576,6 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 	if (ImGui::IsItemClicked())
 	{
 		SelectedBoneIndex = BoneIndex;
-
-		// TempBoneSpaceTransforms 초기화 (처음 선택 시)
-		if (TempBoneSpaceTransforms.IsEmpty() && SkeletalMeshComponent)
-		{
-			const int32 NumBones = RefSkeleton.GetRawBoneNum();
-			TempBoneSpaceTransforms.SetNum(NumBones);
-			for (int32 i = 0; i < NumBones; ++i)
-			{
-				TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
-			}
-		}
 	}
 
 	// 자식 본들 재귀적으로 렌더링
@@ -1059,37 +1047,14 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 /**
  * @brief 우측 패널: Edit Tools (Placeholder)
  */
-void USkeletalMeshViewerWindow::RenderEditToolsPanel()
+void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkeletalMesh, const FReferenceSkeleton& InRefSkeleton, const int32 InNumBones)
 {
+	assert(InSkeletalMesh);
+	assert(InNumBones > 0);
+
 	ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.8f, 1.0f), "Edit Tools");
 	ImGui::Separator();
 	ImGui::Spacing();
-
-	if (!SkeletalMeshComponent)
-	{
-		ImGui::TextWrapped("No SkeletalMeshComponent assigned");
-		ImGui::Spacing();
-		ImGui::TextDisabled("Please assign a component to view bone information.");
-		return;
-	}
-
-	USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
-	if (!SkeletalMesh)
-	{
-		ImGui::TextWrapped("No SkeletalMesh found");
-		ImGui::Spacing();
-		ImGui::TextDisabled("The component has no mesh asset assigned.");
-		return;
-	}
-
-	const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
-	const int32 NumBones = RefSkeleton.GetRawBoneNum();
-
-	if (NumBones == 0)
-	{
-		ImGui::TextWrapped("No bones in skeleton");
-		return;
-	}
 
 	// TempBoneSpaceTransforms 초기화 확인
 	/*if (TempBoneSpaceTransforms.IsEmpty())
@@ -1111,10 +1076,10 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel()
 	}
 
 	// 선택된 본 인덱스 유효성 검사
-	assert((SelectedBoneIndex < 0 || SelectedBoneIndex >= NumBones) && "Invalid bone index selected");
+	assert((SelectedBoneIndex < 0 || SelectedBoneIndex >= InNumBones) && "Invalid bone index selected");
 
-	const TArray<FMeshBoneInfo>& BoneInfoArray = RefSkeleton.GetRawRefBoneInfo();
-	const TArray<FTransform>& RefBonePoses = RefSkeleton.GetRawRefBonePose();
+	const TArray<FMeshBoneInfo>& BoneInfoArray = InRefSkeleton.GetRawRefBoneInfo();
+	const TArray<FTransform>& RefBonePoses = InRefSkeleton.GetRawRefBonePose();
 	const FMeshBoneInfo& BoneInfo = BoneInfoArray[SelectedBoneIndex];
 
 	// ===================================================================
@@ -1293,7 +1258,7 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel()
 		if (ImGui::Button("Reset to Current", ImVec2(-1, 30)))
 		{
 			// 현재 컴포넌트의 값으로 리셋
-			for (int32 i = 0; i < NumBones; ++i)
+			for (int32 i = 0; i < InNumBones; ++i)
 			{
 				TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
 			}
@@ -1345,10 +1310,10 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel()
 
 	if (ImGui::CollapsingHeader("Mesh Info"))
 	{
-		if (SkeletalMesh)
+		if (InSkeletalMesh)
 		{
-			ImGui::Text("Loaded Mesh: %s", SkeletalMesh->GetName().ToString().c_str());
-			ImGui::Text("Bones: %d", NumBones);
+			ImGui::Text("Loaded Mesh: %s", InSkeletalMesh->GetName().ToString().c_str());
+			ImGui::Text("Bones: %d", InNumBones);
 		}
 		else
 		{
@@ -1375,7 +1340,7 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel()
 	if (ImGui::Button("Apply All Changes", ImVec2(-1, ViewerHeight)))
 	{
 		// TempBoneSpaceTransforms를 실제 BoneSpaceTransforms에 적용
-		for (int32 i = 0; i < NumBones; ++i)
+		for (int32 i = 0; i < InNumBones; ++i)
 		{
 			SkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
 		}
@@ -1477,6 +1442,40 @@ void USkeletalMeshViewerWindow::RenderCameraControls(UCamera& InCamera)
 		InCamera.SetOrthoZoom(1000.0f);
 		InCamera.SetMoveSpeed(10.0f);
 	}
+}
+
+bool USkeletalMeshViewerWindow::CheckAndLogSkeletalValidity(USkeletalMesh* OutSkeletalMesh, FReferenceSkeleton& OutRefSkeleton, int32& OutNumBones) const
+{
+	// SkeletalMeshComponent 유효성 검사
+	if (!SkeletalMeshComponent)
+	{
+		ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No SkeletalMeshComponent assigned");
+		ImGui::Spacing();
+		ImGui::TextWrapped("Select a SkeletalMeshComponent from the Detail panel to view its skeleton.");
+		return false;
+	}
+
+	// SkeletalMesh 가져오기
+	OutSkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+	if (!OutSkeletalMesh)
+	{
+		ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.4f, 1.0f), "No SkeletalMesh found");
+		ImGui::Spacing();
+		ImGui::TextWrapped("The component has no mesh asset assigned.");
+		return false;
+	}
+
+	// ReferenceSkeleton 가져오기
+	OutRefSkeleton = OutSkeletalMesh->GetRefSkeleton();
+	OutNumBones = OutRefSkeleton.GetRawBoneNum();
+
+	if (OutNumBones == 0)
+	{
+		ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.4f, 1.0f), "No bones in skeleton");
+		return false;
+	}
+
+	return true;
 }
 
 /**
