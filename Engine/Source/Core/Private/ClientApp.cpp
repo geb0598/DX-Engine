@@ -5,7 +5,6 @@
 #include "Manager/Input/Public/InputManager.h"
 
 #include "Manager/Asset/Public/AssetManager.h"
-#include "Manager/Asset/Public/ObjManager.h"
 #include "Manager/Time/Public/TimeManager.h"
 
 #include "Render/Renderer/Public/Renderer.h"
@@ -280,6 +279,5 @@ void FClientApp::ShutdownSystem() const
 
 	delete Window;
 	UAssetManager::GetInstance().Release();
-	FObjManager::Release();
 	URenderer::GetInstance().Release();
 }
