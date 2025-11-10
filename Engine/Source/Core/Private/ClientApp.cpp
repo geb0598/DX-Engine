@@ -270,9 +270,9 @@ void FClientApp::MainLoop()
 void FClientApp::ShutdownSystem() const
 {
 #if WITH_EDITOR
-	delete GEditor;
 	UStatOverlay::GetInstance().Release();
 	UUIManager::GetInstance().Shutdown();
+	delete GEditor;
 #else
 	// StandAlone Mode: Deinitialize Subsystems
 	EngineSubsystems.Deinitialize();
