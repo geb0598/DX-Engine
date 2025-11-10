@@ -307,7 +307,7 @@ void USkeletalMeshViewerWindow::OpenViewer(USkeletalMeshComponent* InSkeletalMes
 
 	// SkeletalMeshComponent 설정
 	SetWindowState(EUIWindowState::Visible);
-	SetSkeletalMeshComponent(InSkeletalMeshComponent);
+	DuplicateSkeletalMeshComponent(InSkeletalMeshComponent);
 	assert(SkeletalMeshComponent);
 
 	// SkeletalMesh 유효성 검사 및 변수 할당
@@ -335,8 +335,6 @@ void USkeletalMeshViewerWindow::OpenViewer(USkeletalMeshComponent* InSkeletalMes
 			PreviewSkeletalMeshActor->SetActorLocation(FVector(0, 0, 0));
 			PreviewSkeletalMeshActor->SetActorRotation(FQuaternion::Identity());
 
-			OriginalOwnerActor = SkeletalMeshComponent->GetOwner(); // RegisterComponent시 Owner가 재설정되기 때문에, 저장해둠
-
 			PreviewSkeletalMeshActor->RegisterComponent(SkeletalMeshComponent);
 			SelectedComponent = SkeletalMeshComponent;
 
@@ -352,17 +350,26 @@ void USkeletalMeshViewerWindow::OpenViewer(USkeletalMeshComponent* InSkeletalMes
 }
 bool USkeletalMeshViewerWindow::OnWindowClose()
 {
-	if (SkeletalMeshComponent && OriginalOwnerActor)
+	if (SkeletalMeshComponent && PreviewSkeletalMeshActor)
 	{
-		if (PreviewSkeletalMeshActor)
-		{
-			// TODO: SkeletalMeshComponent를 PreviewSkeletalMeshActor에서 언레지스터. 지금은 프로그램 종료 시 크래시 남
-		}
-		SkeletalMeshComponent->SetOwner(OriginalOwnerActor);
+		PreviewSkeletalMeshActor->RemoveComponent(SkeletalMeshComponent);
 	}
 	SkeletalMeshComponent = nullptr;
 
 	return true;
+}
+
+void USkeletalMeshViewerWindow::DuplicateSkeletalMeshComponent(USkeletalMeshComponent* InSkeletalMeshComponent)
+{
+	if(SkeletalMeshComponent = Cast<USkeletalMeshComponent>(InSkeletalMeshComponent->Duplicate()))
+	{
+		OriginalSkeletalMeshComponent = InSkeletalMeshComponent;
+		UE_LOG("SkeletalMeshViewerWindow: SkeletalMeshComponent 복제 완료");
+	}
+	else
+	{
+		UE_LOG_ERROR("SkeletalMeshViewerWindow: SkeletalMeshComponent 복제 실패");
+	}
 }
 
 /**
@@ -625,7 +632,7 @@ void USkeletalMeshViewerWindow::RenderLayout()
 	// SkeletalMeshComponent에 임시 본 트랜스폼 적용
 	if (SkeletalMeshComponent)
 	{
-		SkeletalMeshComponent->RefreshBoneTransformsCustom(TempBoneSpaceTransforms, bDirtyBoneTransforms);
+		SkeletalMeshComponent->RefreshBoneTransforms();
 		SkeletalMeshComponent->UpdateSkinnedVertices();
 	}
 
@@ -1537,6 +1544,8 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
+		bDirtyBoneTransforms = false;
+
 		// X
 		ImVec2 PosX = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
@@ -1663,6 +1672,11 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		ImGui::Separator();
 		ImGui::Spacing();
 
+		if (bDirtyBoneTransforms)
+		{
+			SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, TempTransform);
+		}
+
 		//Reset 버튼
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.3f, 0.2f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.4f, 0.3f, 1.0f));
@@ -1673,7 +1687,8 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 			// 현재 컴포넌트의 값으로 리셋
 			for (int32 i = 0; i < InNumBones; ++i)
 			{
-				TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
+				TempBoneSpaceTransforms[i] = OriginalSkeletalMeshComponent->GetBoneTransformLocal(i);
+				SkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
 			}
 			UE_LOG("SkeletalMeshViewerWindow: Reset temp bone transforms to current values");
 		}
@@ -1755,7 +1770,7 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// TempBoneSpaceTransforms를 실제 BoneSpaceTransforms에 적용
 		for (int32 i = 0; i < InNumBones; ++i)
 		{
-			SkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
+			OriginalSkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
 		}
 		UE_LOG("SkeletalMeshViewerWindow: Applied bone transform changes");
 	}

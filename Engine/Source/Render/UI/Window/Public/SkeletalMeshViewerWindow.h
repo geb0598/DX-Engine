@@ -41,7 +41,7 @@ public:
 	void OpenViewer(USkeletalMeshComponent* InSkeletalMeshComponent);
 	bool OnWindowClose() override;
 
-	void SetSkeletalMeshComponent(USkeletalMeshComponent* InSkeletalMeshComponent) { SkeletalMeshComponent = InSkeletalMeshComponent; }
+	void DuplicateSkeletalMeshComponent(USkeletalMeshComponent* InSkeletalMeshComponent);
 
 protected:
 	void OnPreRenderWindow(float MenuBarOffset) override;
@@ -150,8 +150,8 @@ private:
 	// 렌더링할 SkeletalMeshComponent
 	USkeletalMeshComponent* SkeletalMeshComponent = nullptr;
 
-	// SkeletalMeshComponent의 Owner 복구용 포인터
-	AActor* OriginalOwnerActor = nullptr;
+	// 원본 SkeletalMeshComponent
+	USkeletalMeshComponent* OriginalSkeletalMeshComponent = nullptr;
 
 	bool bDirtyBoneTransforms = false;
 
