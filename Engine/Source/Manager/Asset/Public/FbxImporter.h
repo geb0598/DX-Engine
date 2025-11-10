@@ -224,10 +224,15 @@ private:
 
 	// Skeletal Mesh Helpers
 	static FbxMesh* FindFirstSkinnedMesh(FbxNode* RootNode, FbxNode** OutNode);
+	static void FindAllSkinnedMeshes(FbxNode* RootNode, TArray<FbxNode*>& OutMeshNodes);
 	static bool ExtractSkeleton(FbxScene* Scene, FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo);
 	static bool ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo);
+	static bool AppendSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, uint32 VertexOffset, int32 ControlPointOffset);
 	static void ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, const Configuration& Config);
+	static void AppendSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo,
+		const Configuration& Config, uint32 VertexOffset, uint32 MaterialOffset, int32 ControlPointOffset);
 	static void ExtractSkeletalMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxSkeletalMeshInfo* OutMeshInfo);
+	static void AppendSkeletalMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxSkeletalMeshInfo* OutMeshInfo, uint32 MaterialOffset);
 	static void BuildSkeletalMeshSections(const TArray<TArray<uint32>>& IndicesPerMaterial, FFbxSkeletalMeshInfo* OutMeshInfo);
 
 	static inline FbxManager* SdkManager = nullptr;

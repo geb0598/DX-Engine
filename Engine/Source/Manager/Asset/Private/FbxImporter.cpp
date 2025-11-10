@@ -543,7 +543,7 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 		return false;
 	}
 
-	// 첫 번째 스킨 메시 찾기
+	// 모든 스킨 메시 찾기 (디버그)
 	FbxNode* RootNode = Scene->GetRootNode();
 	if (!RootNode)
 	{
@@ -551,6 +551,30 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 		Scene->Destroy();
 		return false;
 	}
+
+	// 디버그: 모든 메시 노드 출력
+	int TotalMeshCount = 0;
+	int SkinnedMeshCount = 0;
+	std::function<void(FbxNode*)> CountMeshes = [&](FbxNode* Node) {
+		if (FbxMesh* Mesh = Node->GetMesh())
+		{
+			TotalMeshCount++;
+			int DeformerCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
+			if (DeformerCount > 0)
+			{
+				SkinnedMeshCount++;
+				UE_LOG("[FbxImporter] 스킨 메시 발견 #%d: '%s' (정점: %d, 폴리곤: %d)",
+					SkinnedMeshCount, Node->GetName(),
+					Mesh->GetControlPointsCount(), Mesh->GetPolygonCount());
+			}
+		}
+		for (int i = 0; i < Node->GetChildCount(); ++i)
+		{
+			CountMeshes(Node->GetChild(i));
+		}
+	};
+	CountMeshes(RootNode);
+	UE_LOG("[FbxImporter] 전체 메시: %d개, 스킨 메시: %d개", TotalMeshCount, SkinnedMeshCount);
 
 	FbxNode* MeshNode = nullptr;
 	FbxMesh* Mesh = FindFirstSkinnedMesh(RootNode, &MeshNode);
@@ -561,27 +585,82 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 		return false;
 	}
 
-	// 스켈레톤 추출
-	if (!ExtractSkeleton(Scene, Mesh, OutMeshInfo))
+	// 모든 스킨 메시 찾기
+	TArray<FbxNode*> AllMeshNodes;
+	FindAllSkinnedMeshes(RootNode, AllMeshNodes);
+
+	if (AllMeshNodes.Num() == 0)
+	{
+		UE_LOG_ERROR("FBX에 유효한 스킨 메시가 없습니다");
+		Scene->Destroy();
+		return false;
+	}
+
+	UE_LOG_SUCCESS("[FbxImporter] 총 %d개의 스킨 메시를 병합합니다", AllMeshNodes.Num());
+
+	// 첫 번째 메시에서 스켈레톤 추출
+	FbxMesh* FirstMesh = AllMeshNodes[0]->GetMesh();
+	if (!ExtractSkeleton(Scene, FirstMesh, OutMeshInfo))
 	{
 		UE_LOG_ERROR("스켈레톤 추출 실패");
 		Scene->Destroy();
 		return false;
 	}
 
-	// 지오메트리 데이터 추출
-	ExtractSkeletalGeometryData(Mesh, OutMeshInfo, Config);
-
-	// 스킨 가중치 추출
-	if (!ExtractSkinWeights(Mesh, OutMeshInfo))
+	// 모든 메시 병합
+	for (int i = 0; i < AllMeshNodes.Num(); ++i)
 	{
-		UE_LOG_ERROR("스킨 가중치 추출 실패");
-		Scene->Destroy();
-		return false;
-	}
+		FbxNode* CurrentNode = AllMeshNodes[i];
+		FbxMesh* CurrentMesh = CurrentNode->GetMesh();
 
-	// 머티리얼 추출
-	ExtractSkeletalMaterials(MeshNode, FilePath, OutMeshInfo);
+		UE_LOG("[FbxImporter] 메시 #%d 처리 중: '%s'", i + 1, CurrentNode->GetName());
+
+		uint32 VertexOffset = OutMeshInfo->VertexList.Num();
+		uint32 MaterialOffset = OutMeshInfo->Materials.Num();
+
+		// ControlPoint 오프셋 계산
+		int32 ControlPointOffset = 0;
+		if (OutMeshInfo->ControlPointIndices.Num() > 0)
+		{
+			for (int32 Idx : OutMeshInfo->ControlPointIndices)
+			{
+				if (Idx > ControlPointOffset)
+				{
+					ControlPointOffset = Idx;
+				}
+			}
+			ControlPointOffset++; // 다음 인덱스부터 시작
+		}
+
+		// 머티리얼 먼저 추가
+		AppendSkeletalMaterials(CurrentNode, FilePath, OutMeshInfo, MaterialOffset);
+
+		// 지오메트리 데이터 추가
+		if (i == 0)
+		{
+			// 첫 번째 메시는 ExtractSkeletalGeometryData 사용
+			ExtractSkeletalGeometryData(CurrentMesh, OutMeshInfo, Config);
+			// 스킨 가중치도 추출
+			if (!ExtractSkinWeights(CurrentMesh, OutMeshInfo))
+			{
+				UE_LOG_ERROR("스킨 가중치 추출 실패: 메시 #%d", i + 1);
+				Scene->Destroy();
+				return false;
+			}
+		}
+		else
+		{
+			// 이후 메시들은 AppendSkeletalGeometryData 사용
+			AppendSkeletalGeometryData(CurrentMesh, OutMeshInfo, Config, VertexOffset, MaterialOffset, ControlPointOffset);
+			// 스킨 가중치도 추가
+			if (!AppendSkinWeights(CurrentMesh, OutMeshInfo, VertexOffset, ControlPointOffset))
+			{
+				UE_LOG_ERROR("스킨 가중치 추가 실패: 메시 #%d", i + 1);
+				Scene->Destroy();
+				return false;
+			}
+		}
+	}
 
 	// 파싱 완료 후 베이크 저장
 	if (Config.bIsBinaryEnabled)
@@ -619,6 +698,29 @@ FbxMesh* FFbxImporter::FindFirstSkinnedMesh(FbxNode* RootNode, FbxNode** OutNode
 		}
 	}
 	return nullptr;
+}
+
+void FFbxImporter::FindAllSkinnedMeshes(FbxNode* RootNode, TArray<FbxNode*>& OutMeshNodes)
+{
+	if (!RootNode)
+		return;
+
+	// 현재 노드에 메시가 있는지 확인
+	if (FbxMesh* Mesh = RootNode->GetMesh())
+	{
+		// 스킨 디포머가 있는지 확인
+		int DeformerCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
+		if (DeformerCount > 0)
+		{
+			OutMeshNodes.Add(RootNode);
+		}
+	}
+
+	// 자식 노드 재귀 탐색
+	for (int i = 0; i < RootNode->GetChildCount(); ++i)
+	{
+		FindAllSkinnedMeshes(RootNode->GetChild(i), OutMeshNodes);
+	}
 }
 
 bool FFbxImporter::ExtractSkeleton(FbxScene* Scene, FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo)
@@ -787,6 +889,84 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 
 	UE_LOG_SUCCESS("[FbxImporter] 스킨 가중치 추출 완료: ControlPoints=%d, PolygonVertices=%d",
 		ControlPointCount, PolygonVertexCount);
+	return true;
+}
+
+bool FFbxImporter::AppendSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, uint32 VertexOffset, int32 ControlPointOffset)
+{
+	FbxSkin* Skin = (FbxSkin*)Mesh->GetDeformer(0, FbxDeformer::eSkin);
+	if (!Skin)
+	{
+		UE_LOG_ERROR("스킨 디포머를 찾을 수 없습니다.");
+		return false;
+	}
+
+	const int ControlPointCount = Mesh->GetControlPointsCount();
+	int ClusterCount = Skin->GetClusterCount();
+
+	// 1단계: ControlPoint 기반으로 가중치 추출
+	TArray<FFbxBoneInfluence> ControlPointWeights;
+	ControlPointWeights.Reset(ControlPointCount);
+
+	for (int i = 0; i < ControlPointCount; ++i)
+	{
+		ControlPointWeights[i] = FFbxBoneInfluence();
+	}
+
+	for (int ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
+	{
+		FbxCluster* Cluster = Skin->GetCluster(ClusterIndex);
+		int* Indices = Cluster->GetControlPointIndices();
+		double* Weights = Cluster->GetControlPointWeights();
+		int IndexCount = Cluster->GetControlPointIndicesCount();
+
+		for (int i = 0; i < IndexCount; ++i)
+		{
+			int CtrlPointIndex = Indices[i];
+			double Weight = Weights[i];
+
+			if (CtrlPointIndex >= 0 && CtrlPointIndex < ControlPointCount && Weight > 0.0001)
+			{
+				FFbxBoneInfluence& Influence = ControlPointWeights[CtrlPointIndex];
+
+				// 빈 슬롯 찾기
+				for (int j = 0; j < FFbxBoneInfluence::MAX_INFLUENCES; ++j)
+				{
+					if (Influence.BoneIndices[j] == -1)
+					{
+						Influence.BoneIndices[j] = ClusterIndex;
+						Influence.BoneWeights[j] = static_cast<uint8>(Weight * 255.0);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	// 2단계: ControlPoint 가중치를 Polygon Vertex로 확장하여 추가
+	int32 CurrentVertexCount = OutMeshInfo->VertexList.Num();
+
+	for (uint32 i = VertexOffset; i < CurrentVertexCount; ++i)
+	{
+		int32 CtrlPointIndex = OutMeshInfo->ControlPointIndices[i];
+
+		// ControlPointOffset을 빼서 원래 인덱스로 복원
+		int32 LocalCtrlPointIndex = CtrlPointIndex - ControlPointOffset;
+
+		if (LocalCtrlPointIndex >= 0 && LocalCtrlPointIndex < ControlPointCount)
+		{
+			// ControlPoint의 가중치를 추가
+			OutMeshInfo->SkinWeights.Add(ControlPointWeights[LocalCtrlPointIndex]);
+		}
+		else
+		{
+			// 잘못된 인덱스인 경우 빈 가중치 추가
+			OutMeshInfo->SkinWeights.Add(FFbxBoneInfluence());
+		}
+	}
+
+	UE_LOG_SUCCESS("[FbxImporter] 스킨 가중치 추가 완료: ControlPoints=%d, Vertices=%d",
+		ControlPointCount, CurrentVertexCount - VertexOffset);
 	return true;
 }
 
@@ -976,6 +1156,157 @@ void FFbxImporter::ExtractSkeletalMaterials(FbxNode* Node, const std::filesystem
 		FFbxMaterialInfo DefaultMat;
 		DefaultMat.MaterialName = "Default";
 		OutMeshInfo->Materials.Add(DefaultMat);
+	}
+}
+
+void FFbxImporter::AppendSkeletalMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxSkeletalMeshInfo* OutMeshInfo, uint32 MaterialOffset)
+{
+	const int MaterialCount = Node->GetMaterialCount();
+
+	for (int m = 0; m < MaterialCount; ++m)
+	{
+		FbxSurfaceMaterial* Material = Node->GetMaterial(m);
+		if (!Material) continue;
+
+		FFbxMaterialInfo MatInfo;
+		const char* MaterialName = Material->GetName();
+		MatInfo.MaterialName = (MaterialName && strlen(MaterialName) > 0)
+			? MaterialName
+			: "Material_" + std::to_string(MaterialOffset + m);
+
+		// Diffuse 텍스처 추출
+		if (FbxProperty Prop = Material->FindProperty(FbxSurfaceMaterial::sDiffuse); Prop.IsValid())
+		{
+			int TextureCount = Prop.GetSrcObjectCount<FbxFileTexture>();
+			if (TextureCount > 0)
+			{
+				if (FbxFileTexture* Texture = Prop.GetSrcObject<FbxFileTexture>(0))
+				{
+					std::string OriginalTexturePath = Texture->GetFileName();
+					std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
+					std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
+
+					if (!ResolvedPath.empty())
+					{
+						MatInfo.DiffuseTexturePath = ResolvedPath;
+					}
+				}
+			}
+		}
+
+		OutMeshInfo->Materials.Add(MatInfo);
+	}
+
+	if (MaterialCount == 0)
+	{
+		FFbxMaterialInfo DefaultMat;
+		DefaultMat.MaterialName = "Default_" + std::to_string(MaterialOffset);
+		OutMeshInfo->Materials.Add(DefaultMat);
+	}
+}
+
+void FFbxImporter::AppendSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo,
+	const Configuration& Config, uint32 VertexOffset, uint32 MaterialOffset, int32 ControlPointOffset)
+{
+	const int ControlPointCount = Mesh->GetControlPointsCount();
+	FbxVector4* ControlPoints = Mesh->GetControlPoints();
+
+	// ControlPoint → Vertex 변환
+	TArray<FVector> ControlPointPositions;
+	ControlPointPositions.Reserve(ControlPointCount);
+	for (int i = 0; i < ControlPointCount; ++i)
+	{
+		FVector Pos(ControlPoints[i][0], ControlPoints[i][1], ControlPoints[i][2]);
+		if (Config.bConvertToUEBasis) Pos = FVector(Pos.X, -Pos.Y, Pos.Z);
+		ControlPointPositions.Add(Pos);
+	}
+
+	// Material 매핑
+	FbxLayerElementMaterial* MaterialElement = Mesh->GetElementMaterial();
+	FbxGeometryElement::EMappingMode MappingMode = FbxGeometryElement::eAllSame;
+	if (MaterialElement) MappingMode = MaterialElement->GetMappingMode();
+
+	int PolyCount = Mesh->GetPolygonCount();
+	uint32 VertexCounter = VertexOffset;
+
+	// Material별 인덱스 그룹 확장
+	TArray<TArray<uint32>> IndicesPerMaterial;
+	IndicesPerMaterial.SetNum(OutMeshInfo->Materials.Num());
+
+	for (int p = 0; p < PolyCount; ++p)
+	{
+		int MaterialIndex = 0;
+		if (MaterialElement)
+		{
+			switch (MappingMode)
+			{
+			case FbxGeometryElement::eByPolygon:
+				MaterialIndex = MaterialElement->GetIndexArray().GetAt(p);
+				break;
+			case FbxGeometryElement::eAllSame:
+				MaterialIndex = 0;
+				break;
+			}
+		}
+
+		MaterialIndex += MaterialOffset;
+		if (MaterialIndex >= OutMeshInfo->Materials.Num()) MaterialIndex = OutMeshInfo->Materials.Num() - 1;
+
+		int PolySize = Mesh->GetPolygonSize(p);
+		for (int v = 0; v < PolySize; ++v)
+		{
+			int CtrlPointIndex = Mesh->GetPolygonVertex(p, v);
+			OutMeshInfo->ControlPointIndices.Add(CtrlPointIndex + ControlPointOffset);
+
+			// 위치
+			OutMeshInfo->VertexList.Add(ControlPointPositions[CtrlPointIndex]);
+
+			// 노멀
+			FbxVector4 Normal;
+			if (Mesh->GetPolygonVertexNormal(p, v, Normal))
+			{
+				FVector N(Normal[0], Normal[1], Normal[2]);
+				if (Config.bConvertToUEBasis) N = FVector(N.X, -N.Y, N.Z);
+				OutMeshInfo->NormalList.Add(N);
+			}
+
+			// UV
+			FbxStringList UVSets;
+			Mesh->GetUVSetNames(UVSets);
+			FVector2 UV(0, 0);
+			if (UVSets.GetCount() > 0)
+			{
+				FbxVector2 UVVal;
+				bool bUnmapped = false;
+				if (Mesh->GetPolygonVertexUV(p, v, UVSets[0], UVVal, bUnmapped))
+					UV = FVector2(UVVal[0], 1.0f - UVVal[1]);
+			}
+			OutMeshInfo->TexCoordList.Add(UV);
+
+			// 인덱스 추가
+			OutMeshInfo->Indices.Add(VertexCounter);
+			IndicesPerMaterial[MaterialIndex].Add(VertexCounter);
+			VertexCounter++;
+		}
+	}
+
+	// 섹션 누적
+	uint32 CurrentOffset = 0;
+	if (OutMeshInfo->Sections.Num() > 0)
+	{
+		const auto& Last = OutMeshInfo->Sections.Last();
+		CurrentOffset = Last.StartIndex + Last.IndexCount;
+	}
+
+	for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
+	{
+		if (IndicesPerMaterial[i].Num() == 0) continue;
+		FFbxMeshSection Section;
+		Section.StartIndex = CurrentOffset;
+		Section.IndexCount = IndicesPerMaterial[i].Num();
+		Section.MaterialIndex = i;
+		OutMeshInfo->Sections.Add(Section);
+		CurrentOffset += Section.IndexCount;
 	}
 }
 
