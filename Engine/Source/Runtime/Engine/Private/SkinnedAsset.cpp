@@ -36,6 +36,6 @@ void USkinnedAsset::FillComponentSpaceTransforms(const TArray<FTransform>& InBon
 		const int32 ParentIndex = GetRefSkeleton().GetRawParentIndex(BoneIndex);
 		FTransform* ParentSpaceBase = ComponentSpaceData + ParentIndex;
 
-		*SpaceBase = *(LocalTransformsData + BoneIndex) * *ParentSpaceBase;
+		*SpaceBase = *ParentSpaceBase * *(LocalTransformsData + BoneIndex);
 	}
 }

@@ -288,6 +288,10 @@ void USkeletalMeshComponent::UpdateSkinnedVertices()
 		for (int32 InfluenceIndex = 0; InfluenceIndex < FRawSkinWeight::MAX_TOTAL_INFLUENCES; ++InfluenceIndex)
 		{
 			const FBoneIndexType BoneIndex = SkinWeight.InfluenceBones[InfluenceIndex];
+			if (BoneIndex == static_cast<FBoneIndexType>(-1))
+			{
+				continue;
+			}
 			const uint16 Weight = SkinWeight.InfluenceWeights[InfluenceIndex];
 			TotalWeight += Weight;
 

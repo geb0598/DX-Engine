@@ -28,25 +28,38 @@ void USkeletalMesh::CalculateInvRefMatrices()
 {
 	const int32 NumRealBones = GetRefSkeleton().GetRawBoneNum();
 
-	TArray<FMatrix>& ComposedRefPoseMatrices = GetCachedComposedRefPoseMatrices();
+	const TArray<FTransform>& RefBonePose = GetRefSkeleton().GetRawRefBonePose();
+
+	TArray<FMatrix>& ComposedRefPoseMatrices_Matrix = GetCachedComposedRefPoseMatrices();
+
+	TArray<FTransform> ComposedRefPoseTransforms;
+	ComposedRefPoseTransforms.SetNum(NumRealBones);
 
 	if (GetRefBasesInvMatrix().Num() != NumRealBones)
 	{
 		GetRefBasesInvMatrix().SetNum(NumRealBones);
-
-		ComposedRefPoseMatrices.SetNum(NumRealBones);
+		ComposedRefPoseMatrices_Matrix.SetNum(NumRealBones);
 
 		for (int32 b = 0; b < NumRealBones; ++b)
 		{
-			ComposedRefPoseMatrices[b] = GetRefPoseMatrix(b);
+			// 1. 로컬 FTransform을 가져옵니다.
+			const FTransform& LocalTransform = RefBonePose[b];
 
 			if (b > 0)
 			{
-				int32 Parent = GetRefSkeleton().GetRawParentIndex(b);
-				ComposedRefPoseMatrices[b] = ComposedRefPoseMatrices[b] * ComposedRefPoseMatrices[Parent];
+				const int32 Parent = GetRefSkeleton().GetRawParentIndex(b);
+
+				ComposedRefPoseTransforms[b] = ComposedRefPoseTransforms[Parent] * LocalTransform;
+			}
+			else
+			{
+				ComposedRefPoseTransforms[b] = LocalTransform;
 			}
 
-			GetRefBasesInvMatrix()[b] = ComposedRefPoseMatrices[b].Inverse();
+			FMatrix ComponentMatrix = ComposedRefPoseTransforms[b].ToMatrixWithScale();
+
+			ComposedRefPoseMatrices_Matrix[b] = ComponentMatrix;
+			GetRefBasesInvMatrix()[b] = ComponentMatrix.Inverse();
 		}
 	}
 }
