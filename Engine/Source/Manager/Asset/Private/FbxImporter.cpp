@@ -224,10 +224,9 @@ void FFbxImporter::ExtractVertices(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInf
 	}
 }
 
-void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxStaticMeshInfo* OutMeshInfo)
+void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxStaticMeshInfo* OutMeshInfo, uint32 MaterialOffset)
 {
 	const int MaterialCount = Node->GetMaterialCount();
-	UE_LOG("[FbxImporter] Material Count: %d", MaterialCount);
 
 	for (int m = 0; m < MaterialCount; ++m)
 	{
@@ -238,9 +237,7 @@ void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& 
 		const char* MaterialName = Material->GetName();
 		MatInfo.MaterialName = (MaterialName && strlen(MaterialName) > 0)
 			? MaterialName
-			: "Material_" + std::to_string(m);
-
-		UE_LOG("[FbxImporter] Material %d: %s", m, MatInfo.MaterialName.c_str());
+			: "Material_" + std::to_string(MaterialOffset + m);
 
 		// Diffuse 텍스처 추출
 		if (FbxProperty Prop = Material->FindProperty(FbxSurfaceMaterial::sDiffuse); Prop.IsValid())
@@ -258,8 +255,6 @@ void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& 
 					if (FbxFileTexture* Texture = Prop.GetSrcObject<FbxFileTexture>(0))
 					{
 						std::string OriginalTexturePath = Texture->GetFileName();
-						UE_LOG("[FbxImporter] Material %d - Texture Path: %s", m, OriginalTexturePath.c_str());
-
 						std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
 						std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
 
@@ -275,13 +270,19 @@ void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& 
 		OutMeshInfo->Materials.Add(MatInfo);
 	}
 
-	// Material이 없으면 기본 Material 추가
-	if (OutMeshInfo->Materials.Num() == 0)
+	// Material이 없으면 기본 Material 추가 (MaterialOffset이 0일 때만)
+	if (MaterialCount == 0 && MaterialOffset == 0)
 	{
 		FFbxMaterialInfo DefaultMat;
 		DefaultMat.MaterialName = "Default";
 		OutMeshInfo->Materials.Add(DefaultMat);
 		UE_LOG_WARNING("[FbxImporter] Material이 없어 기본 Material을 추가했습니다.");
+	}
+	else if (MaterialCount == 0 && MaterialOffset > 0)
+	{
+		FFbxMaterialInfo DefaultMat;
+		DefaultMat.MaterialName = "Default_" + std::to_string(MaterialOffset);
+		OutMeshInfo->Materials.Add(DefaultMat);
 	}
 }
 
@@ -632,33 +633,18 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 			ControlPointOffset++; // 다음 인덱스부터 시작
 		}
 
-		// 머티리얼 먼저 추가
-		AppendSkeletalMaterials(CurrentNode, FilePath, OutMeshInfo, MaterialOffset);
+		// 머티리얼 먼저 추가 (통합된 ExtractMaterials 사용)
+		ExtractMaterials(CurrentNode, FilePath, OutMeshInfo, MaterialOffset);
 
-		// 지오메트리 데이터 추가
-		if (i == 0)
+		// 지오메트리 데이터 추가 (통합된 함수 사용)
+		ExtractSkeletalGeometryData(CurrentMesh, OutMeshInfo, Config, VertexOffset, MaterialOffset, ControlPointOffset);
+
+		// 스킨 가중치 추가 (통합된 함수 사용)
+		if (!ExtractSkinWeights(CurrentMesh, OutMeshInfo, VertexOffset, ControlPointOffset))
 		{
-			// 첫 번째 메시는 ExtractSkeletalGeometryData 사용
-			ExtractSkeletalGeometryData(CurrentMesh, OutMeshInfo, Config);
-			// 스킨 가중치도 추출
-			if (!ExtractSkinWeights(CurrentMesh, OutMeshInfo))
-			{
-				UE_LOG_ERROR("스킨 가중치 추출 실패: 메시 #%d", i + 1);
-				Scene->Destroy();
-				return false;
-			}
-		}
-		else
-		{
-			// 이후 메시들은 AppendSkeletalGeometryData 사용
-			AppendSkeletalGeometryData(CurrentMesh, OutMeshInfo, Config, VertexOffset, MaterialOffset, ControlPointOffset);
-			// 스킨 가중치도 추가
-			if (!AppendSkinWeights(CurrentMesh, OutMeshInfo, VertexOffset, ControlPointOffset))
-			{
-				UE_LOG_ERROR("스킨 가중치 추가 실패: 메시 #%d", i + 1);
-				Scene->Destroy();
-				return false;
-			}
+			UE_LOG_ERROR("스킨 가중치 처리 실패: 메시 #%d", i + 1);
+			Scene->Destroy();
+			return false;
 		}
 	}
 
@@ -816,7 +802,7 @@ bool FFbxImporter::ExtractSkeleton(FbxScene* Scene, FbxMesh* Mesh, FFbxSkeletalM
 	return true;
 }
 
-bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo)
+bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, uint32 VertexOffset, int32 ControlPointOffset)
 {
 	FbxSkin* Skin = (FbxSkin*)Mesh->GetDeformer(0, FbxDeformer::eSkin);
 	if (!Skin)
@@ -868,109 +854,55 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 	}
 
 	// 2단계: ControlPoint 가중치를 Polygon Vertex로 확장
-	const int PolygonVertexCount = OutMeshInfo->VertexList.Num();
-	OutMeshInfo->SkinWeights.Reset(PolygonVertexCount);
-
-	for (int i = 0; i < PolygonVertexCount; ++i)
-	{
-		int CtrlPointIndex = OutMeshInfo->ControlPointIndices[i];
-
-		if (CtrlPointIndex >= 0 && CtrlPointIndex < ControlPointCount)
-		{
-			// ControlPoint의 가중치를 복사
-			OutMeshInfo->SkinWeights[i] = ControlPointWeights[CtrlPointIndex];
-		}
-		else
-		{
-			// 잘못된 인덱스인 경우 빈 가중치 추가
-			OutMeshInfo->SkinWeights[i] = FFbxBoneInfluence();
-		}
-	}
-
-	UE_LOG_SUCCESS("[FbxImporter] 스킨 가중치 추출 완료: ControlPoints=%d, PolygonVertices=%d",
-		ControlPointCount, PolygonVertexCount);
-	return true;
-}
-
-bool FFbxImporter::AppendSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, uint32 VertexOffset, int32 ControlPointOffset)
-{
-	FbxSkin* Skin = (FbxSkin*)Mesh->GetDeformer(0, FbxDeformer::eSkin);
-	if (!Skin)
-	{
-		UE_LOG_ERROR("스킨 디포머를 찾을 수 없습니다.");
-		return false;
-	}
-
-	const int ControlPointCount = Mesh->GetControlPointsCount();
-	int ClusterCount = Skin->GetClusterCount();
-
-	// 1단계: ControlPoint 기반으로 가중치 추출
-	TArray<FFbxBoneInfluence> ControlPointWeights;
-	ControlPointWeights.Reset(ControlPointCount);
-
-	for (int i = 0; i < ControlPointCount; ++i)
-	{
-		ControlPointWeights[i] = FFbxBoneInfluence();
-	}
-
-	for (int ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
-	{
-		FbxCluster* Cluster = Skin->GetCluster(ClusterIndex);
-		int* Indices = Cluster->GetControlPointIndices();
-		double* Weights = Cluster->GetControlPointWeights();
-		int IndexCount = Cluster->GetControlPointIndicesCount();
-
-		for (int i = 0; i < IndexCount; ++i)
-		{
-			int CtrlPointIndex = Indices[i];
-			double Weight = Weights[i];
-
-			if (CtrlPointIndex >= 0 && CtrlPointIndex < ControlPointCount && Weight > 0.0001)
-			{
-				FFbxBoneInfluence& Influence = ControlPointWeights[CtrlPointIndex];
-
-				// 빈 슬롯 찾기
-				for (int j = 0; j < FFbxBoneInfluence::MAX_INFLUENCES; ++j)
-				{
-					if (Influence.BoneIndices[j] == -1)
-					{
-						Influence.BoneIndices[j] = ClusterIndex;
-						Influence.BoneWeights[j] = static_cast<uint8>(Weight * 255.0);
-						break;
-					}
-				}
-			}
-		}
-	}
-
-	// 2단계: ControlPoint 가중치를 Polygon Vertex로 확장하여 추가
 	int32 CurrentVertexCount = OutMeshInfo->VertexList.Num();
+
+	// VertexOffset이 0이면 첫 메시 (Reset 사용), 아니면 추가 메시 (Add만 사용)
+	if (VertexOffset == 0)
+	{
+		OutMeshInfo->SkinWeights.Reset(CurrentVertexCount);
+	}
 
 	for (uint32 i = VertexOffset; i < CurrentVertexCount; ++i)
 	{
 		int32 CtrlPointIndex = OutMeshInfo->ControlPointIndices[i];
 
-		// ControlPointOffset을 빼서 원래 인덱스로 복원
+		// ControlPointOffset을 빼서 원래 인덱스로 복원 (추가 메시의 경우)
 		int32 LocalCtrlPointIndex = CtrlPointIndex - ControlPointOffset;
 
 		if (LocalCtrlPointIndex >= 0 && LocalCtrlPointIndex < ControlPointCount)
 		{
-			// ControlPoint의 가중치를 추가
-			OutMeshInfo->SkinWeights.Add(ControlPointWeights[LocalCtrlPointIndex]);
+			// ControlPoint의 가중치를 복사/추가
+			if (VertexOffset == 0)
+			{
+				OutMeshInfo->SkinWeights[i] = ControlPointWeights[LocalCtrlPointIndex];
+			}
+			else
+			{
+				OutMeshInfo->SkinWeights.Add(ControlPointWeights[LocalCtrlPointIndex]);
+			}
 		}
 		else
 		{
 			// 잘못된 인덱스인 경우 빈 가중치 추가
-			OutMeshInfo->SkinWeights.Add(FFbxBoneInfluence());
+			if (VertexOffset == 0)
+			{
+				OutMeshInfo->SkinWeights[i] = FFbxBoneInfluence();
+			}
+			else
+			{
+				OutMeshInfo->SkinWeights.Add(FFbxBoneInfluence());
+			}
 		}
 	}
 
-	UE_LOG_SUCCESS("[FbxImporter] 스킨 가중치 추가 완료: ControlPoints=%d, Vertices=%d",
+	UE_LOG_SUCCESS("[FbxImporter] 스킨 가중치 %s: ControlPoints=%d, Vertices=%d",
+		VertexOffset == 0 ? "추출 완료" : "추가 완료",
 		ControlPointCount, CurrentVertexCount - VertexOffset);
 	return true;
 }
 
-void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, const Configuration& Config)
+void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, const Configuration& Config,
+	uint32 VertexOffset, uint32 MaterialOffset, int32 ControlPointOffset)
 {
 	// 컨트롤 포인트(정점) 추출
 	const int ControlPointCount = Mesh->GetControlPointsCount();
@@ -997,18 +929,24 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 		MaterialMappingMode = MaterialElement->GetMappingMode();
 	}
 
-	// Material별 인덱스 그룹
+	// Material별 인덱스 그룹 (첫 메시인 경우와 추가 메시인 경우 처리 방식이 다름)
 	TArray<TArray<uint32>> IndicesPerMaterial;
-	IndicesPerMaterial.Reset(OutMeshInfo->Materials.Num() > 0 ? OutMeshInfo->Materials.Num() : 1);
-	for (int i = 0; i < (OutMeshInfo->Materials.Num() > 0 ? OutMeshInfo->Materials.Num() : 1); ++i)
+	if (VertexOffset == 0)
 	{
-		IndicesPerMaterial.Add(TArray<uint32>());
+		// 첫 메시: 기존 로직
+		IndicesPerMaterial.Reset(OutMeshInfo->Materials.Num() > 0 ? OutMeshInfo->Materials.Num() : 1);
+		for (int i = 0; i < (OutMeshInfo->Materials.Num() > 0 ? OutMeshInfo->Materials.Num() : 1); ++i)
+		{
+			IndicesPerMaterial.Add(TArray<uint32>());
+		}
+	}
+	else
+	{
+		// 추가 메시: 전체 Material 개수만큼 설정
+		IndicesPerMaterial.SetNum(OutMeshInfo->Materials.Num());
 	}
 
-	// ControlPoint -> PolygonVertex 매핑 저장
-	TArray<int32> ControlPointIndices;
-
-	uint32 VertexCounter = 0;
+	uint32 VertexCounter = VertexOffset;
 
 	// 폴리곤별 처리
 	const int PolygonCount = Mesh->GetPolygonCount();
@@ -1028,9 +966,11 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 			}
 		}
 
+		// Material 오프셋 적용
+		MaterialIndex += MaterialOffset;
 		if (MaterialIndex < 0 || MaterialIndex >= IndicesPerMaterial.Num())
 		{
-			MaterialIndex = 0;
+			MaterialIndex = (MaterialOffset > 0) ? OutMeshInfo->Materials.Num() - 1 : 0;
 		}
 
 		int PolySize = Mesh->GetPolygonSize(p);
@@ -1038,8 +978,8 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 		{
 			int CtrlPointIndex = Mesh->GetPolygonVertex(p, v);
 
-			// ControlPoint 인덱스 저장 (나중에 스킨 가중치 매핑에 사용)
-			ControlPointIndices.Add(CtrlPointIndex);
+			// ControlPoint 인덱스 저장 (오프셋 적용)
+			OutMeshInfo->ControlPointIndices.Add(CtrlPointIndex + ControlPointOffset);
 
 			// Position
 			if (CtrlPointIndex >= 0 && CtrlPointIndex < ControlPointPositions.Num())
@@ -1094,236 +1034,38 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 		}
 	}
 
-	// ControlPointIndices를 OutMeshInfo에 저장
-	OutMeshInfo->ControlPointIndices = std::move(ControlPointIndices);
-
-	// Indices를 Material별로 재정렬
-	// 현재 Indices는 Polygon 순서대로 저장되어 있지만,
-	// Section은 Material별로 연속된 범위를 가정하므로 재구성이 필요
-	OutMeshInfo->Indices.Empty();
-	for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
+	// Indices를 Material별로 재정렬 (첫 메시만)
+	if (VertexOffset == 0)
 	{
-		for (uint32 Index : IndicesPerMaterial[i])
+		OutMeshInfo->Indices.Empty();
+		for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
 		{
-			OutMeshInfo->Indices.Add(Index);
-		}
-	}
-
-	BuildSkeletalMeshSections(IndicesPerMaterial, OutMeshInfo);
-}
-
-void FFbxImporter::ExtractSkeletalMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxSkeletalMeshInfo* OutMeshInfo)
-{
-	const int MaterialCount = Node->GetMaterialCount();
-	UE_LOG("[FbxImporter] Material Count: %d", MaterialCount);
-
-	for (int m = 0; m < MaterialCount; ++m)
-	{
-		FbxSurfaceMaterial* Material = Node->GetMaterial(m);
-		if (!Material) continue;
-
-		FFbxMaterialInfo MatInfo;
-		const char* MaterialName = Material->GetName();
-		MatInfo.MaterialName = (MaterialName && strlen(MaterialName) > 0)
-			? MaterialName
-			: "Material_" + std::to_string(m);
-
-		// Diffuse 텍스처 추출
-		if (FbxProperty Prop = Material->FindProperty(FbxSurfaceMaterial::sDiffuse); Prop.IsValid())
-		{
-			int TextureCount = Prop.GetSrcObjectCount<FbxFileTexture>();
-			if (TextureCount > 0)
+			for (uint32 Index : IndicesPerMaterial[i])
 			{
-				if (FbxFileTexture* Texture = Prop.GetSrcObject<FbxFileTexture>(0))
-				{
-					std::string OriginalTexturePath = Texture->GetFileName();
-					std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
-					std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
-
-					if (!ResolvedPath.empty())
-					{
-						MatInfo.DiffuseTexturePath = ResolvedPath;
-					}
-				}
+				OutMeshInfo->Indices.Add(Index);
 			}
 		}
-
-		OutMeshInfo->Materials.Add(MatInfo);
+		BuildMeshSections(IndicesPerMaterial, OutMeshInfo);
 	}
-
-	if (OutMeshInfo->Materials.Num() == 0)
+	else
 	{
-		FFbxMaterialInfo DefaultMat;
-		DefaultMat.MaterialName = "Default";
-		OutMeshInfo->Materials.Add(DefaultMat);
-	}
-}
-
-void FFbxImporter::AppendSkeletalMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxSkeletalMeshInfo* OutMeshInfo, uint32 MaterialOffset)
-{
-	const int MaterialCount = Node->GetMaterialCount();
-
-	for (int m = 0; m < MaterialCount; ++m)
-	{
-		FbxSurfaceMaterial* Material = Node->GetMaterial(m);
-		if (!Material) continue;
-
-		FFbxMaterialInfo MatInfo;
-		const char* MaterialName = Material->GetName();
-		MatInfo.MaterialName = (MaterialName && strlen(MaterialName) > 0)
-			? MaterialName
-			: "Material_" + std::to_string(MaterialOffset + m);
-
-		// Diffuse 텍스처 추출
-		if (FbxProperty Prop = Material->FindProperty(FbxSurfaceMaterial::sDiffuse); Prop.IsValid())
+		// 추가 메시: Section만 업데이트
+		uint32 CurrentOffset = 0;
+		if (OutMeshInfo->Sections.Num() > 0)
 		{
-			int TextureCount = Prop.GetSrcObjectCount<FbxFileTexture>();
-			if (TextureCount > 0)
-			{
-				if (FbxFileTexture* Texture = Prop.GetSrcObject<FbxFileTexture>(0))
-				{
-					std::string OriginalTexturePath = Texture->GetFileName();
-					std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
-					std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
-
-					if (!ResolvedPath.empty())
-					{
-						MatInfo.DiffuseTexturePath = ResolvedPath;
-					}
-				}
-			}
+			const auto& Last = OutMeshInfo->Sections.Last();
+			CurrentOffset = Last.StartIndex + Last.IndexCount;
 		}
 
-		OutMeshInfo->Materials.Add(MatInfo);
-	}
-
-	if (MaterialCount == 0)
-	{
-		FFbxMaterialInfo DefaultMat;
-		DefaultMat.MaterialName = "Default_" + std::to_string(MaterialOffset);
-		OutMeshInfo->Materials.Add(DefaultMat);
-	}
-}
-
-void FFbxImporter::AppendSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo,
-	const Configuration& Config, uint32 VertexOffset, uint32 MaterialOffset, int32 ControlPointOffset)
-{
-	const int ControlPointCount = Mesh->GetControlPointsCount();
-	FbxVector4* ControlPoints = Mesh->GetControlPoints();
-
-	// ControlPoint → Vertex 변환
-	TArray<FVector> ControlPointPositions;
-	ControlPointPositions.Reserve(ControlPointCount);
-	for (int i = 0; i < ControlPointCount; ++i)
-	{
-		FVector Pos(ControlPoints[i][0], ControlPoints[i][1], ControlPoints[i][2]);
-		if (Config.bConvertToUEBasis) Pos = FVector(Pos.X, -Pos.Y, Pos.Z);
-		ControlPointPositions.Add(Pos);
-	}
-
-	// Material 매핑
-	FbxLayerElementMaterial* MaterialElement = Mesh->GetElementMaterial();
-	FbxGeometryElement::EMappingMode MappingMode = FbxGeometryElement::eAllSame;
-	if (MaterialElement) MappingMode = MaterialElement->GetMappingMode();
-
-	int PolyCount = Mesh->GetPolygonCount();
-	uint32 VertexCounter = VertexOffset;
-
-	// Material별 인덱스 그룹 확장
-	TArray<TArray<uint32>> IndicesPerMaterial;
-	IndicesPerMaterial.SetNum(OutMeshInfo->Materials.Num());
-
-	for (int p = 0; p < PolyCount; ++p)
-	{
-		int MaterialIndex = 0;
-		if (MaterialElement)
+		for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
 		{
-			switch (MappingMode)
-			{
-			case FbxGeometryElement::eByPolygon:
-				MaterialIndex = MaterialElement->GetIndexArray().GetAt(p);
-				break;
-			case FbxGeometryElement::eAllSame:
-				MaterialIndex = 0;
-				break;
-			}
-		}
-
-		MaterialIndex += MaterialOffset;
-		if (MaterialIndex >= OutMeshInfo->Materials.Num()) MaterialIndex = OutMeshInfo->Materials.Num() - 1;
-
-		int PolySize = Mesh->GetPolygonSize(p);
-		for (int v = 0; v < PolySize; ++v)
-		{
-			int CtrlPointIndex = Mesh->GetPolygonVertex(p, v);
-			OutMeshInfo->ControlPointIndices.Add(CtrlPointIndex + ControlPointOffset);
-
-			// 위치
-			OutMeshInfo->VertexList.Add(ControlPointPositions[CtrlPointIndex]);
-
-			// 노멀
-			FbxVector4 Normal;
-			if (Mesh->GetPolygonVertexNormal(p, v, Normal))
-			{
-				FVector N(Normal[0], Normal[1], Normal[2]);
-				if (Config.bConvertToUEBasis) N = FVector(N.X, -N.Y, N.Z);
-				OutMeshInfo->NormalList.Add(N);
-			}
-
-			// UV
-			FbxStringList UVSets;
-			Mesh->GetUVSetNames(UVSets);
-			FVector2 UV(0, 0);
-			if (UVSets.GetCount() > 0)
-			{
-				FbxVector2 UVVal;
-				bool bUnmapped = false;
-				if (Mesh->GetPolygonVertexUV(p, v, UVSets[0], UVVal, bUnmapped))
-					UV = FVector2(UVVal[0], 1.0f - UVVal[1]);
-			}
-			OutMeshInfo->TexCoordList.Add(UV);
-
-			// 인덱스 추가
-			OutMeshInfo->Indices.Add(VertexCounter);
-			IndicesPerMaterial[MaterialIndex].Add(VertexCounter);
-			VertexCounter++;
-		}
-	}
-
-	// 섹션 누적
-	uint32 CurrentOffset = 0;
-	if (OutMeshInfo->Sections.Num() > 0)
-	{
-		const auto& Last = OutMeshInfo->Sections.Last();
-		CurrentOffset = Last.StartIndex + Last.IndexCount;
-	}
-
-	for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
-	{
-		if (IndicesPerMaterial[i].Num() == 0) continue;
-		FFbxMeshSection Section;
-		Section.StartIndex = CurrentOffset;
-		Section.IndexCount = IndicesPerMaterial[i].Num();
-		Section.MaterialIndex = i;
-		OutMeshInfo->Sections.Add(Section);
-		CurrentOffset += Section.IndexCount;
-	}
-}
-
-void FFbxImporter::BuildSkeletalMeshSections(const TArray<TArray<uint32>>& IndicesPerMaterial, FFbxSkeletalMeshInfo* OutMeshInfo)
-{
-	uint32 CurrentIndexOffset = 0;
-	for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
-	{
-		if (IndicesPerMaterial[i].Num() > 0)
-		{
+			if (IndicesPerMaterial[i].Num() == 0) continue;
 			FFbxMeshSection Section;
-			Section.StartIndex = CurrentIndexOffset;
+			Section.StartIndex = CurrentOffset;
 			Section.IndexCount = IndicesPerMaterial[i].Num();
 			Section.MaterialIndex = i;
 			OutMeshInfo->Sections.Add(Section);
-
-			CurrentIndexOffset += Section.IndexCount;
+			CurrentOffset += Section.IndexCount;
 		}
 	}
 }
