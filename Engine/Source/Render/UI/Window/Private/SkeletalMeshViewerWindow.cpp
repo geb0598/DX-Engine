@@ -2029,14 +2029,16 @@ FQuaternion USkeletalMeshViewerWindow::GetViewerGizmoDragRotation(UCamera* InCam
 
 		FVector2 TangentDir = FVector2(-DirectionToMousePos.Y, DirectionToMousePos.X);
 
-		if (ViewerGizmo->GetGizmoDirection() == EGizmoDirection::Right)
+		if (ViewerGizmo->GetGizmoDirection() == EGizmoDirection::Right ||
+			ViewerGizmo->GetGizmoDirection() == EGizmoDirection::Forward ||
+			ViewerGizmo->GetGizmoDirection() == EGizmoDirection::Up)
 		{
 			TangentDir = -TangentDir;
 		}
 
 		const FVector2 PrevScreenPos = ViewerGizmo->GetPreviousScreenPos();
 		const FVector2 DragDelta = CurrentScreenPos - PrevScreenPos;
-		const FVector2 DragDir = FVector2(DragDelta.X, -DragDelta.Y);
+		const FVector2 DragDir = FVector2(DragDelta.X, DragDelta.Y);
 
 		const float DragDistSq = DragDir.LengthSquared();
 		constexpr float MinDragDistSq = 0.1f * 0.1f;
@@ -2048,6 +2050,14 @@ FQuaternion USkeletalMeshViewerWindow::GetViewerGizmoDragRotation(UCamera* InCam
 			constexpr float PixelsToDegrees = 1.0f;
 			float DeltaAngleDegrees = PixelDelta * PixelsToDegrees;
 			float DeltaAngle = FVector::GetDegreeToRadian(DeltaAngleDegrees);
+			// 카메라 시점 방향에 따른 회전 방향 보정
+			// 카메라가 회전축의 반대편에 있으면 부호 반전
+			const FVector CamToGizmo = (GizmoLocation - InCamera->GetLocation()).GetNormalized();
+			const float AxisDotCam = WorldRotationAxis.Dot(CamToGizmo);
+			if (AxisDotCam < 0.0f)
+			{
+				DeltaAngle = -DeltaAngle;
+			}
 
 			float NewAngle = ViewerGizmo->GetCurrentRotationAngle() + DeltaAngle;
 
