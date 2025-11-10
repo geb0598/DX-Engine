@@ -53,10 +53,12 @@ EFbxMeshType FFbxImporter::DetermineMeshType(const std::filesystem::path& FilePa
 		return EFbxMeshType::Unknown;
 	}
 
+	// RAII로 Scene 자동 관리 (예외 발생 시에도 자동 해제)
+	FFbxSceneGuard SceneGuard(Scene);
+
 	FbxNode* RootNode = Scene->GetRootNode();
 	if (!RootNode)
 	{
-		Scene->Destroy();
 		return EFbxMeshType::Unknown;
 	}
 
@@ -66,15 +68,12 @@ EFbxMeshType FFbxImporter::DetermineMeshType(const std::filesystem::path& FilePa
 
 	if (SkinnedMesh)
 	{
-		Scene->Destroy();
 		return EFbxMeshType::Skeletal;
 	}
 
 	// 일반 메시가 있는지 확인
 	FbxNode* MeshNode = nullptr;
 	FbxMesh* Mesh = FindFirstMesh(RootNode, &MeshNode);
-
-	Scene->Destroy();
 
 	if (Mesh)
 	{
@@ -133,12 +132,14 @@ bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxSta
 		return false;
 	}
 
+	// RAII로 Scene 자동 관리 (예외 발생 시에도 자동 해제)
+	FFbxSceneGuard SceneGuard(Scene);
+
 	// 첫 번째 메시 찾기
 	FbxNode* RootNode = Scene->GetRootNode();
 	if (!RootNode)
 	{
 		UE_LOG_ERROR("FBX 파일을 탐색을 실패했습니다.");
-		Scene->Destroy();
 		return false;
 	}
 
@@ -147,7 +148,6 @@ bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxSta
 	if (!Mesh || !MeshNode)
 	{
 		UE_LOG_ERROR("FBX에 유효한 메시가 없습니다");
-		Scene->Destroy();
 		return false;
 	}
 
@@ -164,7 +164,6 @@ bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxSta
 		UE_LOG_SUCCESS("FbxCache: Saved fbxbin '%ls'", BinFilePath.c_str());
 	}
 
-	Scene->Destroy();
 	return true;
 }
 
@@ -544,12 +543,14 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 		return false;
 	}
 
+	// RAII로 Scene 자동 관리 (예외 발생 시에도 자동 해제)
+	FFbxSceneGuard SceneGuard(Scene);
+
 	// 모든 스킨 메시 찾기 (디버그)
 	FbxNode* RootNode = Scene->GetRootNode();
 	if (!RootNode)
 	{
 		UE_LOG_ERROR("FBX 루트 노드를 찾을 수 없습니다.");
-		Scene->Destroy();
 		return false;
 	}
 
@@ -582,7 +583,6 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 	if (!Mesh || !MeshNode)
 	{
 		UE_LOG_ERROR("FBX에 유효한 스켈레탈 메시가 없습니다");
-		Scene->Destroy();
 		return false;
 	}
 
@@ -593,7 +593,6 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 	if (AllMeshNodes.Num() == 0)
 	{
 		UE_LOG_ERROR("FBX에 유효한 스킨 메시가 없습니다");
-		Scene->Destroy();
 		return false;
 	}
 
@@ -604,7 +603,6 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 	if (!ExtractSkeleton(Scene, FirstMesh, OutMeshInfo))
 	{
 		UE_LOG_ERROR("스켈레톤 추출 실패");
-		Scene->Destroy();
 		return false;
 	}
 
@@ -643,7 +641,6 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 		if (!ExtractSkinWeights(CurrentMesh, OutMeshInfo, VertexOffset, ControlPointOffset))
 		{
 			UE_LOG_ERROR("스킨 가중치 처리 실패: 메시 #%d", i + 1);
-			Scene->Destroy();
 			return false;
 		}
 	}
@@ -656,7 +653,6 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 		UE_LOG_SUCCESS("FbxCache: Saved fbxbin '%ls'", BinFilePath.c_str());
 	}
 
-	Scene->Destroy();
 	UE_LOG_SUCCESS("스켈레탈 메시 로드 완료: %s", FilePath.string().c_str());
 	return true;
 }

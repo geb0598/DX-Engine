@@ -86,6 +86,92 @@ enum class EFbxMeshType
 	Unknown
 };
 
+class FFbxImporter
+{
+public:
+	struct Configuration
+	{
+		bool bConvertToUEBasis = true;
+		bool bIsBinaryEnabled = false;
+	};
+
+	// 🔸 FBX SDK 세션 관리
+	static bool Initialize();
+	static void Shutdown();
+
+	// 🔸 Public API - 타입별 로드 함수
+
+	/** FBX 파일에서 메시 타입 판단 */
+	static EFbxMeshType DetermineMeshType(const std::filesystem::path& FilePath);
+
+	/** 스태틱 메시 임포트 */
+	static bool LoadStaticMesh(
+		const std::filesystem::path& FilePath,
+		FFbxStaticMeshInfo* OutMeshInfo,
+		Configuration Config = {});
+
+	/** 스켈레탈 메시 임포트 */
+	static bool LoadSkeletalMesh(
+		const std::filesystem::path& FilePath,
+		FFbxSkeletalMeshInfo* OutMeshInfo,
+		Configuration Config = {});
+
+private:
+	// 🔸 RAII Helper - FbxScene 자동 관리 (메모리 릭 방지)
+	class FFbxSceneGuard
+	{
+	private:
+		FFbxSceneGuard(const FFbxSceneGuard&) = delete;
+		FFbxSceneGuard& operator=(const FFbxSceneGuard&) = delete;
+
+		FbxScene* Scene;
+	public:
+		explicit FFbxSceneGuard(FbxScene* InScene) : Scene(InScene) {}
+
+		~FFbxSceneGuard()
+		{
+			if (Scene) { Scene->Destroy(); }
+		}
+
+		FbxScene* Get() const { return Scene; }
+		FbxScene* operator->() const { return Scene; }
+	};
+
+	// 🔸 공통 Helper 함수들 (Static/Skeletal 모두 사용)
+	static FbxScene* ImportFbxScene(const std::filesystem::path& FilePath);
+	static FbxMesh* FindFirstMesh(FbxNode* RootNode, FbxNode** OutNode);
+	static std::filesystem::path ResolveTexturePath(const std::string& OriginalPath, const std::filesystem::path& FbxDirectory, const std::filesystem::path& FbxFilePath);
+
+	/** Material 추출 (Static/Skeletal 공통, 오프셋 지원) */
+	static void ExtractMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxStaticMeshInfo* OutMeshInfo, uint32 MaterialOffset = 0);
+
+	/** Mesh Section 생성 (Static/Skeletal 공통) */
+	static void BuildMeshSections(const TArray<TArray<uint32>>& IndicesPerMaterial, FFbxStaticMeshInfo* OutMeshInfo);
+
+	// 🔸 Static Mesh 전용
+	static void ExtractVertices(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInfo, const Configuration& Config);
+	static void ExtractGeometryData(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInfo, const Configuration& Config);
+
+	// 🔸 Skeletal Mesh 전용
+	static FbxMesh* FindFirstSkinnedMesh(FbxNode* RootNode, FbxNode** OutNode);
+	static void FindAllSkinnedMeshes(FbxNode* RootNode, TArray<FbxNode*>& OutMeshNodes);
+	static bool ExtractSkeleton(FbxScene* Scene, FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo);
+
+	/** 스켈레탈 메시의 스킨 가중치 추출/추가 (오프셋 지원으로 Extract/Append 통합) */
+	static bool ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, uint32 VertexOffset = 0, int32 ControlPointOffset = 0);
+
+	/** 스켈레탈 메시의 지오메트리 추출/추가 (오프셋 지원으로 Extract/Append 통합) */
+	static void ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, const Configuration& Config,
+		uint32 VertexOffset = 0, uint32 MaterialOffset = 0, int32 ControlPointOffset = 0);
+
+	static inline FbxManager* SdkManager = nullptr;
+	static inline FbxIOSettings* IoSettings = nullptr;
+};
+
+// ========================================
+// 🔸 Bake 시스템
+// ========================================
+
 inline FArchive& operator<<(FArchive& Ar, FFbxMaterialInfo& MaterialInfo)
 {
 	// std::string을 FString으로 변환해서 직렬화
@@ -171,65 +257,3 @@ inline FArchive& operator<<(FArchive& Ar, FFbxSkeletalMeshInfo& MeshInfo)
 	Ar << MeshInfo.ControlPointIndices;     // 컨트롤 포인트 매핑
 	return Ar;
 }
-
-class FFbxImporter
-{
-public:
-	struct Configuration
-	{
-		bool bConvertToUEBasis = true;
-		bool bIsBinaryEnabled = false;
-	};
-
-	// 🔸 FBX SDK 세션 관리
-	static bool Initialize();
-	static void Shutdown();
-
-	// 🔸 Public API - 타입별 로드 함수
-
-	/** FBX 파일에서 메시 타입 판단 */
-	static EFbxMeshType DetermineMeshType(const std::filesystem::path& FilePath);
-
-	/** 스태틱 메시 임포트 */
-	static bool LoadStaticMesh(
-		const std::filesystem::path& FilePath,
-		FFbxStaticMeshInfo* OutMeshInfo,
-		Configuration Config = {});
-
-	/** 스켈레탈 메시 임포트 */
-	static bool LoadSkeletalMesh(
-		const std::filesystem::path& FilePath,
-		FFbxSkeletalMeshInfo* OutMeshInfo,
-		Configuration Config = {});
-
-private:
-	// 🔸 공통 Helper 함수들 (Static/Skeletal 모두 사용)
-	static FbxScene* ImportFbxScene(const std::filesystem::path& FilePath);
-	static FbxMesh* FindFirstMesh(FbxNode* RootNode, FbxNode** OutNode);
-	static std::filesystem::path ResolveTexturePath(const std::string& OriginalPath, const std::filesystem::path& FbxDirectory, const std::filesystem::path& FbxFilePath);
-
-	/** Material 추출 (Static/Skeletal 공통, 오프셋 지원) */
-	static void ExtractMaterials(FbxNode* Node, const std::filesystem::path& FbxFilePath, FFbxStaticMeshInfo* OutMeshInfo, uint32 MaterialOffset = 0);
-
-	/** Mesh Section 생성 (Static/Skeletal 공통) */
-	static void BuildMeshSections(const TArray<TArray<uint32>>& IndicesPerMaterial, FFbxStaticMeshInfo* OutMeshInfo);
-
-	// 🔸 Static Mesh 전용
-	static void ExtractVertices(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInfo, const Configuration& Config);
-	static void ExtractGeometryData(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInfo, const Configuration& Config);
-
-	// 🔸 Skeletal Mesh 전용
-	static FbxMesh* FindFirstSkinnedMesh(FbxNode* RootNode, FbxNode** OutNode);
-	static void FindAllSkinnedMeshes(FbxNode* RootNode, TArray<FbxNode*>& OutMeshNodes);
-	static bool ExtractSkeleton(FbxScene* Scene, FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo);
-
-	/** 스켈레탈 메시의 스킨 가중치 추출/추가 (오프셋 지원으로 Extract/Append 통합) */
-	static bool ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, uint32 VertexOffset = 0, int32 ControlPointOffset = 0);
-
-	/** 스켈레탈 메시의 지오메트리 추출/추가 (오프셋 지원으로 Extract/Append 통합) */
-	static void ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, const Configuration& Config,
-		uint32 VertexOffset = 0, uint32 MaterialOffset = 0, int32 ControlPointOffset = 0);
-
-	static inline FbxManager* SdkManager = nullptr;
-	static inline FbxIOSettings* IoSettings = nullptr;
-};
