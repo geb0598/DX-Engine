@@ -214,7 +214,7 @@ float3 ComputeNormalMappedWorldNormal(float2 UV, float3 WorldNormal, float4 Worl
 PS_INPUT Uber_VS(VS_INPUT Input)
 {
     PS_INPUT Output;
-    
+
     Output.WorldPosition = mul(float4(Input.Position, 1.0f), World).xyz;
     Output.Position = mul(mul(mul(float4(Input.Position, 1.0f), World), View), Projection);
     float3x3 World3x3 = (float3x3) World;
@@ -222,15 +222,15 @@ PS_INPUT Uber_VS(VS_INPUT Input)
     float3 WorldTangent = SafeNormalize3(mul(Input.Tangent.xyz, (float3x3) World));
     Output.WorldTangent = float4(WorldTangent, Input.Tangent.w);
     Output.Tex = Input.Tex;
-    
+
 #if LIGHTING_MODEL_GOURAUD
     // Calculate lighting in vertex shader (Gouraud)
     // Accumulate light only; material and textures are applied in pixel stage
     FIllumination Illumination = (FIllumination)0;
-    
+
     // 1. Ambient Light
     Illumination.Ambient = CalculateAmbientLight(Ambient);
-    
+
     // 2. Directional Light
     ADD_ILLUM(Illumination, CalculateDirectionalLight(Directional, Output.WorldNormal, Output.WorldPosition, ViewWorldLocation, Ns, ShadowAtlas, VarianceShadowAtlas, ShadowAtlasDirectionalLightTilePos, ShadowSampler, VarianceShadowSampler, View, CascadeView, CascadeProj, SplitDistance, SplitNum, BandingAreaFactor))
 
@@ -254,13 +254,13 @@ PS_INPUT Uber_VS(VS_INPUT Input)
         FSpotLightInfo SpotLight = GetSpotLight(LightIndex);
         ADD_ILLUM(Illumination, CalculateSpotLight(SpotLight, LightIndex, Output.WorldNormal, Output.WorldPosition, ViewWorldLocation, Ns, ShadowAtlas, VarianceShadowAtlas, ShadowAtlasSpotLightTilePos, ShadowSampler, VarianceShadowSampler));
     }
-    
+
     // Assign to output
     Output.AmbientLight = Illumination.Ambient;
     Output.DiffuseLight = Illumination.Diffuse;
     Output.SpecularLight = Illumination.Specular;
 #endif
-    
+
     return Output;
 }
 
@@ -287,35 +287,35 @@ PS_OUTPUT Uber_PS(PS_INPUT Input)
         // If no ambient map, but diffuse map exists, use diffuse map for ambient color
         ambientColor *= DiffuseTexture.Sample(SamplerWrap, UV);
     }
-    
+
     float4 diffuseColor = Kd;
     if (MaterialFlags & HAS_DIFFUSE_MAP)
     {
         diffuseColor *= DiffuseTexture.Sample(SamplerWrap, UV);
     }
-    
+
     float4 specularColor = Ks;
     if (MaterialFlags & HAS_SPECULAR_MAP)
     {
         specularColor *= SpecularTexture.Sample(SamplerWrap, UV);
     }
-    
-    
+
+
 #if LIGHTING_MODEL_GOURAUD
     // Use pre-calculated vertex lighting; apply diffuse material/texture per-pixel
     finalPixel.rgb = Input.AmbientLight.rgb * ambientColor.rgb + Input.DiffuseLight.rgb * diffuseColor.rgb + Input.SpecularLight.rgb * specularColor.rgb;
-    
+
 #elif LIGHTING_MODEL_LAMBERT || LIGHTING_MODEL_BLINNPHONG
     // Calculate lighting in pixel shader
     FIllumination Illumination = (FIllumination)0;
     float3 N = ShadedWorldNormal;
-    
+
     // 1. Ambient Light
     Illumination.Ambient = CalculateAmbientLight(Ambient);
-    
+
     // 2. Directional Light
     ADD_ILLUM(Illumination, CalculateDirectionalLight(Directional, N, Input.WorldPosition, ViewWorldLocation, Ns, ShadowAtlas, VarianceShadowAtlas, ShadowAtlasDirectionalLightTilePos, ShadowSampler, VarianceShadowSampler, View, CascadeView, CascadeProj, SplitDistance, SplitNum, BandingAreaFactor));
-    
+
     // 3. Point Lights
     uint LightIndicesOffset = GetLightIndicesOffset(Input.WorldPosition, View, Projection, NearClip, FarClip, ClusterSliceNumX, ClusterSliceNumY, ClusterSliceNumZ, LightMaxCountPerCluster);
     uint PointLightCount = GetPointLightCount(LightIndicesOffset);
@@ -336,39 +336,39 @@ PS_OUTPUT Uber_PS(PS_INPUT Input)
         FSpotLightInfo SpotLight = GetSpotLight(LightIndex);
         ADD_ILLUM(Illumination, CalculateSpotLight(SpotLight, LightIndex, N, Input.WorldPosition, ViewWorldLocation, Ns, ShadowAtlas, VarianceShadowAtlas, ShadowAtlasSpotLightTilePos, ShadowSampler, VarianceShadowSampler));
     }
-    
+
     finalPixel.rgb = Illumination.Ambient.rgb * ambientColor.rgb + Illumination.Diffuse.rgb * diffuseColor.rgb + Illumination.Specular.rgb * specularColor.rgb;
-    
+
 #elif LIGHTING_MODEL_NORMAL
     float3 EncodedWorldNormal = ShadedWorldNormal * 0.5f + 0.5f;
     finalPixel.rgb = EncodedWorldNormal;
-    
+
 #else
     // Fallback: simple textured rendering (like current TexturePS.hlsl)
     finalPixel.rgb = diffuseColor.rgb + ambientColor.rgb;
 #endif
-    
+
     // Alpha handling
 #if LIGHTING_MODEL_NORMAL
     finalPixel.a = 1.0f;
 #else
     // 1. Diffuse Map 있으면 그 alpha 사용, 없으면 1.0
     float alpha = (MaterialFlags & HAS_DIFFUSE_MAP) ? diffuseColor.a : 1.0f;
-    
+
     // 2. Alpha Map 따로 있으면 곱해줌.
     if (MaterialFlags & HAS_ALPHA_MAP)
     {
         alpha *= AlphaTexture.Sample(SamplerWrap, UV).r;
     }
-    
+
     // 3. D 곱해서 최종 alpha 결정
     finalPixel.a = D * alpha;
 #endif
     Output.SceneColor = finalPixel;
-    
+
     // Encode normal for deferred rendering
     float3 encodedNormal = SafeNormalize3(ShadedWorldNormal) * 0.5f + 0.5f;
     Output.NormalData = float4(encodedNormal, 1.0f);
-    
+
     return Output;
 }

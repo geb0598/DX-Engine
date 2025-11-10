@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Manager/Asset/Public/TextureManager.h"
 
 #include <DirectXTK/DDSTextureLoader.h>
@@ -104,7 +104,6 @@ void FTextureManager::LoadAllTexturesFromDirectory(const path& InDirectoryPath)
             UTexture* Texture = LoadTexture(TextureName);
             Texture->GetTextureSRV()->AddRef();
             int temp = Texture->GetTextureSRV()->Release();
-            int y =1;
         }
     }
 
