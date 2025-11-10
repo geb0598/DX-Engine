@@ -9,6 +9,8 @@ class USkeletalMeshComponent;
 class USkeletalMeshViewerToolbarWidget;
 class UAmbientLightComponent;
 class UDirectionalLightComponent;
+class UWorld;
+class AActor;
 
 /**
  * @brief SkeletalMesh 뷰어 윈도우
@@ -139,9 +141,13 @@ private:
 	// 그리드 설정
 	float GridCellSize = 1.0f;
 
-	// 뷰어 전용 라이트 컴포넌트 (씬에 영구적으로 추가되지 않음)
-	UAmbientLightComponent* ViewerAmbientLight = nullptr;
-	UDirectionalLightComponent* ViewerDirectionalLight = nullptr;
+	// Preview World (EWorldType::EditorPreview)
+	UWorld* PreviewWorld = nullptr;
+
+	// Preview World에 스폰된 Actor들
+	AActor* PreviewSkeletalMeshActor = nullptr;
+	AActor* PreviewAmbientLightActor = nullptr;
+	AActor* PreviewDirectionalLightActor = nullptr;
 
 public:
 	// 그리드 설정 접근자

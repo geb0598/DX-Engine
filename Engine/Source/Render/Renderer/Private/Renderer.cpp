@@ -1638,3 +1638,171 @@ void URenderer::RenderLevelForGameInstance(UWorld* InWorld, const FSceneView* In
 	// Note: StandAlone에서는 Game UI만 렌더링 (Editor UI 없음)
 	FD2DOverlayManager::GetInstance().FlushAndRender();
 }
+
+/**
+ * @brief Preview World 전용 렌더링 함수 (EditorPreview World, SkeletalMeshViewer 등)
+ * @param InPreviewWorld 렌더링할 Preview World
+ * @param InSceneView 씬 뷰 정보
+ * @param InRenderTarget 독립적인 렌더 타겟
+ * @param InDepthStencil 독립적인 깊이 스텐실
+ * @param InViewport 뷰포트 설정
+ */
+void URenderer::RenderPreviewWorld(UWorld* InPreviewWorld, const FSceneView* InSceneView,
+	ID3D11RenderTargetView* InRenderTarget, ID3D11DepthStencilView* InDepthStencil, const D3D11_VIEWPORT& InViewport)
+{
+	if (!InPreviewWorld || !InSceneView || !InRenderTarget || !InDepthStencil)
+	{
+		return;
+	}
+
+	ULevel* CurrentLevel = InPreviewWorld->GetLevel();
+	if (!CurrentLevel)
+	{
+		return;
+	}
+
+	// 렌더 타겟 및 뷰포트는 이미 외부에서 설정되어 있음
+	// (호출자가 설정한 렌더 타겟 유지)
+
+	// SceneView에서 Camera Constants 가져오기
+	FCameraConstants ViewProj;
+	ViewProj.View = InSceneView->GetViewMatrix();
+	ViewProj.Projection = InSceneView->GetProjectionMatrix();
+	ViewProj.ViewWorldLocation = InSceneView->GetViewLocation();
+	ViewProj.NearClip = InSceneView->GetNearClippingPlane();
+	ViewProj.FarClip = InSceneView->GetFarClippingPlane();
+
+	// Visible primitives 수집
+	TArray<UPrimitiveComponent*> FinalVisiblePrims;
+
+	// 1) Static primitives from Octree
+	if (FOctree* StaticOctree = CurrentLevel->GetStaticOctree())
+	{
+		TArray<UPrimitiveComponent*> AllStatics;
+		StaticOctree->GetAllPrimitives(AllStatics);
+
+		for (UPrimitiveComponent* Primitive : AllStatics)
+		{
+			if (Primitive && Primitive->IsVisible())
+			{
+				FinalVisiblePrims.Add(Primitive);
+			}
+		}
+	}
+
+	// 2) Dynamic primitives
+	TArray<UPrimitiveComponent*> DynamicPrimitives = CurrentLevel->GetDynamicPrimitives();
+	for (UPrimitiveComponent* Primitive : DynamicPrimitives)
+	{
+		if (Primitive && Primitive->IsVisible())
+		{
+			FinalVisiblePrims.Add(Primitive);
+		}
+	}
+
+	// Build FMinimalViewInfo from SceneView
+	FMinimalViewInfo ViewInfo;
+	ViewInfo.Location = InSceneView->GetViewLocation();
+	ViewInfo.Rotation = InSceneView->GetViewRotation();
+	ViewInfo.FOV = InSceneView->GetFOV();
+	ViewInfo.AspectRatio = (InViewport.Height > 0) ? (InViewport.Width / InViewport.Height) : 1.777f;
+	ViewInfo.NearClipPlane = InSceneView->GetNearClippingPlane();
+	ViewInfo.FarClipPlane = InSceneView->GetFarClippingPlane();
+	ViewInfo.ProjectionMode = (InSceneView->GetViewType() == EViewType::Perspective)
+		? ECameraProjectionMode::Perspective
+		: ECameraProjectionMode::Orthographic;
+	ViewInfo.OrthoWidth = 1000.0f;
+	ViewInfo.CameraConstants = ViewProj;
+
+	// RenderingContext 구성
+	FVector2 ViewportSize = FVector2(InViewport.Width, InViewport.Height);
+	FRenderingContext RenderingContext = FRenderingContext(
+		ViewInfo,
+		InSceneView->GetViewModeIndex(),
+		CurrentLevel->GetShowFlags(),
+		InViewport,
+		ViewportSize
+	);
+
+	// Primitives 분류
+	RenderingContext.AllPrimitives = FinalVisiblePrims;
+	for (auto& Prim : FinalVisiblePrims)
+	{
+		if (auto StaticMesh = Cast<UStaticMeshComponent>(Prim))
+		{
+			RenderingContext.StaticMeshes.Add(StaticMesh);
+		}
+		else if (auto BillBoard = Cast<UBillBoardComponent>(Prim))
+		{
+			RenderingContext.BillBoards.Add(BillBoard);
+		}
+		else if (auto Text = Cast<UTextComponent>(Prim))
+		{
+			if (!Text->IsExactly(UUUIDTextComponent::StaticClass()))
+			{
+				RenderingContext.Texts.Add(Text);
+			}
+		}
+		else if (auto Decal = Cast<UDecalComponent>(Prim))
+		{
+			RenderingContext.Decals.Add(Decal);
+		}
+	}
+
+	// Light Components 수집
+	for (const auto& LightComponent : CurrentLevel->GetLightComponents())
+	{
+		if (auto PointLightComponent = Cast<UPointLightComponent>(LightComponent))
+		{
+			auto SpotLightComponent = Cast<USpotLightComponent>(LightComponent);
+
+			if (SpotLightComponent &&
+				SpotLightComponent->GetVisible() &&
+				SpotLightComponent->GetLightEnabled())
+			{
+				RenderingContext.SpotLights.Add(SpotLightComponent);
+			}
+			else if (PointLightComponent &&
+				PointLightComponent->GetVisible() &&
+				PointLightComponent->GetLightEnabled())
+			{
+				RenderingContext.PointLights.Add(PointLightComponent);
+			}
+		}
+
+		auto DirectionalLightComponent = Cast<UDirectionalLightComponent>(LightComponent);
+		if (DirectionalLightComponent &&
+			DirectionalLightComponent->GetVisible() &&
+			DirectionalLightComponent->GetLightEnabled() &&
+			RenderingContext.DirectionalLights.IsEmpty())
+		{
+			RenderingContext.DirectionalLights.Add(DirectionalLightComponent);
+		}
+
+		auto AmbientLightComponent = Cast<UAmbientLightComponent>(LightComponent);
+		if (AmbientLightComponent &&
+			AmbientLightComponent->GetVisible() &&
+			AmbientLightComponent->GetLightEnabled() &&
+			RenderingContext.AmbientLights.IsEmpty())
+		{
+			RenderingContext.AmbientLights.Add(AmbientLightComponent);
+		}
+	}
+
+	// Camera Constants 업데이트
+	FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, ViewProj);
+	Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferViewProj);
+
+	// RenderPasses 실행 - 중요: DeviceResources 대신 전달받은 렌더 타겟 사용
+	// 각 RenderPass는 SetRenderTargets를 호출하지만, 이미 외부에서 설정된 타겟을 존중해야 함
+	// Preview World에서는 Pass별로 렌더 타겟을 직접 설정하지 않음
+	for (auto RenderPass : RenderPasses)
+	{
+		// DeviceResources를 전달하지 않고 현재 설정된 렌더 타겟 유지
+		RenderPass->Execute(RenderingContext);
+	}
+
+	UE_LOG("RenderPreviewWorld: Rendered %d static meshes, %d lights",
+		RenderingContext.StaticMeshes.Num(),
+		RenderingContext.DirectionalLights.Num() + RenderingContext.AmbientLights.Num());
+}

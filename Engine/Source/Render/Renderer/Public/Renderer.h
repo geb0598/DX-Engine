@@ -89,6 +89,7 @@ public:
 	void RenderBegin() const;
 	void RenderLevel(FViewport* InViewport, int32 ViewportIndex);
 	void RenderLevelForGameInstance(UWorld* InWorld, const FSceneView* InSceneView, class UGameInstance* InGameInstance);
+	void RenderPreviewWorld(UWorld* InPreviewWorld, const FSceneView* InSceneView, ID3D11RenderTargetView* InRenderTarget, ID3D11DepthStencilView* InDepthStencil, const D3D11_VIEWPORT& InViewport);
 	void RenderEnd() const;
 	void RenderEditorPrimitive(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState, uint32 InStride = 0, uint32 InIndexBufferStride = 0);
 	void RenderEditorPrimitiveIndexed(const FEditorPrimitive& InPrimitive, const FRenderState& InRenderState, uint32 InStride, uint32 InIndexBufferStride, uint32 StartIndexLocation, uint32 IndexCount);

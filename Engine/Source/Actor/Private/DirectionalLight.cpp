@@ -12,3 +12,8 @@ UClass* ADirectionalLight::GetDefaultRootComponent()
 {
     return UDirectionalLightComponent::StaticClass();
 }
+
+UDirectionalLightComponent* ADirectionalLight::GetDirectionalLightComponent() const
+{
+    return Cast<UDirectionalLightComponent>(GetRootComponent());
+}

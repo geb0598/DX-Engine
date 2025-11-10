@@ -17,6 +17,10 @@
 #include "Render/UI/Widget/Public/SkeletalMeshViewerToolbarWidget.h"
 #include "Component/Public/AmbientLightComponent.h"
 #include "Component/Public/DirectionalLightComponent.h"
+#include "Actor/Public/AmbientLight.h"
+#include "Actor/Public/DirectionalLight.h"
+#include "Actor/Public/StaticMeshActor.h"
+#include "Component/Mesh/Public/StaticMeshComponent.h"
 
 IMPLEMENT_CLASS(USkeletalMeshViewerWindow, UUIWindow)
 
@@ -79,6 +83,10 @@ void USkeletalMeshViewerWindow::Initialize()
 	if (ViewerViewportClient->GetCamera())
 	{
 		ViewerViewportClient->GetCamera()->SetInputEnabled(false);
+		// 카메라를 더 뒤로 이동 (메쉬가 잘 보이도록)
+		ViewerViewportClient->GetCamera()->SetLocation(FVector(-50.0f, 0.0f, 20.0f));
+		ViewerViewportClient->GetCamera()->SetRotation(FVector(0.0f, 0.0f, 0.0f));
+		UE_LOG("SkeletalMeshViewerWindow: 카메라 위치 설정 완료: (-50, 0, 20)");
 	}
 
 	ViewerViewport->SetViewportClient(ViewerViewportClient);
@@ -103,27 +111,76 @@ void USkeletalMeshViewerWindow::Initialize()
 		ToolbarWidget->SetOwningWindow(this);
 	}
 
-	// 뷰어 전용 라이트 컴포넌트 생성 (World에 추가하지 않음)
-	ViewerAmbientLight = NewObject<UAmbientLightComponent>();
-	if (ViewerAmbientLight)
+	// Preview World 생성 (EWorldType::EditorPreview)
+	PreviewWorld = new UWorld(EWorldType::EditorPreview);
+	if (PreviewWorld)
 	{
-		ViewerAmbientLight->SetLightColor(FVector(0.3f, 0.3f, 0.3f)); // 부드러운 앰비언트 라이트
-		ViewerAmbientLight->SetIntensity(1.0f);
-	}
+		// 새 레벨 생성
+		PreviewWorld->CreateNewLevel(FName("PreviewLevel"));
 
-	ViewerDirectionalLight = NewObject<UDirectionalLightComponent>();
-	if (ViewerDirectionalLight)
-	{
-		ViewerDirectionalLight->SetWorldLocation(FVector(0, 0, 100));
-		ViewerDirectionalLight->SetWorldRotation(FVector(-45.0f, 45.0f, 0.0f)); // 대각선 위에서 비추는 라이트
-		ViewerDirectionalLight->SetLightColor(FVector(1.0f, 1.0f, 1.0f)); // 흰색 라이트
-		ViewerDirectionalLight->SetIntensity(0.8f);
+		// Preview World BeginPlay 호출 (중요!)
+		PreviewWorld->BeginPlay();
+
+		UE_LOG("SkeletalMeshViewerWindow: Preview World 생성 및 BeginPlay 완료");
+
+		// Ambient Light Actor 스폰
+		PreviewAmbientLightActor = PreviewWorld->SpawnActor(AAmbientLight::StaticClass());
+		if (PreviewAmbientLightActor)
+		{
+			if (AAmbientLight* AmbientLight = Cast<AAmbientLight>(PreviewAmbientLightActor))
+			{
+				if (UAmbientLightComponent* LightComp = AmbientLight->GetAmbientLightComponent())
+				{
+					LightComp->SetLightColor(FVector(0.3f, 0.3f, 0.3f));
+					LightComp->SetIntensity(1.0f);
+				}
+			}
+			UE_LOG("SkeletalMeshViewerWindow: Ambient Light Actor 스폰 완료");
+		}
+
+		// Directional Light Actor 스폰
+		PreviewDirectionalLightActor = PreviewWorld->SpawnActor(ADirectionalLight::StaticClass());
+		if (PreviewDirectionalLightActor)
+		{
+			PreviewDirectionalLightActor->SetActorLocation(FVector(0, 0, 100));
+			FRotator Rotator(-45.0f, 45.0f, 0.0f);
+			PreviewDirectionalLightActor->SetActorRotation(Rotator.Quaternion());
+
+			if (ADirectionalLight* DirLight = Cast<ADirectionalLight>(PreviewDirectionalLightActor))
+			{
+				if (UDirectionalLightComponent* LightComp = DirLight->GetDirectionalLightComponent())
+				{
+					LightComp->SetLightColor(FVector(1.0f, 1.0f, 1.0f));
+					LightComp->SetIntensity(0.8f);
+				}
+			}
+			UE_LOG("SkeletalMeshViewerWindow: Directional Light Actor 스폰 완료");
+		}
+
+		// 테스트: StaticMesh Actor 스폰 (Airdrop)
+		PreviewSkeletalMeshActor = PreviewWorld->SpawnActor(AStaticMeshActor::StaticClass());
+		if (PreviewSkeletalMeshActor)
+		{
+			PreviewSkeletalMeshActor->SetActorLocation(FVector(0, 0, 0));
+			PreviewSkeletalMeshActor->SetActorRotation(FQuaternion::Identity());
+
+			if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(PreviewSkeletalMeshActor))
+			{
+				if (UStaticMeshComponent* MeshComp = StaticMeshActor->GetStaticMeshComponent())
+				{
+					// Airdrop 메쉬 로드
+					MeshComp->SetStaticMesh(FName("Data/Airdrop.obj"));
+					UE_LOG("SkeletalMeshViewerWindow: Airdrop StaticMesh 설정 완료 (Location: 0,0,0)");
+				}
+			}
+			UE_LOG("SkeletalMeshViewerWindow: StaticMesh Actor 스폰 완료");
+		}
 	}
 
 	bIsInitialized = true;
 	bIsCleanedUp = false;
 
-	UE_LOG("SkeletalMeshViewerWindow: 독립적인 뷰포트 및 카메라 초기화 완료 (라이트 포함)");
+	UE_LOG("SkeletalMeshViewerWindow: 독립적인 뷰포트 및 Preview World 초기화 완료");
 }
 
 /**
@@ -153,17 +210,20 @@ void USkeletalMeshViewerWindow::Cleanup()
 		ToolbarWidget = nullptr;
 	}
 
-	// 뷰어 전용 라이트 삭제
-	if (ViewerAmbientLight)
+	// Preview World 정리 (Actor들은 World 소멸 시 자동으로 정리됨)
+	if (PreviewWorld)
 	{
-		delete ViewerAmbientLight;
-		ViewerAmbientLight = nullptr;
-	}
+		// Actor 참조 초기화
+		PreviewSkeletalMeshActor = nullptr;
+		PreviewAmbientLightActor = nullptr;
+		PreviewDirectionalLightActor = nullptr;
 
-	if (ViewerDirectionalLight)
-	{
-		delete ViewerDirectionalLight;
-		ViewerDirectionalLight = nullptr;
+		// World 종료 및 삭제
+		PreviewWorld->EndPlay();
+		delete PreviewWorld;
+		PreviewWorld = nullptr;
+
+		UE_LOG("SkeletalMeshViewerWindow: Preview World 정리 완료");
 	}
 
 	// ViewportClient와 Viewport의 연결을 먼저 끊음
@@ -656,34 +716,44 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 		// Viewport의 RenderRect 설정
 		ViewerViewport->SetRenderRect(D3DViewport);
 
-		// World 확인
-		if (GWorld)
+		// Preview World 확인 (언리얼 방식: 독립된 EditorPreview World 사용)
+		if (PreviewWorld)
 		{
-			// 뷰어 전용 라이트를 Level에 임시 등록
-			ULevel* CurrentLevel = GWorld->GetLevel();
-			if (CurrentLevel)
+			// 디버깅: Level 및 Actor 확인
+			ULevel* Level = PreviewWorld->GetLevel();
+			if (Level)
 			{
-				if (ViewerAmbientLight)
+				const TArray<AActor*>& Actors = Level->GetLevelActors();
+				static bool bLoggedOnce = false;
+				if (!bLoggedOnce)
 				{
-					CurrentLevel->RegisterComponent(ViewerAmbientLight);
-				}
-				if (ViewerDirectionalLight)
-				{
-					CurrentLevel->RegisterComponent(ViewerDirectionalLight);
+					UE_LOG("SkeletalMeshViewerWindow: Preview World has %d actors", Actors.Num());
+					for (AActor* Actor : Actors)
+					{
+						if (Actor)
+						{
+							FString ClassName = Actor->GetClass()->GetName().ToString();
+							UE_LOG("  - Actor: %s", ClassName.c_str());
+						}
+					}
+					bLoggedOnce = true;
 				}
 			}
 
 			// 카메라 준비
 			ViewerViewportClient->PrepareCamera(D3DViewport);
 
-			// Visible Primitives 업데이트 (Frustum Culling)
-			ViewerViewportClient->UpdateVisiblePrimitives(GWorld);
+			// Visible Primitives 업데이트 (Frustum Culling) - Preview World 사용
+			ViewerViewportClient->UpdateVisiblePrimitives(PreviewWorld);
 
-			// SceneViewFamily 생성
-			FSceneViewFamily ViewFamily;
-			ViewFamily.SetRenderTarget(ViewerViewport);
-			ViewFamily.SetCurrentTime(0.0f);
-			ViewFamily.SetDeltaWorldTime(0.016f);
+			// 디버깅: Visible Primitives 확인
+			const TArray<UPrimitiveComponent*>& VisiblePrims = ViewerViewportClient->GetVisiblePrimitives();
+			static bool bLoggedVisibles = false;
+			if (!bLoggedVisibles)
+			{
+				UE_LOG("SkeletalMeshViewerWindow: Visible primitives count: %d", VisiblePrims.Num());
+				bLoggedVisibles = true;
+			}
 
 			// ViewportClient의 카메라에서 정보 가져오기
 			UCamera* Camera = ViewerViewportClient->GetCamera();
@@ -700,7 +770,7 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 					Camera->GetLocation(),
 					Camera->GetRotation(),
 					ViewerViewport,
-					GWorld,
+					PreviewWorld, // Preview World 사용
 					ViewerViewportClient->GetViewMode(),
 					Camera->GetFovY(),
 					CameraConst.NearClip,
@@ -708,15 +778,9 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 				);
 
 				View->SetViewport(ViewerViewport);
-				ViewFamily.AddView(View);
 
-				// SceneRenderer로 렌더링
-				FSceneRenderer* SceneRenderer = FSceneRenderer::CreateSceneRenderer(ViewFamily);
-				if (SceneRenderer)
-				{
-					SceneRenderer->Render();
-					delete SceneRenderer;
-				}
+				// Preview World 전용 렌더링 함수 호출 (독립 렌더 타겟 사용)
+				Renderer.RenderPreviewWorld(PreviewWorld, View, ViewerRenderTargetView, ViewerDepthStencilView, D3DViewport);
 
 				// Grid 렌더링 (SceneRenderer 후, 메인 렌더 타겟 복구 전)
 				if (ViewerBatchLines)
@@ -740,19 +804,6 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 
 				// View 정리
 				delete View;
-			}
-
-			// 뷰어 전용 라이트를 Level에서 등록 해제
-			if (CurrentLevel)
-			{
-				if (ViewerAmbientLight)
-				{
-					CurrentLevel->UnregisterComponent(ViewerAmbientLight);
-				}
-				if (ViewerDirectionalLight)
-				{
-					CurrentLevel->UnregisterComponent(ViewerDirectionalLight);
-				}
 			}
 		}
 
