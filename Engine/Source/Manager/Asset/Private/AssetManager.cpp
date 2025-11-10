@@ -121,10 +121,20 @@ void UAssetManager::Release()
 		SafeRelease(Pair.second);
 	}
 
+	// Delete UStaticMesh objects
+	for (auto& Pair : StaticMeshCache)
+	{
+		SafeDelete(Pair.second);
+	}
 	StaticMeshCache.Empty();
 	StaticMeshVertexBuffers.Empty();
 	StaticMeshIndexBuffers.Empty();
 
+	// Delete USkeletalMesh objects
+	for (auto& Pair : SkeletalMeshCache)
+	{
+		SafeDelete(Pair.second);
+	}
 	SkeletalMeshCache.Empty();
 	SkeletalMeshVertexBuffers.Empty();
 	SkeletalMeshIndexBuffers.Empty();
@@ -135,7 +145,10 @@ void UAssetManager::Release()
 
 	SafeDelete(TextureManager);
 
+	// Release manager caches
 	FFbxImporter::Shutdown();
+	FObjManager::Release();
+	FFbxManager::Release();
 }
 
 /**
