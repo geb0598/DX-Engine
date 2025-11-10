@@ -169,7 +169,7 @@ FVector4 UGizmo::ColorFor(EGizmoDirection InAxis) const
 	return FGizmoMath::CalculateColor(InAxis, GizmoDirection, bIsDragging, GizmoColor);
 }
 
-void UGizmo::CollectRotationAngleOverlay(FD2DOverlayManager& OverlayManager, UCamera* InCamera, const D3D11_VIEWPORT& InViewport)
+void UGizmo::CollectRotationAngleOverlay(FD2DOverlayManager& OverlayManager, UCamera* InCamera, const D3D11_VIEWPORT& InViewport, bool bUseViewportManager, bool bCustomSnapEnabled, float CustomSnapAngleDegrees)
 {
 	if (!bIsDragging || GizmoMode != EGizmoMode::Rotate || !TargetComponent)
 	{
@@ -189,9 +189,26 @@ void UGizmo::CollectRotationAngleOverlay(FD2DOverlayManager& OverlayManager, UCa
 
 	// 현재 회전 각도 계산 (스냅 적용)
 	float DisplayAngleRadians = GetCurrentRotationAngle();
-	if (UViewportManager::GetInstance().IsRotationSnapEnabled())
+
+	// 스냅 설정 결정: ViewportManager 사용 또는 커스텀 설정 사용
+	bool bSnapEnabled = false;
+	float SnapAngleDegrees = 0.0f;
+
+	if (bUseViewportManager)
 	{
-		const float SnapAngleDegrees = UViewportManager::GetInstance().GetRotationSnapAngle();
+		// 메인: ViewportManager 설정 사용
+		bSnapEnabled = UViewportManager::GetInstance().IsRotationSnapEnabled();
+		SnapAngleDegrees = UViewportManager::GetInstance().GetRotationSnapAngle();
+	}
+	else
+	{
+		// 뷰어: 커스텀 스냅 설정 사용
+		bSnapEnabled = bCustomSnapEnabled;
+		SnapAngleDegrees = CustomSnapAngleDegrees;
+	}
+
+	if (bSnapEnabled && SnapAngleDegrees > 0.0f)
+	{
 		const float SnapAngleRadians = FVector::GetDegreeToRadian(SnapAngleDegrees);
 		DisplayAngleRadians = std::round(GetCurrentRotationAngle() / SnapAngleRadians) * SnapAngleRadians;
 	}

@@ -190,6 +190,8 @@ void USkeletalMeshViewerWindow::Initialize()
 	if (ViewerGizmo && SelectedComponent)
 	{
 		ViewerGizmo->SetSelectedComponent(SelectedComponent);
+		// 뷰어의 Gizmo는 ViewportManager 대신 자체 툴바 설정 사용
+		ViewerGizmo->SetUseCustomRotationSnap(true);
 		UE_LOG("SkeletalMeshViewerWindow: Gizmo 생성 및 초기 선택 완료");
 	}
 
@@ -314,7 +316,7 @@ void USkeletalMeshViewerWindow::CreateRenderTarget(uint32 Width, uint32 Height)
 	TextureDesc.Height = Height;
 	TextureDesc.MipLevels = 1;
 	TextureDesc.ArraySize = 1;
-	TextureDesc.Format = DXGI_FORMAT_B8G8R8A8_TYPELESS;
+	TextureDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;  // D2D 호환을 위해 UNORM 사용 (TYPELESS는 D2D와 호환 안됨)
 	TextureDesc.SampleDesc.Count = 1;
 	TextureDesc.SampleDesc.Quality = 0;
 	TextureDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -329,9 +331,9 @@ void USkeletalMeshViewerWindow::CreateRenderTarget(uint32 Width, uint32 Height)
 		return;
 	}
 
-	// 렌더 타겟 뷰 생성 (D2D 호환을 위해 B8G8R8A8 사용)
+	// 렌더 타겟 뷰 생성 (D2D 호환을 위해 B8G8R8A8_UNORM 사용)
 	D3D11_RENDER_TARGET_VIEW_DESC RTVDesc = {};
-	RTVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+	RTVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;  // 텍스처와 동일한 포맷
 	RTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	RTVDesc.Texture2D.MipSlice = 0;
 
@@ -343,9 +345,9 @@ void USkeletalMeshViewerWindow::CreateRenderTarget(uint32 Width, uint32 Height)
 		return;
 	}
 
-	// 셰이더 리소스 뷰 생성 (D2D 호환을 위해 B8G8R8A8 사용)
+	// 셰이더 리소스 뷰 생성 (D2D 호환을 위해 B8G8R8A8_UNORM 사용)
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-	SRVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+	SRVDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;  // 텍스처와 동일한 포맷
 	SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	SRVDesc.Texture2D.MostDetailedMip = 0;
 	SRVDesc.Texture2D.MipLevels = 1;
@@ -949,6 +951,14 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 							SelectedComponent->GetOwner()->GetClass()->GetName().ToString().c_str());
 						bLoggedGizmoRender = true;
 					}
+
+					// 렌더링 전에 툴바의 현재 snap 설정을 Gizmo에 반영
+					if (ToolbarWidget)
+					{
+						ViewerGizmo->SetCustomRotationSnapEnabled(ToolbarWidget->IsRotationSnapEnabled());
+						ViewerGizmo->SetCustomRotationSnapAngle(ToolbarWidget->GetRotationSnapAngle());
+					}
+
 					ViewerGizmo->UpdateScale(Camera, D3DViewport);
 					ViewerGizmo->RenderGizmo(Camera, D3DViewport);
 				}
@@ -974,10 +984,13 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 				FD2DOverlayManager& OverlayManager = FD2DOverlayManager::GetInstance();
 				OverlayManager.BeginCollect(Camera, D3DViewport);
 
-				// 기즈모 회전 각도 오버레이
-				if (ViewerGizmo)
+				// 기즈모 회전 각도 오버레이 (툴바의 Rotation Snap 설정 적용)
+				if (ViewerGizmo && ToolbarWidget)
 				{
-					ViewerGizmo->CollectRotationAngleOverlay(OverlayManager, Camera, D3DViewport);
+					const bool bSnapEnabled = ToolbarWidget->IsRotationSnapEnabled();
+					const float SnapAngle = ToolbarWidget->GetRotationSnapAngle();
+					// 뷰어는 ViewportManager를 사용하지 않고 자체 툴바 설정 사용
+					ViewerGizmo->CollectRotationAngleOverlay(OverlayManager, Camera, D3DViewport, false, bSnapEnabled, SnapAngle);
 				}
 
 				// FAxis (축 방향) 오버레이

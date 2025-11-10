@@ -57,7 +57,7 @@ public:
 	void UpdateScale(const UCamera* InCamera, const D3D11_VIEWPORT& InViewport);
 	void RenderGizmo(UCamera* InCamera, const D3D11_VIEWPORT& InViewport);
 	void RenderForHitProxy(UCamera* InCamera, const D3D11_VIEWPORT& InViewport);
-	void CollectRotationAngleOverlay(class FD2DOverlayManager& OverlayManager, UCamera* InCamera, const D3D11_VIEWPORT& InViewport);
+	void CollectRotationAngleOverlay(class FD2DOverlayManager& OverlayManager, UCamera* InCamera, const D3D11_VIEWPORT& InViewport, bool bUseViewportManager = true, bool bCustomSnapEnabled = false, float CustomSnapAngleDegrees = 0.0f);
 	void ChangeGizmoMode();
 	void SetGizmoMode(EGizmoMode Mode);
 
@@ -76,6 +76,14 @@ public:
 	void SetWorld() { bIsWorld = true; }
 	void SetLocal() { bIsWorld = false; }
 	bool IsWorldMode() const { return bIsWorld; }
+
+	// Rotation Snap 설정 (뷰어용 독립 설정)
+	void SetUseCustomRotationSnap(bool bEnable) { bUseCustomRotationSnap = bEnable; }
+	void SetCustomRotationSnapEnabled(bool bEnable) { bCustomRotationSnapEnabled = bEnable; }
+	void SetCustomRotationSnapAngle(float Angle) { CustomRotationSnapAngle = Angle; }
+	bool ShouldUseCustomRotationSnap() const { return bUseCustomRotationSnap; }
+	bool IsCustomRotationSnapEnabled() const { return bCustomRotationSnapEnabled; }
+	float GetCustomRotationSnapAngle() const { return CustomRotationSnapAngle; }
 
 	// Pilot Mode 기즈모 고정 위치
 	void SetFixedLocation(const FVector& InFixedLocation) { bUseFixedLocation = true; FixedLocation = InFixedLocation; }
@@ -224,6 +232,11 @@ private:
 	// Pilot Mode 고정 위치
 	bool bUseFixedLocation = false;
 	FVector FixedLocation;
+
+	// Rotation Snap 커스텀 설정 (뷰어용)
+	bool bUseCustomRotationSnap = false;      // true면 ViewportManager 대신 커스텀 설정 사용
+	bool bCustomRotationSnapEnabled = false;  // 커스텀 스냅 활성화 여부
+	float CustomRotationSnapAngle = 15.0f;    // 커스텀 스냅 각도
 
 	// 렌더 시 하이라이트 색상 계산 (상태 오염 방지)
 	FVector4 ColorFor(EGizmoDirection InAxis) const;
