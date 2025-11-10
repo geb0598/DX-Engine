@@ -1765,7 +1765,7 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.6f, 0.3f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.45f, 0.15f, 1.0f));
 
-	if (ImGui::Button("Apply All Changes", ImVec2(-1, ViewerHeight)))
+	if (ImGui::Button("Apply All Changes", ImVec2(-1, 30)))
 	{
 		// TempBoneSpaceTransforms를 실제 BoneSpaceTransforms에 적용
 		for (int32 i = 0; i < InNumBones; ++i)
