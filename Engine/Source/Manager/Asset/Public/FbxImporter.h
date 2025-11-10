@@ -3,6 +3,7 @@
 #include <filesystem>
 #include "Global/Vector.h"
 #include "Global/Types.h"
+#include "Core/Public/Archive.h"
 
 struct FFbxMaterialInfo
 {
@@ -94,12 +95,100 @@ enum class EFbxMeshType
 	Unknown
 };
 
+inline FArchive& operator<<(FArchive& Ar, FFbxMaterialInfo& MaterialInfo)
+{
+	// std::string을 FString으로 변환해서 직렬화
+	if (Ar.IsLoading()) {
+		FString TempName;
+		Ar << TempName;
+		MaterialInfo.MaterialName = TempName;
+
+		FString TempPath;
+		Ar << TempPath;
+		MaterialInfo.DiffuseTexturePath = TempPath;
+	}
+	else {
+		FString TempName = MaterialInfo.MaterialName;
+		Ar << TempName;
+
+		FString TempPath = MaterialInfo.DiffuseTexturePath.string();
+		Ar << TempPath;
+	}
+	return Ar;
+}
+
+inline FArchive& operator<<(FArchive& Ar, FFbxMeshSection& Section)
+{
+	Ar << Section.StartIndex;
+	Ar << Section.IndexCount;
+	Ar << Section.MaterialIndex;
+	return Ar;
+}
+
+inline FArchive& operator<<(FArchive& Ar, FFbxStaticMeshInfo& MeshInfo)
+{
+	Ar << MeshInfo.VertexList;
+	Ar << MeshInfo.NormalList;
+	Ar << MeshInfo.TexCoordList;
+	Ar << MeshInfo.Indices;
+	Ar << MeshInfo.Materials;
+	Ar << MeshInfo.Sections;
+	return Ar;
+}
+
+// FFbxBoneInfo 직렬화
+inline FArchive& operator<<(FArchive& Ar, FFbxBoneInfo& BoneInfo)
+{
+	if (Ar.IsLoading()) {
+		FString TempName;
+		Ar << TempName;
+		BoneInfo.BoneName = TempName;
+	}
+	else {
+		FString TempName = BoneInfo.BoneName;
+		Ar << TempName;
+	}
+
+	Ar << BoneInfo.ParentIndex;
+	Ar << BoneInfo.LocalTransform.Translation;
+	Ar << BoneInfo.LocalTransform.Rotation;
+	Ar << BoneInfo.LocalTransform.Scale;
+
+	return Ar;
+}
+
+// FFbxBoneInfluence 직렬화
+inline FArchive& operator<<(FArchive& Ar, FFbxBoneInfluence& Influence)
+{
+	for (int i = 0; i < FFbxBoneInfluence::MAX_INFLUENCES; ++i) {
+		Ar << Influence.BoneIndices[i];
+		Ar << Influence.BoneWeights[i];
+	}
+	return Ar;
+}
+
+// FFbxSkeletalMeshInfo 직렬화
+inline FArchive& operator<<(FArchive& Ar, FFbxSkeletalMeshInfo& MeshInfo)
+{
+	Ar << MeshInfo.VertexList;
+	Ar << MeshInfo.NormalList;
+	Ar << MeshInfo.TexCoordList;
+	Ar << MeshInfo.Indices;
+	Ar << MeshInfo.Materials;
+	Ar << MeshInfo.Sections;
+	Ar << MeshInfo.Bones;                   // 본 정보
+	Ar << MeshInfo.SkinWeights;             // 스킨 가중치
+	Ar << MeshInfo.ControlPointIndices;     // 컨트롤 포인트 매핑
+	return Ar;
+}
+
 class FFbxImporter
 {
 public:
 	struct Configuration
 	{
 		bool bConvertToUEBasis = true;
+		bool bIsBinaryEnabled = false;
 	};
 
 	// 🔸 FBX SDK 세션 관리

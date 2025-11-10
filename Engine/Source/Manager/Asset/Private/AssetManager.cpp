@@ -219,6 +219,7 @@ void UAssetManager::LoadAllFbxMesh()
 
 	FFbxImporter::Configuration Config;
 	Config.bConvertToUEBasis = true;
+	Config.bIsBinaryEnabled = true;
 
 	for (const FName& FbxPath : FbxList)
 	{
