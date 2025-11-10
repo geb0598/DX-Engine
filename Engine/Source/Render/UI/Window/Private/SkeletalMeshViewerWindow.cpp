@@ -24,6 +24,7 @@
 #include "Editor/Public/Gizmo.h"
 #include "Editor/Public/ObjectPicker.h"
 #include "Editor/Public/Axis.h"
+#include "Editor/Public/GizmoHelper.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
 
@@ -788,49 +789,46 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 }
 
 /**
- * @brief 중앙 패널: 3D Viewport
- * 독립적인 카메라를 사용한 3D 렌더링 뷰포트
+ * @brief 툴바 업데이트 및 기즈모 동기화 처리
  */
-void USkeletalMeshViewerWindow::Render3DViewportPanel()
+void USkeletalMeshViewerWindow::UpdateToolbarAndGizmoSync()
 {
-	// 툴바 위젯 업데이트 및 렌더링 (맨 처음)
-	if (ToolbarWidget)
+	if (!ToolbarWidget) return;
+
+	ToolbarWidget->Update();
+	ToolbarWidget->RenderWidget();
+
+	// 툴바와 ViewerGizmo 간 양방향 동기화
+	if (ViewerGizmo)
 	{
-		ToolbarWidget->Update();
-		ToolbarWidget->RenderWidget();
+		static EGizmoMode PreToolbarGizmoMode = ToolbarWidget->GetCurrentGizmoMode();
+		static EGizmoMode PreViewerGizmoMode = ViewerGizmo->GetGizmoMode();
 
-		// 툴바와 ViewerGizmo 간 양방향 동기화
-		if (ViewerGizmo)
+		EGizmoMode ToolbarGizmoMode = ToolbarWidget->GetCurrentGizmoMode();
+		EGizmoMode ViewerGizmoMode = ViewerGizmo->GetGizmoMode();
+
+		if (PreToolbarGizmoMode != ToolbarGizmoMode)
 		{
-			static EGizmoMode PreToolbarGizmoMode = ToolbarWidget->GetCurrentGizmoMode();
-			static EGizmoMode PreViewerGizmoMode = ViewerGizmo->GetGizmoMode();
-
-			EGizmoMode ToolbarGizmoMode = ToolbarWidget->GetCurrentGizmoMode();
-			EGizmoMode ViewerGizmoMode = ViewerGizmo->GetGizmoMode();
-
-			if (PreToolbarGizmoMode != ToolbarGizmoMode)
-			{
-				ToolbarWidget->SetCurrentGizmoMode(ToolbarGizmoMode);
-				ViewerGizmo->SetGizmoMode(ToolbarGizmoMode);
-				PreToolbarGizmoMode = ToolbarGizmoMode;
-				PreViewerGizmoMode = ViewerGizmoMode;
-			}
-			else if (PreViewerGizmoMode != ViewerGizmoMode)
-			{
-				ToolbarWidget->SetCurrentGizmoMode(ViewerGizmoMode);
-				ViewerGizmo->SetGizmoMode(ViewerGizmoMode);
-				PreToolbarGizmoMode = ToolbarGizmoMode;
-				PreViewerGizmoMode = ViewerGizmoMode;
-			}
+			ToolbarWidget->SetCurrentGizmoMode(ToolbarGizmoMode);
+			ViewerGizmo->SetGizmoMode(ToolbarGizmoMode);
+			PreToolbarGizmoMode = ToolbarGizmoMode;
+			PreViewerGizmoMode = ViewerGizmoMode;
+		}
+		else if (PreViewerGizmoMode != ViewerGizmoMode)
+		{
+			ToolbarWidget->SetCurrentGizmoMode(ViewerGizmoMode);
+			ViewerGizmo->SetGizmoMode(ViewerGizmoMode);
+			PreToolbarGizmoMode = ToolbarGizmoMode;
+			PreViewerGizmoMode = ViewerGizmoMode;
 		}
 	}
+}
 
-	const ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
-
-	// 뷰포트 크기가 변경되면 렌더 타겟 재생성
-	const uint32 NewWidth = static_cast<uint32>(ViewportSize.x);
-	const uint32 NewHeight = static_cast<uint32>(ViewportSize.y);
-
+/**
+ * @brief 뷰포트 크기 변경 시 렌더 타겟 업데이트
+ */
+void USkeletalMeshViewerWindow::UpdateViewportRenderTarget(uint32 NewWidth, uint32 NewHeight)
+{
 	if (NewWidth > 0 && NewHeight > 0 && (NewWidth != ViewerWidth || NewHeight != ViewerHeight))
 	{
 		CreateRenderTarget(NewWidth, NewHeight);
@@ -839,561 +837,523 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 			ViewerViewport->SetSize(NewWidth, NewHeight);
 		}
 	}
+}
 
-	// 독립 렌더 타겟에 씬 렌더링
-	if (ViewerRenderTargetView && ViewerDepthStencilView && ViewerViewportClient)
+/**
+ * @brief 뷰포트 렌더 타겟에 3D 씬 렌더링
+ */
+void USkeletalMeshViewerWindow::RenderToViewportTexture()
+{
+	if (!ViewerRenderTargetView || !ViewerDepthStencilView || !ViewerViewportClient) return;
+
+	URenderer& Renderer = URenderer::GetInstance();
+	ID3D11DeviceContext* Context = Renderer.GetDeviceContext();
+
+	// 렌더 타겟 클리어
+	const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	Context->ClearRenderTargetView(ViewerRenderTargetView, ClearColor);
+	Context->ClearDepthStencilView(ViewerDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	// 렌더 타겟 설정
+	Context->OMSetRenderTargets(1, &ViewerRenderTargetView, ViewerDepthStencilView);
+
+	// 뷰포트 설정
+	D3D11_VIEWPORT D3DViewport = {};
+	D3DViewport.TopLeftX = 0.0f;
+	D3DViewport.TopLeftY = 0.0f;
+	D3DViewport.Width = static_cast<float>(ViewerWidth);
+	D3DViewport.Height = static_cast<float>(ViewerHeight);
+	D3DViewport.MinDepth = 0.0f;
+	D3DViewport.MaxDepth = 1.0f;
+	Context->RSSetViewports(1, &D3DViewport);
+
+	// Viewport의 RenderRect 설정
+	ViewerViewport->SetRenderRect(D3DViewport);
+
+	// Preview World 렌더링
+	if (PreviewWorld)
 	{
-		URenderer& Renderer = URenderer::GetInstance();
-		ID3D11DeviceContext* Context = Renderer.GetDeviceContext();
-
-		// 렌더 타겟 클리어
-		const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f }; // 검정 배경
-		Context->ClearRenderTargetView(ViewerRenderTargetView, ClearColor);
-		Context->ClearDepthStencilView(ViewerDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
-
-		// 렌더 타겟 설정
-		Context->OMSetRenderTargets(1, &ViewerRenderTargetView, ViewerDepthStencilView);
-
-		// 뷰포트 설정
-		D3D11_VIEWPORT D3DViewport = {};
-		D3DViewport.TopLeftX = 0.0f;
-		D3DViewport.TopLeftY = 0.0f;
-		D3DViewport.Width = static_cast<float>(ViewerWidth);
-		D3DViewport.Height = static_cast<float>(ViewerHeight);
-		D3DViewport.MinDepth = 0.0f;
-		D3DViewport.MaxDepth = 1.0f;
-		Context->RSSetViewports(1, &D3DViewport);
-
-		// Viewport의 RenderRect 설정
-		ViewerViewport->SetRenderRect(D3DViewport);
-
-		// Preview World 확인 (언리얼 방식: 독립된 EditorPreview World 사용)
-		if (PreviewWorld)
+		ULevel* Level = PreviewWorld->GetLevel();
+		if (Level)
 		{
-			// 디버깅: Level 및 Actor 확인
-			ULevel* Level = PreviewWorld->GetLevel();
-			if (Level)
+			const TArray<AActor*>& Actors = Level->GetLevelActors();
+			static bool bLoggedOnce = false;
+			if (!bLoggedOnce)
 			{
-				const TArray<AActor*>& Actors = Level->GetLevelActors();
-				static bool bLoggedOnce = false;
-				if (!bLoggedOnce)
+				UE_LOG("SkeletalMeshViewerWindow: Preview World has %d actors", Actors.Num());
+				for (AActor* Actor : Actors)
 				{
-					UE_LOG("SkeletalMeshViewerWindow: Preview World has %d actors", Actors.Num());
-					for (AActor* Actor : Actors)
+					if (Actor)
 					{
-						if (Actor)
-						{
-							FString ClassName = Actor->GetClass()->GetName().ToString();
-							UE_LOG("  - Actor: %s", ClassName.c_str());
-						}
-					}
-					bLoggedOnce = true;
-				}
-			}
-
-			// 카메라 준비
-			ViewerViewportClient->PrepareCamera(D3DViewport);
-
-			// Visible Primitives 업데이트 (Frustum Culling) - Preview World 사용
-			ViewerViewportClient->UpdateVisiblePrimitives(PreviewWorld);
-
-			// 디버깅: Visible Primitives 확인
-			const TArray<UPrimitiveComponent*>& VisiblePrims = ViewerViewportClient->GetVisiblePrimitives();
-			static bool bLoggedVisibles = false;
-			if (!bLoggedVisibles)
-			{
-				UE_LOG("SkeletalMeshViewerWindow: Visible primitives count: %d", VisiblePrims.Num());
-				bLoggedVisibles = true;
-			}
-
-			// ViewportClient의 카메라에서 정보 가져오기
-			UCamera* Camera = ViewerViewportClient->GetCamera();
-			if (Camera)
-			{
-				// 카메라 상수 가져오기
-				const FCameraConstants& CameraConst = Camera->GetCameraConstants();
-
-				// SceneView 생성
-				FSceneView* View = new FSceneView();
-				View->InitializeWithMatrices(
-					CameraConst.View,
-					CameraConst.Projection,
-					Camera->GetLocation(),
-					Camera->GetRotation(),
-					ViewerViewport,
-					PreviewWorld, // Preview World 사용
-					ViewerViewportClient->GetViewMode(),
-					Camera->GetFovY(),
-					CameraConst.NearClip,
-					CameraConst.FarClip
-				);
-
-				View->SetViewport(ViewerViewport);
-
-				// Preview World 전용 렌더링 함수 호출 (독립 렌더 타겟 사용)
-				Renderer.RenderPreviewWorld(PreviewWorld, View, ViewerRenderTargetView, ViewerDepthStencilView, D3DViewport);
-
-				// Grid 렌더링 (SceneRenderer 후, 메인 렌더 타겟 복구 전)
-				if (ViewerBatchLines)
-				{
-					// 카메라 상수 버퍼 업데이트
-					URenderer& Renderer = URenderer::GetInstance();
-					ID3D11Buffer* ConstantBufferViewProj = Renderer.GetConstantBufferViewProj();
-					UPipeline* Pipeline = Renderer.GetPipeline();
-
-					if (ConstantBufferViewProj && Pipeline)
-					{
-						// 카메라 상수 업데이트
-						FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, CameraConst);
-
-						// 파이프라인에 바인딩
-						Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferViewProj);
-					}
-
-					ViewerBatchLines->Render();
-				}
-
-				// Gizmo 렌더링
-				if (ViewerGizmo && SelectedComponent)
-				{
-					static bool bLoggedGizmoRender = false;
-					if (!bLoggedGizmoRender)
-					{
-						UE_LOG("SkeletalMeshViewerWindow: Rendering Gizmo for component: %s",
-							SelectedComponent->GetOwner()->GetClass()->GetName().ToString().c_str());
-						bLoggedGizmoRender = true;
-					}
-
-					// 렌더링 전에 툴바의 현재 snap 설정을 Gizmo에 반영
-					if (ToolbarWidget)
-					{
-						ViewerGizmo->SetCustomRotationSnapEnabled(ToolbarWidget->IsRotationSnapEnabled());
-						ViewerGizmo->SetCustomRotationSnapAngle(ToolbarWidget->GetRotationSnapAngle());
-					}
-
-					ViewerGizmo->UpdateScale(Camera, D3DViewport);
-					ViewerGizmo->RenderGizmo(Camera, D3DViewport);
-				}
-				else
-				{
-					static bool bLoggedNoGizmo = false;
-					if (!bLoggedNoGizmo)
-					{
-						UE_LOG_WARNING("SkeletalMeshViewerWindow: Gizmo not rendering - ViewerGizmo: %p, SelectedComponent: %p",
-							ViewerGizmo, SelectedComponent);
-						bLoggedNoGizmo = true;
+						FString ClassName = Actor->GetClass()->GetName().ToString();
+						UE_LOG("  - Actor: %s", ClassName.c_str());
 					}
 				}
-
-				// View 정리
-				delete View;
-			}
-
-			// D2D 오버레이 렌더링 (3D 렌더링 후, RenderTarget 복구 전)
-			// CRITICAL: 뷰어 RenderTarget이 아직 바인딩된 상태에서 렌더링해야 함
-			if (ViewerD2DRenderTarget && Camera)
-			{
-				FD2DOverlayManager& OverlayManager = FD2DOverlayManager::GetInstance();
-				OverlayManager.BeginCollect(Camera, D3DViewport);
-
-				// 기즈모 회전 각도 오버레이 (툴바의 Rotation Snap 설정 적용)
-				if (ViewerGizmo && ToolbarWidget)
-				{
-					const bool bSnapEnabled = ToolbarWidget->IsRotationSnapEnabled();
-					const float SnapAngle = ToolbarWidget->GetRotationSnapAngle();
-					// 뷰어는 ViewportManager를 사용하지 않고 자체 툴바 설정 사용
-					ViewerGizmo->CollectRotationAngleOverlay(OverlayManager, Camera, D3DViewport, false, bSnapEnabled, SnapAngle);
-				}
-
-				// FAxis (축 방향) 오버레이
-				FAxis::CollectDrawCommands(OverlayManager, Camera, D3DViewport);
-
-				// 뷰어의 D2D RenderTarget에 렌더링
-				static bool bLoggedD2DRender = false;
-				if (!bLoggedD2DRender)
-				{
-					UE_LOG("SkeletalMeshViewerWindow: D2D 오버레이 렌더링 (RenderTarget: %p, Viewport: %.0fx%.0f)",
-						ViewerD2DRenderTarget, D3DViewport.Width, D3DViewport.Height);
-					bLoggedD2DRender = true;
-				}
-				OverlayManager.FlushAndRender(ViewerD2DRenderTarget);
+				bLoggedOnce = true;
 			}
 		}
 
-		// 렌더 타겟 및 뷰포트 해제 (메인 렌더 타겟으로 복구)
-		ID3D11RenderTargetView* MainRTV = Renderer.GetDeviceResources()->GetBackBufferRTV();
-		ID3D11DepthStencilView* MainDSV = Renderer.GetDeviceResources()->GetDepthBufferDSV();
-		Context->OMSetRenderTargets(1, &MainRTV, MainDSV);
+		ViewerViewportClient->PrepareCamera(D3DViewport);
+		ViewerViewportClient->UpdateVisiblePrimitives(PreviewWorld);
 
-		// 메인 뷰포트 복구
-		const D3D11_VIEWPORT& MainViewport = Renderer.GetDeviceResources()->GetViewportInfo();
-		Context->RSSetViewports(1, &MainViewport);
-	}
-
-	// ImGui에 렌더 타겟 표시
-	if (ViewerShaderResourceView)
-	{
-		ImTextureID TextureID = reinterpret_cast<ImTextureID>(ViewerShaderResourceView);
-
-		// 현재 커서 위치 저장
-		ImVec2 CursorPos = ImGui::GetCursorScreenPos();
-
-		// 이미지 렌더링
-		ImGui::Image(TextureID, ViewportSize);
-
-		// 이미지 위에 InvisibleButton을 겹쳐서 마우스 이벤트 캡처
-		ImGui::SetCursorScreenPos(CursorPos);
-		ImGui::InvisibleButton("##ViewportInteraction", ViewportSize, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_MouseButtonMiddle);
-
-		// InvisibleButton이 활성화되거나 호버될 때 뷰어가 완전히 입력 제어
-		bool bViewerHasFocus = ImGui::IsItemActive() || ImGui::IsItemHovered();
-		if (bViewerHasFocus)
+		const TArray<UPrimitiveComponent*>& VisiblePrims = ViewerViewportClient->GetVisiblePrimitives();
+		static bool bLoggedVisibles = false;
+		if (!bLoggedVisibles)
 		{
-			ImGuiIO& IO = ImGui::GetIO();
-			// 뷰어 뷰포트가 모든 마우스 및 키보드 이벤트를 독점적으로 처리
-			IO.WantCaptureMouse = true;
-			IO.WantCaptureKeyboard = true;  // 키보드도 캡처하여 메인 에디터에 전달 방지
+			UE_LOG("SkeletalMeshViewerWindow: Visible primitives count: %d", VisiblePrims.Num());
+			bLoggedVisibles = true;
 		}
 
-		// 뷰포트 위에 마우스가 있을 때만 처리
-		if (ImGui::IsItemHovered())
+		UCamera* Camera = ViewerViewportClient->GetCamera();
+		if (Camera)
 		{
-			// 키보드 입력 처리 (뷰포트가 호버되었을 때만)
-			if (ViewerGizmo)
+			const FCameraConstants& CameraConst = Camera->GetCameraConstants();
+
+			FSceneView* View = new FSceneView();
+			View->InitializeWithMatrices(
+				CameraConst.View,
+				CameraConst.Projection,
+				Camera->GetLocation(),
+				Camera->GetRotation(),
+				ViewerViewport,
+				PreviewWorld,
+				ViewerViewportClient->GetViewMode(),
+				Camera->GetFovY(),
+				CameraConst.NearClip,
+				CameraConst.FarClip
+			);
+
+			View->SetViewport(ViewerViewport);
+			Renderer.RenderPreviewWorld(PreviewWorld, View, ViewerRenderTargetView, ViewerDepthStencilView, D3DViewport);
+
+			// Grid 렌더링
+			if (ViewerBatchLines)
 			{
-				// Ctrl + ` : World/Local 모드 전환
-				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_GraveAccent))
+				ID3D11Buffer* ConstantBufferViewProj = Renderer.GetConstantBufferViewProj();
+				UPipeline* Pipeline = Renderer.GetPipeline();
+
+				if (ConstantBufferViewProj && Pipeline)
 				{
-					ViewerGizmo->IsWorldMode() ? ViewerGizmo->SetLocal() : ViewerGizmo->SetWorld();
+					FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, CameraConst);
+					Pipeline->SetConstantBuffer(1, EShaderType::VS, ConstantBufferViewProj);
 				}
 
-				// Space : 기즈모 모드 순환
-				if (ImGui::IsKeyPressed(ImGuiKey_Space))
-				{
-					ViewerGizmo->ChangeGizmoMode();
-				}
+				ViewerBatchLines->Render();
 			}
 
-			UCamera* Camera = ViewerViewportClient->GetCamera();
-			if (Camera)
+			// Gizmo 렌더링
+			if (ViewerGizmo && SelectedComponent)
 			{
-				// 마우스 위치를 NDC로 변환
-				ImVec2 MousePos = ImGui::GetMousePos();
-				ImVec2 WindowPos = ImGui::GetItemRectMin();
-
-				float MouseX = MousePos.x - WindowPos.x;
-				float MouseY = MousePos.y - WindowPos.y;
-
-				const float NdcX = (MouseX / ViewerWidth) * 2.0f - 1.0f;
-				const float NdcY = -((MouseY / ViewerHeight) * 2.0f - 1.0f);
-
-				FRay WorldRay = Camera->ConvertToWorldRay(NdcX, NdcY);
-
-				// 기즈모 호버링 (Ray 기반 피킹) - 드래그 중이 아닐 때만
-				FVector CollisionPoint;
-				if (ViewerGizmo && SelectedComponent && ViewerObjectPicker && !ViewerGizmo->IsDragging())
+				static bool bLoggedGizmoRender = false;
+				if (!bLoggedGizmoRender)
 				{
-					ViewerObjectPicker->PickGizmo(Camera, WorldRay, *ViewerGizmo, CollisionPoint);
+					UE_LOG("SkeletalMeshViewerWindow: Rendering Gizmo for component: %s",
+						SelectedComponent->GetOwner()->GetClass()->GetName().ToString().c_str());
+					bLoggedGizmoRender = true;
 				}
 
-				// 기즈모 드래그 중
-				if (ViewerGizmo && ViewerGizmo->IsDragging() && SelectedComponent)
+				if (ToolbarWidget)
 				{
-					// 기즈모 드래그 처리는 아래 카메라 조작 섹션 이전에 처리
-					// (여기서는 플래그만 확인, 실제 처리는 밖에서)
-				}
-				// 기즈모를 클릭했을 때
-				else if (ViewerGizmo && ViewerGizmo->GetGizmoDirection() != EGizmoDirection::None)
-				{
-					if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-					{
-						ViewerGizmo->OnMouseDragStart(CollisionPoint);
-
-						// 뷰어 로컬 스크린 좌표로 덮어쓰기 (회전 기즈모용)
-						ImVec2 CurrentMousePos = ImGui::GetMousePos();
-						ImVec2 CurrentWindowPos = ImGui::GetItemRectMin();
-						const FVector2 ViewerLocalScreenPos(CurrentMousePos.x - CurrentWindowPos.x, CurrentMousePos.y - CurrentWindowPos.y);
-						ViewerGizmo->SetPreviousScreenPos(ViewerLocalScreenPos);
-						ViewerGizmo->SetDragStartScreenPos(ViewerLocalScreenPos);
-					}
-				}
-				// 기즈모가 아닌 곳을 클릭 - 액터 피킹
-				else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
-				{
-					// TODO: HitProxy 기반 피킹 구현
-					// 현재는 항상 StaticMeshActor 선택 유지
-					if (PreviewSkeletalMeshActor && !SelectedComponent)
-					{
-						if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(PreviewSkeletalMeshActor))
-						{
-							SelectedComponent = StaticMeshActor->GetStaticMeshComponent();
-							if (ViewerGizmo)
-							{
-								ViewerGizmo->SetSelectedComponent(SelectedComponent);
-							}
-						}
-					}
-				}
-			}
-
-			// 우클릭이 처음 눌렸을 때 드래그 시작 (호버 중일 때만)
-			if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
-			{
-				bIsDraggingRightButton = true;
-			}
-
-			// 중간 버튼이 처음 눌렸을 때 드래그 시작 (호버 중일 때만)
-			if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
-			{
-				bIsDraggingMiddleButton = true;
-			}
-		}
-
-		// 마우스 버튼 릴리즈 처리 - 뷰어에 포커스가 있을 때만
-		if (bViewerHasFocus)
-		{
-			if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
-			{
-				bIsDraggingRightButton = false;
-			}
-
-			if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle))
-			{
-				bIsDraggingMiddleButton = false;
-			}
-		}
-
-		// 마우스 버튼이 완전히 떼어졌을 때 안전하게 드래그 종료
-		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right))
-		{
-			bIsDraggingRightButton = false;
-		}
-
-		if (!ImGui::IsMouseDown(ImGuiMouseButton_Middle))
-		{
-			bIsDraggingMiddleButton = false;
-		}
-
-		// 기즈모 드래그 릴리즈 - 전역 마우스 상태로 체크 (뷰어 밖에서 버튼을 떼도 감지)
-		if (ViewerGizmo && ViewerGizmo->IsDragging())
-		{
-			bool bIsGlobalMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-			if (!bIsGlobalMouseDown)
-			{
-				ViewerGizmo->EndDrag();
-				ViewerGizmo->SetGizmoDirection(EGizmoDirection::None);  // 하이라이트도 해제
-			}
-		}
-
-		// 기즈모 드래그 처리 (카메라 조작보다 우선)
-		if (ViewerGizmo && ViewerGizmo->IsDragging() && SelectedComponent && ViewerViewportClient)
-		{
-			UCamera* Camera = ViewerViewportClient->GetCamera();
-			if (Camera)
-			{
-				// 마우스 위치를 NDC로 변환
-				ImVec2 MousePos = ImGui::GetMousePos();
-				ImVec2 WindowPos = ImGui::GetItemRectMin();
-
-				float MouseX = MousePos.x - WindowPos.x;
-				float MouseY = MousePos.y - WindowPos.y;
-
-				const float NdcX = (MouseX / ViewerWidth) * 2.0f - 1.0f;
-				const float NdcY = -((MouseY / ViewerHeight) * 2.0f - 1.0f);
-
-				FRay WorldRay = Camera->ConvertToWorldRay(NdcX, NdcY);
-
-				// 기즈모 모드별 드래그 처리
-				switch (ViewerGizmo->GetGizmoMode())
-				{
-				case EGizmoMode::Translate:
-				{
-					FVector GizmoDragLocation = GetViewerGizmoDragLocation(Camera, WorldRay);
-					ViewerGizmo->SetLocation(GizmoDragLocation);
-					break;
-				}
-				case EGizmoMode::Rotate:
-				{
-					FQuaternion GizmoDragRotation = GetViewerGizmoDragRotation(Camera, WorldRay);
-					ViewerGizmo->SetComponentRotation(GizmoDragRotation);
-					break;
-				}
-				case EGizmoMode::Scale:
-				{
-					FVector GizmoDragScale = GetViewerGizmoDragScale(Camera, WorldRay);
-					ViewerGizmo->SetComponentScale(GizmoDragScale);
-					break;
-				}
-				}
-			}
-		}
-		// 드래그 중이거나 뷰포트 위에 있을 때 카메라 조작 처리
-		else if ((bIsDraggingRightButton || bIsDraggingMiddleButton || ImGui::IsItemHovered()) && ViewerViewportClient)
-		{
-			UCamera* Camera = ViewerViewportClient->GetCamera();
-			if (Camera)
-			{
-				ImGuiIO& IO = ImGui::GetIO();
-
-				// 우클릭 드래그: 카메라 회전 (Perspective) 또는 패닝 (Orthographic)
-				if (bIsDraggingRightButton && ImGui::IsMouseDown(ImGuiMouseButton_Right))
-				{
-					FVector MouseDelta = FVector(IO.MouseDelta.x, IO.MouseDelta.y, 0);
-
-					if (Camera->GetCameraType() == ECameraType::ECT_Perspective)
-					{
-						// Perspective: 마우스 드래그로 회전
-						const float YawDelta = MouseDelta.X * KeySensitivityDegPerPixel * 2;
-						const float PitchDelta = -MouseDelta.Y * KeySensitivityDegPerPixel * 2;
-
-						FRotator CurrentRot = Camera->GetRotationRotator();
-						CurrentRot.Yaw += YawDelta;
-						CurrentRot.Pitch += PitchDelta;
-						CurrentRot.Roll = 0.0f;
-
-						// Pitch 클램핑
-						constexpr float MaxPitch = 89.9f;
-						CurrentRot.Pitch = clamp(CurrentRot.Pitch, -MaxPitch, MaxPitch);
-
-						Camera->SetRotation(CurrentRot);
-
-						// WASD 키로 이동
-						FVector Direction = FVector::Zero();
-						if (ImGui::IsKeyDown(ImGuiKey_A)) { Direction += -Camera->GetRight() * 2; }
-						if (ImGui::IsKeyDown(ImGuiKey_D)) { Direction += Camera->GetRight() * 2; }
-						if (ImGui::IsKeyDown(ImGuiKey_W)) { Direction += Camera->GetForward() * 2; }
-						if (ImGui::IsKeyDown(ImGuiKey_S)) { Direction += -Camera->GetForward() * 2; }
-						if (ImGui::IsKeyDown(ImGuiKey_Q)) { Direction += FVector(0, 0, -2); }
-						if (ImGui::IsKeyDown(ImGuiKey_E)) { Direction += FVector(0, 0, 2); }
-
-						if (Direction.LengthSquared() > MATH_EPSILON)
-						{
-							Direction.Normalize();
-							Camera->SetLocation(Camera->GetLocation() + Direction * Camera->GetMoveSpeed() * DT);
-						}
-					}
-					else if (Camera->GetCameraType() == ECameraType::ECT_Orthographic)
-					{
-						// Orthographic: 마우스 드래그로 패닝
-						const float PanSpeed = 0.1f;
-						FVector PanDelta = Camera->GetRight() * -MouseDelta.X * PanSpeed + Camera->GetUp() * MouseDelta.Y * PanSpeed;
-						Camera->SetLocation(Camera->GetLocation() + PanDelta);
-					}
+					ViewerGizmo->SetCustomRotationSnapEnabled(ToolbarWidget->IsRotationSnapEnabled());
+					ViewerGizmo->SetCustomRotationSnapAngle(ToolbarWidget->GetRotationSnapAngle());
 				}
 
-				// 마우스 휠 클릭 (중간 버튼) 드래그: 패닝
-				if (bIsDraggingMiddleButton && ImGui::IsMouseDown(ImGuiMouseButton_Middle))
-				{
-					FVector MouseDelta = FVector(IO.MouseDelta.x, IO.MouseDelta.y, 0);
-
-					// 모든 카메라 타입에서 패닝 동작
-					const float PanSpeed = 0.5f;
-					FVector PanDelta = Camera->GetRight() * -MouseDelta.X * PanSpeed + Camera->GetUp() * MouseDelta.Y * PanSpeed;
-					Camera->SetLocation(Camera->GetLocation() + PanDelta);
-				}
-
-				// 마우스 휠: 줌 또는 카메라 속도 조절
-				if (IO.MouseWheel != 0.0f)
-				{
-					// 우클릭 + 마우스 휠: 카메라 이동 속도 조절
-					if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
-					{
-						float CurrentSpeed = Camera->GetMoveSpeed();
-						float NewSpeed = CurrentSpeed + IO.MouseWheel * 1.0f;
-						NewSpeed = clamp(NewSpeed, 0.1f, 100.0f);
-						Camera->SetMoveSpeed(NewSpeed);
-					}
-					else
-					{
-						// 일반 마우스 휠: 줌
-						if (Camera->GetCameraType() == ECameraType::ECT_Perspective)
-						{
-							// Perspective: FOV 조절
-							float NewFOV = Camera->GetFovY() - IO.MouseWheel * 5.0f;
-							NewFOV = clamp(NewFOV, 10.0f, 120.0f);
-							Camera->SetFovY(NewFOV);
-						}
-						else if (Camera->GetCameraType() == ECameraType::ECT_Orthographic)
-						{
-							// Orthographic: Zoom 조절
-							float NewZoom = Camera->GetOrthoZoom() * (1.0f - IO.MouseWheel * 0.1f);
-							NewZoom = clamp(NewZoom, 10.0f, 10000.0f);
-							Camera->SetOrthoZoom(NewZoom);
-						}
-					}
-				}
-			}
-		}
-
-		// 뷰포트 상태 표시 (디버그 정보) - 좌측 상단 오버레이
-		ImDrawList* DrawList = ImGui::GetWindowDrawList();
-		ImVec2 WindowPos = ImGui::GetCursorScreenPos();
-		WindowPos.y -= ViewportSize.y; // Image가 그려진 위치로 이동
-
-		ImVec2 InfoPos = ImVec2(WindowPos.x + 10, WindowPos.y + 10);
-		ImVec2 InfoSize = ImVec2(280, 180);
-
-		// 반투명 배경
-		DrawList->AddRectFilled(InfoPos, ImVec2(InfoPos.x + InfoSize.x, InfoPos.y + InfoSize.y),
-		                        IM_COL32(0, 0, 0, 180), 4.0f);
-
-		// 텍스트
-		DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 10), IM_COL32(80, 200, 200, 255), "3D Viewport");
-		DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 30), IM_COL32(200, 200, 200, 255),
-		                  (FString("Size: ") + std::to_string(ViewerWidth) + " x " + std::to_string(ViewerHeight)).c_str());
-
-		// 카메라 정보 표시
-		if (ViewerViewportClient)
-		{
-			UCamera* Camera = ViewerViewportClient->GetCamera();
-			if (Camera)
-			{
-				FVector CameraPos = Camera->GetLocation();
-				FVector CameraRot = Camera->GetRotation();
-				float CameraFOV = Camera->GetFovY();
-				float CameraAspect = Camera->GetAspect();
-
-				// 카메라 위치
-				char CameraInfoText[256];
-				sprintf_s(CameraInfoText, "Pos: %.1f, %.1f, %.1f", CameraPos.X, CameraPos.Y, CameraPos.Z);
-				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 55), IM_COL32(200, 200, 100, 255), CameraInfoText);
-
-				// 카메라 회전
-				sprintf_s(CameraInfoText, "Rot: %.1f, %.1f, %.1f", CameraRot.X, CameraRot.Y, CameraRot.Z);
-				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 75), IM_COL32(200, 200, 100, 255), CameraInfoText);
-
-				// FOV와 종횡비
-				sprintf_s(CameraInfoText, "FOV: %.1f | Aspect: %.2f", CameraFOV, CameraAspect);
-				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 95), IM_COL32(200, 200, 100, 255), CameraInfoText);
-
-				// 컨트롤 힌트
-				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 120), IM_COL32(150, 150, 150, 255), "RMB: Rotate | MMB: Pan");
-				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 140), IM_COL32(150, 150, 150, 255), "Wheel: Zoom | Q/W/E/R: Gizmo");
-				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 160), IM_COL32(150, 150, 150, 255), "F: Focus | Alt+G: Toggle Grid");
-
-				// 축 방향 표시는 D2D 오버레이로 렌더링됨 (FAxis::CollectDrawCommands)
+				ViewerGizmo->UpdateScale(Camera, D3DViewport);
+				ViewerGizmo->RenderGizmo(Camera, D3DViewport);
 			}
 			else
 			{
-				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 50), IM_COL32(200, 200, 200, 255), "Camera: Not Available");
+				static bool bLoggedNoGizmo = false;
+				if (!bLoggedNoGizmo)
+				{
+					UE_LOG_WARNING("SkeletalMeshViewerWindow: Gizmo not rendering - ViewerGizmo: %p, SelectedComponent: %p",
+						ViewerGizmo, SelectedComponent);
+					bLoggedNoGizmo = true;
+				}
 			}
+
+			delete View;
+		}
+
+		// D2D 오버레이 렌더링
+		if (ViewerD2DRenderTarget && Camera)
+		{
+			FD2DOverlayManager& OverlayManager = FD2DOverlayManager::GetInstance();
+			OverlayManager.BeginCollect(Camera, D3DViewport);
+
+			if (ViewerGizmo && ToolbarWidget)
+			{
+				const bool bSnapEnabled = ToolbarWidget->IsRotationSnapEnabled();
+				const float SnapAngle = ToolbarWidget->GetRotationSnapAngle();
+				ViewerGizmo->CollectRotationAngleOverlay(OverlayManager, Camera, D3DViewport, false, bSnapEnabled, SnapAngle);
+			}
+
+			FAxis::CollectDrawCommands(OverlayManager, Camera, D3DViewport);
+
+			static bool bLoggedD2DRender = false;
+			if (!bLoggedD2DRender)
+			{
+				UE_LOG("SkeletalMeshViewerWindow: D2D 오버레이 렌더링 (RenderTarget: %p, Viewport: %.0fx%.0f)",
+					ViewerD2DRenderTarget, D3DViewport.Width, D3DViewport.Height);
+				bLoggedD2DRender = true;
+			}
+			OverlayManager.FlushAndRender(ViewerD2DRenderTarget);
 		}
 	}
-	else
+
+	// 렌더 타겟 복구
+	ID3D11RenderTargetView* MainRTV = Renderer.GetDeviceResources()->GetBackBufferRTV();
+	ID3D11DepthStencilView* MainDSV = Renderer.GetDeviceResources()->GetDepthBufferDSV();
+	Context->OMSetRenderTargets(1, &MainRTV, MainDSV);
+
+	const D3D11_VIEWPORT& MainViewport = Renderer.GetDeviceResources()->GetViewportInfo();
+	Context->RSSetViewports(1, &MainViewport);
+}
+
+/**
+ * @brief 뷰포트 이미지 표시 및 정보 오버레이 렌더링
+ */
+void USkeletalMeshViewerWindow::DisplayViewportImage(const ImVec2& ViewportSize)
+{
+	if (!ViewerShaderResourceView)
 	{
-		// 렌더 타겟이 없을 경우 플레이스홀더
 		const char* PlaceholderText = "Render Target Not Available";
 		const ImVec2 TextSize = ImGui::CalcTextSize(PlaceholderText);
 		ImGui::SetCursorPos(ImVec2((ViewportSize.x - TextSize.x) * 0.5f, ViewportSize.y * 0.5f));
 		ImGui::TextDisabled("%s", PlaceholderText);
+		return;
 	}
 
-	// TODO 주석
-	// TODO: ViewerViewportClient를 사용한 독립적인 씬 렌더링
-	// TODO: SkeletalMesh 렌더링
-	// TODO: 선택된 본의 Transform Gizmo 렌더링
-	// TODO: 독립적인 카메라 조작 (마우스 드래그로 회전, 줌, 팬)
-	// TODO: 그리드 표시
+	ImTextureID TextureID = reinterpret_cast<ImTextureID>(ViewerShaderResourceView);
+	ImVec2 CursorPos = ImGui::GetCursorScreenPos();
+
+	ImGui::Image(TextureID, ViewportSize);
+
+	ImGui::SetCursorScreenPos(CursorPos);
+	ImGui::InvisibleButton("##ViewportInteraction", ViewportSize, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_MouseButtonMiddle);
+
+	bool bViewerHasFocus = ImGui::IsItemActive() || ImGui::IsItemHovered();
+	if (bViewerHasFocus)
+	{
+		ImGuiIO& IO = ImGui::GetIO();
+		IO.WantCaptureMouse = true;
+		IO.WantCaptureKeyboard = true;
+	}
+
+	// 뷰포트 상태 표시
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	ImVec2 WindowPos = ImGui::GetCursorScreenPos();
+	WindowPos.y -= ViewportSize.y;
+
+	ImVec2 InfoPos = ImVec2(WindowPos.x + 10, WindowPos.y + 10);
+	ImVec2 InfoSize = ImVec2(280, 180);
+
+	DrawList->AddRectFilled(InfoPos, ImVec2(InfoPos.x + InfoSize.x, InfoPos.y + InfoSize.y),
+	                        IM_COL32(0, 0, 0, 180), 4.0f);
+
+	DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 10), IM_COL32(80, 200, 200, 255), "3D Viewport");
+	DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 30), IM_COL32(200, 200, 200, 255),
+	                  (FString("Size: ") + std::to_string(ViewerWidth) + " x " + std::to_string(ViewerHeight)).c_str());
+
+	if (ViewerViewportClient)
+	{
+		UCamera* Camera = ViewerViewportClient->GetCamera();
+		if (Camera)
+		{
+			FVector CameraPos = Camera->GetLocation();
+			FVector CameraRot = Camera->GetRotation();
+			float CameraFOV = Camera->GetFovY();
+			float CameraAspect = Camera->GetAspect();
+
+			char CameraInfoText[256];
+			sprintf_s(CameraInfoText, "Pos: %.1f, %.1f, %.1f", CameraPos.X, CameraPos.Y, CameraPos.Z);
+			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 55), IM_COL32(200, 200, 100, 255), CameraInfoText);
+
+			sprintf_s(CameraInfoText, "Rot: %.1f, %.1f, %.1f", CameraRot.X, CameraRot.Y, CameraRot.Z);
+			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 75), IM_COL32(200, 200, 100, 255), CameraInfoText);
+
+			sprintf_s(CameraInfoText, "FOV: %.1f | Aspect: %.2f", CameraFOV, CameraAspect);
+			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 95), IM_COL32(200, 200, 100, 255), CameraInfoText);
+
+			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 120), IM_COL32(150, 150, 150, 255), "RMB: Rotate | MMB: Pan");
+			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 140), IM_COL32(150, 150, 150, 255), "Wheel: Zoom | Q/W/E/R: Gizmo");
+			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 160), IM_COL32(150, 150, 150, 255), "F: Focus | Alt+G: Toggle Grid");
+		}
+		else
+		{
+			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 50), IM_COL32(200, 200, 200, 255), "Camera: Not Available");
+		}
+	}
+}
+
+/**
+ * @brief 뷰포트 입력 처리 (키보드, 마우스, 기즈모, 카메라)
+ */
+void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const ImVec2& ViewportWindowPos)
+{
+	if (ImGui::IsItemHovered())
+	{
+		// 키보드 입력 처리
+		if (ViewerGizmo)
+		{
+			if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyPressed(ImGuiKey_GraveAccent))
+			{
+				ViewerGizmo->IsWorldMode() ? ViewerGizmo->SetLocal() : ViewerGizmo->SetWorld();
+			}
+
+			if (ImGui::IsKeyPressed(ImGuiKey_Space))
+			{
+				ViewerGizmo->ChangeGizmoMode();
+			}
+		}
+
+		UCamera* Camera = ViewerViewportClient->GetCamera();
+		if (Camera)
+		{
+			ImVec2 MousePos = ImGui::GetMousePos();
+			const ImVec2& WindowPos = ViewportWindowPos;
+
+			float MouseX = MousePos.x - WindowPos.x;
+			float MouseY = MousePos.y - WindowPos.y;
+
+			const float NdcX = (MouseX / ViewerWidth) * 2.0f - 1.0f;
+			const float NdcY = -((MouseY / ViewerHeight) * 2.0f - 1.0f);
+
+			FRay WorldRay = Camera->ConvertToWorldRay(NdcX, NdcY);
+
+			// 기즈모 호버링
+			FVector CollisionPoint;
+			if (ViewerGizmo && SelectedComponent && ViewerObjectPicker && !ViewerGizmo->IsDragging())
+			{
+				ViewerObjectPicker->PickGizmo(Camera, WorldRay, *ViewerGizmo, CollisionPoint);
+			}
+
+			// 기즈모 클릭
+			if (ViewerGizmo && ViewerGizmo->GetGizmoDirection() != EGizmoDirection::None)
+			{
+				if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+				{
+					ViewerGizmo->OnMouseDragStart(CollisionPoint);
+
+					ImVec2 CurrentMousePos = ImGui::GetMousePos();
+					const FVector2 ViewerLocalScreenPos(CurrentMousePos.x - ViewportWindowPos.x, CurrentMousePos.y - ViewportWindowPos.y);
+					ViewerGizmo->SetPreviousScreenPos(ViewerLocalScreenPos);
+					ViewerGizmo->SetDragStartScreenPos(ViewerLocalScreenPos);
+				}
+			}
+			else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+			{
+				if (PreviewSkeletalMeshActor && !SelectedComponent)
+				{
+					if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(PreviewSkeletalMeshActor))
+					{
+						SelectedComponent = StaticMeshActor->GetStaticMeshComponent();
+						if (ViewerGizmo)
+						{
+							ViewerGizmo->SetSelectedComponent(SelectedComponent);
+						}
+					}
+				}
+			}
+		}
+
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+		{
+			bIsDraggingRightButton = true;
+		}
+
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
+		{
+			bIsDraggingMiddleButton = true;
+		}
+	}
+
+	if (bViewerHasFocus)
+	{
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+		{
+			bIsDraggingRightButton = false;
+		}
+
+		if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle))
+		{
+			bIsDraggingMiddleButton = false;
+		}
+	}
+
+	if (!ImGui::IsMouseDown(ImGuiMouseButton_Right))
+	{
+		bIsDraggingRightButton = false;
+	}
+
+	if (!ImGui::IsMouseDown(ImGuiMouseButton_Middle))
+	{
+		bIsDraggingMiddleButton = false;
+	}
+
+	// 기즈모 드래그 릴리즈
+	if (ViewerGizmo && ViewerGizmo->IsDragging())
+	{
+		bool bIsGlobalMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+		if (!bIsGlobalMouseDown)
+		{
+			ViewerGizmo->EndDrag();
+			ViewerGizmo->SetGizmoDirection(EGizmoDirection::None);
+		}
+	}
+
+	// 기즈모 드래그 처리
+	if (ViewerGizmo && ViewerGizmo->IsDragging() && SelectedComponent && ViewerViewportClient)
+	{
+		UCamera* Camera = ViewerViewportClient->GetCamera();
+		if (Camera)
+		{
+			ImVec2 MousePos = ImGui::GetMousePos();
+
+			float MouseX = MousePos.x - ViewportWindowPos.x;
+			float MouseY = MousePos.y - ViewportWindowPos.y;
+
+			const float NdcX = (MouseX / ViewerWidth) * 2.0f - 1.0f;
+			const float NdcY = -((MouseY / ViewerHeight) * 2.0f - 1.0f);
+
+			FRay WorldRay = Camera->ConvertToWorldRay(NdcX, NdcY);
+
+			switch (ViewerGizmo->GetGizmoMode())
+			{
+			case EGizmoMode::Translate:
+			{
+				FVector GizmoDragLocation = GetViewerGizmoDragLocation(Camera, WorldRay);
+				ViewerGizmo->SetLocation(GizmoDragLocation);
+				break;
+			}
+			case EGizmoMode::Rotate:
+			{
+				FQuaternion GizmoDragRotation = GetViewerGizmoDragRotation(Camera, WorldRay);
+				ViewerGizmo->SetComponentRotation(GizmoDragRotation);
+				break;
+			}
+			case EGizmoMode::Scale:
+			{
+				FVector GizmoDragScale = GetViewerGizmoDragScale(Camera, WorldRay);
+				ViewerGizmo->SetComponentScale(GizmoDragScale);
+				break;
+			}
+			}
+		}
+	}
+	else if ((bIsDraggingRightButton || bIsDraggingMiddleButton || ImGui::IsItemHovered()) && ViewerViewportClient)
+	{
+		UCamera* Camera = ViewerViewportClient->GetCamera();
+		if (Camera)
+		{
+			ImGuiIO& IO = ImGui::GetIO();
+
+			if (bIsDraggingRightButton && ImGui::IsMouseDown(ImGuiMouseButton_Right))
+			{
+				FVector MouseDelta = FVector(IO.MouseDelta.x, IO.MouseDelta.y, 0);
+
+				if (Camera->GetCameraType() == ECameraType::ECT_Perspective)
+				{
+					const float YawDelta = MouseDelta.X * KeySensitivityDegPerPixel * 2;
+					const float PitchDelta = -MouseDelta.Y * KeySensitivityDegPerPixel * 2;
+
+					FRotator CurrentRot = Camera->GetRotationRotator();
+					CurrentRot.Yaw += YawDelta;
+					CurrentRot.Pitch += PitchDelta;
+					CurrentRot.Roll = 0.0f;
+
+					constexpr float MaxPitch = 89.9f;
+					CurrentRot.Pitch = clamp(CurrentRot.Pitch, -MaxPitch, MaxPitch);
+
+					Camera->SetRotation(CurrentRot);
+
+					FVector Direction = FVector::Zero();
+					if (ImGui::IsKeyDown(ImGuiKey_A)) { Direction += -Camera->GetRight() * 2; }
+					if (ImGui::IsKeyDown(ImGuiKey_D)) { Direction += Camera->GetRight() * 2; }
+					if (ImGui::IsKeyDown(ImGuiKey_W)) { Direction += Camera->GetForward() * 2; }
+					if (ImGui::IsKeyDown(ImGuiKey_S)) { Direction += -Camera->GetForward() * 2; }
+					if (ImGui::IsKeyDown(ImGuiKey_Q)) { Direction += FVector(0, 0, -2); }
+					if (ImGui::IsKeyDown(ImGuiKey_E)) { Direction += FVector(0, 0, 2); }
+
+					if (Direction.LengthSquared() > MATH_EPSILON)
+					{
+						Direction.Normalize();
+						Camera->SetLocation(Camera->GetLocation() + Direction * Camera->GetMoveSpeed() * DT);
+					}
+				}
+				else if (Camera->GetCameraType() == ECameraType::ECT_Orthographic)
+				{
+					const float PanSpeed = 0.1f;
+					FVector PanDelta = Camera->GetRight() * -MouseDelta.X * PanSpeed + Camera->GetUp() * MouseDelta.Y * PanSpeed;
+					Camera->SetLocation(Camera->GetLocation() + PanDelta);
+				}
+			}
+
+			if (bIsDraggingMiddleButton && ImGui::IsMouseDown(ImGuiMouseButton_Middle))
+			{
+				FVector MouseDelta = FVector(IO.MouseDelta.x, IO.MouseDelta.y, 0);
+
+				const float PanSpeed = 0.5f;
+				FVector PanDelta = Camera->GetRight() * -MouseDelta.X * PanSpeed + Camera->GetUp() * MouseDelta.Y * PanSpeed;
+				Camera->SetLocation(Camera->GetLocation() + PanDelta);
+			}
+
+			if (IO.MouseWheel != 0.0f)
+			{
+				if (ImGui::IsMouseDown(ImGuiMouseButton_Right))
+				{
+					float CurrentSpeed = Camera->GetMoveSpeed();
+					float NewSpeed = CurrentSpeed + IO.MouseWheel * 1.0f;
+					NewSpeed = clamp(NewSpeed, 0.1f, 100.0f);
+					Camera->SetMoveSpeed(NewSpeed);
+				}
+				else
+				{
+					if (Camera->GetCameraType() == ECameraType::ECT_Perspective)
+					{
+						float NewFOV = Camera->GetFovY() - IO.MouseWheel * 5.0f;
+						NewFOV = clamp(NewFOV, 10.0f, 120.0f);
+						Camera->SetFovY(NewFOV);
+					}
+					else if (Camera->GetCameraType() == ECameraType::ECT_Orthographic)
+					{
+						float NewZoom = Camera->GetOrthoZoom() * (1.0f - IO.MouseWheel * 0.1f);
+						NewZoom = clamp(NewZoom, 10.0f, 10000.0f);
+						Camera->SetOrthoZoom(NewZoom);
+					}
+				}
+			}
+		}
+	}
+}
+
+/**
+ * @brief 중앙 패널: 3D Viewport
+ * 독립적인 카메라를 사용한 3D 렌더링 뷰포트
+ */
+void USkeletalMeshViewerWindow::Render3DViewportPanel()
+{
+	// 1. 툴바 업데이트 및 기즈모 동기화
+	UpdateToolbarAndGizmoSync();
+
+	// 2. 뷰포트 크기 가져오기
+	const ImVec2 ViewportSize = ImGui::GetContentRegionAvail();
+	const uint32 NewWidth = static_cast<uint32>(ViewportSize.x);
+	const uint32 NewHeight = static_cast<uint32>(ViewportSize.y);
+
+	// 3. 렌더 타겟 업데이트 (크기 변경 시)
+	UpdateViewportRenderTarget(NewWidth, NewHeight);
+
+	// 4. 3D 씬을 렌더 타겟에 렌더링
+	RenderToViewportTexture();
+
+	// 5. ImGui에 렌더 결과 표시 (뷰포트 시작 위치 저장)
+	const ImVec2 ViewportWindowPos = ImGui::GetCursorScreenPos();
+	DisplayViewportImage(ViewportSize);
+
+	// 6. 입력 처리 (마우스/키보드/기즈모/카메라)
+	bool bViewerHasFocus = ImGui::IsItemActive() || ImGui::IsItemHovered();
+	ProcessViewportInput(bViewerHasFocus, ViewportWindowPos);
 }
 
 /**
@@ -1908,8 +1868,7 @@ void USkeletalMeshViewerWindow::SetGridCellSize(float NewCellSize)
  */
 FVector USkeletalMeshViewerWindow::GetViewerGizmoDragLocation(UCamera* InCamera, FRay& WorldRay)
 {
-	if (!ViewerGizmo || !ViewerObjectPicker) return FVector::Zero();
-	return ViewerGizmo->ProcessDragLocation(InCamera, WorldRay, ViewerObjectPicker);
+	return FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, InCamera, WorldRay);
 }
 
 /**
@@ -1917,8 +1876,6 @@ FVector USkeletalMeshViewerWindow::GetViewerGizmoDragLocation(UCamera* InCamera,
  */
 FQuaternion USkeletalMeshViewerWindow::GetViewerGizmoDragRotation(UCamera* InCamera, FRay& WorldRay)
 {
-	if (!ViewerGizmo) return FQuaternion::Identity();
-
 	// 뷰어의 ViewportRect 생성 (ImGui 윈도우의 로컬 좌표 기준)
 	ImVec2 WindowPos = ImGui::GetItemRectMin();
 	FRect ViewportRect;
@@ -1927,7 +1884,7 @@ FQuaternion USkeletalMeshViewerWindow::GetViewerGizmoDragRotation(UCamera* InCam
 	ViewportRect.Width = ViewerWidth;
 	ViewportRect.Height = ViewerHeight;
 
-	return ViewerGizmo->ProcessDragRotation(InCamera, WorldRay, ViewportRect, true);
+	return FGizmoHelper::ProcessDragRotation(ViewerGizmo, InCamera, WorldRay, ViewportRect, true);
 }
 
 /**
@@ -1935,6 +1892,5 @@ FQuaternion USkeletalMeshViewerWindow::GetViewerGizmoDragRotation(UCamera* InCam
  */
 FVector USkeletalMeshViewerWindow::GetViewerGizmoDragScale(UCamera* InCamera, FRay& WorldRay)
 {
-	if (!ViewerGizmo || !ViewerObjectPicker) return FVector::One();
-	return ViewerGizmo->ProcessDragScale(InCamera, WorldRay, ViewerObjectPicker);
+	return FGizmoHelper::ProcessDragScale(ViewerGizmo, ViewerObjectPicker, InCamera, WorldRay);
 }

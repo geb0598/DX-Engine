@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Editor/Public/Gizmo.h"
+#include "Editor/Public/GizmoHelper.h"
 
 #include "Editor/Public/Editor.h"
 #include "Editor/Public/GizmoMath.h"
@@ -793,4 +794,38 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 		return NewScale;
 	}
 	return GetComponentScale();
+}
+
+// ============================================================================
+// FGizmoHelper Implementation
+// ============================================================================
+
+FVector FGizmoHelper::ProcessDragLocation(UGizmo* Gizmo, UObjectPicker* Picker, UCamera* Camera, FRay& Ray)
+{
+	if (!Gizmo || !Picker || !Camera)
+	{
+		return Gizmo ? Gizmo->GetGizmoLocation() : FVector::Zero();
+	}
+
+	return Gizmo->ProcessDragLocation(Camera, Ray, Picker);
+}
+
+FQuaternion FGizmoHelper::ProcessDragRotation(UGizmo* Gizmo, UCamera* Camera, FRay& Ray, const FRect& ViewportRect, bool bUseCustomSnap)
+{
+	if (!Gizmo || !Camera)
+	{
+		return FQuaternion::Identity();
+	}
+
+	return Gizmo->ProcessDragRotation(Camera, Ray, ViewportRect, bUseCustomSnap);
+}
+
+FVector FGizmoHelper::ProcessDragScale(UGizmo* Gizmo, UObjectPicker* Picker, UCamera* Camera, FRay& Ray)
+{
+	if (!Gizmo || !Picker || !Camera)
+	{
+		return FVector::One();
+	}
+
+	return Gizmo->ProcessDragScale(Camera, Ray, Picker);
 }

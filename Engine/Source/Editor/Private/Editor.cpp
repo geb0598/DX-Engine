@@ -2,6 +2,7 @@
 #include "Editor/Public/Editor.h"
 #include "Editor/Public/Camera.h"
 #include "Editor/Public/Axis.h"
+#include "Editor/Public/GizmoHelper.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Manager/UI/Public/UIManager.h"
 #include "Manager/Input/Public/InputManager.h"
@@ -664,18 +665,18 @@ void UEditor::ProcessMouseInput()
 
 FVector UEditor::GetGizmoDragLocation(UCamera* InActiveCamera, FRay& WorldRay)
 {
-	return Gizmo.ProcessDragLocation(InActiveCamera, WorldRay, &ObjectPicker);
+	return FGizmoHelper::ProcessDragLocation(&Gizmo, &ObjectPicker, InActiveCamera, WorldRay);
 }
 
 FQuaternion UEditor::GetGizmoDragRotation(UCamera* InActiveCamera, FRay& WorldRay)
 {
 	const FRect& ViewportRect = UViewportManager::GetInstance().GetActiveViewportRect();
-	return Gizmo.ProcessDragRotation(InActiveCamera, WorldRay, ViewportRect, false);
+	return FGizmoHelper::ProcessDragRotation(&Gizmo, InActiveCamera, WorldRay, ViewportRect, false);
 }
 
 FVector UEditor::GetGizmoDragScale(UCamera* InActiveCamera, FRay& WorldRay)
 {
-	return Gizmo.ProcessDragScale(InActiveCamera, WorldRay, &ObjectPicker);
+	return FGizmoHelper::ProcessDragScale(&Gizmo, &ObjectPicker, InActiveCamera, WorldRay);
 }
 
 void UEditor::SelectActor(AActor* InActor)

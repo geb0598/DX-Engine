@@ -72,6 +72,15 @@ protected:
 	void Render3DViewportPanel();
 
 	/**
+	 * @brief Render3DViewportPanel의 세부 함수들 (리팩토링)
+	 */
+	void UpdateToolbarAndGizmoSync();
+	void UpdateViewportRenderTarget(uint32 NewWidth, uint32 NewHeight);
+	void RenderToViewportTexture();
+	void DisplayViewportImage(const ImVec2& ViewportSize);
+	void ProcessViewportInput(bool bViewerHasFocus, const ImVec2& ViewportWindowPos);
+
+	/**
 	 * @brief 우측 패널: Edit Tools 영역 렌더링 (Placeholder)
 	 * TODO: Transform 편집 UI, Gizmo 설정, 본 프로퍼티 등 구현
 	 */
