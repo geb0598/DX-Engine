@@ -1772,6 +1772,8 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		{
 			OriginalSkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
 		}
+		OriginalSkeletalMeshComponent->RefreshBoneTransforms();
+		OriginalSkeletalMeshComponent->UpdateSkinnedVertices();
 		UE_LOG("SkeletalMeshViewerWindow: Applied bone transform changes");
 	}
 	ImGui::PopStyleColor(3);
