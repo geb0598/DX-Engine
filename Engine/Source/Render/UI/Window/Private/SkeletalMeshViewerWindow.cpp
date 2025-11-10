@@ -802,13 +802,25 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 		// 툴바와 ViewerGizmo 간 양방향 동기화
 		if (ViewerGizmo)
 		{
+			static EGizmoMode PreToolbarGizmoMode = ToolbarWidget->GetCurrentGizmoMode();
+			static EGizmoMode PreViewerGizmoMode = ViewerGizmo->GetGizmoMode();
+
 			EGizmoMode ToolbarGizmoMode = ToolbarWidget->GetCurrentGizmoMode();
 			EGizmoMode ViewerGizmoMode = ViewerGizmo->GetGizmoMode();
 
-			// 둘 중 하나가 변경되었으면 동기화 (ViewerGizmo 우선, Space 키 지원)
-			if (ToolbarGizmoMode != ViewerGizmoMode)
+			if (PreToolbarGizmoMode != ToolbarGizmoMode)
+			{
+				ToolbarWidget->SetCurrentGizmoMode(ToolbarGizmoMode);
+				ViewerGizmo->SetGizmoMode(ToolbarGizmoMode);
+				PreToolbarGizmoMode = ToolbarGizmoMode;
+				PreViewerGizmoMode = ViewerGizmoMode;
+			}
+			else if (PreViewerGizmoMode != ViewerGizmoMode)
 			{
 				ToolbarWidget->SetCurrentGizmoMode(ViewerGizmoMode);
+				ViewerGizmo->SetGizmoMode(ViewerGizmoMode);
+				PreToolbarGizmoMode = ToolbarGizmoMode;
+				PreViewerGizmoMode = ViewerGizmoMode;
 			}
 		}
 	}
