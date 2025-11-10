@@ -655,7 +655,7 @@ void USkeletalMeshViewerWindow::RenderSkeletonTreePanel(const USkeletalMesh* InS
 {
 	/*assert(InSkeletalMesh);
 	assert(InNumBones > 0);*/
-	bool bValid = CheckSkeletalValidity(const_cast<USkeletalMesh*>(InSkeletalMesh), const_cast<FReferenceSkeleton&>(InRefSkeleton), const_cast<int32&>(InNumBones), true);
+	bool bValid = CheckSkeletalValidity(const_cast<USkeletalMesh*&>(InSkeletalMesh), const_cast<FReferenceSkeleton&>(InRefSkeleton), const_cast<int32&>(InNumBones), true);
 	if(bValid == false)
 	{
 		return;
@@ -1397,7 +1397,7 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
  */
 void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkeletalMesh, const FReferenceSkeleton& InRefSkeleton, const int32 InNumBones)
 {
-	bool bValid = CheckSkeletalValidity(const_cast<USkeletalMesh*>(InSkeletalMesh), const_cast<FReferenceSkeleton&>(InRefSkeleton), const_cast<int32&>(InNumBones), true);
+	bool bValid = CheckSkeletalValidity(const_cast<USkeletalMesh*&>(InSkeletalMesh), const_cast<FReferenceSkeleton&>(InRefSkeleton), const_cast<int32&>(InNumBones), true);
 	if (bValid == false)
 	{
 		return;
@@ -1702,35 +1702,6 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 	ImGui::Spacing();
 
 	// ===================================================================
-	// Gizmo Settings
-	// ===================================================================
-	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_HeaderHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-	ImGui::PushStyleColor(ImGuiCol_HeaderActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-
-	if (ImGui::CollapsingHeader("Gizmo Settings"))
-	{
-		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_CheckMark, ImVec4(0.8f, 0.8f, 0.8f, 1.0f));
-
-		static int GizmoMode = 0;
-		ImGui::RadioButton("Translate", &GizmoMode, 0);
-		ImGui::RadioButton("Rotate", &GizmoMode, 1);
-		ImGui::RadioButton("Scale", &GizmoMode, 2);
-
-		ImGui::Spacing();
-		static bool bLocalSpace = false;
-		ImGui::Checkbox("Local Space", &bLocalSpace);
-
-		ImGui::PopStyleColor(4);
-	}
-
-	ImGui::PopStyleColor(3);
-	ImGui::Spacing();
-
-	// ===================================================================
 	// Mesh Info
 	// ===================================================================
 	ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
@@ -1875,7 +1846,7 @@ void USkeletalMeshViewerWindow::RenderCameraControls(UCamera& InCamera)
 	}
 }
 
-bool USkeletalMeshViewerWindow::CheckSkeletalValidity(USkeletalMesh* OutSkeletalMesh, FReferenceSkeleton& OutRefSkeleton, int32& OutNumBones, bool bLogging) const
+bool USkeletalMeshViewerWindow::CheckSkeletalValidity(USkeletalMesh*& OutSkeletalMesh, FReferenceSkeleton& OutRefSkeleton, int32& OutNumBones, bool bLogging) const
 {
 	// SkeletalMeshComponent 유효성 검사
 	if (!SkeletalMeshComponent)
