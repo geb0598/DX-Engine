@@ -75,20 +75,22 @@ UClass* USkeletalMeshComponent::GetSpecificWidgetClass() const
 
 void USkeletalMeshComponent::RefreshBoneTransforms()
 {
-	RefreshBoneTransformsCustom(BoneSpaceTransforms);
+	RefreshBoneTransformsCustom(BoneSpaceTransforms, bPoseDirty);
 }
 
-void USkeletalMeshComponent::RefreshBoneTransformsCustom(const TArray<FTransform>& InBoneSpaceTransforms)
+void USkeletalMeshComponent::RefreshBoneTransformsCustom(const TArray<FTransform>& InBoneSpaceTransforms, bool& InbPoseDirty)
 {
 	if (!GetSkeletalMeshAsset() || GetNumComponentSpaceTransforms() == 0)
 	{
 		return;
 	}
 
-	if (!bPoseDirty)
+	if (!InbPoseDirty)
 	{
 		return;
 	}
+
+	UE_LOG("USkeletalMeshComponent::RefreshBoneTransformsCustom - 본 트랜스폼 갱신 중...");
 
 	/** @note LOD 시스템이 없으므로 모든 본을 사용한다. */
 	TArray<FBoneIndexType> FillComponentSpaceTransformsRequiredBones(GetSkeletalMeshAsset()->GetRefSkeleton().GetRawBoneNum());
@@ -112,7 +114,7 @@ void USkeletalMeshComponent::RefreshBoneTransformsCustom(const TArray<FTransform
 		SkinningMatrices[BoneIndex] = InvBindMatrices[BoneIndex] * EditableSpaceBases[BoneIndex].ToMatrixWithScale();
 	}
 
-	bPoseDirty = false;
+	InbPoseDirty = false;
 	bSkinningDirty = true;
 }
 
@@ -153,6 +155,7 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 		SkinnedVertices.SetNum(NumVertices);
 		GetEditableComponentSpaceTransform().SetNum(NumBones);
 		GetEditableBoneVisibilityStates().SetNum(NumBones);
+		SkinningMatrices.SetNum(NumBones); // 임시
 
 		UStaticMesh* StaticMesh = SkeletalMeshAsset->GetStaticMesh();
 

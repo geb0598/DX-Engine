@@ -1741,6 +1741,10 @@ void URenderer::RenderPreviewWorld(UWorld* InPreviewWorld, const FSceneView* InS
 		{
 			RenderingContext.StaticMeshes.Add(StaticMesh);
 		}
+		else if(auto SkeletalMesh = Cast<USkeletalMeshComponent>(Prim))
+		{
+			RenderingContext.SkeletalMeshes.Add(SkeletalMesh);
+		}
 		else if (auto BillBoard = Cast<UBillBoardComponent>(Prim))
 		{
 			RenderingContext.BillBoards.Add(BillBoard);
