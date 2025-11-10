@@ -14,7 +14,9 @@ public:
 
 public:
     virtual UClass* GetDefaultRootComponent() override;
-    
+
+    UDirectionalLightComponent* GetDirectionalLightComponent() const;
+
 private:
     UDirectionalLightComponent* DirectionalLightComponent = nullptr;
 };

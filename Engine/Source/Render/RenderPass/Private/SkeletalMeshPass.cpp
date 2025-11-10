@@ -95,13 +95,10 @@ void FSkeletalMeshPass::Execute(FRenderingContext& Context)
 		if (!MeshComp->GetSkeletalMeshAsset()) { continue; }
 		FStaticMesh* MeshAsset = MeshComp->GetSkeletalMeshAsset()->GetStaticMesh()->GetStaticMeshAsset();
 
-		if (CurrentMeshAsset != MeshAsset)
-		{
-			// 스켈레탈 메시도 FNormalVertex를 사용
-			Pipeline->SetVertexBuffer(MeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
-			Pipeline->SetIndexBuffer(MeshComp->GetIndexBuffer(), 0);
-			CurrentMeshAsset = MeshAsset;
-		}
+		// 스켈레탈 메시도 FNormalVertex를 사용
+		Pipeline->SetVertexBuffer(MeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
+		Pipeline->SetIndexBuffer(MeshComp->GetIndexBuffer(), 0);
+		CurrentMeshAsset = MeshAsset;
 
 		FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferModel, MeshComp->GetWorldTransformMatrix());
 		Pipeline->SetConstantBuffer(0, EShaderType::VS, ConstantBufferModel);

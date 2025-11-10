@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 #include "Component/Mesh/Public/SkinnedMeshComponent.h"
 #include "Runtime/Engine/Public/ReferenceSkeleton.h"
@@ -7,13 +7,16 @@ IMPLEMENT_ABSTRACT_CLASS(USkinnedMeshComponent, UMeshComponent)
 
 UObject* USkinnedMeshComponent::Duplicate()
 {
-	/** @todo */
-	return nullptr;
+	USkinnedMeshComponent* SkinnedMeshComponent = Cast<USkinnedMeshComponent>(Super::Duplicate());
+	SkinnedMeshComponent->SkinnedAsset = SkinnedAsset;
+	SkinnedMeshComponent->BoneVisibilityStates = BoneVisibilityStates;
+
+	return SkinnedMeshComponent;
 }
 
 void USkinnedMeshComponent::DuplicateSubObjects(UObject* DuplicatedObject)
 {
-	/** @todo */
+	Super::DuplicateSubObjects(DuplicatedObject);
 }
 
 void USkinnedMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)

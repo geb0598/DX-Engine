@@ -409,7 +409,13 @@ void AActor::RegisterComponent(UActorComponent* InNewComponent)
 		OwnedComponents.Add(InNewComponent);
 	}
 
-	GWorld->GetLevel()->RegisterComponent(InNewComponent);
+	// FIX: 액터가 속한 Level에 등록 (GWorld 대신 GetOuter 사용)
+	// 이렇게 하면 Preview World의 액터는 Preview World의 Level에 등록됨
+	ULevel* OwningLevel = Cast<ULevel>(GetOuter());
+	if (OwningLevel)
+	{
+		OwningLevel->RegisterComponent(InNewComponent);
+	}
 }
 
 bool AActor::RemoveComponent(UActorComponent* InComponentToDelete, bool bShouldDetachChildren)
@@ -435,7 +441,11 @@ bool AActor::RemoveComponent(UActorComponent* InComponentToDelete, bool bShouldD
 		}
 
 		// 라이트 컴포넌트 자체를 등록 해제
-		GWorld->GetLevel()->UnregisterComponent(LightComponent);
+		// FIX: Actor가 속한 Level에서 Unregister (GWorld 대신 GetOuter 사용)
+		if (ULevel* OwningLevel = Cast<ULevel>(GetOuter()))
+		{
+			OwningLevel->UnregisterComponent(LightComponent);
+		}
 	}
 
 	if (UDecalComponent* DecalComponent = Cast<UDecalComponent>(InComponentToDelete))
@@ -450,7 +460,11 @@ bool AActor::RemoveComponent(UActorComponent* InComponentToDelete, bool bShouldD
 	}
     if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(InComponentToDelete))
     {
-         GWorld->GetLevel()->UnregisterComponent(PrimitiveComponent);
+		// FIX: Actor가 속한 Level에서 Unregister (GWorld 대신 GetOuter 사용)
+		if (ULevel* OwningLevel = Cast<ULevel>(GetOuter()))
+		{
+			OwningLevel->UnregisterComponent(PrimitiveComponent);
+		}
     }
 
     if (USceneComponent* SceneComponent = Cast<USceneComponent>(InComponentToDelete))

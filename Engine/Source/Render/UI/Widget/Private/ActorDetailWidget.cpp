@@ -10,6 +10,9 @@
 #include "Manager/Input/Public/InputManager.h"
 #include "Manager/Path/Public/PathManager.h"
 #include "Texture/Public/Texture.h"
+#include "Component/Mesh/Public/SkeletalMeshComponent.h"
+#include "Render/UI/Window/Public/SkeletalMeshViewerWindow.h"
+#include "Manager/UI/Public/UIManager.h"
 
 IMPLEMENT_CLASS(UActorDetailWidget, UWidget)
 
@@ -408,6 +411,36 @@ void UActorDetailWidget::RenderSceneComponents(USceneComponent* InSceneComponent
 	{
 		SelectedComponent = InSceneComponent;
 		GEditor->GetEditorModule()->SelectComponent(SelectedComponent);
+	}
+
+	// -----------------------------
+	// Context Menu for SkinnedMeshComponent
+	// -----------------------------
+	if (ImGui::BeginPopupContextItem())
+	{
+		// Check if this is a SkinnedMeshComponent
+		USkeletalMeshComponent* SkeletalMeshComp = Cast<USkeletalMeshComponent>(InSceneComponent);
+		if (SkeletalMeshComp)
+		{
+			if (ImGui::MenuItem("Edit Skeletal"))
+			{
+				// UIManager를 통해 SkeletalMeshViewerWindow 찾기
+				UUIManager& UIManager = UUIManager::GetInstance();
+				USkeletalMeshViewerWindow* ViewerWindow = Cast<USkeletalMeshViewerWindow>(
+					UIManager.FindUIWindow(FName("SkeletalMeshViewer"))
+				);
+
+				if (ViewerWindow)
+				{
+					ViewerWindow->OpenViewer(SkeletalMeshComp);
+				}
+				else
+				{
+					UE_LOG_ERROR("ActorDetailWidget: SkeletalMeshViewerWindow을 찾을 수 없습니다!");
+				}
+			}
+		}
+		ImGui::EndPopup();
 	}
 
 	// -----------------------------

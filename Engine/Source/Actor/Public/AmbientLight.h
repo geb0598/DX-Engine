@@ -14,7 +14,9 @@ public:
 
 public:
     virtual UClass* GetDefaultRootComponent() override;
-    
+
+    UAmbientLightComponent* GetAmbientLightComponent() const;
+
 private:
     UAmbientLightComponent* AmbientLightComponent = nullptr;
 };

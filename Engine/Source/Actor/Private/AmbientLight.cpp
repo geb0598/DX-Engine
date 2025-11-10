@@ -12,3 +12,8 @@ UClass* AAmbientLight::GetDefaultRootComponent()
 {
     return UAmbientLightComponent::StaticClass();
 }
+
+UAmbientLightComponent* AAmbientLight::GetAmbientLightComponent() const
+{
+    return Cast<UAmbientLightComponent>(GetRootComponent());
+}

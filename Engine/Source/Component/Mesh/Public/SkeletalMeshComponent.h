@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "Runtime/Engine/Public/SkeletalMesh.h"
 #include "SkinnedMeshComponent.h"
@@ -54,6 +54,8 @@ public:
 	 -----------------------------------------------------------------------------*/
 public:
 	virtual void RefreshBoneTransforms() override;
+
+	void RefreshBoneTransformsCustom(const TArray<FTransform>& InBoneSpaceTransforms, bool& InbPoseDirty);
 
 	virtual void TickPose(float DeltaTime) override;
 

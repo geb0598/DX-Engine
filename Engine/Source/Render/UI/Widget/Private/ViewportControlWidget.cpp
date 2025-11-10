@@ -876,7 +876,7 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 					{
 						// Perspective: FOV 표시
 						float Fov = Camera->GetFovY();
-						if (ImGui::SliderFloat("FOV", &Fov, 1.0f, 170.0f, "%.1f"))
+						if (ImGui::DragFloat("FOV", &Fov, 0.1f, 1.0f, 170.0f, "%.1f"))
 						{
 							Camera->SetFovY(Fov);
 						}

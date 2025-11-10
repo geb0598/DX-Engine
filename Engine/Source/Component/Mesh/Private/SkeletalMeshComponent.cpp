@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 
 #include <numeric>
 
@@ -35,13 +35,44 @@ USkeletalMeshComponent::~USkeletalMeshComponent()
 
 UObject* USkeletalMeshComponent::Duplicate()
 {
-	/** @todo */
-	return nullptr;
+	USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(Super::Duplicate());
+
+	//SkeletalMeshComponent->SkeletalMeshAsset = Cast<USkeletalMesh>(SkeletalMeshAsset->Duplicate()); // Deep Copy 필요?
+	SkeletalMeshComponent->SkeletalMeshAsset = SkeletalMeshAsset;
+
+	SkeletalMeshComponent->BoneSpaceTransforms = BoneSpaceTransforms;
+	SkeletalMeshComponent->OverrideMaterials = OverrideMaterials;
+	SkeletalMeshComponent->bPoseDirty = true;
+	SkeletalMeshComponent->bNormalMapEnabled = bNormalMapEnabled;
+
+	// VertexBuffer와 IndexBuffer는 새로 생성
+	UStaticMesh* StaticMesh = SkeletalMeshAsset->GetStaticMesh();
+
+	SkeletalMeshComponent->VertexBuffer = FRenderResourceFactory::CreateVertexBuffer(
+		StaticMesh->GetVertices().GetData(),
+		static_cast<uint32>(StaticMesh->GetVertices().Num()) * sizeof(FNormalVertex),
+		true
+	);
+	SkeletalMeshComponent->IndexBuffer = FRenderResourceFactory::CreateIndexBuffer(
+		StaticMesh->GetIndices().GetData(),
+		static_cast<uint32>(StaticMesh->GetIndices().Num()) * sizeof(uint32)
+	);
+
+	// BoundingBox를 복사된 StaticMesh에 맞게 재설정
+	// PrimitiveComponent::Duplicate()이 원본의 BoundingBox를 복사했지만,
+	// 명시적으로 재설정하여 논리적 완결성 확보
+	if (StaticMesh)
+	{
+		UAssetManager& AssetManager = UAssetManager::GetInstance();
+		SkeletalMeshComponent->BoundingBox = &AssetManager.GetStaticMeshAABB(StaticMesh->GetAssetPathFileName());
+	}
+
+	return SkeletalMeshComponent;
 }
 
 void USkeletalMeshComponent::DuplicateSubObjects(UObject* DuplicatedObject)
 {
-	/** @todo */
+	Super::DuplicateSubObjects(DuplicatedObject);
 }
 
 void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
@@ -75,15 +106,22 @@ UClass* USkeletalMeshComponent::GetSpecificWidgetClass() const
 
 void USkeletalMeshComponent::RefreshBoneTransforms()
 {
+	RefreshBoneTransformsCustom(BoneSpaceTransforms, bPoseDirty);
+}
+
+void USkeletalMeshComponent::RefreshBoneTransformsCustom(const TArray<FTransform>& InBoneSpaceTransforms, bool& InbPoseDirty)
+{
 	if (!GetSkeletalMeshAsset() || GetNumComponentSpaceTransforms() == 0)
 	{
 		return;
 	}
 
-	if (!bPoseDirty)
+	if (!InbPoseDirty)
 	{
 		return;
 	}
+
+	UE_LOG("USkeletalMeshComponent::RefreshBoneTransformsCustom - 본 트랜스폼 갱신 중...");
 
 	/** @note LOD 시스템이 없으므로 모든 본을 사용한다. */
 	TArray<FBoneIndexType> FillComponentSpaceTransformsRequiredBones(GetSkeletalMeshAsset()->GetRefSkeleton().GetRawBoneNum());
@@ -92,7 +130,7 @@ void USkeletalMeshComponent::RefreshBoneTransforms()
 
 	/** 현재는 애니메이션 시스템이 없으므로 FillComponentSpaceTransforms를 직접 호출한다. */
 	SkeletalMeshAsset->FillComponentSpaceTransforms(
-		BoneSpaceTransforms,
+		InBoneSpaceTransforms,
 		FillComponentSpaceTransformsRequiredBones,
 		EditableSpaceBases
 	);
@@ -107,7 +145,7 @@ void USkeletalMeshComponent::RefreshBoneTransforms()
 		SkinningMatrices[BoneIndex] = InvBindMatrices[BoneIndex] * EditableSpaceBases[BoneIndex].ToMatrixWithScale();
 	}
 
-	bPoseDirty = false;
+	InbPoseDirty = false;
 	bSkinningDirty = true;
 }
 
@@ -149,6 +187,7 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 		SkinningMatrices.SetNum(NumBones);
 		GetEditableComponentSpaceTransform().SetNum(NumBones);
 		GetEditableBoneVisibilityStates().SetNum(NumBones);
+		SkinningMatrices.SetNum(NumBones); // 임시
 
 		UStaticMesh* StaticMesh = SkeletalMeshAsset->GetStaticMesh();
 

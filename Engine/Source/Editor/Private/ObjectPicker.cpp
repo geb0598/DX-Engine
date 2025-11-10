@@ -141,7 +141,6 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 				}
 			}
 		}
-
 		// 중심 구체 충돌 검사
 		{
 			const float SphereRadius = Gizmo.GetTranslateRadius() * 2.5f;

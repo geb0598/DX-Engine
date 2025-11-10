@@ -88,7 +88,13 @@ void FGizmoBatchRenderer::Clear()
 
 void UGizmo::RenderGizmo(UCamera* InCamera, const D3D11_VIEWPORT& InViewport)
 {
-	TargetComponent = Cast<USceneComponent>(GEditor->GetEditorModule()->GetSelectedComponent());
+	// TargetComponent가 이미 설정되어 있지 않으면 GEditor에서 가져오기
+	// (뷰어 같은 곳에서는 SetSelectedComponent로 직접 설정됨)
+	if (!TargetComponent)
+	{
+		TargetComponent = Cast<USceneComponent>(GEditor->GetEditorModule()->GetSelectedComponent());
+	}
+
 	if (!TargetComponent || !InCamera)
 	{
 		return;
@@ -727,7 +733,10 @@ void UGizmo::RenderRotationCircles(const FEditorPrimitive& P, const FQuaternion&
 		TArray<FNormalVertex> tickVertices;
 		TArray<uint32> tickIndices;
 
-		const float SnapAngle = UViewportManager::GetInstance().GetRotationSnapAngle();
+		// Snap 각도 결정: 커스텀 설정 또는 ViewportManager
+		const float SnapAngle = bUseCustomRotationSnap
+			? CustomRotationSnapAngle
+			: UViewportManager::GetInstance().GetRotationSnapAngle();
 		FGizmoGeometry::GenerateAngleTickMarks(RenderWorldAxis0, RenderWorldAxis1,
 			RotateCollisionConfig.InnerRadius, RotateCollisionConfig.OuterRadius,
 			RotateCollisionConfig.Thickness, SnapAngle, tickVertices, tickIndices);
@@ -754,9 +763,23 @@ void UGizmo::RenderRotationCircles(const FEditorPrimitive& P, const FQuaternion&
 
 	// 회전 각도 Arc 렌더링 (Inner/Outer Circle과 동일 평면)
 	float DisplayAngle = CurrentRotationAngle;
-	if (UViewportManager::GetInstance().IsRotationSnapEnabled())
+
+	// Snap 설정 결정: 커스텀 설정 또는 ViewportManager
+	bool bSnapEnabled = false;
+	float SnapAngle = 0.0f;
+	if (bUseCustomRotationSnap)
 	{
-		const float SnapAngle = UViewportManager::GetInstance().GetRotationSnapAngle();
+		bSnapEnabled = bCustomRotationSnapEnabled;
+		SnapAngle = CustomRotationSnapAngle;
+	}
+	else
+	{
+		bSnapEnabled = UViewportManager::GetInstance().IsRotationSnapEnabled();
+		SnapAngle = UViewportManager::GetInstance().GetRotationSnapAngle();
+	}
+
+	if (bSnapEnabled)
+	{
 		DisplayAngle = GetSnappedRotationAngle(SnapAngle);
 	}
 
