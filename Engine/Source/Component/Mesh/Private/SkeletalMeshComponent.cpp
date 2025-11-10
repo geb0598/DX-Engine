@@ -42,8 +42,12 @@ UObject* USkeletalMeshComponent::Duplicate()
 
 	SkeletalMeshComponent->BoneSpaceTransforms = BoneSpaceTransforms;
 	SkeletalMeshComponent->OverrideMaterials = OverrideMaterials;
+
 	SkeletalMeshComponent->bPoseDirty = true;
 	SkeletalMeshComponent->bNormalMapEnabled = bNormalMapEnabled;
+
+	SkeletalMeshComponent->SkinnedVertices.SetNum(SkinnedVertices.Num());
+	SkeletalMeshComponent->SkinningMatrices.SetNum(SkinningMatrices.Num());
 
 	// VertexBuffer와 IndexBuffer는 새로 생성
 	UStaticMesh* StaticMesh = SkeletalMeshAsset->GetStaticMesh();

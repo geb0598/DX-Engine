@@ -10,6 +10,7 @@ UObject* USkinnedMeshComponent::Duplicate()
 	USkinnedMeshComponent* SkinnedMeshComponent = Cast<USkinnedMeshComponent>(Super::Duplicate());
 	SkinnedMeshComponent->SkinnedAsset = SkinnedAsset;
 	SkinnedMeshComponent->BoneVisibilityStates = BoneVisibilityStates;
+	SkinnedMeshComponent->ComponentSpaceTransformArray.SetNum(ComponentSpaceTransformArray.Num());
 
 	return SkinnedMeshComponent;
 }
