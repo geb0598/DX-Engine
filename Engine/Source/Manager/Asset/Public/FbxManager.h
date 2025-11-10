@@ -37,9 +37,19 @@ public:
 	// 🔸 Skeletal Mesh
 	// ========================================
 
+	static FStaticMesh* LoadFbxSkeletalMeshAsset(
+		const FName& FilePath,
+		const FFbxImporter::Configuration& Config = {});
+
 	static USkeletalMesh* LoadFbxSkeletalMesh(
 		const FName& FilePath,
 		const FFbxImporter::Configuration& Config = {});
+
+	// ========================================
+	// 🔸 Memory Management
+	// ========================================
+
+	static void Release();
 
 private:
 	// ========================================
@@ -56,7 +66,8 @@ private:
 	/** FFbxSkeletalMeshInfo를 USkeletalMesh로 변환 */
 	static bool ConvertFbxToSkeletalMesh(
 		const FFbxSkeletalMeshInfo& FbxData,
-		USkeletalMesh* OutSkeletalMesh);
+		USkeletalMesh* OutSkeletalMesh,
+		FStaticMesh* StaticMeshAsset);
 
 	/** FFbxBoneInfo 배열을 FReferenceSkeleton으로 변환 */
 	static void ConvertSkeleton(
@@ -72,4 +83,11 @@ private:
 	static void ConvertFbxSkeletalToStaticMesh(
 		const FFbxSkeletalMeshInfo& FbxData,
 		FStaticMesh* OutStaticMesh);
+
+	// ========================================
+	// 🔸 Caching
+	// ========================================
+
+	static TMap<FName, std::unique_ptr<FStaticMesh>> FbxFStaticMeshMap;
+	static TMap<FName, std::unique_ptr<FStaticMesh>> FbxSkeletalFStaticMeshMap;
 };

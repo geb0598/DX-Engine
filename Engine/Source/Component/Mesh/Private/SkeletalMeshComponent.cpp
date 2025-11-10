@@ -153,6 +153,7 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 
 		BoneSpaceTransforms = RefSkeleton.GetRawRefBonePose();
 		SkinnedVertices.SetNum(NumVertices);
+		SkinningMatrices.SetNum(NumBones);
 		GetEditableComponentSpaceTransform().SetNum(NumBones);
 		GetEditableBoneVisibilityStates().SetNum(NumBones);
 		SkinningMatrices.SetNum(NumBones); // 임시
@@ -176,6 +177,7 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 	{
 		BoneSpaceTransforms.Empty();
 		SkinnedVertices.Empty();
+		SkinningMatrices.Empty();
 		GetEditableComponentSpaceTransform().Empty();
 		GetEditableBoneVisibilityStates().Empty();
 	}
@@ -203,6 +205,27 @@ void USkeletalMeshComponent::SetBoneTransformLocal(int32 BoneIndex, const FTrans
 		BoneSpaceTransforms[BoneIndex] = NewLocalTransform;
 		bPoseDirty = true;
 	}
+}
+
+UMaterial* USkeletalMeshComponent::GetMaterial(int32 Index) const
+{
+	if (OverrideMaterials.IsValidIndex(Index))
+	{
+		return OverrideMaterials[Index];
+	}
+	UStaticMesh* StaticMesh = SkeletalMeshAsset->GetStaticMesh();
+	return StaticMesh ? StaticMesh->GetMaterial(Index) : nullptr;
+}
+
+void USkeletalMeshComponent::SetMaterial(int32 Index, UMaterial* InMaterial)
+{
+	if (Index < 0) return;
+
+	if (Index >= OverrideMaterials.Num())
+	{
+		OverrideMaterials.SetNum(Index + 1, nullptr);
+	}
+	OverrideMaterials[Index] = InMaterial;
 }
 
 void USkeletalMeshComponent::UpdateSkinnedVertices()

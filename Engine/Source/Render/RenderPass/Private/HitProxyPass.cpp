@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Render/RenderPass/Public/HitProxyPass.h"
+
+#include "Component/Mesh/Public/SkeletalMeshComponent.h"
 #include "Render/Renderer/Public/Pipeline.h"
 #include "Render/Renderer/Public/DeviceResources.h"
 #include "Render/Renderer/Public/Renderer.h"
@@ -123,6 +125,40 @@ void FHitProxyPass::Execute(FRenderingContext& Context)
 		if (!MeshComp->GetStaticMesh()) { continue; }
 
 		FStaticMesh* MeshAsset = MeshComp->GetStaticMesh()->GetStaticMeshAsset();
+		if (!MeshAsset) { continue; }
+
+		// HitProxy ID 할당
+		HComponent* ComponentProxy = new HComponent(MeshComp, InvalidHitProxyId);
+		FHitProxyId ProxyId = HitProxyManager.AllocateHitProxyId(ComponentProxy);
+
+		// HitProxyColor 상수 버퍼 업데이트
+		FVector4 ProxyColor = ProxyId.GetColor();
+		FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferHitProxyColor, ProxyColor);
+		Pipeline->SetConstantBuffer(2, EShaderType::PS, ConstantBufferHitProxyColor);
+
+		// 메쉬가 변경되면 버퍼 바인딩
+		if (CurrentMeshAsset != MeshAsset)
+		{
+			CurrentMeshAsset = MeshAsset;
+			Pipeline->SetVertexBuffer(MeshComp->GetVertexBuffer(), sizeof(FNormalVertex));
+			Pipeline->SetIndexBuffer(MeshComp->GetIndexBuffer(), 0);
+		}
+
+		// Model 상수 버퍼 업데이트 (World Transform)
+		FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferModel, MeshComp->GetWorldTransformMatrix());
+		Pipeline->SetConstantBuffer(0, EShaderType::VS, ConstantBufferModel);
+
+		// 렌더링
+		Pipeline->DrawIndexed(static_cast<uint32>(MeshAsset->Indices.Num()), 0, 0);
+	}
+
+	for (USkeletalMeshComponent* MeshComp : Context.SkeletalMeshes)
+	{
+		if (!MeshComp->IsVisible()) { continue; }
+		if (!MeshComp->GetSkeletalMeshAsset()) { continue; }
+
+		FStaticMesh* MeshAsset = MeshComp->GetSkeletalMeshAsset()->GetStaticMesh()->GetStaticMeshAsset();
+
 		if (!MeshAsset) { continue; }
 
 		// HitProxy ID 할당
