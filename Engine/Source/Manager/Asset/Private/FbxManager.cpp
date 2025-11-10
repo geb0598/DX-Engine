@@ -53,6 +53,8 @@ UStaticMesh* FFbxManager::LoadFbxStaticMesh(const FName& FilePath, const FFbxImp
 	if (!StaticMeshAsset)
 		return nullptr;
 
+	StaticMeshAsset->PathFileName = FilePath;
+
 	UStaticMesh* StaticMesh = NewObject<UStaticMesh>();
 	StaticMesh->SetStaticMeshAsset(StaticMeshAsset);
 
@@ -192,6 +194,7 @@ bool FFbxManager::ConvertFbxToSkeletalMesh(const FFbxSkeletalMeshInfo& FbxData, 
 	// 2. UStaticMesh 생성 및 설정 (지오메트리 데이터)
 	FStaticMesh* StaticMeshAsset = new FStaticMesh();
 	ConvertFbxSkeletalToStaticMesh(FbxData, StaticMeshAsset);
+	StaticMeshAsset->PathFileName = FbxData.PathFileName;
 
 	UStaticMesh* StaticMesh = NewObject<UStaticMesh>();
 	StaticMesh->SetStaticMeshAsset(StaticMeshAsset);

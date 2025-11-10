@@ -108,9 +108,14 @@ void FRenderResourceFactory::CreateVertexShaderAndInputLayout(const wstring& InF
 	SafeRelease(VertexShaderBlob);
 }
 
-ID3D11Buffer* FRenderResourceFactory::CreateVertexBuffer(FNormalVertex* InVertices, uint32 InByteWidth)
+ID3D11Buffer* FRenderResourceFactory::CreateVertexBuffer(FNormalVertex* InVertices, uint32 InByteWidth, bool bCpuAccess)
 {
 	D3D11_BUFFER_DESC Desc = { InByteWidth, D3D11_USAGE_IMMUTABLE, D3D11_BIND_VERTEX_BUFFER, 0, 0, 0 };
+	if (bCpuAccess)
+	{
+		Desc.Usage = D3D11_USAGE_DYNAMIC;
+		Desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	}
 	D3D11_SUBRESOURCE_DATA InitData = { InVertices, 0, 0 };
 	ID3D11Buffer* VertexBuffer = nullptr;
 	URenderer::GetInstance().GetDevice()->CreateBuffer(&Desc, &InitData, &VertexBuffer);

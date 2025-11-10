@@ -70,6 +70,8 @@ struct FFbxBoneInfluence
 /** 스켈레탈 메시 전용 데이터 */
 struct FFbxSkeletalMeshInfo
 {
+	FName PathFileName;
+
 	// 지오메트리 데이터 (스태틱과 동일)
 	TArray<FVector> VertexList;
 	TArray<FVector> NormalList;
