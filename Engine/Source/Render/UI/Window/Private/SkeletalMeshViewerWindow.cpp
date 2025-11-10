@@ -307,6 +307,10 @@ void USkeletalMeshViewerWindow::OpenViewer(USkeletalMeshComponent* InSkeletalMes
 			PreviewSkeletalMeshActor->SetActorLocation(FVector(0, 0, 0));
 			PreviewSkeletalMeshActor->SetActorRotation(FQuaternion::Identity());
 
+			SkeletalMeshComponent->SetWorldLocation(FVector(0, 0, 0));
+			SkeletalMeshComponent->SetWorldRotation(FQuaternion::Identity());
+			SkeletalMeshComponent->SetWorldScale3D(FVector(1.0f, 1.0f, 1.0f));
+
 			PreviewSkeletalMeshActor->RegisterComponent(SkeletalMeshComponent);
 			SelectedComponent = SkeletalMeshComponent;
 
@@ -1393,9 +1397,6 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
  */
 void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkeletalMesh, const FReferenceSkeleton& InRefSkeleton, const int32 InNumBones)
 {
-	/*assert(InSkeletalMesh);
-	assert(InNumBones > 0);*/
-
 	bool bValid = CheckSkeletalValidity(const_cast<USkeletalMesh*>(InSkeletalMesh), const_cast<FReferenceSkeleton&>(InRefSkeleton), const_cast<int32&>(InNumBones), true);
 	if (bValid == false)
 	{
@@ -1436,32 +1437,23 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		ImGui::Indent();
 
 		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Translation:");
-		ImGui::Text("  X: %.3f", RefPose.Translation.X);
-		ImGui::Text("  Y: %.3f", RefPose.Translation.Y);
-		ImGui::Text("  Z: %.3f", RefPose.Translation.Z);
+		ImGui::Text("  X: %.3f  Y: %.3f  Z: %.3f", RefPose.Translation.X, RefPose.Translation.Y, RefPose.Translation.Z);
 
 		ImGui::Spacing();
 
 		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Rotation (Quaternion):");
-		ImGui::Text("  X: %.3f", RefPose.Rotation.X);
-		ImGui::Text("  Y: %.3f", RefPose.Rotation.Y);
-		ImGui::Text("  Z: %.3f", RefPose.Rotation.Z);
-		ImGui::Text("  W: %.3f", RefPose.Rotation.W);
+		ImGui::Text("  X: %.3f  Y: %.3f  Z: %.3f  W: %.3f", RefPose.Rotation.X, RefPose.Rotation.Y, RefPose.Rotation.Z, RefPose.Rotation.W);
 
 		ImGui::Spacing();
 
 		FVector EulerRot = RefPose.Rotation.ToEuler();
 		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Rotation (Euler):");
-		ImGui::Text("  Pitch: %.3f", EulerRot.X);
-		ImGui::Text("  Yaw: %.3f", EulerRot.Y);
-		ImGui::Text("  Roll: %.3f", EulerRot.Z);
+		ImGui::Text("  Pitch: %.3f  Yaw: %.3f  Roll: %.3f", EulerRot.X, EulerRot.Y, EulerRot.Z);
 
 		ImGui::Spacing();
 
 		ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Scale:");
-		ImGui::Text("  X: %.3f", RefPose.Scale.X);
-		ImGui::Text("  Y: %.3f", RefPose.Scale.Y);
-		ImGui::Text("  Z: %.3f", RefPose.Scale.Z);
+		ImGui::Text("  X: %.3f  Y: %.3f  Z: %.3f", RefPose.Scale.X, RefPose.Scale.Y, RefPose.Scale.Z);
 
 		ImGui::Unindent();
 	}
@@ -1530,48 +1522,92 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 
 		ImGui::Spacing();
 
-		// Rotation (Euler)
+		// Rotation (Euler) - 캐싱 방식으로 90도 제한 해결
 		ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "Rotation (Euler):");
 
-		FVector EulerAngles = TempTransform.Rotation.ToEuler();
+		// Static 변수로 캐싱된 Euler 각도 관리
+		static FVector CachedRotation = FVector::ZeroVector();
+		static bool bIsDraggingRotation = false;
+		static int32 LastSelectedBoneIndex = INDEX_NONE;
+
+		// 본이 변경되었을 때 캐시 초기화
+		if (LastSelectedBoneIndex != SelectedBoneIndex)
+		{
+			CachedRotation = TempTransform.Rotation.ToEuler();
+			LastSelectedBoneIndex = SelectedBoneIndex;
+			bIsDraggingRotation = false;
+		}
+
+		// 드래그 중이 아닐 때만 동기화
+		if (!bIsDraggingRotation)
+		{
+			CachedRotation = TempTransform.Rotation.ToEuler();
+		}
+
+		// 작은 값은 0으로 스냅 (부동소수점 오차 제거)
+		constexpr float ZeroSnapThreshold = 0.0001f;
+		if (std::abs(CachedRotation.X) < ZeroSnapThreshold) CachedRotation.X = 0.0f;
+		if (std::abs(CachedRotation.Y) < ZeroSnapThreshold) CachedRotation.Y = 0.0f;
+		if (std::abs(CachedRotation.Z) < ZeroSnapThreshold) CachedRotation.Z = 0.0f;
+
+		float EulerAngles[3] = { CachedRotation.X, CachedRotation.Y, CachedRotation.Z };
+		bool bRotationChanged = false;
 
 		// Pitch (X)
 		ImVec2 RotX = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		if (ImGui::DragFloat("##RotX", &EulerAngles.X, 1.0f, 0.0f, 0.0f, "%.3f"))
+		if (ImGui::DragFloat("##RotX", &EulerAngles[0], 1.0f, 0.0f, 0.0f, "%.3f"))
 		{
+			bRotationChanged = true;
 			bDirtyBoneTransforms = true;
 		}
 		ImVec2 SizeRotX = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(RotX.x + 5, RotX.y + 2), ImVec2(RotX.x + 5, RotX.y + SizeRotX.y - 2),
 			IM_COL32(255, 0, 0, 255), 2.0f);
+		
+		bool bIsAnyRotationItemActive = ImGui::IsItemActive();
 		ImGui::SameLine();
 
 		// Yaw (Y)
 		ImVec2 RotY = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		if (ImGui::DragFloat("##RotY", &EulerAngles.Y, 1.0f, 0.0f, 0.0f, "%.3f"))
+		if (ImGui::DragFloat("##RotY", &EulerAngles[1], 1.0f, 0.0f, 0.0f, "%.3f"))
 		{
+			bRotationChanged = true;
 			bDirtyBoneTransforms = true;
 		}
 		ImVec2 SizeRotY = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(RotY.x + 5, RotY.y + 2), ImVec2(RotY.x + 5, RotY.y + SizeRotY.y - 2),
 			IM_COL32(0, 255, 0, 255), 2.0f);
+		
+		bIsAnyRotationItemActive |= ImGui::IsItemActive();
 		ImGui::SameLine();
 
 		// Roll (Z)
 		ImVec2 RotZ = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		if (ImGui::DragFloat("##RotZ", &EulerAngles.Z, 1.0f, 0.0f, 0.0f, "%.3f"))
+		if (ImGui::DragFloat("##RotZ", &EulerAngles[2], 1.0f, 0.0f, 0.0f, "%.3f"))
 		{
+			bRotationChanged = true;
 			bDirtyBoneTransforms = true;
 		}
 		ImVec2 SizeRotZ = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(RotZ.x + 5, RotZ.y + 2), ImVec2(RotZ.x + 5, RotZ.y + SizeRotZ.y - 2),
 			IM_COL32(0, 0, 255, 255), 2.0f);
 
-		// Euler를 Quaternion으로 변환
-		TempTransform.Rotation = FQuaternion::FromEuler(EulerAngles);
+		bIsAnyRotationItemActive |= ImGui::IsItemActive();
+
+		// 회전값이 변경되었을 때 캐시 업데이트 및 Quaternion 변환
+		if (bRotationChanged)
+		{
+			CachedRotation.X = EulerAngles[0];
+			CachedRotation.Y = EulerAngles[1];
+			CachedRotation.Z = EulerAngles[2];
+			TempTransform.Rotation = FQuaternion::FromEuler(CachedRotation);
+		}
+
+		// 드래그 상태 업데이트
+		bIsDraggingRotation = bIsAnyRotationItemActive;
 
 		ImGui::Spacing();
 
@@ -1629,7 +1665,7 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.4f, 0.3f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.45f, 0.25f, 0.15f, 1.0f));
 
-		if (ImGui::Button("Reset to Current", ImVec2(-1, 30)))
+		if (ImGui::Button("Reset to Last Value", ImVec2(-1, 30)))
 		{
 			// 현재 컴포넌트의 값으로 리셋
 			for (int32 i = 0; i < InNumBones; ++i)
@@ -1637,8 +1673,26 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 				TempBoneSpaceTransforms[i] = OriginalSkeletalMeshComponent->GetBoneTransformLocal(i);
 				SkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
 			}
-			UE_LOG("SkeletalMeshViewerWindow: Reset temp bone transforms to current values");
+			// 캐시 초기화
+			CachedRotation = TempBoneSpaceTransforms[SelectedBoneIndex].Rotation.ToEuler();
+			bIsDraggingRotation = false;
+			UE_LOG("SkeletalMeshViewerWindow: Reset temp bone transforms to last value");
 		}
+
+		if(ImGui::Button("Reset to Reference Pose", ImVec2(-1, 30)))
+		{
+			// 레퍼런스 포즈로 리셋
+			for (int32 i = 0; i < InNumBones; ++i)
+			{
+				TempBoneSpaceTransforms[i] = RefBonePoses[i];
+				SkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
+			}
+			// 캐시 초기화
+			CachedRotation = TempBoneSpaceTransforms[SelectedBoneIndex].Rotation.ToEuler();
+			bIsDraggingRotation = false;
+			UE_LOG("SkeletalMeshViewerWindow: Reset temp bone transforms to reference pose");
+		}
+
 		ImGui::PopStyleColor(3);
 
 		ImGui::Unindent();
