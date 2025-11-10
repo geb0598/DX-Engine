@@ -93,7 +93,7 @@ protected:
 	 * @brief SkeletalMeshComponent 유효성 검사 및 로그 출력
 	 * @return 유효한 경우 true, 그렇지 않으면 false
 	 */
-	bool CheckAndLogSkeletalValidity(USkeletalMesh* OutSkeletalMesh, FReferenceSkeleton& OutRefSkeleton, int32& OutNumBones) const;
+	bool CheckSkeletalValidity(USkeletalMesh* OutSkeletalMesh, FReferenceSkeleton& OutRefSkeleton, int32& OutNumBones, bool bLogging) const;
 
 private:
 	// 패널 크기 비율 (드래그 가능)

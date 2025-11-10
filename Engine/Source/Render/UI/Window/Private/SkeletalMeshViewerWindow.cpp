@@ -354,11 +354,11 @@ void USkeletalMeshViewerWindow::RenderLayout()
 	USkeletalMesh* SkeletalMesh = nullptr;
 	FReferenceSkeleton RefSkeleton;
 	int32 NumBones = 0;
-	bool bValid = CheckAndLogSkeletalValidity(SkeletalMesh, RefSkeleton, NumBones);
-	if(!bValid)
+	bool bValid = CheckSkeletalValidity(SkeletalMesh, RefSkeleton, NumBones, false);
+	/*if(!bValid)
 	{
 		return;
-	}
+	}*/
 
 	// TempBoneSpaceTransforms 초기화
 	if (TempBoneSpaceTransforms.IsEmpty() && SkeletalMeshComponent)
@@ -372,7 +372,10 @@ void USkeletalMeshViewerWindow::RenderLayout()
 	}
 
 	// SkeletalMeshComponent에 임시 본 트랜스폼 적용
-	SkeletalMeshComponent->RefreshBoneTransformsCustom(TempBoneSpaceTransforms);
+	if (SkeletalMeshComponent)
+	{
+		SkeletalMeshComponent->RefreshBoneTransformsCustom(TempBoneSpaceTransforms);
+	}
 
 	// === 좌측 패널: Skeleton Tree ===
 	if (ImGui::BeginChild("SkeletonTreePanel", ImVec2(LeftPanelWidth - SplitterWidth * 0.5f, PanelHeight), true))
@@ -415,8 +418,13 @@ void USkeletalMeshViewerWindow::RenderLayout()
  */
 void USkeletalMeshViewerWindow::RenderSkeletonTreePanel(const USkeletalMesh* InSkeletalMesh, const FReferenceSkeleton& InRefSkeleton, const int32 InNumBones)
 {
-	assert(InSkeletalMesh);
-	assert(InNumBones > 0);
+	/*assert(InSkeletalMesh);
+	assert(InNumBones > 0);*/
+	bool bValid = CheckSkeletalValidity(const_cast<USkeletalMesh*>(InSkeletalMesh), const_cast<FReferenceSkeleton&>(InRefSkeleton), const_cast<int32&>(InNumBones), true);
+	if(bValid == false)
+	{
+		return;
+	}
 
 	ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Skeleton Tree");
 	ImGui::Separator();
@@ -1049,8 +1057,14 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
  */
 void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkeletalMesh, const FReferenceSkeleton& InRefSkeleton, const int32 InNumBones)
 {
-	assert(InSkeletalMesh);
-	assert(InNumBones > 0);
+	/*assert(InSkeletalMesh);
+	assert(InNumBones > 0);*/
+
+	bool bValid = CheckSkeletalValidity(const_cast<USkeletalMesh*>(InSkeletalMesh), const_cast<FReferenceSkeleton&>(InRefSkeleton), const_cast<int32&>(InNumBones), true);
+	if (bValid == false)
+	{
+		return;
+	}
 
 	ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.8f, 1.0f), "Edit Tools");
 	ImGui::Separator();
@@ -1444,14 +1458,17 @@ void USkeletalMeshViewerWindow::RenderCameraControls(UCamera& InCamera)
 	}
 }
 
-bool USkeletalMeshViewerWindow::CheckAndLogSkeletalValidity(USkeletalMesh* OutSkeletalMesh, FReferenceSkeleton& OutRefSkeleton, int32& OutNumBones) const
+bool USkeletalMeshViewerWindow::CheckSkeletalValidity(USkeletalMesh* OutSkeletalMesh, FReferenceSkeleton& OutRefSkeleton, int32& OutNumBones, bool bLogging) const
 {
 	// SkeletalMeshComponent 유효성 검사
 	if (!SkeletalMeshComponent)
 	{
-		ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No SkeletalMeshComponent assigned");
-		ImGui::Spacing();
-		ImGui::TextWrapped("Select a SkeletalMeshComponent from the Detail panel to view its skeleton.");
+		if (bLogging)
+		{
+			ImGui::TextColored(ImVec4(0.6f, 0.6f, 0.6f, 1.0f), "No SkeletalMeshComponent assigned");
+			ImGui::Spacing();
+			ImGui::TextWrapped("Select a SkeletalMeshComponent from the Detail panel to view its skeleton.");
+		}
 		return false;
 	}
 
@@ -1459,9 +1476,12 @@ bool USkeletalMeshViewerWindow::CheckAndLogSkeletalValidity(USkeletalMesh* OutSk
 	OutSkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
 	if (!OutSkeletalMesh)
 	{
-		ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.4f, 1.0f), "No SkeletalMesh found");
-		ImGui::Spacing();
-		ImGui::TextWrapped("The component has no mesh asset assigned.");
+		if (bLogging)
+		{
+			ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.4f, 1.0f), "No SkeletalMesh found");
+			ImGui::Spacing();
+			ImGui::TextWrapped("The component has no mesh asset assigned.");
+		}
 		return false;
 	}
 
@@ -1471,7 +1491,10 @@ bool USkeletalMeshViewerWindow::CheckAndLogSkeletalValidity(USkeletalMesh* OutSk
 
 	if (OutNumBones == 0)
 	{
-		ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.4f, 1.0f), "No bones in skeleton");
+		if (bLogging)
+		{
+			ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.4f, 1.0f), "No bones in skeleton");
+		}
 		return false;
 	}
 
