@@ -196,11 +196,4 @@ private:
 	 * @brief 렌더 타겟 해제
 	 */
 	void ReleaseRenderTarget();
-
-	/**
-	 * @brief 기즈모 드래그 처리 함수들 (Editor.cpp와 동일한 로직)
-	 */
-	FVector GetViewerGizmoDragLocation(class UCamera* InCamera, FRay& WorldRay);
-	FQuaternion GetViewerGizmoDragRotation(class UCamera* InCamera, FRay& WorldRay);
-	FVector GetViewerGizmoDragScale(class UCamera* InCamera, FRay& WorldRay);
 };

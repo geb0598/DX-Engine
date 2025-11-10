@@ -1222,19 +1222,26 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 			{
 			case EGizmoMode::Translate:
 			{
-				FVector GizmoDragLocation = GetViewerGizmoDragLocation(Camera, WorldRay);
+				FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
 				ViewerGizmo->SetLocation(GizmoDragLocation);
 				break;
 			}
 			case EGizmoMode::Rotate:
 			{
-				FQuaternion GizmoDragRotation = GetViewerGizmoDragRotation(Camera, WorldRay);
+				// 뷰어의 ViewportRect 생성
+				FRect ViewportRect;
+				ViewportRect.Left = static_cast<uint32>(ViewportWindowPos.x);
+				ViewportRect.Top = static_cast<uint32>(ViewportWindowPos.y);
+				ViewportRect.Width = ViewerWidth;
+				ViewportRect.Height = ViewerHeight;
+
+				FQuaternion GizmoDragRotation = FGizmoHelper::ProcessDragRotation(ViewerGizmo, Camera, WorldRay, ViewportRect, true);
 				ViewerGizmo->SetComponentRotation(GizmoDragRotation);
 				break;
 			}
 			case EGizmoMode::Scale:
 			{
-				FVector GizmoDragScale = GetViewerGizmoDragScale(Camera, WorldRay);
+				FVector GizmoDragScale = FGizmoHelper::ProcessDragScale(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
 				ViewerGizmo->SetComponentScale(GizmoDragScale);
 				break;
 			}
@@ -1861,36 +1868,4 @@ void USkeletalMeshViewerWindow::SetGridCellSize(float NewCellSize)
 		ViewerBatchLines->UpdateUGridVertices(GridCellSize);
 		ViewerBatchLines->UpdateVertexBuffer();
 	}
-}
-
-/**
- * @brief 기즈모 평행이동 드래그 처리
- */
-FVector USkeletalMeshViewerWindow::GetViewerGizmoDragLocation(UCamera* InCamera, FRay& WorldRay)
-{
-	return FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, InCamera, WorldRay);
-}
-
-/**
- * @brief 기즈모 회전 드래그 처리
- */
-FQuaternion USkeletalMeshViewerWindow::GetViewerGizmoDragRotation(UCamera* InCamera, FRay& WorldRay)
-{
-	// 뷰어의 ViewportRect 생성 (ImGui 윈도우의 로컬 좌표 기준)
-	ImVec2 WindowPos = ImGui::GetItemRectMin();
-	FRect ViewportRect;
-	ViewportRect.Left = static_cast<uint32>(WindowPos.x);
-	ViewportRect.Top = static_cast<uint32>(WindowPos.y);
-	ViewportRect.Width = ViewerWidth;
-	ViewportRect.Height = ViewerHeight;
-
-	return FGizmoHelper::ProcessDragRotation(ViewerGizmo, InCamera, WorldRay, ViewportRect, true);
-}
-
-/**
- * @brief 기즈모 스케일 드래그 처리
- */
-FVector USkeletalMeshViewerWindow::GetViewerGizmoDragScale(UCamera* InCamera, FRay& WorldRay)
-{
-	return FGizmoHelper::ProcessDragScale(ViewerGizmo, ViewerObjectPicker, InCamera, WorldRay);
 }
