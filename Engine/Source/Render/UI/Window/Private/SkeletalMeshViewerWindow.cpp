@@ -1096,15 +1096,6 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 					ViewerObjectPicker->PickGizmo(Camera, WorldRay, *ViewerGizmo, CollisionPoint);
 				}
 
-				// 마우스 왼쪽 버튼 릴리즈
-				if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
-				{
-					if (ViewerGizmo)
-					{
-						ViewerGizmo->EndDrag();
-					}
-				}
-
 				// 기즈모 드래그 중
 				if (ViewerGizmo && ViewerGizmo->IsDragging() && SelectedComponent)
 				{
@@ -1181,6 +1172,17 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_Middle))
 		{
 			bIsDraggingMiddleButton = false;
+		}
+
+		// 기즈모 드래그 릴리즈 - 전역 마우스 상태로 체크 (뷰어 밖에서 버튼을 떼도 감지)
+		if (ViewerGizmo && ViewerGizmo->IsDragging())
+		{
+			bool bIsGlobalMouseDown = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+			if (!bIsGlobalMouseDown)
+			{
+				ViewerGizmo->EndDrag();
+				ViewerGizmo->SetGizmoDirection(EGizmoDirection::None);  // 하이라이트도 해제
+			}
 		}
 
 		// 기즈모 드래그 처리 (카메라 조작보다 우선)
@@ -1902,350 +1904,37 @@ void USkeletalMeshViewerWindow::SetGridCellSize(float NewCellSize)
 }
 
 /**
- * @brief 기즈모 평행이동 드래그 처리 (Editor.cpp 로직 복사)
+ * @brief 기즈모 평행이동 드래그 처리
  */
 FVector USkeletalMeshViewerWindow::GetViewerGizmoDragLocation(UCamera* InCamera, FRay& WorldRay)
 {
 	if (!ViewerGizmo || !ViewerObjectPicker) return FVector::Zero();
-
-	FVector MouseWorld;
-	FVector PlaneOrigin{ ViewerGizmo->GetGizmoLocation() };
-
-	// Center 구체 드래그 처리
-	if (ViewerGizmo->GetGizmoDirection() == EGizmoDirection::Center)
-	{
-		FVector PlaneNormal = InCamera->GetForward();
-		FVector FixedPlaneOrigin = ViewerGizmo->GetDragStartMouseLocation();
-
-		if (ViewerObjectPicker->IsRayCollideWithPlane(WorldRay, FixedPlaneOrigin, PlaneNormal, MouseWorld))
-		{
-			FVector MouseDelta = MouseWorld - ViewerGizmo->GetDragStartMouseLocation();
-			return ViewerGizmo->GetDragStartActorLocation() + MouseDelta;
-		}
-		return ViewerGizmo->GetGizmoLocation();
-	}
-
-	// 평면 드래그 처리
-	if (ViewerGizmo->IsPlaneDirection())
-	{
-		FVector PlaneNormal = ViewerGizmo->GetPlaneNormal();
-
-		if (!ViewerGizmo->IsWorldMode())
-		{
-			FQuaternion q = ViewerGizmo->GetTargetComponent()->GetWorldRotationAsQuaternion();
-			PlaneNormal = q.RotateVector(PlaneNormal);
-		}
-
-		if (ViewerObjectPicker->IsRayCollideWithPlane(WorldRay, PlaneOrigin, PlaneNormal, MouseWorld))
-		{
-			FVector MouseDelta = MouseWorld - ViewerGizmo->GetDragStartMouseLocation();
-			return ViewerGizmo->GetDragStartActorLocation() + MouseDelta;
-		}
-		return ViewerGizmo->GetGizmoLocation();
-	}
-
-	// 축 드래그 처리
-	FVector GizmoAxis = ViewerGizmo->GetGizmoAxis();
-
-	if (!ViewerGizmo->IsWorldMode())
-	{
-		FQuaternion q = ViewerGizmo->GetTargetComponent()->GetWorldRotationAsQuaternion();
-		GizmoAxis = q.RotateVector(GizmoAxis);
-	}
-
-	const FVector CamRight = InCamera->GetRight();
-	const FVector CamUp = InCamera->GetUp();
-
-	FVector PlaneVector;
-	const float DotRight = abs(GizmoAxis.Dot(CamRight));
-	const float DotUp = abs(GizmoAxis.Dot(CamUp));
-
-	if (DotRight < DotUp)
-	{
-		PlaneVector = CamRight;
-	}
-	else
-	{
-		PlaneVector = CamUp;
-	}
-
-	FVector PlaneNormal = GizmoAxis.Cross(PlaneVector);
-	PlaneNormal.Normalize();
-
-	const FVector CameraLocation = InCamera->GetLocation();
-	const FVector ToCamera = (CameraLocation - PlaneOrigin).GetNormalized();
-	if (PlaneNormal.Dot(ToCamera) < 0.0f)
-	{
-		PlaneNormal = -PlaneNormal;
-	}
-
-	if (ViewerObjectPicker->IsRayCollideWithPlane(WorldRay, PlaneOrigin, PlaneNormal, MouseWorld))
-	{
-		FVector MouseDistance = MouseWorld - ViewerGizmo->GetDragStartMouseLocation();
-		return ViewerGizmo->GetDragStartActorLocation() + GizmoAxis * MouseDistance.Dot(GizmoAxis);
-	}
-	return ViewerGizmo->GetGizmoLocation();
+	return ViewerGizmo->ProcessDragLocation(InCamera, WorldRay, ViewerObjectPicker);
 }
 
 /**
- * @brief 기즈모 회전 드래그 처리 (Editor.cpp 로직 복사)
+ * @brief 기즈모 회전 드래그 처리
  */
 FQuaternion USkeletalMeshViewerWindow::GetViewerGizmoDragRotation(UCamera* InCamera, FRay& WorldRay)
 {
 	if (!ViewerGizmo) return FQuaternion::Identity();
 
-	const FVector GizmoLocation = ViewerGizmo->GetGizmoLocation();
-	const FVector LocalGizmoAxis = ViewerGizmo->GetGizmoAxis();
-	const FQuaternion StartRotQuat = ViewerGizmo->GetDragStartActorRotationQuat();
+	// 뷰어의 ViewportRect 생성 (ImGui 윈도우의 로컬 좌표 기준)
+	ImVec2 WindowPos = ImGui::GetItemRectMin();
+	FRect ViewportRect;
+	ViewportRect.Left = static_cast<uint32>(WindowPos.x);
+	ViewportRect.Top = static_cast<uint32>(WindowPos.y);
+	ViewportRect.Width = ViewerWidth;
+	ViewportRect.Height = ViewerHeight;
 
-	FVector WorldRotationAxis = LocalGizmoAxis;
-	if (!ViewerGizmo->IsWorldMode())
-	{
-		WorldRotationAxis = StartRotQuat.RotateVector(LocalGizmoAxis);
-	}
-
-	// 기즈모 중심을 스크린 공간으로 투영
-	const FCameraConstants& CamConst = InCamera->GetFViewProjConstants();
-	const FMatrix ViewProj = CamConst.View * CamConst.Projection;
-	FVector4 GizmoScreenPos4 = FVector4(GizmoLocation, 1.0f) * ViewProj;
-
-	if (GizmoScreenPos4.W > 0.0f)
-	{
-		GizmoScreenPos4 *= (1.0f / GizmoScreenPos4.W);
-
-		// NDC → 뷰포트 로컬 좌표
-		const FVector2 GizmoScreenPos(
-			(GizmoScreenPos4.X * 0.5f + 0.5f) * ViewerWidth,
-			((-GizmoScreenPos4.Y) * 0.5f + 0.5f) * ViewerHeight
-		);
-
-		// 현재 마우스 스크린 좌표 (뷰포트 로컬)
-		ImVec2 MousePos = ImGui::GetMousePos();
-		ImVec2 WindowPos = ImGui::GetItemRectMin();
-		const FVector2 CurrentScreenPos(MousePos.x - WindowPos.x, MousePos.y - WindowPos.y);
-
-		const FVector2 DragStartScreenPos = ViewerGizmo->GetDragStartScreenPos();
-		const FVector2 DirectionToMousePos = (DragStartScreenPos - GizmoScreenPos).GetNormalized();
-
-		FVector2 TangentDir = FVector2(-DirectionToMousePos.Y, DirectionToMousePos.X);
-
-		if (ViewerGizmo->GetGizmoDirection() == EGizmoDirection::Right ||
-			ViewerGizmo->GetGizmoDirection() == EGizmoDirection::Forward ||
-			ViewerGizmo->GetGizmoDirection() == EGizmoDirection::Up)
-		{
-			TangentDir = -TangentDir;
-		}
-
-		const FVector2 PrevScreenPos = ViewerGizmo->GetPreviousScreenPos();
-		const FVector2 DragDelta = CurrentScreenPos - PrevScreenPos;
-		const FVector2 DragDir = FVector2(DragDelta.X, DragDelta.Y);
-
-		const float DragDistSq = DragDir.LengthSquared();
-		constexpr float MinDragDistSq = 0.1f * 0.1f;
-
-		if (DragDistSq > MinDragDistSq)
-		{
-			float PixelDelta = TangentDir.Dot(DragDir);
-
-			constexpr float PixelsToDegrees = 1.0f;
-			float DeltaAngleDegrees = PixelDelta * PixelsToDegrees;
-			float DeltaAngle = FVector::GetDegreeToRadian(DeltaAngleDegrees);
-			// 카메라 시점 방향에 따른 회전 방향 보정
-			// 카메라가 회전축의 반대편에 있으면 부호 반전
-			const FVector CamToGizmo = (GizmoLocation - InCamera->GetLocation()).GetNormalized();
-			const float AxisDotCam = WorldRotationAxis.Dot(CamToGizmo);
-			if (AxisDotCam < 0.0f)
-			{
-				DeltaAngle = -DeltaAngle;
-			}
-
-			float NewAngle = ViewerGizmo->GetCurrentRotationAngle() + DeltaAngle;
-
-			constexpr float TwoPi = 2.0f * PI;
-			if (NewAngle > TwoPi)
-			{
-				NewAngle = fmodf(NewAngle, TwoPi);
-			}
-			else if (NewAngle < -TwoPi)
-			{
-				NewAngle = fmodf(NewAngle, -TwoPi);
-			}
-
-			ViewerGizmo->SetCurrentRotationAngle(NewAngle);
-		}
-
-		ViewerGizmo->SetPreviousScreenPos(CurrentScreenPos);
-
-		// 최종 회전 Quaternion 계산 (스냅 적용)
-		float FinalAngle = ViewerGizmo->GetCurrentRotationAngle();
-		if (ToolbarWidget && ToolbarWidget->IsRotationSnapEnabled())
-		{
-			const float SnapAngleDegrees = ToolbarWidget->GetRotationSnapAngle();
-			const float SnapAngleRadians = FVector::GetDegreeToRadian(SnapAngleDegrees);
-			FinalAngle = std::round(ViewerGizmo->GetCurrentRotationAngle() / SnapAngleRadians) * SnapAngleRadians;
-		}
-
-		const FQuaternion DeltaRotQuat = FQuaternion::FromAxisAngle(LocalGizmoAxis, FinalAngle);
-		if (ViewerGizmo->IsWorldMode())
-		{
-			return DeltaRotQuat * StartRotQuat;
-		}
-		else
-		{
-			return StartRotQuat * DeltaRotQuat;
-		}
-	}
-
-	return ViewerGizmo->GetComponentRotation();
+	return ViewerGizmo->ProcessDragRotation(InCamera, WorldRay, ViewportRect, true);
 }
 
 /**
- * @brief 기즈모 스케일 드래그 처리 (Editor.cpp 로직 복사)
+ * @brief 기즈모 스케일 드래그 처리
  */
 FVector USkeletalMeshViewerWindow::GetViewerGizmoDragScale(UCamera* InCamera, FRay& WorldRay)
 {
 	if (!ViewerGizmo || !ViewerObjectPicker) return FVector::One();
-
-	FVector MouseWorld;
-	FVector PlaneOrigin = ViewerGizmo->GetGizmoLocation();
-	FQuaternion Quat = ViewerGizmo->GetTargetComponent()->GetWorldRotationAsQuaternion();
-	const FVector CameraLocation = InCamera->GetLocation();
-
-	// Center 구체 드래그 처리 (균일 스케일)
-	if (ViewerGizmo->GetGizmoDirection() == EGizmoDirection::Center)
-	{
-		FVector PlaneNormal = InCamera->GetForward();
-
-		if (ViewerObjectPicker->IsRayCollideWithPlane(WorldRay, PlaneOrigin, PlaneNormal, MouseWorld))
-		{
-			const FVector MouseDelta = MouseWorld - ViewerGizmo->GetDragStartMouseLocation();
-			const FVector CamRight = InCamera->GetRight();
-			const float DragDistance = MouseDelta.Dot(CamRight);
-
-			const float DistanceToGizmo = (PlaneOrigin - CameraLocation).Length();
-			constexpr float BaseSensitivity = 0.03f;
-			const float ScaleSensitivity = BaseSensitivity * DistanceToGizmo;
-			const float ScaleDelta = DragDistance * ScaleSensitivity;
-
-			const float UniformScale = 1.0f + ScaleDelta;
-			const float ClampedScale = clamp(UniformScale, 0.01f, 100.0f);
-
-			return ViewerGizmo->GetDragStartActorScale() * ClampedScale;
-		}
-		return ViewerGizmo->GetComponentScale();
-	}
-
-	// 평면 스케일 처리
-	if (ViewerGizmo->IsPlaneDirection())
-	{
-		FVector PlaneNormal = ViewerGizmo->GetPlaneNormal();
-		FVector Tangent1, Tangent2;
-		ViewerGizmo->GetPlaneTangents(Tangent1, Tangent2);
-
-		PlaneNormal = Quat.RotateVector(PlaneNormal);
-		FVector WorldTangent1 = Quat.RotateVector(Tangent1);
-		FVector WorldTangent2 = Quat.RotateVector(Tangent2);
-
-		if (ViewerObjectPicker->IsRayCollideWithPlane(WorldRay, PlaneOrigin, PlaneNormal, MouseWorld))
-		{
-			const FVector MouseDelta = MouseWorld - ViewerGizmo->GetDragStartMouseLocation();
-			const float Drag1 = MouseDelta.Dot(WorldTangent1);
-			const float Drag2 = MouseDelta.Dot(WorldTangent2);
-			const float AvgDrag = (Drag1 + Drag2) * 0.5f;
-
-			const float DistanceToGizmo = (PlaneOrigin - CameraLocation).Length();
-			constexpr float BaseSensitivity = 0.03f;
-			const float ScaleSensitivity = BaseSensitivity * DistanceToGizmo;
-			const float ScaleDelta = AvgDrag * ScaleSensitivity;
-
-			const FVector DragStartScale = ViewerGizmo->GetDragStartActorScale();
-			FVector NewScale = DragStartScale;
-
-			constexpr float MIN_SCALE_VALUE = 0.01f;
-			if (abs(Tangent1.X) > 0.5f) NewScale.X = max(DragStartScale.X + ScaleDelta, MIN_SCALE_VALUE);
-			if (abs(Tangent1.Y) > 0.5f) NewScale.Y = max(DragStartScale.Y + ScaleDelta, MIN_SCALE_VALUE);
-			if (abs(Tangent1.Z) > 0.5f) NewScale.Z = max(DragStartScale.Z + ScaleDelta, MIN_SCALE_VALUE);
-			if (abs(Tangent2.X) > 0.5f) NewScale.X = max(DragStartScale.X + ScaleDelta, MIN_SCALE_VALUE);
-			if (abs(Tangent2.Y) > 0.5f) NewScale.Y = max(DragStartScale.Y + ScaleDelta, MIN_SCALE_VALUE);
-			if (abs(Tangent2.Z) > 0.5f) NewScale.Z = max(DragStartScale.Z + ScaleDelta, MIN_SCALE_VALUE);
-
-			return NewScale;
-		}
-		return ViewerGizmo->GetComponentScale();
-	}
-
-	// 축 스케일 처리
-	FVector CardinalAxis = ViewerGizmo->GetGizmoAxis();
-	FVector GizmoAxis = Quat.RotateVector(CardinalAxis);
-
-	const FVector CamRight = InCamera->GetRight();
-	const FVector CamUp = InCamera->GetUp();
-
-	FVector PlaneVector;
-	const float DotRight = abs(GizmoAxis.Dot(CamRight));
-	const float DotUp = abs(GizmoAxis.Dot(CamUp));
-
-	if (DotRight < DotUp)
-	{
-		PlaneVector = CamRight;
-	}
-	else
-	{
-		PlaneVector = CamUp;
-	}
-
-	FVector PlaneNormal = GizmoAxis.Cross(PlaneVector);
-	PlaneNormal.Normalize();
-
-	const FVector ToCamera = (CameraLocation - PlaneOrigin).GetNormalized();
-	if (PlaneNormal.Dot(ToCamera) < 0.0f)
-	{
-		PlaneNormal = -PlaneNormal;
-	}
-
-	if (ViewerObjectPicker->IsRayCollideWithPlane(WorldRay, PlaneOrigin, PlaneNormal, MouseWorld))
-	{
-		const FVector MouseDelta = MouseWorld - ViewerGizmo->GetDragStartMouseLocation();
-		const float AxisDragDistance = MouseDelta.Dot(GizmoAxis);
-
-		const float DistanceToGizmo = (PlaneOrigin - CameraLocation).Length();
-		constexpr float BaseSensitivity = 0.03f;
-		const float ScaleSensitivity = BaseSensitivity * DistanceToGizmo;
-		const float ScaleDelta = AxisDragDistance * ScaleSensitivity;
-
-		const FVector DragStartScale = ViewerGizmo->GetDragStartActorScale();
-		FVector NewScale;
-
-		constexpr float MIN_SCALE_VALUE = 0.01f;
-		if (ViewerGizmo->GetTargetComponent()->IsUniformScale())
-		{
-			// Uniform Scale
-			const float UniformDelta = ScaleDelta;
-			NewScale = DragStartScale + FVector(UniformDelta, UniformDelta, UniformDelta);
-			NewScale.X = max(NewScale.X, MIN_SCALE_VALUE);
-			NewScale.Y = max(NewScale.Y, MIN_SCALE_VALUE);
-			NewScale.Z = max(NewScale.Z, MIN_SCALE_VALUE);
-		}
-		else
-		{
-			// Non-uniform Scale
-			NewScale = DragStartScale;
-			if (abs(CardinalAxis.X) > 0.5f)
-			{
-				NewScale.X = max(DragStartScale.X + ScaleDelta, MIN_SCALE_VALUE);
-			}
-			else if (abs(CardinalAxis.Y) > 0.5f)
-			{
-				NewScale.Y = max(DragStartScale.Y + ScaleDelta, MIN_SCALE_VALUE);
-			}
-			else if (abs(CardinalAxis.Z) > 0.5f)
-			{
-				NewScale.Z = max(DragStartScale.Z + ScaleDelta, MIN_SCALE_VALUE);
-			}
-		}
-
-		return NewScale;
-	}
-
-	return ViewerGizmo->GetComponentScale();
+	return ViewerGizmo->ProcessDragScale(InCamera, WorldRay, ViewerObjectPicker);
 }

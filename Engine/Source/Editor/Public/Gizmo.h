@@ -62,6 +62,19 @@ public:
 	void SetGizmoMode(EGizmoMode Mode);
 
 	/**
+	 * @brief 기즈모 드래그 처리 함수들 (Editor와 Viewer에서 공통으로 사용)
+	 * @param InCamera 현재 카메라
+	 * @param WorldRay 마우스 레이
+	 * @param InObjectPicker 오브젝트 피커 (레이-평면 충돌 계산용)
+	 * @param ViewportRect 뷰포트 영역 (Rotation 계산용)
+	 * @param bUseCustomSnap Rotation 스냅 설정 사용 여부 (true면 커스텀, false면 ViewportManager)
+	 * @return 새로운 Location/Rotation/Scale 값
+	 */
+	FVector ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, class UObjectPicker* InObjectPicker);
+	FQuaternion ProcessDragRotation(UCamera* InCamera, FRay& WorldRay, const FRect& ViewportRect, bool bUseCustomSnap = false);
+	FVector ProcessDragScale(UCamera* InCamera, FRay& WorldRay, class UObjectPicker* InObjectPicker);
+
+	/**
 	 * @brief Setter
 	 */
 	void SetLocation(const FVector& Location) const;

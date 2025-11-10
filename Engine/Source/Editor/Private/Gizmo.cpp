@@ -3,10 +3,13 @@
 
 #include "Editor/Public/Editor.h"
 #include "Editor/Public/GizmoMath.h"
+#include "Editor/Public/ObjectPicker.h"
 #include "Manager/Asset/Public/AssetManager.h"
 #include "Manager/UI/Public/ViewportManager.h"
 #include "Manager/Config/Public/ConfigManager.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
+
+constexpr float MIN_SCALE_VALUE = 0.001f;
 
 IMPLEMENT_CLASS(UGizmo, UObject)
 
@@ -333,4 +336,461 @@ void UGizmo::CollectRotationAngleOverlay(FD2DOverlayManager& OverlayManager, UCa
 	// 노란색 텍스트
 	const D2D1_COLOR_F ColorYellow = D2D1::ColorF(1.0f, 1.0f, 0.0f);
 	OverlayManager.AddText(AngleText, TextRect, ColorYellow, 15.0f, true, true, L"Consolas");
+}
+
+/**
+ * @brief Translation 드래그 처리
+ */
+FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPicker* InObjectPicker)
+{
+	if (!InCamera || !InObjectPicker || !TargetComponent)
+	{
+		return GetGizmoLocation();
+	}
+
+	FVector MouseWorld;
+	FVector PlaneOrigin{ GetGizmoLocation() };
+
+	// Center 구체 드래그 처리
+	// UE 기준 카메라 NDC 평면에 평행하게 이동
+	if (GetGizmoDirection() == EGizmoDirection::Center)
+	{
+		// 카메라의 Forward 방향을 평면 법선로 사용
+		FVector PlaneNormal = InCamera->GetForward();
+
+		// 드래그 시작 지점의 마우스 위치를 평면 원점으로 사용
+		FVector FixedPlaneOrigin = GetDragStartMouseLocation();
+
+		// 레이와 카메라 평면 교차점 계산
+		if (InObjectPicker->IsRayCollideWithPlane(WorldRay, FixedPlaneOrigin, PlaneNormal, MouseWorld))
+		{
+			// 드래그 시작점으로부터 이동 거리 계산
+			FVector MouseDelta = MouseWorld - GetDragStartMouseLocation();
+			return GetDragStartActorLocation() + MouseDelta;
+		}
+		return GetGizmoLocation();
+	}
+
+	// 평면 드래그 처리
+	if (IsPlaneDirection())
+	{
+		// 평면 법선 벡터
+		FVector PlaneNormal = GetPlaneNormal();
+
+		if (!IsWorldMode())
+		{
+			FQuaternion q = TargetComponent->GetWorldRotationAsQuaternion();
+			PlaneNormal = q.RotateVector(PlaneNormal);
+		}
+
+		// 레이와 평면 교차점 계산
+		if (InObjectPicker->IsRayCollideWithPlane(WorldRay, PlaneOrigin, PlaneNormal, MouseWorld))
+		{
+			// 드래그 시작점으로부터 이동 거리 계산
+			FVector MouseDelta = MouseWorld - GetDragStartMouseLocation();
+			return GetDragStartActorLocation() + MouseDelta;
+		}
+		return GetGizmoLocation();
+	}
+
+	// 축 드래그 처리
+	FVector GizmoAxis = GetGizmoAxis();
+
+	if (!IsWorldMode())
+	{
+		FQuaternion q = TargetComponent->GetWorldRotationAsQuaternion();
+		GizmoAxis = q.RotateVector(GizmoAxis);
+	}
+
+	// 카메라 방향 벡터를 사용하여 안정적인 평면 계산
+	const FVector CamRight = InCamera->GetRight();
+	const FVector CamUp = InCamera->GetUp();
+
+	// GizmoAxis에 가장 수직인 카메라 벡터 선택
+	FVector PlaneVector;
+	const float DotRight = abs(GizmoAxis.Dot(CamRight));
+	const float DotUp = abs(GizmoAxis.Dot(CamUp));
+
+	if (DotRight < DotUp)
+	{
+		PlaneVector = CamRight;
+	}
+	else
+	{
+		PlaneVector = CamUp;
+	}
+
+	FVector PlaneNormal = GizmoAxis.Cross(PlaneVector);
+	PlaneNormal.Normalize();
+
+	// PlaneNormal이 카메라를 향하도록 보장 (드래그 방향 일관성)
+	const FVector CameraLocation = InCamera->GetLocation();
+	const FVector ToCamera = (CameraLocation - PlaneOrigin).GetNormalized();
+	if (PlaneNormal.Dot(ToCamera) < 0.0f)
+	{
+		PlaneNormal = -PlaneNormal;
+	}
+
+	if (InObjectPicker->IsRayCollideWithPlane(WorldRay, PlaneOrigin, PlaneNormal, MouseWorld))
+	{
+		FVector MouseDistance = MouseWorld - GetDragStartMouseLocation();
+		return GetDragStartActorLocation() + GizmoAxis * MouseDistance.Dot(GizmoAxis);
+	}
+	return GetGizmoLocation();
+}
+
+/**
+ * @brief Rotation 드래그 처리
+ */
+FQuaternion UGizmo::ProcessDragRotation(UCamera* InCamera, FRay& WorldRay, const FRect& ViewportRect, bool bUseCustomSnap)
+{
+	if (!InCamera || !TargetComponent)
+	{
+		return GetComponentRotation();
+	}
+
+	const FVector GizmoLocation = GetGizmoLocation();
+	const FVector LocalGizmoAxis = GetGizmoAxis();
+	const FQuaternion StartRotQuat = GetDragStartActorRotationQuat();
+
+	// 월드 공간 회전축
+	FVector WorldRotationAxis = LocalGizmoAxis;
+	if (!IsWorldMode())
+	{
+		WorldRotationAxis = StartRotQuat.RotateVector(LocalGizmoAxis);
+	}
+
+	// 스크린 공간 회전 계산
+	const float ViewportWidth = static_cast<float>(ViewportRect.Width);
+	const float ViewportHeight = static_cast<float>(ViewportRect.Height);
+	const float ViewportLeft = static_cast<float>(ViewportRect.Left);
+	const float ViewportTop = static_cast<float>(ViewportRect.Top);
+
+	// 기즈모 중심을 스크린 공간으로 투영
+	const FCameraConstants& CamConst = InCamera->GetFViewProjConstants();
+	const FMatrix ViewProj = CamConst.View * CamConst.Projection;
+	FVector4 GizmoScreenPos4 = FVector4(GizmoLocation, 1.0f) * ViewProj;
+
+	if (GizmoScreenPos4.W > 0.0f)
+	{
+		// NDC로 변환
+		GizmoScreenPos4 *= (1.0f / GizmoScreenPos4.W);
+
+		// NDC → 뷰포트 로컬 좌표
+		const FVector2 GizmoScreenPos(
+			(GizmoScreenPos4.X * 0.5f + 0.5f) * ViewportWidth,
+			((-GizmoScreenPos4.Y) * 0.5f + 0.5f) * ViewportHeight
+		);
+
+		// 현재 마우스 스크린 좌표
+		POINT MousePos;
+		GetCursorPos(&MousePos);
+		ScreenToClient(GetActiveWindow(), &MousePos);
+
+		const FVector2 CurrentScreenPos(
+			static_cast<float>(MousePos.x) - ViewportLeft,
+			static_cast<float>(MousePos.y) - ViewportTop
+		);
+
+		// UE5 표준: 드래그 시작 지점에서 기즈모로의 방향 (Origin = DragStartPos in UE)
+		const FVector2 DragStartScreenPos = GetDragStartScreenPos();
+		const FVector2 DirectionToMousePos = (DragStartScreenPos - GizmoScreenPos).GetNormalized();
+
+		// Tangent 방향: DirectionToMousePos에 수직 (시계방향 회전)
+		FVector2 TangentDir = FVector2(-DirectionToMousePos.Y, DirectionToMousePos.X);
+
+		// 모든 축에 대해 동일한 부호 보정 적용
+		if (GetGizmoDirection() == EGizmoDirection::Right ||
+			GetGizmoDirection() == EGizmoDirection::Forward ||
+			GetGizmoDirection() == EGizmoDirection::Up)
+		{
+			TangentDir = -TangentDir;
+		}
+
+		// 스크린 공간 드래그 벡터
+		const FVector2 PrevScreenPos = GetPreviousScreenPos();
+		const FVector2 DragDelta = CurrentScreenPos - PrevScreenPos;
+		const FVector2 DragDir = FVector2(DragDelta.X, DragDelta.Y);
+
+		// 마우스가 실제로 움직였는지 체크
+		const float DragDistSq = DragDir.LengthSquared();
+		constexpr float MinDragDistSq = 0.1f * 0.1f;
+
+		if (DragDistSq > MinDragDistSq)
+		{
+			// UE5 표준: Dot Product로 회전 각도 계산
+			float PixelDelta = TangentDir.Dot(DragDir);
+
+			// 픽셀을 각도(라디안)로 변환 (언리얼에선 1픽셀 = 1도 사용, 어차피 감도 조절용 매직 넘버라 그대로 차용)
+			constexpr float PixelsToDegrees = 1.0f;
+			float DeltaAngleDegrees = PixelDelta * PixelsToDegrees;
+			float DeltaAngle = FVector::GetDegreeToRadian(DeltaAngleDegrees);
+
+			// 카메라 시점 방향에 따른 회전 방향 보정
+			// 카메라가 회전축의 반대편에 있으면 부호 반전
+			const FVector CamToGizmo = (GizmoLocation - InCamera->GetLocation()).GetNormalized();
+			const float AxisDotCam = WorldRotationAxis.Dot(CamToGizmo);
+			if (AxisDotCam < 0.0f)
+			{
+				DeltaAngle = -DeltaAngle;
+			}
+			// 누적 각도 업데이트
+			float NewAngle = GetCurrentRotationAngle() + DeltaAngle;
+
+			// 360deg Clamp
+			constexpr float TwoPi = 2.0f * PI;
+			if (NewAngle > TwoPi)
+			{
+				NewAngle = fmodf(NewAngle, TwoPi);
+			}
+			else if (NewAngle < -TwoPi)
+			{
+				NewAngle = fmodf(NewAngle, -TwoPi);
+			}
+
+			SetCurrentRotationAngle(NewAngle);
+		}
+
+		// 현재 스크린 좌표 저장
+		SetPreviousScreenPos(CurrentScreenPos);
+
+		// 최종 회전 Quaternion 계산 (스냅 적용)
+		float FinalAngle = GetCurrentRotationAngle();
+
+		// Snap 설정 결정: 커스텀 또는 ViewportManager
+		bool bSnapEnabled = false;
+		float SnapAngleDegrees = 0.0f;
+		if (bUseCustomSnap)
+		{
+			bSnapEnabled = bCustomRotationSnapEnabled;
+			SnapAngleDegrees = CustomRotationSnapAngle;
+		}
+		else
+		{
+			bSnapEnabled = UViewportManager::GetInstance().IsRotationSnapEnabled();
+			SnapAngleDegrees = UViewportManager::GetInstance().GetRotationSnapAngle();
+		}
+
+		if (bSnapEnabled)
+		{
+			const float SnapAngleRadians = FVector::GetDegreeToRadian(SnapAngleDegrees);
+			FinalAngle = std::round(GetCurrentRotationAngle() / SnapAngleRadians) * SnapAngleRadians;
+		}
+
+		// 기즈모 드래그 방향과 회전 방향을 일치시키기 위해 부호 반전
+		const FQuaternion DeltaRotQuat = FQuaternion::FromAxisAngle(LocalGizmoAxis, FinalAngle);
+		if (IsWorldMode())
+		{
+			return DeltaRotQuat * StartRotQuat;
+		}
+		else
+		{
+			return StartRotQuat * DeltaRotQuat;
+		}
+	}
+
+	return GetComponentRotation();
+}
+
+/**
+ * @brief Scale 드래그 처리
+ */
+FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicker* InObjectPicker)
+{
+	if (!InCamera || !InObjectPicker || !TargetComponent)
+	{
+		return GetComponentScale();
+	}
+
+	FVector MouseWorld;
+	FVector PlaneOrigin = GetGizmoLocation();
+	FQuaternion Quat = TargetComponent->GetWorldRotationAsQuaternion();
+	const FVector CameraLocation = InCamera->GetLocation();
+
+	// Center 구체 드래그 처리 (균일 스케일, 모든 축 동일하게)
+	if (GetGizmoDirection() == EGizmoDirection::Center)
+	{
+		// 카메라 Forward 방향의 평면에서 드래그
+		FVector PlaneNormal = InCamera->GetForward();
+
+		if (InObjectPicker->IsRayCollideWithPlane(WorldRay, PlaneOrigin, PlaneNormal, MouseWorld))
+		{
+			// 드래그 벡터 계산
+			const FVector MouseDelta = MouseWorld - GetDragStartMouseLocation();
+
+			// 카메라 Right 방향으로의 드래그 거리 사용 (수평 드래그)
+			const FVector CamRight = InCamera->GetRight();
+			const float DragDistance = MouseDelta.Dot(CamRight);
+
+			// 스케일 민감도 조정
+			const float DistanceToGizmo = (PlaneOrigin - CameraLocation).Length();
+			constexpr float BaseSensitivity = 0.03f;
+			const float ScaleSensitivity = BaseSensitivity * DistanceToGizmo;
+			const float ScaleDelta = DragDistance * ScaleSensitivity;
+
+			// 모든 축에 동일한 스케일 적용 (균일 스케일)
+			const FVector DragStartScale = GetDragStartActorScale();
+			const float UniformScale = max(1.0f + ScaleDelta / DragStartScale.X, MIN_SCALE_VALUE);
+
+			FVector NewScale;
+			NewScale.X = max(DragStartScale.X * UniformScale, MIN_SCALE_VALUE);
+			NewScale.Y = max(DragStartScale.Y * UniformScale, MIN_SCALE_VALUE);
+			NewScale.Z = max(DragStartScale.Z * UniformScale, MIN_SCALE_VALUE);
+
+			return NewScale;
+		}
+		return GetComponentScale();
+	}
+
+	// 평면 스케일 처리
+	if (IsPlaneDirection())
+	{
+		// 평면 법선과 접선 벡터
+		FVector PlaneNormal = GetPlaneNormal();
+		FVector Tangent1, Tangent2;
+		GetPlaneTangents(Tangent1, Tangent2);
+
+		// 로컬 좌표로 변환
+		PlaneNormal = Quat.RotateVector(PlaneNormal);
+		FVector WorldTangent1 = Quat.RotateVector(Tangent1);
+		FVector WorldTangent2 = Quat.RotateVector(Tangent2);
+
+		// 레이와 평면 교차점 계산
+		if (InObjectPicker->IsRayCollideWithPlane(WorldRay, PlaneOrigin, PlaneNormal, MouseWorld))
+		{
+			// 평면 내 드래그 벡터 계산
+			const FVector MouseDelta = MouseWorld - GetDragStartMouseLocation();
+
+			// 두 접선 방향 드래그 거리 평균
+			const float Drag1 = MouseDelta.Dot(WorldTangent1);
+			const float Drag2 = MouseDelta.Dot(WorldTangent2);
+			const float AvgDrag = (Drag1 + Drag2) * 0.5f;
+
+			// 스케일 민감도 조정
+			const float DistanceToGizmo = (PlaneOrigin - CameraLocation).Length();
+			constexpr float BaseSensitivity = 0.03f;
+			const float ScaleSensitivity = BaseSensitivity * DistanceToGizmo;
+			const float ScaleDelta = AvgDrag * ScaleSensitivity;
+
+			const FVector DragStartScale = GetDragStartActorScale();
+			FVector NewScale = DragStartScale;
+
+			// 평면의 두 축에 동일한 스케일 적용
+			if (abs(Tangent1.X) > 0.5f)
+			{
+				NewScale.X = max(DragStartScale.X + ScaleDelta, MIN_SCALE_VALUE);
+			}
+			if (abs(Tangent1.Y) > 0.5f)
+			{
+				NewScale.Y = max(DragStartScale.Y + ScaleDelta, MIN_SCALE_VALUE);
+			}
+			if (abs(Tangent1.Z) > 0.5f)
+			{
+				NewScale.Z = max(DragStartScale.Z + ScaleDelta, MIN_SCALE_VALUE);
+			}
+			if (abs(Tangent2.X) > 0.5f)
+			{
+				NewScale.X = max(DragStartScale.X + ScaleDelta, MIN_SCALE_VALUE);
+			}
+			if (abs(Tangent2.Y) > 0.5f)
+			{
+				NewScale.Y = max(DragStartScale.Y + ScaleDelta, MIN_SCALE_VALUE);
+			}
+			if (abs(Tangent2.Z) > 0.5f)
+			{
+				NewScale.Z = max(DragStartScale.Z + ScaleDelta, MIN_SCALE_VALUE);
+			}
+
+			return NewScale;
+		}
+		return GetComponentScale();
+	}
+
+	// 축 스케일 처리 (기존 로직)
+	FVector CardinalAxis = GetGizmoAxis();
+	FVector GizmoAxis = Quat.RotateVector(CardinalAxis);
+
+	// 카메라 방향 벡터를 사용하여 안정적인 평면 계산
+	const FVector CamForward = InCamera->GetForward();
+	const FVector CamRight = InCamera->GetRight();
+	const FVector CamUp = InCamera->GetUp();
+
+	// GizmoAxis에 가장 수직인 카메라 벡터 선택
+	FVector PlaneVector;
+	const float DotRight = abs(GizmoAxis.Dot(CamRight));
+	const float DotUp = abs(GizmoAxis.Dot(CamUp));
+
+	if (DotRight < DotUp)
+	{
+		PlaneVector = CamRight;
+	}
+	else
+	{
+		PlaneVector = CamUp;
+	}
+
+	FVector PlaneNormal = GizmoAxis.Cross(PlaneVector);
+	PlaneNormal.Normalize();
+
+	// PlaneNormal이 카메라를 향하도록 보장 (드래그 방향 일관성)
+	const FVector ToCamera = (CameraLocation - PlaneOrigin).GetNormalized();
+	if (PlaneNormal.Dot(ToCamera) < 0.0f)
+	{
+		PlaneNormal = -PlaneNormal;
+	}
+
+	if (InObjectPicker->IsRayCollideWithPlane(WorldRay, PlaneOrigin, PlaneNormal, MouseWorld))
+	{
+		// UE 방식을 사용, 드래그 거리에 비례하여 스케일 변화
+		const FVector MouseDelta = MouseWorld - GetDragStartMouseLocation();
+		const float AxisDragDistance = MouseDelta.Dot(GizmoAxis);
+
+		// 카메라 거리에 따른 스케일 민감도 조정
+		const float DistanceToGizmo = (PlaneOrigin - CameraLocation).Length();
+
+		// 거리에 비례한 민감도, 기본 배율 적용
+		// 가까울수록 정밀하게, 멀수록 빠르게 조정
+		constexpr float BaseSensitivity = 0.03f;  // 기본 민감도
+		const float ScaleSensitivity = BaseSensitivity * DistanceToGizmo;
+		const float ScaleDelta = AxisDragDistance * ScaleSensitivity;
+
+		const FVector DragStartScale = GetDragStartActorScale();
+		FVector NewScale;
+
+		if (TargetComponent->IsUniformScale())
+		{
+			// Uniform Scale: 모든 축에 동일한 스케일 델타 적용
+			const float UniformDelta = ScaleDelta;
+			NewScale = DragStartScale + FVector(UniformDelta, UniformDelta, UniformDelta);
+
+			// 모든 축이 최소값 이상이 되도록 보장
+			NewScale.X = std::max(NewScale.X, MIN_SCALE_VALUE);
+			NewScale.Y = std::max(NewScale.Y, MIN_SCALE_VALUE);
+			NewScale.Z = std::max(NewScale.Z, MIN_SCALE_VALUE);
+		}
+		else
+		{
+			// Non-uniform Scale: 선택한 축에만 스케일 델타 적용
+			NewScale = DragStartScale;
+
+			// X축 (1,0,0)
+			if (abs(CardinalAxis.X) > 0.5f)
+			{
+				NewScale.X = std::max(DragStartScale.X + ScaleDelta, MIN_SCALE_VALUE);
+			}
+			// Y축 (0,1,0)
+			else if (abs(CardinalAxis.Y) > 0.5f)
+			{
+				NewScale.Y = std::max(DragStartScale.Y + ScaleDelta, MIN_SCALE_VALUE);
+			}
+			// Z축 (0,0,1)
+			else if (abs(CardinalAxis.Z) > 0.5f)
+			{
+				NewScale.Z = std::max(DragStartScale.Z + ScaleDelta, MIN_SCALE_VALUE);
+			}
+		}
+
+		return NewScale;
+	}
+	return GetComponentScale();
 }
