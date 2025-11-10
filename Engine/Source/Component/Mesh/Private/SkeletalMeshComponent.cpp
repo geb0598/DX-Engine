@@ -3,9 +3,35 @@
 #include <numeric>
 
 #include "Component/Mesh/Public/SkeletalMeshComponent.h"
+
+#include "Manager/Asset/Public/FbxManager.h"
+#include "Render/Renderer/Public/RenderResourceFactory.h"
+#include "Render/UI/Widget/Public/SkeletalMeshComponentWidget.h"
 #include "Runtime/Engine/Public/SkeletalMesh.h"
 
 IMPLEMENT_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
+
+USkeletalMeshComponent::USkeletalMeshComponent()
+	: bPoseDirty(false)
+	, bSkinningDirty(false)
+	, bNormalMapEnabled(false)
+{
+	FName DefaultFbxPath = "Data/DefaultSkeletalMesh.fbx";
+	LoadSkeletalMeshAsset(DefaultFbxPath);
+}
+
+USkeletalMeshComponent::~USkeletalMeshComponent()
+{
+	if (VertexBuffer)
+	{
+		SafeRelease(VertexBuffer);
+	}
+
+	if (IndexBuffer)
+	{
+		SafeRelease(IndexBuffer);
+	}
+}
 
 UObject* USkeletalMeshComponent::Duplicate()
 {
@@ -40,6 +66,11 @@ void USkeletalMeshComponent::EndPlay()
 {
 	Super::EndPlay();
 	/** @todo */
+}
+
+UClass* USkeletalMeshComponent::GetSpecificWidgetClass() const
+{
+	return USkeletalMeshComponentWidget::StaticClass();
 }
 
 void USkeletalMeshComponent::RefreshBoneTransforms()
@@ -105,6 +136,9 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 		return;
 	}
 
+	SafeRelease(VertexBuffer);
+	SafeRelease(IndexBuffer);
+
 	// 부모 클래스의 멤버(SkinnedAsset)에 에셋을 설정
 	SetSkinnedAsset(NewMesh);
 	SkeletalMeshAsset = NewMesh;
@@ -120,6 +154,18 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 		GetEditableComponentSpaceTransform().SetNum(NumBones);
 		GetEditableBoneVisibilityStates().SetNum(NumBones);
 
+		UStaticMesh* StaticMesh = SkeletalMeshAsset->GetStaticMesh();
+
+		VertexBuffer = FRenderResourceFactory::CreateVertexBuffer(
+			StaticMesh->GetVertices().GetData(),
+			static_cast<uint32>(StaticMesh->GetVertices().Num()) * sizeof(FNormalVertex),
+			true
+		);
+		IndexBuffer = FRenderResourceFactory::CreateIndexBuffer(
+			StaticMesh->GetIndices().GetData(),
+			static_cast<uint32>(StaticMesh->GetIndices().Num()) * sizeof(uint32)
+		);
+
 		bPoseDirty = true;
 		bSkinningDirty = true;
 	}
@@ -129,6 +175,16 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 		SkinnedVertices.Empty();
 		GetEditableComponentSpaceTransform().Empty();
 		GetEditableBoneVisibilityStates().Empty();
+	}
+}
+
+void USkeletalMeshComponent::LoadSkeletalMeshAsset(const FName& FilePath)
+{
+	USkeletalMesh* NewSkeletalMesh = FFbxManager::LoadFbxSkeletalMesh(FilePath);
+
+	if (NewSkeletalMesh)
+	{
+		SetSkeletalMeshAsset(NewSkeletalMesh);
 	}
 }
 
@@ -197,6 +253,8 @@ void USkeletalMeshComponent::UpdateSkinnedVertices()
 		// @todo FVector4 타입 탄젠트 처리 (@박영빈 해주세요)
 		// ResultVertex.Tangent = FinalTangent / TotalWeight;
 	}
+
+	FRenderResourceFactory::UpdateVertexBufferData(VertexBuffer, SkinnedVertices);
 
 	bSkinningDirty = false;
 }

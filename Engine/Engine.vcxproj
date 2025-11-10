@@ -471,6 +471,7 @@
     <ClInclude Include="Source\Render\UI\Overlay\Public\D2DOverlayManager.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\ShadowMapFilterPass.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\ScriptComponentWidget.h" />
+    <ClInclude Include="Source\Render\UI\Widget\Public\SkeletalMeshComponentWidget.h" />
     <ClInclude Include="Source\Render\UI\Window\Public\CurveEditorWindow.h" />
     <ClInclude Include="Source\Render\UI\Window\Public\SkeletalMeshViewerWindow.h" />
     <ClInclude Include="Source\Runtime\Core\Public\Containers\TArray.h" />
@@ -711,6 +712,7 @@
     <ClCompile Include="Source\Render\UI\Overlay\Private\D2DOverlayManager.cpp" />
     <ClCompile Include="Source\Render\UI\Overlay\Private\StatOverlay.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\ScriptComponentWidget.cpp" />
+    <ClCompile Include="Source\Render\UI\Widget\Private\SkeletalMeshComponentWidget.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Private\ReferenceSkeleton.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Private\SkeletalMesh.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Private\SkinnedAsset.cpp" />

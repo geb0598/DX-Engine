@@ -469,6 +469,8 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 		return false;
 	}
 
+	OutMeshInfo->PathFileName = FName(FilePath.string());
+
 	// FBX Scene 임포트
 	FbxScene* Scene = ImportFbxScene(FilePath);
 	if (!Scene)

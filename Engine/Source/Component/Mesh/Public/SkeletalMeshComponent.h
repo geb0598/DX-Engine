@@ -2,6 +2,7 @@
 
 #include "Runtime/Engine/Public/SkeletalMesh.h"
 #include "SkinnedMeshComponent.h"
+#include "Manager/Asset/Public/AssetManager.h"
 
 // class USkeletalMesh;
 
@@ -14,6 +15,11 @@ class USkeletalMeshComponent : public USkinnedMeshComponent
 private:
 	/** 이 컴포넌트에 의해 사용되는 스켈레탈 메시 */
 	TObjectPtr<USkeletalMesh> SkeletalMeshAsset;
+
+public:
+	USkeletalMeshComponent();
+
+	virtual ~USkeletalMeshComponent();
 
 	/*-----------------------------------------------------------------------------
 		UObject 인터페이스
@@ -34,6 +40,8 @@ public:
 	virtual void TickComponent(float DeltaTime) override;
 
 	virtual void EndPlay() override;
+
+	virtual UClass* GetSpecificWidgetClass() const override;
 
 	/*-----------------------------------------------------------------------------
 		UPrimitiveComponent 인터페이스
@@ -60,6 +68,9 @@ public:
 
 	/** @brief 이 메쉬를 위해 렌더링되는 SkeletalMesh를 설정한다. */
 	void SetSkeletalMeshAsset(USkeletalMesh* NewMesh);
+
+	/** @brief 명시된 경로로부터 메쉬 정보를 불러온다. */
+	void LoadSkeletalMeshAsset(const FName& FilePath);
 
 	/** @brief 외부(e.g., 에디터)에서 현재 본의 위치를 확인하기 위해 제공되는 함수이다. */
 	FTransform GetBoneTransformLocal(int32 BoneIndex);
