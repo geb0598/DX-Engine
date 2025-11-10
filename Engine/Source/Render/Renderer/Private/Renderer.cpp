@@ -1389,6 +1389,10 @@ void URenderer::RenderHitProxyPass(UCamera* InCamera, const D3D11_VIEWPORT& InVi
 		{
 			Context.StaticMeshes.Add(StaticMesh);
 		}
+		else if (auto SkeletalMesh = Cast<USkeletalMeshComponent>(Prim))
+		{
+			Context.SkeletalMeshes.Add(SkeletalMesh);
+		}
 		else if (auto EditorIcon = Cast<UEditorIconComponent>(Prim))
 		{
 			// Pilot Mode: 현재 조종 중인 Actor의 아이콘은 렌더링 스킵

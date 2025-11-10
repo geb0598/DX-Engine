@@ -146,6 +146,7 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 
 		BoneSpaceTransforms = RefSkeleton.GetRawRefBonePose();
 		SkinnedVertices.SetNum(NumVertices);
+		SkinningMatrices.SetNum(NumBones);
 		GetEditableComponentSpaceTransform().SetNum(NumBones);
 		GetEditableBoneVisibilityStates().SetNum(NumBones);
 
@@ -168,6 +169,7 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 	{
 		BoneSpaceTransforms.Empty();
 		SkinnedVertices.Empty();
+		SkinningMatrices.Empty();
 		GetEditableComponentSpaceTransform().Empty();
 		GetEditableBoneVisibilityStates().Empty();
 	}
