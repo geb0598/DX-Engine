@@ -451,6 +451,18 @@ void FFbxImporter::ExtractGeometryData(
 		OutMeshInfo->VertexList.Num(), OutMeshInfo->NormalList.Num(),
 		OutMeshInfo->TexCoordList.Num(), OutMeshInfo->Indices.Num());
 
+	// Indices를 Material별로 재정렬
+	// 현재 Indices는 Polygon 순서대로 저장되어 있지만,
+	// Section은 Material별로 연속된 범위를 가정하므로 재구성이 필요
+	OutMeshInfo->Indices.Empty();
+	for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
+	{
+		for (uint32 Index : IndicesPerMaterial[i])
+		{
+			OutMeshInfo->Indices.Add(Index);
+		}
+	}
+
 	// Mesh Section 정보 생성
 	BuildMeshSections(IndicesPerMaterial, OutMeshInfo);
 }
@@ -904,6 +916,18 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 
 	// ControlPointIndices를 OutMeshInfo에 저장
 	OutMeshInfo->ControlPointIndices = std::move(ControlPointIndices);
+
+	// Indices를 Material별로 재정렬
+	// 현재 Indices는 Polygon 순서대로 저장되어 있지만,
+	// Section은 Material별로 연속된 범위를 가정하므로 재구성이 필요
+	OutMeshInfo->Indices.Empty();
+	for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
+	{
+		for (uint32 Index : IndicesPerMaterial[i])
+		{
+			OutMeshInfo->Indices.Add(Index);
+		}
+	}
 
 	BuildSkeletalMeshSections(IndicesPerMaterial, OutMeshInfo);
 }
