@@ -1389,6 +1389,10 @@ void URenderer::RenderHitProxyPass(UCamera* InCamera, const D3D11_VIEWPORT& InVi
 		{
 			Context.StaticMeshes.Add(StaticMesh);
 		}
+		else if (auto SkeletalMesh = Cast<USkeletalMeshComponent>(Prim))
+		{
+			Context.SkeletalMeshes.Add(SkeletalMesh);
+		}
 		else if (auto EditorIcon = Cast<UEditorIconComponent>(Prim))
 		{
 			// Pilot Mode: 현재 조종 중인 Actor의 아이콘은 렌더링 스킵
@@ -1740,6 +1744,10 @@ void URenderer::RenderPreviewWorld(UWorld* InPreviewWorld, const FSceneView* InS
 		if (auto StaticMesh = Cast<UStaticMeshComponent>(Prim))
 		{
 			RenderingContext.StaticMeshes.Add(StaticMesh);
+		}
+		else if(auto SkeletalMesh = Cast<USkeletalMeshComponent>(Prim))
+		{
+			RenderingContext.SkeletalMeshes.Add(SkeletalMesh);
 		}
 		else if (auto BillBoard = Cast<UBillBoardComponent>(Prim))
 		{

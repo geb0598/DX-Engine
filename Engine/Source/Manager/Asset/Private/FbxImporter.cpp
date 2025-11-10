@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Source/Manager/Asset/Public/FbxImporter.h"
+#include "Source/Manager/Path/Public/PathManager.h"
+#include "Core/Public/WindowsBinReader.h"
+#include "Core/Public/WindowsBinWriter.h"
 
 // ========================================
 // 🔸 Public API
@@ -90,6 +93,27 @@ bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxSta
 		return false;
 	}
 
+	// .fbxbin 파일의 여부 확인
+	path CookedPath = UPathManager::GetInstance().GetCookedPath();
+	path BinFilePath = CookedPath / (FilePath.stem().wstring() + L".fbxbin");
+	if (Config.bIsBinaryEnabled && std::filesystem::exists(BinFilePath))
+	{
+		auto FbxTime = std::filesystem::last_write_time(FilePath);
+		auto BinTime = std::filesystem::last_write_time(BinFilePath);
+
+		if (BinTime >= FbxTime)
+		{
+			UE_LOG_SUCCESS("FbxCache: Loaded cached fbxbin '%ls'", BinFilePath.c_str());
+			FWindowsBinReader WindowsBinReader(BinFilePath);
+			WindowsBinReader << *OutMeshInfo;
+			return true;
+		}
+		else
+		{
+			UE_LOG_INFO("FbxCache: fbxbin outdated, reloading from fbx '%ls'", FilePath.c_str());
+		}
+	}
+
 	if (!SdkManager)
 	{
 		UE_LOG_ERROR("FBX SDK Manager가 존재하지 않습니다.");
@@ -131,6 +155,14 @@ bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxSta
 	ExtractVertices(Mesh, OutMeshInfo, Config);
 	ExtractMaterials(MeshNode, FilePath, OutMeshInfo);
 	ExtractGeometryData(Mesh, OutMeshInfo, Config);
+
+	// 파싱 완료 후 베이크 저장
+	if (Config.bIsBinaryEnabled)
+	{
+		FWindowsBinWriter WindowsBinWriter(BinFilePath);
+		WindowsBinWriter << *OutMeshInfo;
+		UE_LOG_SUCCESS("FbxCache: Saved fbxbin '%ls'", BinFilePath.c_str());
+	}
 
 	Scene->Destroy();
 	return true;
@@ -457,6 +489,27 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 		return false;
 	}
 
+	// .fbxbin 파일의 여부 확인
+	path CookedPath = UPathManager::GetInstance().GetCookedPath();
+	path BinFilePath = CookedPath / (FilePath.stem().wstring() + L".fbxbin");
+	if (Config.bIsBinaryEnabled && std::filesystem::exists(BinFilePath))
+	{
+		auto FbxTime = std::filesystem::last_write_time(FilePath);
+		auto BinTime = std::filesystem::last_write_time(BinFilePath);
+
+		if (BinTime >= FbxTime)
+		{
+			UE_LOG_SUCCESS("FbxCache: Loaded cached fbxbin '%ls'", BinFilePath.c_str());
+			FWindowsBinReader WindowsBinReader(BinFilePath);
+			WindowsBinReader << *OutMeshInfo;
+			return true;
+		}
+		else
+		{
+			UE_LOG_INFO("FbxCache: fbxbin outdated, reloading from fbx '%ls'", FilePath.c_str());
+		}
+	}
+
 	if (!SdkManager)
 	{
 		UE_LOG_ERROR("FBX SDK Manager가 존재하지 않습니다.");
@@ -517,6 +570,14 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 
 	// 머티리얼 추출
 	ExtractSkeletalMaterials(MeshNode, FilePath, OutMeshInfo);
+
+	// 파싱 완료 후 베이크 저장
+	if (Config.bIsBinaryEnabled)
+	{
+		FWindowsBinWriter WindowsBinWriter(BinFilePath);
+		WindowsBinWriter << *OutMeshInfo;
+		UE_LOG_SUCCESS("FbxCache: Saved fbxbin '%ls'", BinFilePath.c_str());
+	}
 
 	Scene->Destroy();
 	UE_LOG_SUCCESS("스켈레탈 메시 로드 완료: %s", FilePath.string().c_str());

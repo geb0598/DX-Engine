@@ -55,7 +55,7 @@ public:
 public:
 	virtual void RefreshBoneTransforms() override;
 
-	void RefreshBoneTransformsCustom(const TArray<FTransform>& InBoneSpaceTransforms);
+	void RefreshBoneTransformsCustom(const TArray<FTransform>& InBoneSpaceTransforms, bool& InbPoseDirty);
 
 	virtual void TickPose(float DeltaTime) override;
 
@@ -78,6 +78,12 @@ public:
 	/** @brief 애니메이션이 아닌 외부(e.g., 에디터, 기즈모, etc)에서 포즈를 조작하기 위해 제공되는 함수이다. */
 	void SetBoneTransformLocal(int32 BoneIndex, const FTransform& NewLocalTransform);
 
+	/** @brief 머티리얼 목록에서 머티리얼을 가져온다. 덮어쓰기용 머티리얼을 먼저 확인하고, 없을 경우 기본 머티리얼 목록에서 가져온다. */
+	UMaterial* GetMaterial(int32 Index) const;
+
+	/** @brief 덮어쓰기용 머티리얼을 설정한다. */
+	void SetMaterial(int32 Index, UMaterial* InMaterial);
+
 	/** @brief CPU 스키닝을 수행한다. */
 	void UpdateSkinnedVertices();
 
@@ -96,6 +102,9 @@ private:
 
 	/** CPU 스키닝을 적용한 이후의 정점 정보 */
 	TArray<FNormalVertex> SkinnedVertices;
+
+	/** 덮어쓰기용 머티리얼 (UI 패널을 통해 선택 가능) */
+	TArray<UMaterial*> OverrideMaterials;
 
 	/** 포즈가 변경되었음을 알리는 플래그 */
 	bool bPoseDirty;

@@ -432,11 +432,7 @@ void UActorDetailWidget::RenderSceneComponents(USceneComponent* InSceneComponent
 
 				if (ViewerWindow)
 				{
-					// 윈도우가 아직 초기화되지 않았다면 초기화
-					ViewerWindow->Initialize();
-
-					ViewerWindow->SetWindowState(EUIWindowState::Visible);
-					ViewerWindow->SetSkeletalMeshComponent(SkeletalMeshComp);
+					ViewerWindow->OpenViewer(SkeletalMeshComp);
 				}
 				else
 				{

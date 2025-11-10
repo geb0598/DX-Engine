@@ -38,6 +38,9 @@ public:
 	void Initialize() override;
 	void Cleanup() override;
 
+	void OpenViewer(USkeletalMeshComponent* InSkeletalMeshComponent);
+	bool OnWindowClose() override;
+
 	void SetSkeletalMeshComponent(USkeletalMeshComponent* InSkeletalMeshComponent) { SkeletalMeshComponent = InSkeletalMeshComponent; }
 
 protected:
@@ -146,6 +149,11 @@ private:
 
 	// 렌더링할 SkeletalMeshComponent
 	USkeletalMeshComponent* SkeletalMeshComponent = nullptr;
+
+	// SkeletalMeshComponent의 Owner 복구용 포인터
+	AActor* OriginalOwnerActor = nullptr;
+
+	bool bDirtyBoneTransforms = false;
 
 	// 선택된 본 인덱스
 	int32 SelectedBoneIndex = INDEX_NONE;

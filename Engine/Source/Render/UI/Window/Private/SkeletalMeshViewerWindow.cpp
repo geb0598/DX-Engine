@@ -163,38 +163,45 @@ void USkeletalMeshViewerWindow::Initialize()
 			UE_LOG("SkeletalMeshViewerWindow: Directional Light Actor 스폰 완료");
 		}
 
-		// 테스트: StaticMesh Actor 스폰 (Airdrop)
-		PreviewSkeletalMeshActor = PreviewWorld->SpawnActor(AStaticMeshActor::StaticClass());
-		if (PreviewSkeletalMeshActor)
-		{
-			PreviewSkeletalMeshActor->SetActorLocation(FVector(0, 0, 0));
-			PreviewSkeletalMeshActor->SetActorRotation(FQuaternion::Identity());
+		PreviewSkeletalMeshActor = PreviewWorld->SpawnActor(AActor::StaticClass());
+		//// 테스트: StaticMesh Actor 스폰 (Airdrop)
+		//PreviewSkeletalMeshActor = PreviewWorld->SpawnActor(AStaticMeshActor::StaticClass());
+		//if (PreviewSkeletalMeshActor)
+		//{
+		//	PreviewSkeletalMeshActor->SetActorLocation(FVector(0, 0, 0));
+		//	PreviewSkeletalMeshActor->SetActorRotation(FQuaternion::Identity());
 
-			if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(PreviewSkeletalMeshActor))
-			{
-				if (UStaticMeshComponent* MeshComp = StaticMeshActor->GetStaticMeshComponent())
-				{
-					// Airdrop 메쉬 로드
-					MeshComp->SetStaticMesh(FName("Data/Airdrop.obj"));
-					UE_LOG("SkeletalMeshViewerWindow: Airdrop StaticMesh 설정 완료 (Location: 0,0,0)");
+		//	if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(PreviewSkeletalMeshActor))
+		//	{
+		//		if (UStaticMeshComponent* MeshComp = StaticMeshActor->GetStaticMeshComponent())
+		//		{
+		//			// Airdrop 메쉬 로드
+		//			MeshComp->SetStaticMesh(FName("Data/Airdrop.obj"));
+		//			UE_LOG("SkeletalMeshViewerWindow: Airdrop StaticMesh 설정 완료 (Location: 0,0,0)");
 
-					// 기본적으로 StaticMeshComponent를 선택하고 기즈모 활성화
-					SelectedComponent = MeshComp;
-				}
-			}
-			UE_LOG("SkeletalMeshViewerWindow: StaticMesh Actor 스폰 완료");
-		}
+		//			// 기본적으로 StaticMeshComponent를 선택하고 기즈모 활성화
+		//			SelectedComponent = MeshComp;
+		//		}
+		//	}
+		//	UE_LOG("SkeletalMeshViewerWindow: StaticMesh Actor 스폰 완료");
+		//}
 	}
 
 	// Gizmo 생성
 	ViewerGizmo = new UGizmo();
-	if (ViewerGizmo && SelectedComponent)
+	if (ViewerGizmo)
 	{
-		ViewerGizmo->SetSelectedComponent(SelectedComponent);
 		// 뷰어의 Gizmo는 ViewportManager 대신 자체 툴바 설정 사용
 		ViewerGizmo->SetUseCustomRotationSnap(true);
 		UE_LOG("SkeletalMeshViewerWindow: Gizmo 생성 및 초기 선택 완료");
 	}
+	//if (ViewerGizmo && SelectedComponent)
+	//{
+	//	ViewerGizmo->SetSelectedComponent(SelectedComponent);
+	//	// 뷰어의 Gizmo는 ViewportManager 대신 자체 툴바 설정 사용
+	//	ViewerGizmo->SetUseCustomRotationSnap(true);
+	//	UE_LOG("SkeletalMeshViewerWindow: Gizmo 생성 및 초기 선택 완료");
+	//}
 
 	// ObjectPicker 생성
 	ViewerObjectPicker = new UObjectPicker();
@@ -292,6 +299,70 @@ void USkeletalMeshViewerWindow::Cleanup()
 	bIsInitialized = false;
 
 	UE_LOG("SkeletalMeshViewerWindow: 정리 완료");
+}
+
+void USkeletalMeshViewerWindow::OpenViewer(USkeletalMeshComponent* InSkeletalMeshComponent)
+{
+	assert(InSkeletalMeshComponent);
+
+	// SkeletalMeshComponent 설정
+	SetWindowState(EUIWindowState::Visible);
+	SetSkeletalMeshComponent(InSkeletalMeshComponent);
+	assert(SkeletalMeshComponent);
+
+	// SkeletalMesh 유효성 검사 및 변수 할당
+	USkeletalMesh* SkeletalMesh = nullptr;
+	FReferenceSkeleton RefSkeleton;
+	int32 NumBones = 0;
+	bool bValid = CheckSkeletalValidity(SkeletalMesh, RefSkeleton, NumBones, false);
+
+	// TempBoneSpaceTransforms 초기화
+	if (bValid)
+	{
+		const int32 NumBones = RefSkeleton.GetRawBoneNum();
+		TempBoneSpaceTransforms.Reset(NumBones);
+		for (int32 i = 0; i < NumBones; ++i)
+		{
+			TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
+		}
+	}
+
+	// SkeletalMesh Actor 스폰
+	if (PreviewWorld)
+	{
+		if (PreviewSkeletalMeshActor)
+		{
+			PreviewSkeletalMeshActor->SetActorLocation(FVector(0, 0, 0));
+			PreviewSkeletalMeshActor->SetActorRotation(FQuaternion::Identity());
+
+			OriginalOwnerActor = SkeletalMeshComponent->GetOwner(); // RegisterComponent시 Owner가 재설정되기 때문에, 저장해둠
+
+			PreviewSkeletalMeshActor->RegisterComponent(SkeletalMeshComponent);
+			SelectedComponent = SkeletalMeshComponent;
+
+			UE_LOG("SkeletalMeshViewerWindow: 편집용 Actor 스폰 완료");
+		}
+
+		if (ViewerGizmo && SelectedComponent)
+		{
+			ViewerGizmo->SetSelectedComponent(SelectedComponent);
+			UE_LOG("SkeletalMeshViewerWindow: Gizmo를 SelectedComponent에 설정 완료");
+		}
+	}
+}
+bool USkeletalMeshViewerWindow::OnWindowClose()
+{
+	if (SkeletalMeshComponent && OriginalOwnerActor)
+	{
+		if (PreviewSkeletalMeshActor)
+		{
+			// TODO: SkeletalMeshComponent를 PreviewSkeletalMeshActor에서 언레지스터. 지금은 프로그램 종료 시 크래시 남
+		}
+		SkeletalMeshComponent->SetOwner(OriginalOwnerActor);
+	}
+	SkeletalMeshComponent = nullptr;
+
+	return true;
 }
 
 /**
@@ -551,21 +622,11 @@ void USkeletalMeshViewerWindow::RenderLayout()
 		return;
 	}*/
 
-	// TempBoneSpaceTransforms 초기화
-	if (TempBoneSpaceTransforms.IsEmpty() && SkeletalMeshComponent)
-	{
-		const int32 NumBones = RefSkeleton.GetRawBoneNum();
-		TempBoneSpaceTransforms.SetNum(NumBones);
-		for (int32 i = 0; i < NumBones; ++i)
-		{
-			TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
-		}
-	}
-
 	// SkeletalMeshComponent에 임시 본 트랜스폼 적용
 	if (SkeletalMeshComponent)
 	{
-		SkeletalMeshComponent->RefreshBoneTransformsCustom(TempBoneSpaceTransforms);
+		SkeletalMeshComponent->RefreshBoneTransformsCustom(TempBoneSpaceTransforms, bDirtyBoneTransforms);
+		SkeletalMeshComponent->UpdateSkinnedVertices();
 	}
 
 	// === 좌측 패널: Skeleton Tree ===
@@ -1401,7 +1462,7 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 	}
 
 	// 선택된 본 인덱스 유효성 검사
-	assert((SelectedBoneIndex < 0 || SelectedBoneIndex >= InNumBones) && "Invalid bone index selected");
+	assert(( 0 <= SelectedBoneIndex && SelectedBoneIndex < InNumBones) && "Invalid bone index selected");
 
 	const TArray<FMeshBoneInfo>& BoneInfoArray = InRefSkeleton.GetRawRefBoneInfo();
 	const TArray<FTransform>& RefBonePoses = InRefSkeleton.GetRawRefBonePose();
@@ -1479,7 +1540,10 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// X
 		ImVec2 PosX = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		ImGui::DragFloat("##TransX", &TempTransform.Translation.X, 0.1f, 0.0f, 0.0f, "%.3f");
+		if (ImGui::DragFloat("##TransX", &TempTransform.Translation.X, 0.1f, 0.0f, 0.0f, "%.3f"))
+		{
+			bDirtyBoneTransforms = true;
+		}
 		ImVec2 SizeX = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(PosX.x + 5, PosX.y + 2), ImVec2(PosX.x + 5, PosX.y + SizeX.y - 2),
 			IM_COL32(255, 0, 0, 255), 2.0f);
@@ -1488,7 +1552,10 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// Y
 		ImVec2 PosY = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		ImGui::DragFloat("##TransY", &TempTransform.Translation.Y, 0.1f, 0.0f, 0.0f, "%.3f");
+		if (ImGui::DragFloat("##TransY", &TempTransform.Translation.Y, 0.1f, 0.0f, 0.0f, "%.3f"))
+		{
+			bDirtyBoneTransforms = true;
+		}
 		ImVec2 SizeY = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(PosY.x + 5, PosY.y + 2), ImVec2(PosY.x + 5, PosY.y + SizeY.y - 2),
 			IM_COL32(0, 255, 0, 255), 2.0f);
@@ -1497,7 +1564,10 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// Z
 		ImVec2 PosZ = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		ImGui::DragFloat("##TransZ", &TempTransform.Translation.Z, 0.1f, 0.0f, 0.0f, "%.3f");
+		if (ImGui::DragFloat("##TransZ", &TempTransform.Translation.Z, 0.1f, 0.0f, 0.0f, "%.3f"))
+		{
+			bDirtyBoneTransforms = true;
+		}
 		ImVec2 SizeZ = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(PosZ.x + 5, PosZ.y + 2), ImVec2(PosZ.x + 5, PosZ.y + SizeZ.y - 2),
 			IM_COL32(0, 0, 255, 255), 2.0f);
@@ -1512,7 +1582,10 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// Pitch (X)
 		ImVec2 RotX = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		ImGui::DragFloat("##RotX", &EulerAngles.X, 1.0f, 0.0f, 0.0f, "%.3f");
+		if (ImGui::DragFloat("##RotX", &EulerAngles.X, 1.0f, 0.0f, 0.0f, "%.3f"))
+		{
+			bDirtyBoneTransforms = true;
+		}
 		ImVec2 SizeRotX = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(RotX.x + 5, RotX.y + 2), ImVec2(RotX.x + 5, RotX.y + SizeRotX.y - 2),
 			IM_COL32(255, 0, 0, 255), 2.0f);
@@ -1521,7 +1594,10 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// Yaw (Y)
 		ImVec2 RotY = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		ImGui::DragFloat("##RotY", &EulerAngles.Y, 1.0f, 0.0f, 0.0f, "%.3f");
+		if (ImGui::DragFloat("##RotY", &EulerAngles.Y, 1.0f, 0.0f, 0.0f, "%.3f"))
+		{
+			bDirtyBoneTransforms = true;
+		}
 		ImVec2 SizeRotY = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(RotY.x + 5, RotY.y + 2), ImVec2(RotY.x + 5, RotY.y + SizeRotY.y - 2),
 			IM_COL32(0, 255, 0, 255), 2.0f);
@@ -1530,7 +1606,10 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// Roll (Z)
 		ImVec2 RotZ = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		ImGui::DragFloat("##RotZ", &EulerAngles.Z, 1.0f, 0.0f, 0.0f, "%.3f");
+		if (ImGui::DragFloat("##RotZ", &EulerAngles.Z, 1.0f, 0.0f, 0.0f, "%.3f"))
+		{
+			bDirtyBoneTransforms = true;
+		}
 		ImVec2 SizeRotZ = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(RotZ.x + 5, RotZ.y + 2), ImVec2(RotZ.x + 5, RotZ.y + SizeRotZ.y - 2),
 			IM_COL32(0, 0, 255, 255), 2.0f);
@@ -1546,7 +1625,10 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// Scale X
 		ImVec2 ScaleX = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		ImGui::DragFloat("##ScaleX", &TempTransform.Scale.X, 0.01f, 0.0f, 0.0f, "%.3f");
+		if (ImGui::DragFloat("##ScaleX", &TempTransform.Scale.X, 0.01f, 0.0f, 0.0f, "%.3f"))
+		{
+			bDirtyBoneTransforms = true;
+		}
 		ImVec2 SizeScaleX = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(ScaleX.x + 5, ScaleX.y + 2), ImVec2(ScaleX.x + 5, ScaleX.y + SizeScaleX.y - 2),
 			IM_COL32(255, 0, 0, 255), 2.0f);
@@ -1555,7 +1637,10 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// Scale Y
 		ImVec2 ScaleY = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		ImGui::DragFloat("##ScaleY", &TempTransform.Scale.Y, 0.01f, 0.0f, 0.0f, "%.3f");
+		if (ImGui::DragFloat("##ScaleY", &TempTransform.Scale.Y, 0.01f, 0.0f, 0.0f, "%.3f"))
+		{
+			bDirtyBoneTransforms = true;
+		}
 		ImVec2 SizeScaleY = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(ScaleY.x + 5, ScaleY.y + 2), ImVec2(ScaleY.x + 5, ScaleY.y + SizeScaleY.y - 2),
 			IM_COL32(0, 255, 0, 255), 2.0f);
@@ -1564,7 +1649,10 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// Scale Z
 		ImVec2 ScaleZ = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
-		ImGui::DragFloat("##ScaleZ", &TempTransform.Scale.Z, 0.01f, 0.0f, 0.0f, "%.3f");
+		if (ImGui::DragFloat("##ScaleZ", &TempTransform.Scale.Z, 0.01f, 0.0f, 0.0f, "%.3f"))
+		{
+			bDirtyBoneTransforms = true;
+		}
 		ImVec2 SizeScaleZ = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(ScaleZ.x + 5, ScaleZ.y + 2), ImVec2(ScaleZ.x + 5, ScaleZ.y + SizeScaleZ.y - 2),
 			IM_COL32(0, 0, 255, 255), 2.0f);
