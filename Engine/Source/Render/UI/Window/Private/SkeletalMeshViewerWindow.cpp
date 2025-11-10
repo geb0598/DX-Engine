@@ -164,27 +164,6 @@ void USkeletalMeshViewerWindow::Initialize()
 		}
 
 		PreviewSkeletalMeshActor = PreviewWorld->SpawnActor(AActor::StaticClass());
-		//// 테스트: StaticMesh Actor 스폰 (Airdrop)
-		//PreviewSkeletalMeshActor = PreviewWorld->SpawnActor(AStaticMeshActor::StaticClass());
-		//if (PreviewSkeletalMeshActor)
-		//{
-		//	PreviewSkeletalMeshActor->SetActorLocation(FVector(0, 0, 0));
-		//	PreviewSkeletalMeshActor->SetActorRotation(FQuaternion::Identity());
-
-		//	if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(PreviewSkeletalMeshActor))
-		//	{
-		//		if (UStaticMeshComponent* MeshComp = StaticMeshActor->GetStaticMeshComponent())
-		//		{
-		//			// Airdrop 메쉬 로드
-		//			MeshComp->SetStaticMesh(FName("Data/Airdrop.obj"));
-		//			UE_LOG("SkeletalMeshViewerWindow: Airdrop StaticMesh 설정 완료 (Location: 0,0,0)");
-
-		//			// 기본적으로 StaticMeshComponent를 선택하고 기즈모 활성화
-		//			SelectedComponent = MeshComp;
-		//		}
-		//	}
-		//	UE_LOG("SkeletalMeshViewerWindow: StaticMesh Actor 스폰 완료");
-		//}
 	}
 
 	// Gizmo 생성
@@ -195,13 +174,6 @@ void USkeletalMeshViewerWindow::Initialize()
 		ViewerGizmo->SetUseCustomRotationSnap(true);
 		UE_LOG("SkeletalMeshViewerWindow: Gizmo 생성 및 초기 선택 완료");
 	}
-	//if (ViewerGizmo && SelectedComponent)
-	//{
-	//	ViewerGizmo->SetSelectedComponent(SelectedComponent);
-	//	// 뷰어의 Gizmo는 ViewportManager 대신 자체 툴바 설정 사용
-	//	ViewerGizmo->SetUseCustomRotationSnap(true);
-	//	UE_LOG("SkeletalMeshViewerWindow: Gizmo 생성 및 초기 선택 완료");
-	//}
 
 	// ObjectPicker 생성
 	ViewerObjectPicker = new UObjectPicker();
@@ -821,23 +793,8 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 			ImGui::Text("Parent Name: (Root)");
 		}
 
-		/*ImGui::Separator();
-		ImGui::Text("Local Transform:");
-		const FTransform& BonePose = BonePoseArray[BoneIndex];
-		ImGui::Text("  Location: (%.2f, %.2f, %.2f)", BonePose.Translation.X, BonePose.Translation.Y, BonePose.Translation.Z);
-
-		FVector EulerRot = BonePose.Rotation.ToEuler();
-		ImGui::Text("  Rotation: (%.2f, %.2f, %.2f)", EulerRot.X, EulerRot.Y, EulerRot.Z);
-		ImGui::Text("  Scale: (%.2f, %.2f, %.2f)", BonePose.Scale.X, BonePose.Scale.Y, BonePose.Scale.Z);*/
-
 		ImGui::EndTooltip();
 	}
-
-	// 클릭 시 본 선택 (TODO: 선택 기능 구현)
-	// if (ImGui::IsItemClicked())
-	// {
-	//     SelectedBoneIndex = BoneIndex;
-	// }
 
 	// 클릭 시 본 선택
 	if (ImGui::IsItemClicked())
@@ -1448,16 +1405,6 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 	ImGui::TextColored(ImVec4(0.8f, 0.2f, 0.8f, 1.0f), "Edit Tools");
 	ImGui::Separator();
 	ImGui::Spacing();
-
-	// TempBoneSpaceTransforms 초기화 확인
-	/*if (TempBoneSpaceTransforms.IsEmpty())
-	{
-		TempBoneSpaceTransforms.SetNum(NumBones);
-		for (int32 i = 0; i < NumBones; ++i)
-		{
-			TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
-		}
-	}*/
 
 	// 선택된 본이 없는 경우
 	if (SelectedBoneIndex == INDEX_NONE)
