@@ -4,6 +4,13 @@
 #include "Manager/Asset/Public/AssetManager.h"
 
 // ========================================
+// 🔸 Static member variable definition
+// ========================================
+
+TMap<FName, std::unique_ptr<FStaticMesh>> FFbxManager::FbxFStaticMeshMap;
+TMap<FName, std::unique_ptr<FStaticMesh>> FFbxManager::FbxSkeletalFStaticMeshMap;
+
+// ========================================
 // 🔸 Public API
 // ========================================
 
@@ -31,6 +38,13 @@ UObject* FFbxManager::LoadFbxMesh(const FName& FilePath, const FFbxImporter::Con
 
 FStaticMesh* FFbxManager::LoadFbxStaticMeshAsset(const FName& FilePath, const FFbxImporter::Configuration& Config)
 {
+	// 캐시에서 먼저 찾기
+	auto* FoundValuePtr = FbxFStaticMeshMap.Find(FilePath);
+	if (FoundValuePtr)
+	{
+		return FoundValuePtr->get();
+	}
+
 	FFbxStaticMeshInfo MeshInfo;
 	if (!FFbxImporter::LoadStaticMesh(FilePath.ToString(), &MeshInfo, Config))
 	{
@@ -44,7 +58,10 @@ FStaticMesh* FFbxManager::LoadFbxStaticMeshAsset(const FName& FilePath, const FF
 	ConvertFbxToStaticMesh(MeshInfo, StaticMesh.get());
 
 	UE_LOG_SUCCESS("FBX StaticMesh 변환 완료: %s", FilePath.ToString().c_str());
-	return StaticMesh.release();
+
+	// 캐시에 저장
+	FbxFStaticMeshMap.Emplace(FilePath, std::move(StaticMesh));
+	return FbxFStaticMeshMap[FilePath].get();
 }
 
 UStaticMesh* FFbxManager::LoadFbxStaticMesh(const FName& FilePath, const FFbxImporter::Configuration& Config)
@@ -154,8 +171,15 @@ UMaterial* FFbxManager::CreateMaterialFromInfo(const FMaterial& MaterialInfo, in
 // 🔸 Skeletal Mesh Public API
 // ========================================
 
-USkeletalMesh* FFbxManager::LoadFbxSkeletalMesh(const FName& FilePath, const FFbxImporter::Configuration& Config)
+FStaticMesh* FFbxManager::LoadFbxSkeletalMeshAsset(const FName& FilePath, const FFbxImporter::Configuration& Config)
 {
+	// 캐시에서 먼저 찾기
+	auto* FoundValuePtr = FbxSkeletalFStaticMeshMap.Find(FilePath);
+	if (FoundValuePtr)
+	{
+		return FoundValuePtr->get();
+	}
+
 	FFbxSkeletalMeshInfo SkeletalMeshInfo;
 	if (!FFbxImporter::LoadSkeletalMesh(FilePath.ToString(), &SkeletalMeshInfo, Config))
 	{
@@ -163,9 +187,46 @@ USkeletalMesh* FFbxManager::LoadFbxSkeletalMesh(const FName& FilePath, const FFb
 		return nullptr;
 	}
 
-	USkeletalMesh* SkeletalMesh = NewObject<USkeletalMesh>();
+	// FStaticMesh 생성 (지오메트리 데이터만)
+	auto StaticMeshAsset = std::make_unique<FStaticMesh>();
+	ConvertFbxSkeletalToStaticMesh(SkeletalMeshInfo, StaticMeshAsset.get());
+	StaticMeshAsset->PathFileName = FilePath;
 
-	if (!ConvertFbxToSkeletalMesh(SkeletalMeshInfo, SkeletalMesh))
+	UE_LOG_SUCCESS("FBX SkeletalMesh Asset 변환 완료: %s", FilePath.ToString().c_str());
+
+	// 캐시에 저장
+	FbxSkeletalFStaticMeshMap.Emplace(FilePath, std::move(StaticMeshAsset));
+	return FbxSkeletalFStaticMeshMap[FilePath].get();
+}
+
+USkeletalMesh* FFbxManager::LoadFbxSkeletalMesh(const FName& FilePath, const FFbxImporter::Configuration& Config)
+{
+	// 1) AssetManager 캐시에서 먼저 찾기
+	UAssetManager& AssetManager = UAssetManager::GetInstance();
+	if (USkeletalMesh* Cached = AssetManager.GetSkeletalMeshFromCache(FilePath))
+	{
+		return Cached;
+	}
+
+	// 2) FBX 스켈레탈 메시 정보 로드
+	FFbxSkeletalMeshInfo SkeletalMeshInfo;
+	if (!FFbxImporter::LoadSkeletalMesh(FilePath.ToString(), &SkeletalMeshInfo, Config))
+	{
+		UE_LOG_ERROR("FBX 스켈레탈 메시 로드 실패: %s", FilePath.ToString().c_str());
+		return nullptr;
+	}
+
+	// 3) FStaticMesh Asset 로드 (지오메트리 데이터)
+	FStaticMesh* StaticMeshAsset = LoadFbxSkeletalMeshAsset(FilePath, Config);
+	if (!StaticMeshAsset)
+	{
+		UE_LOG_ERROR("FBX SkeletalMesh Asset 로드 실패: %s", FilePath.ToString().c_str());
+		return nullptr;
+	}
+
+	// 4) USkeletalMesh 생성 및 설정
+	USkeletalMesh* SkeletalMesh = NewObject<USkeletalMesh>();
+	if (!ConvertFbxToSkeletalMesh(SkeletalMeshInfo, SkeletalMesh, StaticMeshAsset))
 	{
 		UE_LOG_ERROR("FBX → SkeletalMesh 변환 실패: %s", FilePath.ToString().c_str());
 		delete SkeletalMesh;
@@ -173,6 +234,10 @@ USkeletalMesh* FFbxManager::LoadFbxSkeletalMesh(const FName& FilePath, const FFb
 	}
 
 	UE_LOG_SUCCESS("FBX SkeletalMesh 변환 완료: %s", FilePath.ToString().c_str());
+
+	// 5) AssetManager에 등록
+	AssetManager.AddSkeletalMeshToCache(FilePath, SkeletalMesh);
+
 	return SkeletalMesh;
 }
 
@@ -180,7 +245,7 @@ USkeletalMesh* FFbxManager::LoadFbxSkeletalMesh(const FName& FilePath, const FFb
 // 🔸 Skeletal Mesh Helper Functions
 // ========================================
 
-bool FFbxManager::ConvertFbxToSkeletalMesh(const FFbxSkeletalMeshInfo& FbxData, USkeletalMesh* OutSkeletalMesh)
+bool FFbxManager::ConvertFbxToSkeletalMesh(const FFbxSkeletalMeshInfo& FbxData, USkeletalMesh* OutSkeletalMesh, FStaticMesh* StaticMeshAsset)
 {
 	if (!OutSkeletalMesh)
 	{
@@ -188,14 +253,17 @@ bool FFbxManager::ConvertFbxToSkeletalMesh(const FFbxSkeletalMeshInfo& FbxData, 
 		return false;
 	}
 
+	if (!StaticMeshAsset)
+	{
+		UE_LOG_ERROR("유효하지 않은 StaticMeshAsset입니다.");
+		return false;
+	}
+
 	// 1. 스켈레톤 변환
 	ConvertSkeleton(FbxData.Bones, OutSkeletalMesh->GetRefSkeleton());
 
 	// 2. UStaticMesh 생성 및 설정 (지오메트리 데이터)
-	FStaticMesh* StaticMeshAsset = new FStaticMesh();
-	ConvertFbxSkeletalToStaticMesh(FbxData, StaticMeshAsset);
-	StaticMeshAsset->PathFileName = FbxData.PathFileName;
-
+	// StaticMeshAsset는 이미 LoadFbxSkeletalMeshAsset()에서 생성 및 캐싱됨
 	UStaticMesh* StaticMesh = NewObject<UStaticMesh>();
 	StaticMesh->SetStaticMeshAsset(StaticMeshAsset);
 
@@ -336,4 +404,15 @@ void FFbxManager::ConvertFbxSkeletalToStaticMesh(const FFbxSkeletalMeshInfo& Fbx
 
 	UE_LOG("[FbxManager] StaticMesh 변환 완료 - Vertices: %d, Indices: %d, Sections: %d",
 		OutStaticMesh->Vertices.Num(), OutStaticMesh->Indices.Num(), OutStaticMesh->Sections.Num());
+}
+
+// ========================================
+// 🔸 Memory Management
+// ========================================
+
+void FFbxManager::Release()
+{
+	// unique_ptr이므로 Empty()만으로 자동 메모리 해제
+	FbxFStaticMeshMap.Empty();
+	FbxSkeletalFStaticMeshMap.Empty();
 }
