@@ -11,6 +11,8 @@ class UAmbientLightComponent;
 class UDirectionalLightComponent;
 class UWorld;
 class AActor;
+class UGizmo;
+class UObjectPicker;
 
 /**
  * @brief SkeletalMesh 뷰어 윈도우
@@ -112,6 +114,11 @@ private:
 	ID3D11DepthStencilView* ViewerDepthStencilView = nullptr;
 	ID3D11Texture2D* ViewerDepthStencilTexture = nullptr;
 
+	// HitProxy 렌더 타겟 (마우스 피킹용)
+	ID3D11Texture2D* ViewerHitProxyTexture = nullptr;
+	ID3D11RenderTargetView* ViewerHitProxyRTV = nullptr;
+	ID3D11ShaderResourceView* ViewerHitProxySRV = nullptr;
+
 	uint32 ViewerWidth = 800;
 	uint32 ViewerHeight = 600;
 
@@ -148,6 +155,13 @@ private:
 	AActor* PreviewSkeletalMeshActor = nullptr;
 	AActor* PreviewAmbientLightActor = nullptr;
 	AActor* PreviewDirectionalLightActor = nullptr;
+
+	// 기즈모 및 오브젝트 피커
+	UGizmo* ViewerGizmo = nullptr;
+	UObjectPicker* ViewerObjectPicker = nullptr;
+
+	// 선택된 컴포넌트 (기즈모 타겟)
+	class USceneComponent* SelectedComponent = nullptr;
 
 public:
 	// 그리드 설정 접근자

@@ -142,28 +142,7 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 			}
 		}
 
-		// 중심 구체 충돌 검사
-		{
-			const float SphereRadius = Gizmo.GetTranslateRadius() * 2.5f;
-			FVector ToSphere = GizmoLocation - WorldRayOrigin;
-			float ProjectionLength = ToSphere.Dot(WorldRayDirection);
-
-			if (ProjectionLength > 0.0f)
-			{
-				FVector ClosestPoint = WorldRayOrigin + WorldRayDirection * ProjectionLength;
-				float DistanceToRay = (ClosestPoint - GizmoLocation).Length();
-
-				if (DistanceToRay <= SphereRadius)
-				{
-					// 구체와 충돌
-					CollisionPoint = ClosestPoint;
-					Gizmo.SetGizmoDirection(EGizmoDirection::Center);
-					return;
-				}
-			}
-		}
-
-		// 평면과 중심 구체와 충돌하지 않았으면 축 충돌 검사
+		// 평면과 충돌하지 않았으면 축 충돌 검사 (중심 구체보다 우선순위 높음)
 		FVector GizmoDistanceVector = WorldRayOrigin - GizmoLocation;
 		bool bIsCollide = false;
 
@@ -211,6 +190,27 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 					case 1:	Gizmo.SetGizmoDirection(EGizmoDirection::Right);	return;
 					case 2:	Gizmo.SetGizmoDirection(EGizmoDirection::Up);		return;
 					}
+				}
+			}
+		}
+
+		// 평면과 축 모두 충돌하지 않았으면 마지막으로 중심 구체 충돌 검사 (최하위 우선순위)
+		{
+			const float SphereRadius = Gizmo.GetTranslateRadius() * 2.5f;
+			FVector ToSphere = GizmoLocation - WorldRayOrigin;
+			float ProjectionLength = ToSphere.Dot(WorldRayDirection);
+
+			if (ProjectionLength > 0.0f)
+			{
+				FVector ClosestPoint = WorldRayOrigin + WorldRayDirection * ProjectionLength;
+				float DistanceToRay = (ClosestPoint - GizmoLocation).Length();
+
+				if (DistanceToRay <= SphereRadius)
+				{
+					// 구체와 충돌
+					CollisionPoint = ClosestPoint;
+					Gizmo.SetGizmoDirection(EGizmoDirection::Center);
+					return;
 				}
 			}
 		}

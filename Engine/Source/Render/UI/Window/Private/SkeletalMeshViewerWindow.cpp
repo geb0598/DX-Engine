@@ -21,6 +21,9 @@
 #include "Actor/Public/DirectionalLight.h"
 #include "Actor/Public/StaticMeshActor.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
+#include "Editor/Public/Gizmo.h"
+#include "Editor/Public/ObjectPicker.h"
+#include "Manager/Input/Public/InputManager.h"
 
 IMPLEMENT_CLASS(USkeletalMeshViewerWindow, UUIWindow)
 
@@ -171,10 +174,28 @@ void USkeletalMeshViewerWindow::Initialize()
 					// Airdrop 메쉬 로드
 					MeshComp->SetStaticMesh(FName("Data/Airdrop.obj"));
 					UE_LOG("SkeletalMeshViewerWindow: Airdrop StaticMesh 설정 완료 (Location: 0,0,0)");
+
+					// 기본적으로 StaticMeshComponent를 선택하고 기즈모 활성화
+					SelectedComponent = MeshComp;
 				}
 			}
 			UE_LOG("SkeletalMeshViewerWindow: StaticMesh Actor 스폰 완료");
 		}
+	}
+
+	// Gizmo 생성
+	ViewerGizmo = new UGizmo();
+	if (ViewerGizmo && SelectedComponent)
+	{
+		ViewerGizmo->SetSelectedComponent(SelectedComponent);
+		UE_LOG("SkeletalMeshViewerWindow: Gizmo 생성 및 초기 선택 완료");
+	}
+
+	// ObjectPicker 생성
+	ViewerObjectPicker = new UObjectPicker();
+	if (ViewerObjectPicker)
+	{
+		UE_LOG("SkeletalMeshViewerWindow: ObjectPicker 생성 완료");
 	}
 
 	bIsInitialized = true;
@@ -209,6 +230,23 @@ void USkeletalMeshViewerWindow::Cleanup()
 		delete ToolbarWidget;
 		ToolbarWidget = nullptr;
 	}
+
+	// Gizmo 삭제
+	if (ViewerGizmo)
+	{
+		delete ViewerGizmo;
+		ViewerGizmo = nullptr;
+	}
+
+	// ObjectPicker 삭제
+	if (ViewerObjectPicker)
+	{
+		delete ViewerObjectPicker;
+		ViewerObjectPicker = nullptr;
+	}
+
+	// 선택된 컴포넌트 참조 초기화
+	SelectedComponent = nullptr;
 
 	// Preview World 정리 (Actor들은 World 소멸 시 자동으로 정리됨)
 	if (PreviewWorld)
@@ -354,6 +392,57 @@ void USkeletalMeshViewerWindow::CreateRenderTarget(uint32 Width, uint32 Height)
 		return;
 	}
 
+	// HitProxy 렌더 타겟 텍스처 생성 (R8G8B8A8)
+	D3D11_TEXTURE2D_DESC HitProxyTextureDesc = {};
+	HitProxyTextureDesc.Width = Width;
+	HitProxyTextureDesc.Height = Height;
+	HitProxyTextureDesc.MipLevels = 1;
+	HitProxyTextureDesc.ArraySize = 1;
+	HitProxyTextureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	HitProxyTextureDesc.SampleDesc.Count = 1;
+	HitProxyTextureDesc.SampleDesc.Quality = 0;
+	HitProxyTextureDesc.Usage = D3D11_USAGE_DEFAULT;
+	HitProxyTextureDesc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	HitProxyTextureDesc.CPUAccessFlags = 0;
+	HitProxyTextureDesc.MiscFlags = 0;
+
+	hr = Device->CreateTexture2D(&HitProxyTextureDesc, nullptr, &ViewerHitProxyTexture);
+	if (FAILED(hr))
+	{
+		UE_LOG_ERROR("SkeletalMeshViewerWindow: HitProxy 텍스처 생성 실패");
+		ReleaseRenderTarget();
+		return;
+	}
+
+	// HitProxy 렌더 타겟 뷰 생성
+	D3D11_RENDER_TARGET_VIEW_DESC HitProxyRTVDesc = {};
+	HitProxyRTVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	HitProxyRTVDesc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+	HitProxyRTVDesc.Texture2D.MipSlice = 0;
+
+	hr = Device->CreateRenderTargetView(ViewerHitProxyTexture, &HitProxyRTVDesc, &ViewerHitProxyRTV);
+	if (FAILED(hr))
+	{
+		UE_LOG_ERROR("SkeletalMeshViewerWindow: HitProxy RTV 생성 실패");
+		ReleaseRenderTarget();
+		return;
+	}
+
+	// HitProxy 셰이더 리소스 뷰 생성
+	D3D11_SHADER_RESOURCE_VIEW_DESC HitProxySRVDesc = {};
+	HitProxySRVDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	HitProxySRVDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	HitProxySRVDesc.Texture2D.MostDetailedMip = 0;
+	HitProxySRVDesc.Texture2D.MipLevels = 1;
+
+	hr = Device->CreateShaderResourceView(ViewerHitProxyTexture, &HitProxySRVDesc, &ViewerHitProxySRV);
+	if (FAILED(hr))
+	{
+		UE_LOG_ERROR("SkeletalMeshViewerWindow: HitProxy SRV 생성 실패");
+		ReleaseRenderTarget();
+		return;
+	}
+
 	ViewerWidth = Width;
 	ViewerHeight = Height;
 
@@ -365,6 +454,9 @@ void USkeletalMeshViewerWindow::CreateRenderTarget(uint32 Width, uint32 Height)
  */
 void USkeletalMeshViewerWindow::ReleaseRenderTarget()
 {
+	SafeRelease(ViewerHitProxySRV);
+	SafeRelease(ViewerHitProxyRTV);
+	SafeRelease(ViewerHitProxyTexture);
 	SafeRelease(ViewerDepthStencilView);
 	SafeRelease(ViewerDepthStencilTexture);
 	SafeRelease(ViewerShaderResourceView);
@@ -802,6 +894,30 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 					ViewerBatchLines->Render();
 				}
 
+				// Gizmo 렌더링
+				if (ViewerGizmo && SelectedComponent)
+				{
+					static bool bLoggedGizmoRender = false;
+					if (!bLoggedGizmoRender)
+					{
+						UE_LOG("SkeletalMeshViewerWindow: Rendering Gizmo for component: %s",
+							SelectedComponent->GetOwner()->GetClass()->GetName().ToString().c_str());
+						bLoggedGizmoRender = true;
+					}
+					ViewerGizmo->UpdateScale(Camera, D3DViewport);
+					ViewerGizmo->RenderGizmo(Camera, D3DViewport);
+				}
+				else
+				{
+					static bool bLoggedNoGizmo = false;
+					if (!bLoggedNoGizmo)
+					{
+						UE_LOG_WARNING("SkeletalMeshViewerWindow: Gizmo not rendering - ViewerGizmo: %p, SelectedComponent: %p",
+							ViewerGizmo, SelectedComponent);
+						bLoggedNoGizmo = true;
+					}
+				}
+
 				// View 정리
 				delete View;
 			}
@@ -821,49 +937,162 @@ void USkeletalMeshViewerWindow::Render3DViewportPanel()
 	if (ViewerShaderResourceView)
 	{
 		ImTextureID TextureID = reinterpret_cast<ImTextureID>(ViewerShaderResourceView);
+
+		// 현재 커서 위치 저장
+		ImVec2 CursorPos = ImGui::GetCursorScreenPos();
+
+		// 이미지 렌더링
 		ImGui::Image(TextureID, ViewportSize);
 
-		// 뷰포트 위에 마우스가 있을 때만 드래그 시작
+		// 이미지 위에 InvisibleButton을 겹쳐서 마우스 이벤트 캡처
+		ImGui::SetCursorScreenPos(CursorPos);
+		ImGui::InvisibleButton("##ViewportInteraction", ViewportSize, ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonRight | ImGuiButtonFlags_MouseButtonMiddle);
+
+		// InvisibleButton이 활성화되면 ImGui가 마우스를 캡처하지 않도록 설정
+		if (ImGui::IsItemActive() || ImGui::IsItemHovered())
+		{
+			ImGuiIO& IO = ImGui::GetIO();
+			IO.WantCaptureMouse = false; // ImGui가 마우스를 캡처하지 않도록
+		}
+
+		// 뷰포트 위에 마우스가 있을 때만 처리
 		if (ImGui::IsItemHovered())
 		{
+			UCamera* Camera = ViewerViewportClient->GetCamera();
+			if (Camera)
+			{
+				// 마우스 위치를 NDC로 변환
+				ImVec2 MousePos = ImGui::GetMousePos();
+				ImVec2 WindowPos = ImGui::GetItemRectMin();
+
+				float MouseX = MousePos.x - WindowPos.x;
+				float MouseY = MousePos.y - WindowPos.y;
+
+				const float NdcX = (MouseX / ViewerWidth) * 2.0f - 1.0f;
+				const float NdcY = -((MouseY / ViewerHeight) * 2.0f - 1.0f);
+
+				FRay WorldRay = Camera->ConvertToWorldRay(NdcX, NdcY);
+
+				// 기즈모 호버링 (Ray 기반 피킹)
+				FVector CollisionPoint;
+				if (ViewerGizmo && SelectedComponent && ViewerObjectPicker)
+				{
+					ViewerObjectPicker->PickGizmo(Camera, WorldRay, *ViewerGizmo, CollisionPoint);
+				}
+
+				// 마우스 왼쪽 버튼 릴리즈
+				if (ImGui::IsMouseReleased(ImGuiMouseButton_Left))
+				{
+					if (ViewerGizmo)
+					{
+						ViewerGizmo->EndDrag();
+					}
+				}
+
+				// 기즈모 드래그 중
+				if (ViewerGizmo && ViewerGizmo->IsDragging() && SelectedComponent)
+				{
+					// 기즈모 드래그 처리는 아래 카메라 조작 섹션 이전에 처리
+					// (여기서는 플래그만 확인, 실제 처리는 밖에서)
+				}
+				// 기즈모를 클릭했을 때
+				else if (ViewerGizmo && ViewerGizmo->GetGizmoDirection() != EGizmoDirection::None)
+				{
+					if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+					{
+						ViewerGizmo->OnMouseDragStart(CollisionPoint);
+					}
+				}
+				// 기즈모가 아닌 곳을 클릭 - 액터 피킹
+				else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+				{
+					// TODO: HitProxy 기반 피킹 구현
+					// 현재는 항상 StaticMeshActor 선택 유지
+					if (PreviewSkeletalMeshActor && !SelectedComponent)
+					{
+						if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(PreviewSkeletalMeshActor))
+						{
+							SelectedComponent = StaticMeshActor->GetStaticMeshComponent();
+							if (ViewerGizmo)
+							{
+								ViewerGizmo->SetSelectedComponent(SelectedComponent);
+							}
+						}
+					}
+				}
+			}
+
 			// 우클릭이 처음 눌렸을 때 드래그 시작
 			if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
 			{
 				bIsDraggingRightButton = true;
-				HWND hwnd = (HWND)ImGui::GetMainViewport()->PlatformHandleRaw;
-				if (hwnd)
-				{
-					SetCapture(hwnd);
-				}
 			}
 
 			// 중간 버튼이 처음 눌렸을 때 드래그 시작
 			if (ImGui::IsMouseClicked(ImGuiMouseButton_Middle))
 			{
 				bIsDraggingMiddleButton = true;
-				HWND hwnd = (HWND)ImGui::GetMainViewport()->PlatformHandleRaw;
-				if (hwnd)
-				{
-					SetCapture(hwnd);
-				}
+			}
+
+			// 마우스 버튼이 떼어졌을 때 드래그 종료 (IsItemHovered() 안에서)
+			if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+			{
+				bIsDraggingRightButton = false;
+			}
+
+			if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle))
+			{
+				bIsDraggingMiddleButton = false;
 			}
 		}
 
-		// 마우스 버튼이 떼어졌을 때 드래그 종료 (어디서든)
-		if (ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+		// IsItemHovered() 밖에서도 드래그 종료 처리 (안전장치)
+		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right))
 		{
 			bIsDraggingRightButton = false;
-			ReleaseCapture();
 		}
 
-		if (ImGui::IsMouseReleased(ImGuiMouseButton_Middle))
+		if (!ImGui::IsMouseDown(ImGuiMouseButton_Middle))
 		{
 			bIsDraggingMiddleButton = false;
-			ReleaseCapture();
 		}
 
+		// 기즈모 드래그 처리 (카메라 조작보다 우선)
+		if (ViewerGizmo && ViewerGizmo->IsDragging() && SelectedComponent && ViewerViewportClient)
+		{
+			UCamera* Camera = ViewerViewportClient->GetCamera();
+			if (Camera)
+			{
+				// 마우스 위치를 NDC로 변환
+				ImVec2 MousePos = ImGui::GetMousePos();
+				ImVec2 WindowPos = ImGui::GetItemRectMin();
+
+				float MouseX = MousePos.x - WindowPos.x;
+				float MouseY = MousePos.y - WindowPos.y;
+
+				const float NdcX = (MouseX / ViewerWidth) * 2.0f - 1.0f;
+				const float NdcY = -((MouseY / ViewerHeight) * 2.0f - 1.0f);
+
+				FRay WorldRay = Camera->ConvertToWorldRay(NdcX, NdcY);
+
+				// TODO: GetGizmoDragLocation/Rotation/Scale 구현
+				// 현재는 간단히 평행이동만 지원 (평면 기반 드래그)
+				if (ViewerGizmo->GetGizmoMode() == EGizmoMode::Translate)
+				{
+					// 기즈모 방향에 따른 평면 정의
+					FVector PlaneNormal = ViewerGizmo->GetPlaneNormal();
+					FVector GizmoLocation = SelectedComponent->GetWorldLocation();
+
+					FVector IntersectionPoint;
+					if (ViewerObjectPicker->IsRayCollideWithPlane(WorldRay, GizmoLocation, PlaneNormal, IntersectionPoint))
+					{
+						ViewerGizmo->SetLocation(IntersectionPoint);
+					}
+				}
+			}
+		}
 		// 드래그 중이거나 뷰포트 위에 있을 때 카메라 조작 처리
-		if ((bIsDraggingRightButton || bIsDraggingMiddleButton || ImGui::IsItemHovered()) && ViewerViewportClient)
+		else if ((bIsDraggingRightButton || bIsDraggingMiddleButton || ImGui::IsItemHovered()) && ViewerViewportClient)
 		{
 			UCamera* Camera = ViewerViewportClient->GetCamera();
 			if (Camera)
@@ -1582,7 +1811,7 @@ void USkeletalMeshViewerWindow::SetGridCellSize(float NewCellSize)
 
 	// ViewerBatchLines가 존재하면 그리드 업데이트
 	if (ViewerBatchLines)
-	{
+	{ 
 		ViewerBatchLines->UpdateUGridVertices(GridCellSize);
 		ViewerBatchLines->UpdateVertexBuffer();
 	}

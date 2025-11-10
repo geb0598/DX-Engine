@@ -69,7 +69,13 @@ UGizmo::~UGizmo() = default;
 
 void UGizmo::UpdateScale(const UCamera* InCamera, const D3D11_VIEWPORT& InViewport)
 {
-	TargetComponent = Cast<USceneComponent>(GEditor->GetEditorModule()->GetSelectedComponent());
+	// TargetComponent가 이미 설정되어 있지 않으면 GEditor에서 가져오기
+	// (뷰어 같은 곳에서는 SetSelectedComponent로 직접 설정됨)
+	if (!TargetComponent)
+	{
+		TargetComponent = Cast<USceneComponent>(GEditor->GetEditorModule()->GetSelectedComponent());
+	}
+
 	if (!TargetComponent || !InCamera)
 	{
 		return;
