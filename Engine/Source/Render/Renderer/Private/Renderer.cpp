@@ -1811,7 +1811,7 @@ void URenderer::RenderPreviewWorld(UWorld* InPreviewWorld, const FSceneView* InS
 		RenderPass->Execute(RenderingContext);
 	}
 
-	UE_LOG("RenderPreviewWorld: Rendered %d static meshes, %d lights",
+	/*UE_LOG("RenderPreviewWorld: Rendered %d static meshes, %d lights",
 		RenderingContext.StaticMeshes.Num(),
-		RenderingContext.DirectionalLights.Num() + RenderingContext.AmbientLights.Num());
+		RenderingContext.DirectionalLights.Num() + RenderingContext.AmbientLights.Num());*/
 }

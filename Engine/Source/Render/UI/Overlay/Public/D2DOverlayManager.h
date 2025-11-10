@@ -42,8 +42,9 @@ public:
 
 	/**
 	 * @brief 수집된 모든 렌더링 명령을 실행하고 클리어
+	 * @param CustomRenderTarget 커스텀 D2D RenderTarget (nullptr이면 메인 RenderTarget 사용)
 	 */
-	void FlushAndRender();
+	void FlushAndRender(ID2D1RenderTarget* CustomRenderTarget = nullptr);
 
 	/**
 	 * @brief 현재 뷰포트의 Width 반환

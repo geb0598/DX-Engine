@@ -71,6 +71,7 @@ public:
 	void SetPreviousMouseLocation(const FVector& Location) { PreviousMouseLocation = Location; }
 	void SetCurrentRotationAngle(float Angle) { CurrentRotationAngle = Angle; }
 	void SetPreviousScreenPos(const FVector2& ScreenPos) { PreviousScreenPos = ScreenPos; }
+	void SetDragStartScreenPos(const FVector2& ScreenPos) { DragStartScreenPos = ScreenPos; }
 
 	void SetWorld() { bIsWorld = true; }
 	void SetLocal() { bIsWorld = false; }

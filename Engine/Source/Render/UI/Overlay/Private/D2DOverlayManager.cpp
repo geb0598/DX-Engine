@@ -57,9 +57,15 @@ void FD2DOverlayManager::AddText(const wchar_t* Text, const D2D1_RECT_F& Rect, c
 	TextCommands.push_back(Cmd);
 }
 
-void FD2DOverlayManager::FlushAndRender()
+void FD2DOverlayManager::FlushAndRender(ID2D1RenderTarget* CustomRenderTarget)
 {
-	ID2D1RenderTarget* D2DRT = URenderer::GetInstance().GetDeviceResources()->GetD2DRenderTarget();
+	// CustomRenderTarget이 제공되면 사용, 아니면 메인 RenderTarget 사용
+	ID2D1RenderTarget* D2DRT = CustomRenderTarget;
+	if (!D2DRT)
+	{
+		D2DRT = URenderer::GetInstance().GetDeviceResources()->GetD2DRenderTarget();
+	}
+
 	if (!D2DRT)
 	{
 		return;

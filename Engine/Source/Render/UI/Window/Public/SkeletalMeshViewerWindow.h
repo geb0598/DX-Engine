@@ -125,6 +125,9 @@ private:
 	ID3D11RenderTargetView* ViewerHitProxyRTV = nullptr;
 	ID3D11ShaderResourceView* ViewerHitProxySRV = nullptr;
 
+	// D2D 렌더 타겟 (오버레이용)
+	ID2D1RenderTarget* ViewerD2DRenderTarget = nullptr;
+
 	uint32 ViewerWidth = 800;
 	uint32 ViewerHeight = 600;
 
@@ -184,4 +187,11 @@ private:
 	 * @brief 렌더 타겟 해제
 	 */
 	void ReleaseRenderTarget();
+
+	/**
+	 * @brief 기즈모 드래그 처리 함수들 (Editor.cpp와 동일한 로직)
+	 */
+	FVector GetViewerGizmoDragLocation(class UCamera* InCamera, FRay& WorldRay);
+	FQuaternion GetViewerGizmoDragRotation(class UCamera* InCamera, FRay& WorldRay);
+	FVector GetViewerGizmoDragScale(class UCamera* InCamera, FRay& WorldRay);
 };

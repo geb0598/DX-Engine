@@ -40,6 +40,11 @@ public:
 	EGizmoMode GetCurrentGizmoMode() const { return CurrentGizmoMode; }
 
 	/**
+	 * @brief Gizmo Mode 설정 (외부에서 변경 시 동기화용)
+	 */
+	void SetCurrentGizmoMode(EGizmoMode Mode) { CurrentGizmoMode = Mode; }
+
+	/**
 	 * @brief Select Mode 활성화 여부
 	 */
 	bool IsSelectModeActive() const { return bSelectModeActive; }
@@ -133,5 +138,5 @@ private:
 
 	// Rotation Snap 상태
 	bool bRotationSnapEnabled = false;
-	float RotationSnapAngle = 45.0f;
+	float RotationSnapAngle = 10.0f;
 };
