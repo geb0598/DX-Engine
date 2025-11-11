@@ -1067,7 +1067,6 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 				OutMeshInfo->TexCoordList.Add(FVector2(0, 0));
 			}
 
-			OutMeshInfo->Indices.Add(VertexCounter);
 			IndicesPerMaterial[MaterialIndex].Add(VertexCounter);
 			VertexCounter++;
 		}
