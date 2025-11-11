@@ -174,6 +174,8 @@ private:
 	// 그리드 설정
 	float GridCellSize = 1.0f;
 
+	bool bShowAllBones = false;
+
 	// Preview World (EWorldType::EditorPreview)
 	UWorld* PreviewWorld = nullptr;
 

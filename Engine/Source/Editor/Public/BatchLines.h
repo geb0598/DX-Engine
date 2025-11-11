@@ -28,6 +28,7 @@ public:
 	
 	// Bone Pyramid 렌더링용 업데이트 (특정 본 인덱스에 대한 사각뿔만 렌더링)
 	void UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMeshComponent, int32 InBoneIndex);
+	void UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMeshComponent);
 	void ClearBonePyramids();
 	
 	// GPU VertexBuffer에 복사

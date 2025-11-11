@@ -260,6 +260,85 @@ void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMesh
 	bChangedVertices = true;
 }
 
+void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMeshComponent)
+{
+	BonePyramidVertices.Empty();
+	BonePyramidIndices.Empty();
+
+	if (!SkeletalMeshComponent)
+	{
+		bRenderBonePyramids = false;
+		bChangedVertices = true;
+		return;
+	}
+
+	USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+	if (!SkeletalMesh)
+	{
+		bRenderBonePyramids = false;
+		bChangedVertices = true;
+		return;
+	}
+
+	const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
+	const int32 NumBones = RefSkeleton.GetRawBoneNum();
+
+	if (NumBones == 0)
+	{
+		bRenderBonePyramids = false;
+		bChangedVertices = true;
+		return;
+	}
+
+	// ComponentSpaceTransforms이 정상적으로 갱신되어 있는지 확인
+	if (SkeletalMeshComponent->IsSkinningDirty() == false)
+	{
+		SkeletalMeshComponent->RefreshBoneTransforms();
+	}
+
+	const TArray<FTransform>& ComponentSpaceTransforms = SkeletalMeshComponent->GetComponentSpaceTransforms();
+	const FMatrix& ComponentWorldMatrix = SkeletalMeshComponent->GetWorldTransformMatrix();
+
+	// 사각뿔 크기 (본 간 거리에 비례하여 조정)
+	constexpr float BaseSizeRatio = 0.1f;
+
+	uint32 CurrentVertexIndex = 0;
+
+	// 모든 본에 대해 피라미드 생성
+	for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+	{
+		int32 ParentIndex = RefSkeleton.GetRawParentIndex(BoneIndex);
+
+		// 루트 본(부모가 없는 본)은 건너뜀
+		if (ParentIndex == INDEX_NONE)
+		{
+			continue;
+		}
+
+		// 부모 본 -> 현재 본으로 이어지는 피라미드 생성
+		FVector ParentPos = ComponentWorldMatrix.TransformPosition(ComponentSpaceTransforms[ParentIndex].Translation);
+		FVector CurrentPos = ComponentWorldMatrix.TransformPosition(ComponentSpaceTransforms[BoneIndex].Translation);
+
+		float Distance = (CurrentPos - ParentPos).Length();
+
+		// 너무 짧은 본은 건너뜀 (거리가 거의 0인 경우)
+		if (Distance < MATH_EPSILON)
+		{
+			continue;
+		}
+
+		float BaseSize = Distance * BaseSizeRatio;
+
+		// 모든 본을 흰색으로 렌더링 (또는 원하는 색상으로 변경 가능)
+		CreatePyramid(ParentPos, CurrentPos, BaseSize, FVector4(1.0f, 1.0f, 1.0f, 1.0f), // White
+			BonePyramidVertices, BonePyramidIndices, CurrentVertexIndex);
+		CurrentVertexIndex += 5; // 피라미드는 5개의 정점 (base 4 + tip 1)
+	}
+
+	bRenderBonePyramids = (BonePyramidVertices.Num() > 0);
+	bChangedVertices = true;
+}
+
 void UBatchLines::ClearBonePyramids()
 {
 	BonePyramidVertices.Empty();

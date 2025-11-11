@@ -611,7 +611,16 @@ void USkeletalMeshViewerWindow::RenderLayout()
 		SkeletalMeshComponent->RefreshBoneTransforms();
 		SkeletalMeshComponent->UpdateSkinnedVertices();
 	}
-	ViewerBatchLines->UpdateBonePyramidVertices(SkeletalMeshComponent, SelectedBoneIndex);
+
+	// 본 피라미드 정점들 업데이트
+	if (bShowAllBones)
+	{
+		ViewerBatchLines->UpdateBonePyramidVertices(SkeletalMeshComponent);
+	}
+	else
+	{
+		ViewerBatchLines->UpdateBonePyramidVertices(SkeletalMeshComponent, SelectedBoneIndex);
+	}
 	ViewerBatchLines->UpdateVertexBuffer();
 
 	// === 좌측 패널: Skeleton Tree ===
@@ -1733,6 +1742,9 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 	ImGui::BulletText("애니메이션 프리뷰");
 	ImGui::BulletText("소켓 편집");
 	ImGui::BulletText("LOD 설정");
+
+
+	ImGui::Checkbox("Show All Bones", &bShowAllBones);
 
 	// Apply Changes 버튼 - 우측 하단에 고정
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.2f, 1.0f));
