@@ -33,6 +33,8 @@ public:
 	const FMatrix& GetWorldTransformMatrix() const;
 	const FMatrix& GetWorldTransformMatrixInverse() const;
 
+	FTransform GetWorldTransform() const;
+
 	FVector GetWorldLocation() const;
     FVector GetWorldRotation() const;
     FQuaternion GetWorldRotationAsQuaternion() const;

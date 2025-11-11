@@ -611,6 +611,8 @@ void USkeletalMeshViewerWindow::RenderLayout()
 		SkeletalMeshComponent->RefreshBoneTransforms();
 		SkeletalMeshComponent->UpdateSkinnedVertices();
 	}
+	ViewerBatchLines->UpdateBonePyramidVertices(SkeletalMeshComponent, SelectedBoneIndex);
+	ViewerBatchLines->UpdateVertexBuffer();
 
 	// === 좌측 패널: Skeleton Tree ===
 	if (ImGui::BeginChild("SkeletonTreePanel", ImVec2(LeftPanelWidth - SplitterWidth * 0.5f, PanelHeight), true))

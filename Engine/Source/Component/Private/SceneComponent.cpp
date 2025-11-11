@@ -226,6 +226,15 @@ const FMatrix& USceneComponent::GetWorldTransformMatrixInverse() const
 	return WorldTransformMatrixInverse;
 }
 
+FTransform USceneComponent::GetWorldTransform() const
+{
+	FTransform WorldTransform;
+	WorldTransform.Translation = GetWorldLocation();
+	WorldTransform.Rotation = GetWorldRotationAsQuaternion();
+	WorldTransform.Scale = GetWorldScale3D();
+	return WorldTransform;
+}
+
 FVector USceneComponent::GetWorldLocation() const
 {
     return GetWorldTransformMatrix().GetLocation();
