@@ -255,8 +255,8 @@ void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMesh
 	FVector WorldPosition = SkeletalMeshComponent->GetWorldLocation();
 	if (ParentIndex != INDEX_NONE)
 	{
-		FVector ParentPos = ComponentSpaceTransforms[ParentIndex].Translation + WorldPosition;
-		FVector CurrentPos = ComponentSpaceTransforms[InBoneIndex].Translation + WorldPosition;
+		FVector ParentPos = SkeletalMeshComponent->GetWorldTransformMatrix().TransformPosition(ComponentSpaceTransforms[ParentIndex].Translation);
+		FVector CurrentPos = SkeletalMeshComponent->GetWorldTransformMatrix().TransformPosition(ComponentSpaceTransforms[InBoneIndex].Translation);
 		float Distance = (CurrentPos - ParentPos).Length();
 		float BaseSize = Distance * BaseSizeRatio;
 
