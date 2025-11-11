@@ -185,6 +185,8 @@ void USkeletalMeshViewerWindow::Initialize()
 	bIsInitialized = true;
 	bIsCleanedUp = false;
 
+	SetWindowState(EUIWindowState::Hidden);
+
 	UE_LOG("SkeletalMeshViewerWindow: 독립적인 뷰포트 및 Preview World 초기화 완료");
 }
 
@@ -277,6 +279,13 @@ void USkeletalMeshViewerWindow::OpenViewer(USkeletalMeshComponent* InSkeletalMes
 {
 	assert(InSkeletalMeshComponent);
 
+	// 이전에 등록된 SkeletalMeshComponent 제거
+	if (SkeletalMeshComponent && PreviewSkeletalMeshActor)
+	{
+		PreviewSkeletalMeshActor->RemoveComponent(SkeletalMeshComponent);
+	}
+
+	SkeletalMeshComponent = nullptr;
 	SelectedBoneIndex = INDEX_NONE;
 	bShowAllBones = false;
 
