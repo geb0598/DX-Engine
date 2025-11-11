@@ -28,7 +28,7 @@ public:
 	
 	// Bone Pyramid 렌더링용 업데이트 (특정 본 인덱스에 대한 사각뿔만 렌더링)
 	void UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMeshComponent, int32 InBoneIndex);
-	void UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMeshComponent);
+	void UpdateAllBonePyramidVertices(USkeletalMeshComponent* SkeletalMeshComponent, int32 InBoneIndex);
 	void ClearBonePyramids();
 	
 	// GPU VertexBuffer에 복사
@@ -91,9 +91,11 @@ private:
 	// Bone Pyramid 데이터
 	TArray<FVector> BonePyramidVertices;
 	TArray<uint32> BonePyramidIndices;
+	bool bRenderBonePyramids = false;
+	uint32 HighlightedIndexStart = 0;
+	uint32 HighlightedIndexCount = 0;
 
 	bool bRenderBox;
 	bool bRenderSpotLight = false;
-	bool bRenderBonePyramids = false;
 };
 

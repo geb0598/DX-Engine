@@ -39,6 +39,7 @@ UBatchLines::UBatchLines() : Grid(), BoundingBoxLines()
 	Primitive.VertexBuffer = FRenderResourceFactory::CreateVertexBuffer(Vertices.GetData(), Primitive.NumVertices * sizeof(FVector), true);
 	Primitive.IndexBuffer = FRenderResourceFactory::CreateIndexBuffer(Indices.GetData(), Primitive.NumIndices * sizeof(uint32));
 	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	Primitive.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
 }
 
 UBatchLines::~UBatchLines()
@@ -235,9 +236,17 @@ void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMesh
 		float Distance = (CurrentPos - ParentPos).Length();
 		float BaseSize = Distance * BaseSizeRatio;
 
+		HighlightedIndexStart = BonePyramidIndices.Num();
+		HighlightedIndexCount = 16; // 피라미드 라인 수
+
 		CreatePyramid(ParentPos, CurrentPos, BaseSize, FVector4(1.0f, 0.5f, 0.0f, 1.0f), // Orange
 			BonePyramidVertices, BonePyramidIndices, CurrentVertexIndex);
 		CurrentVertexIndex += 5; // 피라미드는 5개의 정점 (base 4 + tip 1)
+	}
+	else
+	{
+		HighlightedIndexStart = 0;
+		HighlightedIndexCount = 0;
 	}
 
 	// 2. 초록색 피라미드: InBoneIndex 본 -> 각 자식 본
@@ -260,7 +269,7 @@ void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMesh
 	bChangedVertices = true;
 }
 
-void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMeshComponent)
+void UBatchLines::UpdateAllBonePyramidVertices(USkeletalMeshComponent* SkeletalMeshComponent, int32 InBoneIndex)
 {
 	BonePyramidVertices.Empty();
 	BonePyramidIndices.Empty();
@@ -312,6 +321,8 @@ void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMesh
 		// 루트 본(부모가 없는 본)은 건너뜀
 		if (ParentIndex == INDEX_NONE)
 		{
+			HighlightedIndexStart = 0;
+			HighlightedIndexCount = 0;
 			continue;
 		}
 
@@ -328,6 +339,12 @@ void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMesh
 		}
 
 		float BaseSize = Distance * BaseSizeRatio;
+
+		if(BoneIndex == InBoneIndex)
+		{
+			HighlightedIndexStart = BonePyramidIndices.Num();
+			HighlightedIndexCount = 16; // 피라미드 라인 수
+		}
 
 		// 모든 본을 흰색으로 렌더링 (또는 원하는 색상으로 변경 가능)
 		CreatePyramid(ParentPos, CurrentPos, BaseSize, FVector4(1.0f, 1.0f, 1.0f, 1.0f), // White
@@ -648,6 +665,22 @@ void UBatchLines::RenderBonePyramids()
 			BonePyramidStartIndex,
 			NumBonePyramidIndices
 		);
+
+		// 특정 본에 해당하는 피라미드 강조 렌더링
+		if(HighlightedIndexCount > 0 && HighlightedIndexStart >= 0)
+		{
+			FVector4 OriginalColor = Primitive.Color;
+			Primitive.Color = FVector4(1.0f, 0.5f, 0.0f, 1.0f); // Highlighted Color (Orange)
+			Renderer.RenderEditorPrimitiveIndexed(
+				Primitive,
+				Primitive.RenderState,
+				sizeof(FVector),
+				sizeof(uint32),
+				BonePyramidStartIndex + HighlightedIndexStart,
+				HighlightedIndexCount
+			);
+			Primitive.Color = OriginalColor;
+		}
 
 		// 이전 DepthStencilState 복원
 		Primitive.bShouldAlwaysVisible = false;

@@ -277,6 +277,9 @@ void USkeletalMeshViewerWindow::OpenViewer(USkeletalMeshComponent* InSkeletalMes
 {
 	assert(InSkeletalMeshComponent);
 
+	SelectedBoneIndex = INDEX_NONE;
+	bShowAllBones = false;
+
 	// SkeletalMeshComponent 설정
 	SetWindowState(EUIWindowState::Visible);
 	DuplicateSkeletalMeshComponent(InSkeletalMeshComponent);
@@ -600,10 +603,6 @@ void USkeletalMeshViewerWindow::RenderLayout()
 	FReferenceSkeleton RefSkeleton;
 	int32 NumBones = 0;
 	bool bValid = CheckSkeletalValidity(SkeletalMesh, RefSkeleton, NumBones, false);
-	/*if(!bValid)
-	{
-		return;
-	}*/
 
 	// SkeletalMeshComponent에 임시 본 트랜스폼 적용
 	if (SkeletalMeshComponent)
@@ -615,7 +614,7 @@ void USkeletalMeshViewerWindow::RenderLayout()
 	// 본 피라미드 정점들 업데이트
 	if (bShowAllBones)
 	{
-		ViewerBatchLines->UpdateBonePyramidVertices(SkeletalMeshComponent);
+		ViewerBatchLines->UpdateAllBonePyramidVertices(SkeletalMeshComponent, SelectedBoneIndex);
 	}
 	else
 	{
