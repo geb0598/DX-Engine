@@ -214,25 +214,31 @@ void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMesh
 	}
 
 	// 각 본에 대해 월드 변환 계산
-	TArray<FVector> BoneWorldPositions;
-	BoneWorldPositions.SetNum(NumBones);
+	//TArray<FVector> BoneWorldPositions;
+	//BoneWorldPositions.SetNum(NumBones);
 
-	for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+	//for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+	//{
+	//	FTransform BoneTransform = SkeletalMeshComponent->GetBoneTransformLocal(BoneIndex);
+	//	
+	//	// 부모 본의 변환을 누적 적용
+	//	int32 ParentIndex = RefSkeleton.GetRawParentIndex(BoneIndex);
+	//	while (ParentIndex != INDEX_NONE)
+	//	{
+	//		FTransform ParentTransform = SkeletalMeshComponent->GetBoneTransformLocal(ParentIndex);
+	//		BoneTransform = BoneTransform * ParentTransform;
+	//		ParentIndex = RefSkeleton.GetRawParentIndex(ParentIndex);
+	//	}
+
+	//	// 컴포넌트 월드 변환 적용
+	//	BoneTransform = BoneTransform * SkeletalMeshComponent->GetWorldTransform();
+	//	BoneWorldPositions[BoneIndex] = BoneTransform.Translation;
+	//}
+
+	// ComponentSpaceTransforms이 정상적으로 갱신되어 있는지 확인
+	if(SkeletalMeshComponent->IsSkinningDirty() == false)
 	{
-		FTransform BoneTransform = SkeletalMeshComponent->GetBoneTransformLocal(BoneIndex);
-		
-		// 부모 본의 변환을 누적 적용
-		int32 ParentIndex = RefSkeleton.GetRawParentIndex(BoneIndex);
-		while (ParentIndex != INDEX_NONE)
-		{
-			FTransform ParentTransform = SkeletalMeshComponent->GetBoneTransformLocal(ParentIndex);
-			BoneTransform = BoneTransform * ParentTransform;
-			ParentIndex = RefSkeleton.GetRawParentIndex(ParentIndex);
-		}
-
-		// 컴포넌트 월드 변환 적용
-		BoneTransform = BoneTransform * SkeletalMeshComponent->GetWorldTransform();
-		BoneWorldPositions[BoneIndex] = BoneTransform.Translation;
+		SkeletalMeshComponent->RefreshBoneTransforms();
 	}
 
 	// 사각뿔 크기 (본 간 거리에 비례하여 조정)
@@ -242,11 +248,15 @@ void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMesh
 
 	// InBoneIndex에 해당하는 본과 관련된 피라미드만 생성
 	// 1. 주황색 피라미드: 부모 본 -> InBoneIndex 본
+	/*FTransform BoneTransform = SkeletalMeshComponent->GetBoneTransformLocal(InBoneIndex);
+	FVector BonePosition = BoneTransform.Translation;*/
 	int32 ParentIndex = RefSkeleton.GetRawParentIndex(InBoneIndex);
+	const TArray<FTransform>& ComponentSpaceTransforms = SkeletalMeshComponent->GetComponentSpaceTransforms();
+	FVector WorldPosition = SkeletalMeshComponent->GetWorldLocation();
 	if (ParentIndex != INDEX_NONE)
 	{
-		FVector ParentPos = BoneWorldPositions[ParentIndex];
-		FVector CurrentPos = BoneWorldPositions[InBoneIndex];
+		FVector ParentPos = ComponentSpaceTransforms[ParentIndex].Translation + WorldPosition;
+		FVector CurrentPos = ComponentSpaceTransforms[InBoneIndex].Translation + WorldPosition;
 		float Distance = (CurrentPos - ParentPos).Length();
 		float BaseSize = Distance * BaseSizeRatio;
 
@@ -260,8 +270,8 @@ void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMesh
 	{
 		if (RefSkeleton.GetRawParentIndex(ChildIndex) == InBoneIndex)
 		{
-			FVector CurrentPos = BoneWorldPositions[InBoneIndex];
-			FVector ChildPos = BoneWorldPositions[ChildIndex];
+			FVector CurrentPos = ComponentSpaceTransforms[InBoneIndex].Translation + WorldPosition;
+			FVector ChildPos = ComponentSpaceTransforms[ChildIndex].Translation + WorldPosition;
 			float Distance = (ChildPos - CurrentPos).Length();
 			float BaseSize = Distance * BaseSizeRatio;
 

@@ -93,6 +93,11 @@ public:
 
 	bool IsNormalMapEnabled() const;
 
+	bool IsSkinningDirty() const
+	{
+		return bSkinningDirty;
+	}
+
 private:
 	/** 포즈 및 애니메이션이 적용된 이후의 본 로컬 트랜스폼 */
 	TArray<FTransform> BoneSpaceTransforms;
