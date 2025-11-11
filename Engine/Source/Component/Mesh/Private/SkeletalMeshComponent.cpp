@@ -308,15 +308,13 @@ void USkeletalMeshComponent::UpdateSkinnedVertices()
 
 			FinalPosition += FinalMatrix.TransformPosition(Vertex.Position) * Weight;
 			FinalNormal += FinalMatrix.TransformVector(Vertex.Normal) * Weight;
-			// @todo FVector4 타입 탄젠트 처리 (@박영빈 해주세요)
-			// FinalTangent += FinalMatrix.TransformVector(Vertex.Tangent) * Weight;
+			FinalTangent += FinalMatrix.TransformVector(FVector(Vertex.Tangent)) * Weight;
 		}
 
 		FNormalVertex& ResultVertex = SkinnedVertices[VertexIndex];
 		ResultVertex.Position = FinalPosition / TotalWeight;
 		ResultVertex.Normal = FinalNormal / TotalWeight;
-		// @todo FVector4 타입 탄젠트 처리 (@박영빈 해주세요)
-		// ResultVertex.Tangent = FinalTangent / TotalWeight;
+		ResultVertex.Tangent = FVector4(FinalTangent / TotalWeight, Vertex.Tangent.W);
 	}
 
 	FRenderResourceFactory::UpdateVertexBufferData(VertexBuffer, SkinnedVertices);

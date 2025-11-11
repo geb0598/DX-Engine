@@ -29,6 +29,14 @@ FVector::FVector(const FVector& InOther)
 {
 }
 
+/**
+ * @brief FVector4를 Param으로 넘기는 생성자
+ */
+FVector::FVector(const FVector4& InOther)
+	: X(InOther.X), Y(InOther.Y), Z(InOther.Z)
+{
+}
+
 void FVector::operator=(const FVector4& InOther)
 {
 	*this = FVector(InOther.X, InOther.Y, InOther.Z);

@@ -2,6 +2,7 @@
 
 struct FArchive; // @note: 직렬화 지원용 헤더
 struct FMatrix;
+struct FVector4;
 
 struct FVector
 {
@@ -23,6 +24,11 @@ struct FVector
 	 * @brief FVector를 Param으로 넘기는 생성자
 	 */
 	FVector(const FVector& InOther);
+
+	/**
+	 * @brief FVector4를 Param으로 넘기는 생성자
+	 */
+	FVector(const FVector4& InOther);
 
 	void operator=(const FVector4& InOther);
 
