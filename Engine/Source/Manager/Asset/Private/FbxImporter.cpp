@@ -189,7 +189,8 @@ void FFbxImporter::ExtractVertices(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInf
 		FVector Pos(ControlPoints[i][0], ControlPoints[i][1], ControlPoints[i][2]);
 		if (Config.bConvertToUEBasis)
 		{
-			Pos = FVector(Pos.X, -Pos.Y, Pos.Z);
+			// FBX(Y-up, Z-forward) → UE(Z-up, X-forward)
+			Pos = FVector(Pos.Z, Pos.X, -Pos.Y);
 		}
 		OutMeshInfo->VertexList.Add(Pos);
 	}
@@ -395,7 +396,8 @@ void FFbxImporter::ExtractGeometryData(
 				FVector N(Normal[0], Normal[1], Normal[2]);
 				if (Config.bConvertToUEBasis)
 				{
-					N = FVector(N.X, -N.Y, N.Z);
+					// FBX(Y-up, Z-forward) → UE(Z-up, X-forward)
+					N = FVector(N.Z, N.X, -N.Y);
 				}
 				OutMeshInfo->NormalList.Add(N);
 			}
@@ -772,9 +774,9 @@ bool FFbxImporter::ExtractSkeleton(FbxScene* Scene, FbxMesh* Mesh, FFbxSkeletalM
 		FbxQuaternion R = LocalTransform.GetQ();
 		FbxVector4 S = LocalTransform.GetS();
 
-		BoneInfo.LocalTransform.Translation = FVector(T[0], T[1], T[2]);
-		BoneInfo.LocalTransform.Rotation = FQuaternion(R[0], R[1], R[2], R[3]);
-		BoneInfo.LocalTransform.Scale = FVector(S[0], S[1], S[2]);
+		BoneInfo.LocalTransform.Translation = FVector(T[2], T[0], -T[1]);
+		BoneInfo.LocalTransform.Rotation = FQuaternion(R[2], R[0], -R[1], R[3]);
+		BoneInfo.LocalTransform.Scale = FVector(S[2], S[0], S[1]);
 
 		int32 BoneIndex = OutMeshInfo->Bones.Num();
 		OutMeshInfo->Bones.Add(BoneInfo);
@@ -928,7 +930,8 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 		FVector Pos(ControlPoints[i][0], ControlPoints[i][1], ControlPoints[i][2]);
 		if (Config.bConvertToUEBasis)
 		{
-			Pos = FVector(Pos.X, -Pos.Y, Pos.Z);
+			// FBX(Y-up, Z-forward) → UE(Z-up, X-forward)
+			Pos = FVector(Pos.Z, Pos.X, -Pos.Y);
 		}
 		ControlPointPositions.Add(Pos);
 	}
@@ -1010,6 +1013,7 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 				FVector N(Normal[0], Normal[1], Normal[2]);
 				if (Config.bConvertToUEBasis)
 				{
+					// FBX(Y-up, Z-forward) → UE(Z-up, X-forward)
 					N = FVector(N.X, -N.Y, N.Z);
 				}
 				OutMeshInfo->NormalList.Add(N);
