@@ -6,6 +6,9 @@
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Global/Octree.h"
 #include "Component/Public/DecalSpotLightComponent.h"
+#include "Component/Mesh/Public/SkeletalMeshComponent.h"
+#include "Runtime/Engine/Public/SkeletalMesh.h"
+#include "Runtime/Engine/Public/ReferenceSkeleton.h"
 #include "Level/Public/Level.h"
 #include "Physics/Public/OBB.h"
 
@@ -34,7 +37,8 @@ UBatchLines::UBatchLines() : Grid(), BoundingBoxLines()
 	Primitive.NumVertices = static_cast<uint32>(Vertices.Num());
 	Primitive.NumIndices = static_cast<uint32>(Indices.Num());
 	Primitive.VertexBuffer = FRenderResourceFactory::CreateVertexBuffer(Vertices.GetData(), Primitive.NumVertices * sizeof(FVector), true);
-	Primitive.IndexBuffer = FRenderResourceFactory::CreateIndexBuffer(Indices.GetData(), Primitive.NumIndices * sizeof(uint32));	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
+	Primitive.IndexBuffer = FRenderResourceFactory::CreateIndexBuffer(Indices.GetData(), Primitive.NumIndices * sizeof(uint32));
+	Primitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_LINELIST;
 }
 
 UBatchLines::~UBatchLines()
@@ -179,6 +183,143 @@ void UBatchLines::UpdateConeVertices(const FVector& InCenter, float InGenerating
 	bChangedVertices = true;
 }
 
+void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMeshComponent, int32 InBoneIndex)
+{
+	BonePyramidVertices.Empty();
+	BonePyramidIndices.Empty();
+
+	if (!SkeletalMeshComponent)
+	{
+		bRenderBonePyramids = false;
+		bChangedVertices = true;
+		return;
+	}
+
+	USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+	if (!SkeletalMesh)
+	{
+		bRenderBonePyramids = false;
+		bChangedVertices = true;
+		return;
+	}
+
+	const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
+	const int32 NumBones = RefSkeleton.GetRawBoneNum();
+
+	if (NumBones == 0 || !RefSkeleton.IsValidRawIndex(InBoneIndex))
+	{
+		bRenderBonePyramids = false;
+		bChangedVertices = true;
+		return;
+	}
+
+	// ComponentSpaceTransforms이 정상적으로 갱신되어 있는지 확인
+	if(SkeletalMeshComponent->IsSkinningDirty() == false)
+	{
+		SkeletalMeshComponent->RefreshBoneTransforms();
+	}
+
+	// 사각뿔 크기 (본 간 거리에 비례하여 조정)
+	constexpr float BaseSizeRatio = 0.1f;
+
+	uint32 CurrentVertexIndex = 0;
+
+	// 1. 주황색 피라미드: 부모 본 -> InBoneIndex 본
+	int32 ParentIndex = RefSkeleton.GetRawParentIndex(InBoneIndex);
+	const TArray<FTransform>& ComponentSpaceTransforms = SkeletalMeshComponent->GetComponentSpaceTransforms();
+	FVector WorldPosition = SkeletalMeshComponent->GetWorldLocation();
+	if (ParentIndex != INDEX_NONE)
+	{
+		FVector ParentPos = SkeletalMeshComponent->GetWorldTransformMatrix().TransformPosition(ComponentSpaceTransforms[ParentIndex].Translation);
+		FVector CurrentPos = SkeletalMeshComponent->GetWorldTransformMatrix().TransformPosition(ComponentSpaceTransforms[InBoneIndex].Translation);
+		float Distance = (CurrentPos - ParentPos).Length();
+		float BaseSize = Distance * BaseSizeRatio;
+
+		CreatePyramid(ParentPos, CurrentPos, BaseSize, FVector4(1.0f, 0.5f, 0.0f, 1.0f), // Orange
+			BonePyramidVertices, BonePyramidIndices, CurrentVertexIndex);
+		CurrentVertexIndex += 5; // 피라미드는 5개의 정점 (base 4 + tip 1)
+	}
+
+	// 2. 초록색 피라미드: InBoneIndex 본 -> 각 자식 본
+	for (int32 ChildIndex = 0; ChildIndex < NumBones; ++ChildIndex)
+	{
+		if (RefSkeleton.GetRawParentIndex(ChildIndex) == InBoneIndex)
+		{
+			FVector CurrentPos = ComponentSpaceTransforms[InBoneIndex].Translation + WorldPosition;
+			FVector ChildPos = ComponentSpaceTransforms[ChildIndex].Translation + WorldPosition;
+			float Distance = (ChildPos - CurrentPos).Length();
+			float BaseSize = Distance * BaseSizeRatio;
+
+			CreatePyramid(CurrentPos, ChildPos, BaseSize, FVector4(0.0f, 1.0f, 0.0f, 1.0f), // Green
+				BonePyramidVertices, BonePyramidIndices, CurrentVertexIndex);
+			CurrentVertexIndex += 5;
+		}
+	}
+
+	bRenderBonePyramids = (BonePyramidVertices.Num() > 0);
+	bChangedVertices = true;
+}
+
+void UBatchLines::ClearBonePyramids()
+{
+	BonePyramidVertices.Empty();
+	BonePyramidIndices.Empty();
+	bRenderBonePyramids = false;
+	bChangedVertices = true;
+}
+
+void UBatchLines::CreatePyramid(const FVector& Base, const FVector& Tip, float BaseSize, const FVector4& Color,
+	TArray<FVector>& OutVertices, TArray<uint32>& OutIndices, uint32 BaseVertexIndex)
+{
+	// 방향 벡터 계산
+	FVector Direction = (Tip - Base).GetNormalized();
+	
+	// Base 평면을 위한 직교 벡터 생성
+	FVector Up = (fabsf(Direction.Z) < 0.999f) ? FVector(0, 0, 1) : FVector(1, 0, 0);
+	FVector Right = Direction.Cross(Up).GetNormalized();
+	FVector Forward = Right.Cross(Direction).GetNormalized();
+
+	// 사각형 Base의 4개 코너 계산
+	float HalfSize = BaseSize * 0.5f;
+	FVector Corner0 = Base + Right * HalfSize + Forward * HalfSize;
+	FVector Corner1 = Base - Right * HalfSize + Forward * HalfSize;
+	FVector Corner2 = Base - Right * HalfSize - Forward * HalfSize;
+	FVector Corner3 = Base + Right * HalfSize - Forward * HalfSize;
+
+	// 정점 추가 (Base 4개 + Tip 1개)
+	OutVertices.Add(Corner0);
+	OutVertices.Add(Corner1);
+	OutVertices.Add(Corner2);
+	OutVertices.Add(Corner3);
+	OutVertices.Add(Tip);
+
+	// 인덱스 추가 (라인으로 렌더링)
+	// Base 사각형 (4개 라인)
+	OutIndices.Add(BaseVertexIndex + 0);
+	OutIndices.Add(BaseVertexIndex + 1);
+	
+	OutIndices.Add(BaseVertexIndex + 1);
+	OutIndices.Add(BaseVertexIndex + 2);
+	
+	OutIndices.Add(BaseVertexIndex + 2);
+	OutIndices.Add(BaseVertexIndex + 3);
+	
+	OutIndices.Add(BaseVertexIndex + 3);
+	OutIndices.Add(BaseVertexIndex + 0);
+
+	// Tip으로 연결되는 라인 (4개)
+	OutIndices.Add(BaseVertexIndex + 0);
+	OutIndices.Add(BaseVertexIndex + 4);
+	
+	OutIndices.Add(BaseVertexIndex + 1);
+	OutIndices.Add(BaseVertexIndex + 4);
+	
+	OutIndices.Add(BaseVertexIndex + 2);
+	OutIndices.Add(BaseVertexIndex + 4);
+	
+	OutIndices.Add(BaseVertexIndex + 3);
+	OutIndices.Add(BaseVertexIndex + 4);
+}
 
 void UBatchLines::TraverseOctree(const FOctree* InNode)
 {
@@ -209,8 +350,9 @@ void UBatchLines::UpdateVertexBuffer()
 		{
 			NumOctreeVertices += Line.GetNumVertices();
 		}
+		uint32 NumBonePyramidVertices = bRenderBonePyramids ? static_cast<uint32>(BonePyramidVertices.Num()) : 0;
 
-		Vertices.SetNum(NumGridVertices + NumBoxVertices + NumSpotLightVertices + NumOctreeVertices);
+		Vertices.SetNum(NumGridVertices + NumBoxVertices + NumSpotLightVertices + NumOctreeVertices + NumBonePyramidVertices);
 
 		Grid.MergeVerticesAt(Vertices, 0);
 		BoundingBoxLines.MergeVerticesAt(Vertices, NumGridVertices);
@@ -226,6 +368,14 @@ void UBatchLines::UpdateVertexBuffer()
 		{
 			Line.MergeVerticesAt(Vertices, CurrentOffset);
 			CurrentOffset += Line.GetNumVertices();
+		}
+
+		if (bRenderBonePyramids)
+		{
+			for (int32 i = 0; i < BonePyramidVertices.Num(); ++i)
+			{
+				Vertices[CurrentOffset + i] = BonePyramidVertices[i];
+			}
 		}
 
 		SetIndices();
@@ -260,6 +410,9 @@ void UBatchLines::Render()
 			RenderOctree();
 		}
 	}
+
+	// Bone Pyramids
+	RenderBonePyramids();
 }
 
 void UBatchLines::RenderGridAndLightLines()
@@ -371,6 +524,58 @@ void UBatchLines::RenderOctree()
 	}
 }
 
+void UBatchLines::RenderBonePyramids()
+{
+	if (!bRenderBonePyramids || BonePyramidIndices.Num() == 0)
+	{
+		return;
+	}
+
+	URenderer& Renderer = URenderer::GetInstance();
+
+	const uint32 NumGridVertices = Grid.GetNumVertices();
+	const uint32 NumGridIndices = NumGridVertices;
+
+	const EBoundingVolumeType BoundingType = BoundingBoxLines.GetCurrentType();
+	const uint32 NumBoundingIndices = BoundingBoxLines.GetNumIndices(BoundingType);
+
+	uint32 NumSpotLightIndices = 0;
+	if (bRenderSpotLight)
+	{
+		const EBoundingVolumeType SpotLightType = SpotLightLines.GetCurrentType();
+		NumSpotLightIndices = SpotLightLines.GetNumIndices(SpotLightType);
+	}
+
+	uint32 NumOctreeIndices = 0;
+	for (auto& OctreeLine : OctreeLines)
+	{
+		const EBoundingVolumeType OctreeType = OctreeLine.GetCurrentType();
+		NumOctreeIndices += OctreeLine.GetNumIndices(OctreeType);
+	}
+
+	const uint32 BonePyramidStartIndex = NumGridIndices + NumBoundingIndices + NumSpotLightIndices + NumOctreeIndices;
+	const uint32 NumBonePyramidIndices = static_cast<uint32>(BonePyramidIndices.Num());
+
+	if (NumBonePyramidIndices > 0)
+	{
+		// Depth Test를 끄기 위해 DisabledDepthStencilState로 설정
+		Primitive.bShouldAlwaysVisible = true;
+
+		Renderer.RenderEditorPrimitiveIndexed(
+			Primitive,
+			Primitive.RenderState,
+			sizeof(FVector),
+			sizeof(uint32),
+			BonePyramidStartIndex,
+			NumBonePyramidIndices
+		);
+
+		// 이전 DepthStencilState 복원
+		Primitive.bShouldAlwaysVisible = false;
+	}
+		
+}
+
 void UBatchLines::SetIndices()
 {
 	Indices.Empty();
@@ -432,6 +637,15 @@ void UBatchLines::SetIndices()
 		}
 
 		BaseVertexOffset += OctreeLine.GetNumVertices();
+	}
+
+	// Bone Pyramid Indices 추가
+	if (bRenderBonePyramids)
+	{
+		for (uint32 Idx = 0; Idx < BonePyramidIndices.Num(); ++Idx)
+		{
+			Indices.Add(BaseVertexOffset + BonePyramidIndices[Idx]);
+		}
 	}
 }
 

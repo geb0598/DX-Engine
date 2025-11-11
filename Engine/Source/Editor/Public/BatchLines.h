@@ -8,6 +8,7 @@
 struct FVertex;
 class FOctree;
 class UDecalSpotLightComponent;
+class USkeletalMeshComponent;
 
 class UBatchLines : UObject
 {
@@ -24,6 +25,11 @@ public:
 	void UpdateDecalSpotLightVertices(UDecalSpotLightComponent* SpotLightComponent);
 	void UpdateConeVertices(const FVector& InCenter, float InGeneratingLineLength
 		, float InOuterHalfAngleRad, float InInnerHalfAngleRad, FQuaternion InRotation);
+	
+	// Bone Pyramid 렌더링용 업데이트 (특정 본 인덱스에 대한 사각뿔만 렌더링)
+	void UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMeshComponent, int32 InBoneIndex);
+	void ClearBonePyramids();
+	
 	// GPU VertexBuffer에 복사
 	void UpdateVertexBuffer();
 
@@ -49,7 +55,7 @@ public:
 	//void Update();
 
 	/**
-	 * @brief 모든 BatchLines 렌더링 (Grid, AABB, Light Lines, Octree)
+	 * @brief 모든 BatchLines 렌더링 (Grid, AABB, Light Lines, Octree, Bone Pyramids)
 	 * @note 내부에서 ShowFlags 체크 및 선택 상태에 따라 적절히 렌더링
 	 */
 	void Render();
@@ -58,9 +64,13 @@ private:
 	void RenderGridAndLightLines();  // Grid + Light Lines
 	void RenderBoundingBox();        // AABB
 	void RenderOctree();             // Octree
+	void RenderBonePyramids();       // Bone Pyramids
 	void SetIndices();
 
 	void TraverseOctree(const FOctree* InNode);
+
+	// Pyramid 생성 헬퍼 함수
+	void CreatePyramid(const FVector& Base, const FVector& Tip, float BaseSize, const FVector4& Color, TArray<FVector>& OutVertices, TArray<uint32>& OutIndices, uint32 BaseVertexIndex);
 
 	/*void AddWorldGridVerticesAndConstData();
 	void AddBoundingBoxVertices();*/
@@ -77,7 +87,12 @@ private:
 	UBoundingBoxLines SpotLightLines;
 	TArray<UBoundingBoxLines> OctreeLines;
 
+	// Bone Pyramid 데이터
+	TArray<FVector> BonePyramidVertices;
+	TArray<uint32> BonePyramidIndices;
+
 	bool bRenderBox;
 	bool bRenderSpotLight = false;
+	bool bRenderBonePyramids = false;
 };
 
