@@ -85,6 +85,11 @@ public:
 	void SetCurrentRotationAngle(float Angle) { CurrentRotationAngle = Angle; }
 	void SetPreviousScreenPos(const FVector2& ScreenPos) { PreviousScreenPos = ScreenPos; }
 	void SetDragStartScreenPos(const FVector2& ScreenPos) { DragStartScreenPos = ScreenPos; }
+	void SetDragStartActorLocation(const FVector& Location) { DragStartActorLocation = Location; }
+	void SetDragStartActorRotation(const FVector& Rotation) { DragStartActorRotation = Rotation; }
+	void SetDragStartActorRotationQuat(const FQuaternion& Rotation) { DragStartActorRotationQuat = Rotation; }
+	void SetDragStartActorScale(const FVector& Scale) { DragStartActorScale = Scale; }
+	void SetDragStartMouseLocation(const FVector& Location) { DragStartMouseLocation = Location; }
 
 	void SetWorld() { bIsWorld = true; }
 	void SetLocal() { bIsWorld = false; }

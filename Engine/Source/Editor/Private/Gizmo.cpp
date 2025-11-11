@@ -80,13 +80,30 @@ void UGizmo::UpdateScale(const UCamera* InCamera, const D3D11_VIEWPORT& InViewpo
 		TargetComponent = Cast<USceneComponent>(GEditor->GetEditorModule()->GetSelectedComponent());
 	}
 
-	if (!TargetComponent || !InCamera)
+	if (!InCamera)
 	{
 		return;
 	}
 
+	// 기즈모 위치 가져오기 (고정 위치 또는 TargetComponent 위치)
+	FVector GizmoLocation;
+	if (bUseFixedLocation)
+	{
+		// 본 선택 시: 고정 위치 사용
+		GizmoLocation = FixedLocation;
+	}
+	else if (TargetComponent)
+	{
+		// 컴포넌트 선택 시: TargetComponent 위치 사용
+		GizmoLocation = TargetComponent->GetWorldLocation();
+	}
+	else
+	{
+		// 아무것도 선택되지 않음
+		return;
+	}
+
 	// 스크린에서 균일한 사이즈를 가지도록 하기 위한 스케일 조정
-	const FVector GizmoLocation = TargetComponent->GetWorldLocation();
 	const float Scale = FGizmoMath::CalculateScreenSpaceScale(InCamera, InViewport, GizmoLocation, 120.0f);
 
 	TranslateCollisionConfig.Scale = Scale;
@@ -344,7 +361,7 @@ void UGizmo::CollectRotationAngleOverlay(FD2DOverlayManager& OverlayManager, UCa
  */
 FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPicker* InObjectPicker)
 {
-	if (!InCamera || !InObjectPicker || !TargetComponent)
+	if (!InCamera || !InObjectPicker)
 	{
 		return GetGizmoLocation();
 	}
@@ -378,7 +395,7 @@ FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPi
 		// 평면 법선 벡터
 		FVector PlaneNormal = GetPlaneNormal();
 
-		if (!IsWorldMode())
+		if (!IsWorldMode() && TargetComponent)
 		{
 			FQuaternion q = TargetComponent->GetWorldRotationAsQuaternion();
 			PlaneNormal = q.RotateVector(PlaneNormal);
@@ -397,7 +414,7 @@ FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPi
 	// 축 드래그 처리
 	FVector GizmoAxis = GetGizmoAxis();
 
-	if (!IsWorldMode())
+	if (!IsWorldMode() && TargetComponent)
 	{
 		FQuaternion q = TargetComponent->GetWorldRotationAsQuaternion();
 		GizmoAxis = q.RotateVector(GizmoAxis);
@@ -445,7 +462,7 @@ FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPi
  */
 FQuaternion UGizmo::ProcessDragRotation(UCamera* InCamera, FRay& WorldRay, const FRect& ViewportRect, bool bUseCustomSnap)
 {
-	if (!InCamera || !TargetComponent)
+	if (!InCamera)
 	{
 		return GetComponentRotation();
 	}
@@ -598,14 +615,14 @@ FQuaternion UGizmo::ProcessDragRotation(UCamera* InCamera, FRay& WorldRay, const
  */
 FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicker* InObjectPicker)
 {
-	if (!InCamera || !InObjectPicker || !TargetComponent)
+	if (!InCamera || !InObjectPicker)
 	{
 		return GetComponentScale();
 	}
 
 	FVector MouseWorld;
 	FVector PlaneOrigin = GetGizmoLocation();
-	FQuaternion Quat = TargetComponent->GetWorldRotationAsQuaternion();
+	FQuaternion Quat = TargetComponent ? TargetComponent->GetWorldRotationAsQuaternion() : FQuaternion::Identity();
 	const FVector CameraLocation = InCamera->GetLocation();
 
 	// Center 구체 드래그 처리 (균일 스케일, 모든 축 동일하게)

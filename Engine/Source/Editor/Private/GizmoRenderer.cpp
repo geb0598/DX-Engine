@@ -95,21 +95,27 @@ void UGizmo::RenderGizmo(UCamera* InCamera, const D3D11_VIEWPORT& InViewport)
 		TargetComponent = Cast<USceneComponent>(GEditor->GetEditorModule()->GetSelectedComponent());
 	}
 
-	if (!TargetComponent || !InCamera)
+	if (!InCamera)
 	{
 		return;
 	}
 
-	// 스크린에서 균일한 사이즈를 가지도록 하기 위한 스케일 조정
+	// 기즈모 위치 가져오기 (고정 위치 또는 TargetComponent 위치)
 	FVector GizmoLocation;
 	if (bUseFixedLocation)
 	{
-		// Pilot Mode: 고정 위치 사용
+		// 본 선택 시: 고정 위치 사용
 		GizmoLocation = FixedLocation;
+	}
+	else if (TargetComponent)
+	{
+		// 컴포넌트 선택 시: TargetComponent 위치 사용
+		GizmoLocation = TargetComponent->GetWorldLocation();
 	}
 	else
 	{
-		GizmoLocation = TargetComponent->GetWorldLocation();
+		// 아무것도 선택되지 않음
+		return;
 	}
 
 	const float RenderScale = FGizmoMath::CalculateScreenSpaceScale(InCamera, InViewport, GizmoLocation, 120.0f);
@@ -126,7 +132,7 @@ void UGizmo::RenderGizmo(UCamera* InCamera, const D3D11_VIEWPORT& InViewport)
 	if (GizmoMode == EGizmoMode::Scale)
 	{
 		// 스케일 모드: 항상 로컬 좌표
-		BaseRot = TargetComponent->GetWorldRotationAsQuaternion();
+		BaseRot = TargetComponent ? TargetComponent->GetWorldRotationAsQuaternion() : GetDragStartActorRotationQuat();
 	}
 	else if (GizmoMode == EGizmoMode::Rotate && IsDragging())
 	{
@@ -136,7 +142,19 @@ void UGizmo::RenderGizmo(UCamera* InCamera, const D3D11_VIEWPORT& InViewport)
 	else
 	{
 		// 평행이동/회전 모드: World는 Identity, Local은 현재 회전
-		BaseRot = bIsWorld ? FQuaternion::Identity() : TargetComponent->GetWorldRotationAsQuaternion();
+		if (bIsWorld)
+		{
+			BaseRot = FQuaternion::Identity();
+		}
+		else if (TargetComponent)
+		{
+			BaseRot = TargetComponent->GetWorldRotationAsQuaternion();
+		}
+		else
+		{
+			// 본 선택 시: 드래그 시작 회전 사용
+			BaseRot = GetDragStartActorRotationQuat();
+		}
 	}
 
 	// 회전 모드 확인

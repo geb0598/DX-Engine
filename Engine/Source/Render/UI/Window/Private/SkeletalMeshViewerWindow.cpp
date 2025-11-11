@@ -815,6 +815,14 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 	if (ImGui::IsItemClicked())
 	{
 		SelectedBoneIndex = BoneIndex;
+
+		// 기즈모 위치를 선택된 본의 월드 위치로 설정
+		if (ViewerGizmo && SkeletalMeshComponent)
+		{
+			FVector BoneWorldLocation = GetBoneWorldLocation(BoneIndex);
+			ViewerGizmo->SetFixedLocation(BoneWorldLocation);
+			ViewerGizmo->SetSelectedComponent(nullptr);  // 본은 SceneComponent가 아니므로 nullptr
+		}
 	}
 
 	// 자식 본들 재귀적으로 렌더링
@@ -981,15 +989,41 @@ void USkeletalMeshViewerWindow::RenderToViewportTexture()
 				ViewerBatchLines->Render();
 			}
 
-			// Gizmo 렌더링
-			if (ViewerGizmo && SelectedComponent)
+			// Gizmo 렌더링 (컴포넌트 또는 본 선택 시)
+			if (ViewerGizmo && (SelectedComponent || SelectedBoneIndex != INDEX_NONE))
 			{
-				static bool bLoggedGizmoRender = false;
-				if (!bLoggedGizmoRender)
+				// 본 선택 시: Local 모드일 때만 부모 본의 월드 회전을 기즈모에 설정
+				// 드래그 중이 아닐 때만 업데이트 (드래그 시작 회전값을 보존하기 위해)
+				if (SelectedBoneIndex != INDEX_NONE && SkeletalMeshComponent && !ViewerGizmo->IsDragging())
 				{
-					UE_LOG("SkeletalMeshViewerWindow: Rendering Gizmo for component: %s",
-						SelectedComponent->GetOwner()->GetClass()->GetName().ToString().c_str());
-					bLoggedGizmoRender = true;
+					FQuaternion GizmoRotation = FQuaternion::Identity();  // World 모드: Identity
+
+					// Local 모드일 때만 부모 본의 회전 계산
+					if (!ViewerGizmo->IsWorldMode())
+					{
+						USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+						if (SkeletalMesh)
+						{
+							const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
+							int32 ParentIndex = RefSkeleton.GetRawParentIndex(SelectedBoneIndex);
+
+							if (ParentIndex != INDEX_NONE)
+							{
+								// 부모 본의 월드 회전 계산
+								const TArray<FTransform>& ComponentSpaceTransforms = SkeletalMeshComponent->GetComponentSpaceTransforms();
+								if (ComponentSpaceTransforms.IsValidIndex(ParentIndex))
+								{
+									FQuaternion ComponentWorldRotation = SkeletalMeshComponent->GetWorldRotationAsQuaternion();
+									GizmoRotation = ComponentWorldRotation * ComponentSpaceTransforms[ParentIndex].Rotation;
+								}
+							}
+							// else: 루트 본인 경우 Identity 유지
+						}
+					}
+
+					// 기즈모의 DragStartActorRotationQuat 설정
+					// World 모드: Identity, Local 모드: 부모 회전
+					ViewerGizmo->SetDragStartActorRotationQuat(GizmoRotation);
 				}
 
 				if (ToolbarWidget)
@@ -1000,16 +1034,6 @@ void USkeletalMeshViewerWindow::RenderToViewportTexture()
 
 				ViewerGizmo->UpdateScale(Camera, D3DViewport);
 				ViewerGizmo->RenderGizmo(Camera, D3DViewport);
-			}
-			else
-			{
-				static bool bLoggedNoGizmo = false;
-				if (!bLoggedNoGizmo)
-				{
-					UE_LOG_WARNING("SkeletalMeshViewerWindow: Gizmo not rendering - ViewerGizmo: %p, SelectedComponent: %p",
-						ViewerGizmo, SelectedComponent);
-					bLoggedNoGizmo = true;
-				}
 			}
 
 			delete View;
@@ -1161,9 +1185,9 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 
 			FRay WorldRay = Camera->ConvertToWorldRay(NdcX, NdcY);
 
-			// 기즈모 호버링
+			// 기즈모 호버링 (컴포넌트 또는 본 선택 시)
 			FVector CollisionPoint;
-			if (ViewerGizmo && SelectedComponent && ViewerObjectPicker && !ViewerGizmo->IsDragging())
+			if (ViewerGizmo && (SelectedComponent || SelectedBoneIndex != INDEX_NONE) && ViewerObjectPicker && !ViewerGizmo->IsDragging())
 			{
 				ViewerObjectPicker->PickGizmo(Camera, WorldRay, *ViewerGizmo, CollisionPoint);
 			}
@@ -1174,6 +1198,37 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 				if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 				{
 					ViewerGizmo->OnMouseDragStart(CollisionPoint);
+
+					// 본 선택 시: 본의 월드 트랜스폼을 기즈모에 설정
+					if (SelectedBoneIndex != INDEX_NONE && SkeletalMeshComponent)
+					{
+						FVector BoneWorldLocation = GetBoneWorldLocation(SelectedBoneIndex);
+						FQuaternion BoneWorldRotation = GetBoneWorldRotation(SelectedBoneIndex);
+
+						// TempBoneSpaceTransforms가 초기화되어 있는지 확인
+						if (!TempBoneSpaceTransforms.IsValidIndex(SelectedBoneIndex))
+						{
+							USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+							if (SkeletalMesh)
+							{
+								int32 NumBones = SkeletalMesh->GetRefSkeleton().GetRawBoneNum();
+								TempBoneSpaceTransforms.Reset(NumBones);
+								for (int32 i = 0; i < NumBones; ++i)
+								{
+									TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
+								}
+							}
+						}
+
+						FVector BoneLocalScale = TempBoneSpaceTransforms.IsValidIndex(SelectedBoneIndex)
+							? TempBoneSpaceTransforms[SelectedBoneIndex].Scale
+							: FVector::OneVector();
+
+						ViewerGizmo->SetDragStartActorLocation(BoneWorldLocation);
+						ViewerGizmo->SetDragStartActorRotationQuat(BoneWorldRotation);
+						ViewerGizmo->SetDragStartActorScale(BoneLocalScale);
+						ViewerGizmo->SetDragStartMouseLocation(CollisionPoint);
+					}
 
 					ImVec2 CurrentMousePos = ImGui::GetMousePos();
 					const FVector2 ViewerLocalScreenPos(CurrentMousePos.x - ViewportWindowPos.x, CurrentMousePos.y - ViewportWindowPos.y);
@@ -1242,8 +1297,8 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 		}
 	}
 
-	// 기즈모 드래그 처리
-	if (ViewerGizmo && ViewerGizmo->IsDragging() && SelectedComponent && ViewerViewportClient)
+	// 기즈모 드래그 처리 (컴포넌트 또는 본)
+	if (ViewerGizmo && ViewerGizmo->IsDragging() && (SelectedComponent || SelectedBoneIndex != INDEX_NONE) && ViewerViewportClient)
 	{
 		UCamera* Camera = ViewerViewportClient->GetCamera();
 		if (Camera)
@@ -1258,33 +1313,121 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 
 			FRay WorldRay = Camera->ConvertToWorldRay(NdcX, NdcY);
 
-			switch (ViewerGizmo->GetGizmoMode())
+			// 본 선택 시: 본의 로컬 트랜스폼 직접 수정 (UI 슬라이더 방식)
+			if (SelectedBoneIndex != INDEX_NONE && SkeletalMeshComponent)
 			{
-			case EGizmoMode::Translate:
-			{
-				FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
-				ViewerGizmo->SetLocation(GizmoDragLocation);
-				break;
-			}
-			case EGizmoMode::Rotate:
-			{
-				// 뷰어의 ViewportRect 생성
-				FRect ViewportRect;
-				ViewportRect.Left = static_cast<uint32>(ViewportWindowPos.x);
-				ViewportRect.Top = static_cast<uint32>(ViewportWindowPos.y);
-				ViewportRect.Width = ViewerWidth;
-				ViewportRect.Height = ViewerHeight;
+				if (!TempBoneSpaceTransforms.IsValidIndex(SelectedBoneIndex))
+				{
+					// TempBoneSpaceTransforms 초기화 (아직 초기화되지 않은 경우)
+					USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+					if (SkeletalMesh)
+					{
+						int32 NumBones = SkeletalMesh->GetRefSkeleton().GetRawBoneNum();
+						TempBoneSpaceTransforms.Reset(NumBones);
+						for (int32 i = 0; i < NumBones; ++i)
+						{
+							TempBoneSpaceTransforms[i] = SkeletalMeshComponent->GetBoneTransformLocal(i);
+						}
+					}
+				}
 
-				FQuaternion GizmoDragRotation = FGizmoHelper::ProcessDragRotation(ViewerGizmo, Camera, WorldRay, ViewportRect, true);
-				ViewerGizmo->SetComponentRotation(GizmoDragRotation);
-				break;
+				FTransform& BoneLocalTransform = TempBoneSpaceTransforms[SelectedBoneIndex];
+
+				switch (ViewerGizmo->GetGizmoMode())
+				{
+				case EGizmoMode::Translate:
+				{
+					// 기즈모로부터 월드 좌표 얻기
+					FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
+
+					// 월드 좌표 → 본 로컬 좌표 변환
+					FVector BoneLocalLocation = WorldToLocalBoneTranslation(SelectedBoneIndex, GizmoDragLocation);
+
+					// 본 로컬 트랜스폼 업데이트
+					BoneLocalTransform.Translation = BoneLocalLocation;
+
+					// SkeletalMeshComponent에 적용
+					SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, BoneLocalTransform);
+
+					// 기즈모 위치 업데이트 (다음 프레임을 위해)
+					ViewerGizmo->SetFixedLocation(GizmoDragLocation);
+					break;
+				}
+				case EGizmoMode::Rotate:
+				{
+					// 뷰어의 ViewportRect 생성
+					FRect ViewportRect;
+					ViewportRect.Left = static_cast<uint32>(ViewportWindowPos.x);
+					ViewportRect.Top = static_cast<uint32>(ViewportWindowPos.y);
+					ViewportRect.Width = ViewerWidth;
+					ViewportRect.Height = ViewerHeight;
+
+					// 기즈모로부터 월드 회전 얻기
+					FQuaternion GizmoDragRotation = FGizmoHelper::ProcessDragRotation(ViewerGizmo, Camera, WorldRay, ViewportRect, true);
+
+					// 월드 회전 → 본 로컬 회전 변환
+					FQuaternion BoneLocalRotation = WorldToLocalBoneRotation(SelectedBoneIndex, GizmoDragRotation);
+
+					// 본 로컬 트랜스폼 업데이트
+					BoneLocalTransform.Rotation = BoneLocalRotation;
+
+					// SkeletalMeshComponent에 적용
+					SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, BoneLocalTransform);
+
+					// 기즈모 위치는 그대로 유지 (회전 시 위치는 변하지 않음)
+					FVector BoneWorldLocation = GetBoneWorldLocation(SelectedBoneIndex);
+					ViewerGizmo->SetFixedLocation(BoneWorldLocation);
+					break;
+				}
+				case EGizmoMode::Scale:
+				{
+					// 기즈모로부터 스케일 얻기
+					FVector GizmoDragScale = FGizmoHelper::ProcessDragScale(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
+
+					// 스케일은 로컬 스케일을 직접 사용 (월드→로컬 변환 불필요)
+					BoneLocalTransform.Scale = GizmoDragScale;
+
+					// SkeletalMeshComponent에 적용
+					SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, BoneLocalTransform);
+
+					// 기즈모 위치는 그대로 유지
+					FVector BoneWorldLocation = GetBoneWorldLocation(SelectedBoneIndex);
+					ViewerGizmo->SetFixedLocation(BoneWorldLocation);
+					break;
+				}
+				}
 			}
-			case EGizmoMode::Scale:
+			// 컴포넌트 선택 시: 기존 방식 (SceneComponent의 World Transform 수정)
+			else if (SelectedComponent)
 			{
-				FVector GizmoDragScale = FGizmoHelper::ProcessDragScale(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
-				ViewerGizmo->SetComponentScale(GizmoDragScale);
-				break;
-			}
+				switch (ViewerGizmo->GetGizmoMode())
+				{
+				case EGizmoMode::Translate:
+				{
+					FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
+					ViewerGizmo->SetLocation(GizmoDragLocation);
+					break;
+				}
+				case EGizmoMode::Rotate:
+				{
+					// 뷰어의 ViewportRect 생성
+					FRect ViewportRect;
+					ViewportRect.Left = static_cast<uint32>(ViewportWindowPos.x);
+					ViewportRect.Top = static_cast<uint32>(ViewportWindowPos.y);
+					ViewportRect.Width = ViewerWidth;
+					ViewportRect.Height = ViewerHeight;
+
+					FQuaternion GizmoDragRotation = FGizmoHelper::ProcessDragRotation(ViewerGizmo, Camera, WorldRay, ViewportRect, true);
+					ViewerGizmo->SetComponentRotation(GizmoDragRotation);
+					break;
+				}
+				case EGizmoMode::Scale:
+				{
+					FVector GizmoDragScale = FGizmoHelper::ProcessDragScale(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
+					ViewerGizmo->SetComponentScale(GizmoDragScale);
+					break;
+				}
+				}
 			}
 		}
 	}
@@ -1958,5 +2101,169 @@ void USkeletalMeshViewerWindow::SetGridCellSize(float NewCellSize)
 	{
 		ViewerBatchLines->UpdateUGridVertices(GridCellSize);
 		ViewerBatchLines->UpdateVertexBuffer();
+	}
+}
+
+/**
+ * @brief 본의 월드 스페이스 위치 계산
+ *
+ * ComponentSpace Transform을 월드 스페이스로 변환합니다.
+ * 이 함수는 UI 슬라이더가 사용하는 본 데이터와 동일한 소스를 사용합니다.
+ */
+FVector USkeletalMeshViewerWindow::GetBoneWorldLocation(int32 BoneIndex) const
+{
+	if (!SkeletalMeshComponent || BoneIndex == INDEX_NONE)
+	{
+		return FVector::ZeroVector();
+	}
+
+	// ComponentSpace Transform 가져오기
+	const TArray<FTransform>& ComponentSpaceTransforms = SkeletalMeshComponent->GetComponentSpaceTransforms();
+	if (!ComponentSpaceTransforms.IsValidIndex(BoneIndex))
+	{
+		return FVector::ZeroVector();
+	}
+
+	// ComponentSpace → WorldSpace 변환
+	FTransform ComponentWorldTransform;
+	ComponentWorldTransform.Translation = SkeletalMeshComponent->GetWorldLocation();
+	ComponentWorldTransform.Rotation = SkeletalMeshComponent->GetWorldRotationAsQuaternion();
+	ComponentWorldTransform.Scale = SkeletalMeshComponent->GetWorldScale3D();
+
+	// ComponentSpace 위치를 월드 스페이스로 변환
+	FMatrix ComponentWorldMatrix = ComponentWorldTransform.ToMatrixWithScale();
+	FVector WorldLocation = ComponentWorldMatrix.TransformPosition(ComponentSpaceTransforms[BoneIndex].Translation);
+
+	return WorldLocation;
+}
+
+/**
+ * @brief 본의 월드 스페이스 회전 계산
+ *
+ * ComponentSpace Transform의 회전을 월드 스페이스로 변환합니다.
+ */
+FQuaternion USkeletalMeshViewerWindow::GetBoneWorldRotation(int32 BoneIndex) const
+{
+	if (!SkeletalMeshComponent || BoneIndex == INDEX_NONE)
+	{
+		return FQuaternion::Identity();
+	}
+
+	const TArray<FTransform>& ComponentSpaceTransforms = SkeletalMeshComponent->GetComponentSpaceTransforms();
+	if (!ComponentSpaceTransforms.IsValidIndex(BoneIndex))
+	{
+		return FQuaternion::Identity();
+	}
+
+	// ComponentSpace → WorldSpace 변환
+	FQuaternion ComponentWorldRotation = SkeletalMeshComponent->GetWorldRotationAsQuaternion();
+	FQuaternion WorldRotation = ComponentWorldRotation * ComponentSpaceTransforms[BoneIndex].Rotation;
+
+	return WorldRotation;
+}
+
+/**
+ * @brief 월드 스페이스 위치를 본의 로컬 스페이스 위치로 변환
+ *
+ * 이 함수는 기즈모에서 계산된 월드 좌표를 본의 로컬 좌표로 변환하여
+ * UI 슬라이더와 동일한 방식으로 TempBoneSpaceTransforms를 업데이트할 수 있게 합니다.
+ */
+FVector USkeletalMeshViewerWindow::WorldToLocalBoneTranslation(int32 BoneIndex, const FVector& WorldLocation) const
+{
+	if (!SkeletalMeshComponent || BoneIndex == INDEX_NONE)
+	{
+		return FVector::ZeroVector();
+	}
+
+	USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+	if (!SkeletalMesh)
+	{
+		return FVector::ZeroVector();
+	}
+
+	const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
+	int32 ParentIndex = RefSkeleton.GetRawParentIndex(BoneIndex);
+
+	// ComponentWorld Transform
+	FTransform ComponentWorldTransform;
+	ComponentWorldTransform.Translation = SkeletalMeshComponent->GetWorldLocation();
+	ComponentWorldTransform.Rotation = SkeletalMeshComponent->GetWorldRotationAsQuaternion();
+	ComponentWorldTransform.Scale = SkeletalMeshComponent->GetWorldScale3D();
+
+	if (ParentIndex == INDEX_NONE)
+	{
+		// 루트 본: WorldSpace → ComponentSpace (ComponentSpace == LocalSpace for root)
+		FMatrix InvComponentWorldMatrix = ComponentWorldTransform.ToInverseMatrixWithScale();
+		return InvComponentWorldMatrix.TransformPosition(WorldLocation);
+	}
+	else
+	{
+		// 자식 본: WorldSpace → ParentBoneSpace (LocalSpace)
+		const TArray<FTransform>& ComponentSpaceTransforms = SkeletalMeshComponent->GetComponentSpaceTransforms();
+		if (!ComponentSpaceTransforms.IsValidIndex(ParentIndex))
+		{
+			return FVector::ZeroVector();
+		}
+
+		// ParentBone의 WorldSpace Transform 계산
+		FTransform ParentComponentSpace = ComponentSpaceTransforms[ParentIndex];
+		FMatrix ComponentWorldMatrix = ComponentWorldTransform.ToMatrixWithScale();
+		FVector ParentWorldLocation = ComponentWorldMatrix.TransformPosition(ParentComponentSpace.Translation);
+		FQuaternion ParentWorldRotation = ComponentWorldTransform.Rotation * ParentComponentSpace.Rotation;
+		FVector ParentWorldScale = ComponentWorldTransform.Scale * ParentComponentSpace.Scale;
+
+		FTransform ParentWorldTransform;
+		ParentWorldTransform.Translation = ParentWorldLocation;
+		ParentWorldTransform.Rotation = ParentWorldRotation;
+		ParentWorldTransform.Scale = ParentWorldScale;
+
+		// WorldSpace를 ParentBoneSpace(LocalSpace)로 변환
+		FMatrix InvParentWorldMatrix = ParentWorldTransform.ToInverseMatrixWithScale();
+		return InvParentWorldMatrix.TransformPosition(WorldLocation);
+	}
+}
+
+/**
+ * @brief 월드 스페이스 회전을 본의 로컬 스페이스 회전으로 변환
+ *
+ * 기즈모의 월드 회전을 본의 로컬 회전으로 변환합니다.
+ */
+FQuaternion USkeletalMeshViewerWindow::WorldToLocalBoneRotation(int32 BoneIndex, const FQuaternion& WorldRotation) const
+{
+	if (!SkeletalMeshComponent || BoneIndex == INDEX_NONE)
+	{
+		return FQuaternion::Identity();
+	}
+
+	USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+	if (!SkeletalMesh)
+	{
+		return FQuaternion::Identity();
+	}
+
+	const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
+	int32 ParentIndex = RefSkeleton.GetRawParentIndex(BoneIndex);
+
+	FQuaternion ComponentWorldRotation = SkeletalMeshComponent->GetWorldRotationAsQuaternion();
+
+	if (ParentIndex == INDEX_NONE)
+	{
+		// 루트 본: WorldSpace → ComponentSpace
+		return ComponentWorldRotation.Inverse() * WorldRotation;
+	}
+	else
+	{
+		// 자식 본: WorldSpace → ParentBoneSpace
+		const TArray<FTransform>& ComponentSpaceTransforms = SkeletalMeshComponent->GetComponentSpaceTransforms();
+		if (!ComponentSpaceTransforms.IsValidIndex(ParentIndex))
+		{
+			return FQuaternion::Identity();
+		}
+
+		// ParentBone의 WorldSpace Rotation 계산
+		FQuaternion ParentWorldRotation = ComponentWorldRotation * ComponentSpaceTransforms[ParentIndex].Rotation;
+
+		// WorldSpace를 ParentBoneSpace(LocalSpace)로 변환
+		return ParentWorldRotation.Inverse() * WorldRotation;
 	}
 }

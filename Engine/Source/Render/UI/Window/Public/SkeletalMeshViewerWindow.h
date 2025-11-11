@@ -206,4 +206,40 @@ private:
 	 * @brief 렌더 타겟 해제
 	 */
 	void ReleaseRenderTarget();
+
+	/**
+	 * @brief 본 좌표 변환 헬퍼 함수들
+	 * UI 슬라이더와 동일한 방식으로 본의 로컬 트랜스폼을 직접 수정하되,
+	 * 기즈모의 월드 좌표를 로컬 좌표로 변환하는 기능을 제공합니다.
+	 */
+
+	/**
+	 * @brief 본의 월드 스페이스 위치 계산
+	 * @param BoneIndex 본 인덱스
+	 * @return 본의 월드 스페이스 위치
+	 */
+	FVector GetBoneWorldLocation(int32 BoneIndex) const;
+
+	/**
+	 * @brief 본의 월드 스페이스 회전 계산
+	 * @param BoneIndex 본 인덱스
+	 * @return 본의 월드 스페이스 회전 (쿼터니언)
+	 */
+	FQuaternion GetBoneWorldRotation(int32 BoneIndex) const;
+
+	/**
+	 * @brief 월드 스페이스 위치를 본의 로컬 스페이스 위치로 변환
+	 * @param BoneIndex 본 인덱스
+	 * @param WorldLocation 월드 스페이스 위치
+	 * @return 본의 로컬 스페이스 위치 (부모 본 기준)
+	 */
+	FVector WorldToLocalBoneTranslation(int32 BoneIndex, const FVector& WorldLocation) const;
+
+	/**
+	 * @brief 월드 스페이스 회전을 본의 로컬 스페이스 회전으로 변환
+	 * @param BoneIndex 본 인덱스
+	 * @param WorldRotation 월드 스페이스 회전 (쿼터니언)
+	 * @return 본의 로컬 스페이스 회전 (부모 본 기준)
+	 */
+	FQuaternion WorldToLocalBoneRotation(int32 BoneIndex, const FQuaternion& WorldRotation) const;
 };
