@@ -47,52 +47,37 @@ EFbxMeshType FFbxImporter::DetermineMeshType(const std::filesystem::path& FilePa
 	}
 
 	// FBX Scene 임포트
-	FbxScene* Scene = ImportFbxScene(FilePath);
-	if (!Scene)
-	{
-		return EFbxMeshType::Unknown;
-	}
+	FbxScene* Scene = ImportFbxScene(FilePath, false);
+	if (!Scene) { return EFbxMeshType::Unknown; }
 
-	// RAII로 Scene 자동 관리 (예외 발생 시에도 자동 해제)
+	// Scene RAII 보장
 	FFbxSceneGuard SceneGuard(Scene);
 
 	FbxNode* RootNode = Scene->GetRootNode();
-	if (!RootNode)
-	{
-		return EFbxMeshType::Unknown;
-	}
+	if (!RootNode) { return EFbxMeshType::Unknown; }
 
 	// 첫 번째 스킨 메시가 있는지 확인
 	FbxNode* SkinnedMeshNode = nullptr;
 	FbxMesh* SkinnedMesh = FindFirstSkinnedMesh(RootNode, &SkinnedMeshNode);
 
-	if (SkinnedMesh)
-	{
-		return EFbxMeshType::Skeletal;
-	}
+	if (HasAnySkinnedMesh(RootNode)) { return EFbxMeshType::Skeletal; }
 
 	// 일반 메시가 있는지 확인
 	FbxNode* MeshNode = nullptr;
-	FbxMesh* Mesh = FindFirstMesh(RootNode, &MeshNode);
-
-	if (Mesh)
-	{
-		return EFbxMeshType::Static;
-	}
+	if (FbxMesh* Mesh = FindFirstMesh(RootNode, &MeshNode)) { return EFbxMeshType::Static; }
 
 	return EFbxMeshType::Unknown;
 }
 
 bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxStaticMeshInfo* OutMeshInfo, Configuration Config)
 {
-	// 입력 검증
 	if (!OutMeshInfo)
 	{
 		UE_LOG_ERROR("유효하지 않은 FBXStaticMeshInfo입니다.");
 		return false;
 	}
 
-	// .fbxbin 파일의 여부 확인
+	// 캐시 체크
 	path CookedPath = UPathManager::GetInstance().GetCookedPath();
 	path BinFilePath = CookedPath / (FilePath.stem().wstring() + L".fbxbin");
 	if (Config.bIsBinaryEnabled && std::filesystem::exists(BinFilePath))
@@ -102,66 +87,50 @@ bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxSta
 
 		if (BinTime >= FbxTime)
 		{
-			UE_LOG_SUCCESS("FbxCache: Loaded cached fbxbin '%ls'", BinFilePath.c_str());
-			FWindowsBinReader WindowsBinReader(BinFilePath);
-			WindowsBinReader << *OutMeshInfo;
+			FWindowsBinReader Reader(BinFilePath);
+			Reader << *OutMeshInfo;
 			return true;
 		}
-		else
-		{
-			UE_LOG_INFO("FbxCache: fbxbin outdated, reloading from fbx '%ls'", FilePath.c_str());
-		}
 	}
 
-	if (!SdkManager)
+	if (!SdkManager || !std::filesystem::exists(FilePath))
 	{
-		UE_LOG_ERROR("FBX SDK Manager가 존재하지 않습니다.");
-		return false;
-	}
-
-	if (!std::filesystem::exists(FilePath))
-	{
-		UE_LOG_ERROR("FBX 파일이 존재하지 않습니다: %s", FilePath.string().c_str());
+		UE_LOG_ERROR("FBX SDK Manager 또는 파일이 유효하지 않습니다.");
 		return false;
 	}
 
 	// FBX Scene 임포트
 	FbxScene* Scene = ImportFbxScene(FilePath);
-	if (!Scene)
-	{
-		return false;
-	}
+	if (!Scene) { return false; }
 
-	// RAII로 Scene 자동 관리 (예외 발생 시에도 자동 해제)
+	// Scene RAII 보장
 	FFbxSceneGuard SceneGuard(Scene);
 
-	// 첫 번째 메시 찾기
 	FbxNode* RootNode = Scene->GetRootNode();
-	if (!RootNode)
-	{
-		UE_LOG_ERROR("FBX 파일을 탐색을 실패했습니다.");
-		return false;
-	}
+	if (!RootNode) { return false; }
 
 	FbxNode* MeshNode = nullptr;
 	FbxMesh* Mesh = FindFirstMesh(RootNode, &MeshNode);
-	if (!Mesh || !MeshNode)
+	if (!Mesh || !MeshNode) { return false; }
+
+	FbxGeometryConverter Converter(SdkManager);
+	if (!Mesh->IsTriangleMesh())
 	{
-		UE_LOG_ERROR("FBX에 유효한 메시가 없습니다");
-		return false;
+		FbxNodeAttribute* TriAttr = Converter.Triangulate(Mesh, true);
+		if (TriAttr && TriAttr->GetAttributeType() == FbxNodeAttribute::eMesh)
+		{
+			Mesh = MeshNode->GetMesh(); // 새로운 메시 재할당
+		}
 	}
 
-	// 데이터 추출
 	ExtractVertices(Mesh, OutMeshInfo, Config);
 	ExtractMaterials(MeshNode, FilePath, OutMeshInfo);
 	ExtractGeometryData(Mesh, OutMeshInfo, Config);
 
-	// 파싱 완료 후 베이크 저장
 	if (Config.bIsBinaryEnabled)
 	{
-		FWindowsBinWriter WindowsBinWriter(BinFilePath);
-		WindowsBinWriter << *OutMeshInfo;
-		UE_LOG_SUCCESS("FbxCache: Saved fbxbin '%ls'", BinFilePath.c_str());
+		FWindowsBinWriter Writer(BinFilePath);
+		Writer << *OutMeshInfo;
 	}
 
 	return true;
@@ -171,7 +140,7 @@ bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxSta
 // 🔸 Private Helper Functions
 // ========================================
 
-FbxScene* FFbxImporter::ImportFbxScene(const std::filesystem::path& FilePath)
+FbxScene* FFbxImporter::ImportFbxScene(const std::filesystem::path& FilePath, bool bTriangulateScene)
 {
 	FbxImporter* Importer = FbxImporter::Create(SdkManager, "");
 	if (!Importer->Initialize(FilePath.string().c_str(), -1, IoSettings))
@@ -186,8 +155,11 @@ FbxScene* FFbxImporter::ImportFbxScene(const std::filesystem::path& FilePath)
 	Importer->Destroy();
 
 	// 모든 지오메트리를 삼각형으로 변환
-	FbxGeometryConverter GeomConverter(SdkManager);
-	GeomConverter.Triangulate(Scene, true);
+	if (bTriangulateScene)
+	{
+		FbxGeometryConverter GeomConverter(SdkManager);
+		GeomConverter.Triangulate(Scene, true);
+	}
 
 	return Scene;
 }
@@ -230,7 +202,7 @@ void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& 
 	for (int m = 0; m < MaterialCount; ++m)
 	{
 		FbxSurfaceMaterial* Material = Node->GetMaterial(m);
-		if (!Material) continue;
+		if (!Material) { continue; }
 
 		FFbxMaterialInfo MatInfo;
 		const char* MaterialName = Material->GetName();
@@ -358,6 +330,11 @@ void FFbxImporter::ExtractGeometryData(
 
 	uint32 VertexCounter = 0;
 
+	const FbxGeometryElementNormal* LayerNormal = Mesh->GetElementNormal(0);
+	FbxStringList UVSetNames;
+	Mesh->GetUVSetNames(UVSetNames);
+	const char* ActiveUVSet = (UVSetNames.GetCount() > 0) ? UVSetNames[0] : nullptr;
+
 	// 폴리곤별로 버텍스 데이터 생성
 	const int PolygonCount = Mesh->GetPolygonCount();
 	for (int p = 0; p < PolygonCount; ++p)
@@ -402,9 +379,18 @@ void FFbxImporter::ExtractGeometryData(
 				OutMeshInfo->VertexList.Add(FVector(0, 0, 0));
 			}
 
-			// Normal 추출
+			// Normal
 			FbxVector4 Normal;
-			if (Mesh->GetPolygonVertexNormal(p, v, Normal))
+			bool bHasNormal = false;
+			if (LayerNormal && LayerNormal->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
+			{
+				bHasNormal = Mesh->GetPolygonVertexNormal(p, v, Normal);
+			}
+			else
+			{
+				bHasNormal = Mesh->GetPolygonVertexNormal(p, v, Normal); // fallback
+			}
+			if (bHasNormal)
 			{
 				FVector N(Normal[0], Normal[1], Normal[2]);
 				if (Config.bConvertToUEBasis)
@@ -419,13 +405,11 @@ void FFbxImporter::ExtractGeometryData(
 			}
 
 			// UV 추출
-			FbxStringList UVSetNames;
-			Mesh->GetUVSetNames(UVSetNames);
-			if (UVSetNames.GetCount() > 0)
+			if (ActiveUVSet)
 			{
 				FbxVector2 UV;
 				bool bUnmapped = false;
-				if (Mesh->GetPolygonVertexUV(p, v, UVSetNames[0], UV, bUnmapped))
+				if (Mesh->GetPolygonVertexUV(p, v, ActiveUVSet, UV, bUnmapped))
 				{
 					FVector2 UVConv(UV[0], 1.0f - UV[1]);
 					OutMeshInfo->TexCoordList.Add(UVConv);
@@ -488,6 +472,41 @@ void FFbxImporter::BuildMeshSections(const TArray<TArray<uint32>>& IndicesPerMat
 	}
 }
 
+bool FFbxImporter::HasAnySkinnedMesh(FbxNode* Root)
+{
+	if (!Root) { return false; }
+
+	if (FbxMesh* Mesh = Root->GetMesh())
+	{
+		if (Mesh->GetDeformerCount(FbxDeformer::eSkin) > 0) { return true; }
+	}
+
+	for (int i = 0; i < Root->GetChildCount(); ++i)
+	{
+		if (HasAnySkinnedMesh(Root->GetChild(i))) { return true; }
+	}
+
+	return false;
+}
+
+bool FFbxImporter::EnsureTriangleMesh(FbxMesh*& Mesh, FbxGeometryConverter& Converter)
+{
+	if (!Mesh) { return false; }
+	if (Mesh->IsTriangleMesh()) { return true; }
+
+	FbxNode* Node = Mesh->GetNode();
+	if (!Node) { return false; }
+
+	// Mesh 단위로 Triangulate 진행
+	FbxNodeAttribute* TriAttr = Converter.Triangulate(Mesh, true);
+	if (TriAttr && TriAttr->GetAttributeType() == FbxNodeAttribute::eMesh)
+	{
+		Mesh = Node->GetMesh(); // 교체된 메시 참조로 갱신
+		return true;
+	}
+	return false;
+}
+
 // ========================================
 // 🔸 Skeletal Mesh Implementation
 // ========================================
@@ -538,12 +557,9 @@ bool FFbxImporter::LoadSkeletalMesh(const std::filesystem::path& FilePath, FFbxS
 
 	// FBX Scene 임포트
 	FbxScene* Scene = ImportFbxScene(FilePath);
-	if (!Scene)
-	{
-		return false;
-	}
+	if (!Scene) { return false; }
 
-	// RAII로 Scene 자동 관리 (예외 발생 시에도 자동 해제)
+	// Scene RAII 보장
 	FFbxSceneGuard SceneGuard(Scene);
 
 	// 모든 스킨 메시 찾기 (디버그)

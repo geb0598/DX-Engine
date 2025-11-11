@@ -138,7 +138,7 @@ private:
 	};
 
 	// 🔸 공통 Helper 함수들 (Static/Skeletal 모두 사용)
-	static FbxScene* ImportFbxScene(const std::filesystem::path& FilePath);
+	static FbxScene* ImportFbxScene(const std::filesystem::path& FilePath, bool bTriangulateScene = true);
 	static FbxMesh* FindFirstMesh(FbxNode* RootNode, FbxNode** OutNode);
 	static std::filesystem::path ResolveTexturePath(const std::string& OriginalPath, const std::filesystem::path& FbxDirectory, const std::filesystem::path& FbxFilePath);
 
@@ -147,6 +147,10 @@ private:
 
 	/** Mesh Section 생성 (Static/Skeletal 공통) */
 	static void BuildMeshSections(const TArray<TArray<uint32>>& IndicesPerMaterial, FFbxStaticMeshInfo* OutMeshInfo);
+
+	/** mesh 단위 최적화 유틸 */
+	static bool HasAnySkinnedMesh(FbxNode * Root);
+	static bool EnsureTriangleMesh(FbxMesh * &Mesh, FbxGeometryConverter & Converter);
 
 	// 🔸 Static Mesh 전용
 	static void ExtractVertices(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInfo, const Configuration& Config);
