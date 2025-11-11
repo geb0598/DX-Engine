@@ -324,16 +324,13 @@ void USkeletalMeshViewerWindow::OpenViewer(USkeletalMeshComponent* InSkeletalMes
 			SkeletalMeshComponent->SetWorldScale3D(FVector(1.0f, 1.0f, 1.0f));
 
 			PreviewSkeletalMeshActor->RegisterComponent(SkeletalMeshComponent);
-			SelectedComponent = SkeletalMeshComponent;
 
 			UE_LOG("SkeletalMeshViewerWindow: 편집용 Actor 스폰 완료");
 		}
 
-		if (ViewerGizmo && SelectedComponent)
-		{
-			ViewerGizmo->SetSelectedComponent(SelectedComponent);
-			UE_LOG("SkeletalMeshViewerWindow: Gizmo를 SelectedComponent에 설정 완료");
-		}
+		// 초기에는 아무것도 선택하지 않음
+		SelectedComponent = nullptr;
+		SelectedBoneIndex = INDEX_NONE;
 	}
 }
 bool USkeletalMeshViewerWindow::OnWindowClose()
@@ -1118,7 +1115,7 @@ void USkeletalMeshViewerWindow::DisplayViewportImage(const ImVec2& ViewportSize)
 	WindowPos.y -= ViewportSize.y;
 
 	ImVec2 InfoPos = ImVec2(WindowPos.x + 10, WindowPos.y + 10);
-	ImVec2 InfoSize = ImVec2(280, 180);
+	ImVec2 InfoSize = ImVec2(320, 230);
 
 	DrawList->AddRectFilled(InfoPos, ImVec2(InfoPos.x + InfoSize.x, InfoPos.y + InfoSize.y),
 	                        IM_COL32(0, 0, 0, 180), 4.0f);
@@ -1150,6 +1147,14 @@ void USkeletalMeshViewerWindow::DisplayViewportImage(const ImVec2& ViewportSize)
 			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 120), IM_COL32(150, 150, 150, 255), "RMB: Rotate | MMB: Pan");
 			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 140), IM_COL32(150, 150, 150, 255), "Wheel: Zoom | Q/W/E/R: Gizmo");
 			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 160), IM_COL32(150, 150, 150, 255), "F: Focus | Alt+G: Toggle Grid");
+			// Gizmo 모드 표시
+			if (ViewerGizmo)
+			{
+				const char* ModeText = ViewerGizmo->IsWorldMode() ? "Gizmo: WORLD" : "Gizmo: LOCAL";
+				const ImU32 ModeColor = ViewerGizmo->IsWorldMode() ? IM_COL32(255, 100, 100, 255) : IM_COL32(100, 255, 100, 255);
+				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 180), ModeColor, ModeText);
+				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 200), IM_COL32(150, 150, 150, 255), "Ctrl+`: Toggle World/Local");
+			}
 		}
 		else
 		{
@@ -1246,15 +1251,14 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 			}
 			else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 			{
-				if (PreviewSkeletalMeshActor && !SelectedComponent)
+				// 기즈모가 선택되지 않은 상태에서 왼쪽 클릭
+				// → 본 선택 해제 (바깥 클릭)
+				if (SelectedBoneIndex != INDEX_NONE)
 				{
-					if (AStaticMeshActor* StaticMeshActor = Cast<AStaticMeshActor>(PreviewSkeletalMeshActor))
+					SelectedBoneIndex = INDEX_NONE;
+					if (ViewerGizmo)
 					{
-						SelectedComponent = StaticMeshActor->GetStaticMeshComponent();
-						if (ViewerGizmo)
-						{
-							ViewerGizmo->SetSelectedComponent(SelectedComponent);
-						}
+						ViewerGizmo->ClearFixedLocation();
 					}
 				}
 			}
@@ -1820,6 +1824,12 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		if (bDirtyBoneTransforms)
 		{
 			SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, TempTransform);
+			// UI 슬라이더로 위치 변경 시 기즈모 위치도 업데이트
+			if (ViewerGizmo)
+			{
+				FVector NewBoneWorldLocation = GetBoneWorldLocation(SelectedBoneIndex);
+				ViewerGizmo->SetFixedLocation(NewBoneWorldLocation);
+			}
 		}
 
 		//Reset 버튼
