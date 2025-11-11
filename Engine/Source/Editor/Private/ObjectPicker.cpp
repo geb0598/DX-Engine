@@ -67,9 +67,25 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 	FVector GizmoLocation = Gizmo.GetGizmoLocation();
 	FVector GizmoAxises[3] = { FVector{1, 0, 0}, FVector{0, 1, 0}, FVector{0, 0, 1} };
 
+	// 스케일 모드는 항상 로컬, 다른 모드는 로컬 모드일 때만
 	if (Gizmo.GetGizmoMode() == EGizmoMode::Scale || !Gizmo.IsWorldMode())
 	{
-		FQuaternion q = Gizmo.GetTargetComponent()->GetWorldRotationAsQuaternion();
+		FQuaternion q;
+		// 본 선택 시: DragStartActorRotationQuat 사용
+		// 일반 컴포넌트 선택 시: TargetComponent 회전 사용
+		if (Gizmo.IsFixedLocation())
+		{
+			q = Gizmo.GetDragStartActorRotationQuat();
+		}
+		else if (Gizmo.GetTargetComponent())
+		{
+			q = Gizmo.GetTargetComponent()->GetWorldRotationAsQuaternion();
+		}
+		else
+		{
+			q = Gizmo.GetDragStartActorRotationQuat();
+		}
+
 		for (int i = 0; i < 3; i++)
 		{
 			// 쿼터니언을 사용해 기본 축을 회전시킵니다.
@@ -116,7 +132,22 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 			// World/Local 모드에 따라 회전 적용
 			if (Gizmo.GetGizmoMode() == EGizmoMode::Scale || !Gizmo.IsWorldMode())
 			{
-				FQuaternion q = Gizmo.GetTargetComponent()->GetWorldRotationAsQuaternion();
+				FQuaternion q;
+				// 본 선택 시: DragStartActorRotationQuat 사용
+				// 일반 컴포넌트 선택 시: TargetComponent 회전 사용
+				if (Gizmo.IsFixedLocation())
+				{
+					q = Gizmo.GetDragStartActorRotationQuat();
+				}
+				else if (Gizmo.GetTargetComponent())
+				{
+					q = Gizmo.GetTargetComponent()->GetWorldRotationAsQuaternion();
+				}
+				else
+				{
+					q = Gizmo.GetDragStartActorRotationQuat();
+				}
+
 				T1 = q.RotateVector(T1);
 				T2 = q.RotateVector(T2);
 				Normal = q.RotateVector(Normal);
@@ -294,7 +325,22 @@ void UObjectPicker::PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGi
 						// Local 모드면 회전 적용
 						if (!Gizmo.IsWorldMode())
 						{
-							FQuaternion q = Gizmo.GetTargetComponent()->GetWorldRotationAsQuaternion();
+							FQuaternion q;
+							// 본 선택 시: DragStartActorRotationQuat 사용
+							// 일반 컴포넌트 선택 시: TargetComponent 회전 사용
+							if (Gizmo.IsFixedLocation())
+							{
+								q = Gizmo.GetDragStartActorRotationQuat();
+							}
+							else if (Gizmo.GetTargetComponent())
+							{
+								q = Gizmo.GetTargetComponent()->GetWorldRotationAsQuaternion();
+							}
+							else
+							{
+								q = Gizmo.GetDragStartActorRotationQuat();
+							}
+
 							BaseAxis0 = q.RotateVector(BaseAxis0);
 							BaseAxis1 = q.RotateVector(BaseAxis1);
 						}

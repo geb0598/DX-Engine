@@ -131,8 +131,20 @@ void UGizmo::RenderGizmo(UCamera* InCamera, const D3D11_VIEWPORT& InViewport)
 	FQuaternion BaseRot;
 	if (GizmoMode == EGizmoMode::Scale)
 	{
-		// 스케일 모드: 항상 로컬 좌표
-		BaseRot = TargetComponent ? TargetComponent->GetWorldRotationAsQuaternion() : GetDragStartActorRotationQuat();
+		// 스케일 모드: 항상 로컬 좌표 (bIsWorld 무시)
+		if (bUseFixedLocation)
+		{
+			// 본 선택 시: 드래그 시작 회전 사용
+			BaseRot = GetDragStartActorRotationQuat();
+		}
+		else if (TargetComponent)
+		{
+			BaseRot = TargetComponent->GetWorldRotationAsQuaternion();
+		}
+		else
+		{
+			BaseRot = GetDragStartActorRotationQuat();
+		}
 	}
 	else if (GizmoMode == EGizmoMode::Rotate && IsDragging())
 	{
@@ -146,13 +158,18 @@ void UGizmo::RenderGizmo(UCamera* InCamera, const D3D11_VIEWPORT& InViewport)
 		{
 			BaseRot = FQuaternion::Identity();
 		}
+		else if (bUseFixedLocation)
+		{
+			// 본 선택 시 (Fixed Location 모드): 드래그 시작 회전 사용
+			BaseRot = GetDragStartActorRotationQuat();
+		}
 		else if (TargetComponent)
 		{
 			BaseRot = TargetComponent->GetWorldRotationAsQuaternion();
 		}
 		else
 		{
-			// 본 선택 시: 드래그 시작 회전 사용
+			// 기타: 드래그 시작 회전 사용
 			BaseRot = GetDragStartActorRotationQuat();
 		}
 	}

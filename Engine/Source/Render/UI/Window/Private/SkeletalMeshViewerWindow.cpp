@@ -997,37 +997,23 @@ void USkeletalMeshViewerWindow::RenderToViewportTexture()
 			// Gizmo 렌더링 (컴포넌트 또는 본 선택 시)
 			if (ViewerGizmo && (SelectedComponent || SelectedBoneIndex != INDEX_NONE))
 			{
-				// 본 선택 시: Local 모드일 때만 부모 본의 월드 회전을 기즈모에 설정
+				// 본 선택 시: Local 모드 또는 Scale 모드일 때 선택된 본 자체의 월드 회전을 기즈모에 설정
 				// 드래그 중이 아닐 때만 업데이트 (드래그 시작 회전값을 보존하기 위해)
 				if (SelectedBoneIndex != INDEX_NONE && SkeletalMeshComponent && !ViewerGizmo->IsDragging())
 				{
 					FQuaternion GizmoRotation = FQuaternion::Identity();  // World 모드: Identity
 
-					// Local 모드일 때만 부모 본의 회전 계산
-					if (!ViewerGizmo->IsWorldMode())
+					// Local 모드 또는 Scale 모드(항상 로컬)일 때 선택된 본 자체의 회전 사용
+					if (!ViewerGizmo->IsWorldMode() || ViewerGizmo->GetGizmoMode() == EGizmoMode::Scale)
 					{
-						USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
-						if (SkeletalMesh)
-						{
-							const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
-							int32 ParentIndex = RefSkeleton.GetRawParentIndex(SelectedBoneIndex);
-
-							if (ParentIndex != INDEX_NONE)
-							{
-								// 부모 본의 월드 회전 계산
-								const TArray<FTransform>& ComponentSpaceTransforms = SkeletalMeshComponent->GetComponentSpaceTransforms();
-								if (ComponentSpaceTransforms.IsValidIndex(ParentIndex))
-								{
-									FQuaternion ComponentWorldRotation = SkeletalMeshComponent->GetWorldRotationAsQuaternion();
-									GizmoRotation = ComponentWorldRotation * ComponentSpaceTransforms[ParentIndex].Rotation;
-								}
-							}
-							// else: 루트 본인 경우 Identity 유지
-						}
+						// 선택된 본 자체의 월드 회전 (본의 로컬 좌표계)
+						GizmoRotation = GetBoneWorldRotation(SelectedBoneIndex);
 					}
 
 					// 기즈모의 DragStartActorRotationQuat 설정
-					// World 모드: Identity, Local 모드: 부모 회전
+					// World 모드: Identity (단, Scale 모드는 예외)
+					// Local 모드: 선택된 본의 회전
+					// Scale 모드: 항상 선택된 본의 회전
 					ViewerGizmo->SetDragStartActorRotationQuat(GizmoRotation);
 				}
 

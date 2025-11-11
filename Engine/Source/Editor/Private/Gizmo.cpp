@@ -395,9 +395,23 @@ FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPi
 		// 평면 법선 벡터
 		FVector PlaneNormal = GetPlaneNormal();
 
-		if (!IsWorldMode() && TargetComponent)
+		if (!IsWorldMode())
 		{
-			FQuaternion q = TargetComponent->GetWorldRotationAsQuaternion();
+			FQuaternion q;
+			// 본 선택 시: DragStartActorRotationQuat 사용
+			// 일반 컴포넌트 선택 시: TargetComponent 회전 사용
+			if (bUseFixedLocation)
+			{
+				q = GetDragStartActorRotationQuat();
+			}
+			else if (TargetComponent)
+			{
+				q = TargetComponent->GetWorldRotationAsQuaternion();
+			}
+			else
+			{
+				q = GetDragStartActorRotationQuat();
+			}
 			PlaneNormal = q.RotateVector(PlaneNormal);
 		}
 
@@ -414,9 +428,23 @@ FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPi
 	// 축 드래그 처리
 	FVector GizmoAxis = GetGizmoAxis();
 
-	if (!IsWorldMode() && TargetComponent)
+	if (!IsWorldMode())
 	{
-		FQuaternion q = TargetComponent->GetWorldRotationAsQuaternion();
+		FQuaternion q;
+		// 본 선택 시: DragStartActorRotationQuat 사용
+		// 일반 컴포넌트 선택 시: TargetComponent 회전 사용
+		if (bUseFixedLocation)
+		{
+			q = GetDragStartActorRotationQuat();
+		}
+		else if (TargetComponent)
+		{
+			q = TargetComponent->GetWorldRotationAsQuaternion();
+		}
+		else
+		{
+			q = GetDragStartActorRotationQuat();
+		}
 		GizmoAxis = q.RotateVector(GizmoAxis);
 	}
 
@@ -622,7 +650,8 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 
 	FVector MouseWorld;
 	FVector PlaneOrigin = GetGizmoLocation();
-	FQuaternion Quat = TargetComponent ? TargetComponent->GetWorldRotationAsQuaternion() : FQuaternion::Identity();
+	// 본 선택 시에도 올바른 회전을 사용하기 위해 DragStartActorRotationQuat 사용
+	FQuaternion Quat = GetDragStartActorRotationQuat();
 	const FVector CameraLocation = InCamera->GetLocation();
 
 	// Center 구체 드래그 처리 (균일 스케일, 모든 축 동일하게)
@@ -642,7 +671,7 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 
 			// 스케일 민감도 조정
 			const float DistanceToGizmo = (PlaneOrigin - CameraLocation).Length();
-			constexpr float BaseSensitivity = 0.03f;
+			constexpr float BaseSensitivity = 0.01f;  // 민감도 감소
 			const float ScaleSensitivity = BaseSensitivity * DistanceToGizmo;
 			const float ScaleDelta = DragDistance * ScaleSensitivity;
 
@@ -686,7 +715,7 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 
 			// 스케일 민감도 조정
 			const float DistanceToGizmo = (PlaneOrigin - CameraLocation).Length();
-			constexpr float BaseSensitivity = 0.03f;
+			constexpr float BaseSensitivity = 0.01f;  // 민감도 감소
 			const float ScaleSensitivity = BaseSensitivity * DistanceToGizmo;
 			const float ScaleDelta = AvgDrag * ScaleSensitivity;
 
@@ -768,7 +797,7 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 
 		// 거리에 비례한 민감도, 기본 배율 적용
 		// 가까울수록 정밀하게, 멀수록 빠르게 조정
-		constexpr float BaseSensitivity = 0.03f;  // 기본 민감도
+		constexpr float BaseSensitivity = 0.01f;  // 기본 민감도 (감소)
 		const float ScaleSensitivity = BaseSensitivity * DistanceToGizmo;
 		const float ScaleDelta = AxisDragDistance * ScaleSensitivity;
 
