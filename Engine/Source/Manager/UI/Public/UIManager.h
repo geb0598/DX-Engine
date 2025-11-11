@@ -68,6 +68,8 @@ public:
 	
 	void OnSelectedComponentChanged(UActorComponent* InSelectedComponent) const;
 
+	bool IsWindowMinimized() const { return bIsMinimized; }
+
 private:
 	TArray<UUIWindow*> UIWindows;
 	UUIWindow* FocusedWindow = nullptr;

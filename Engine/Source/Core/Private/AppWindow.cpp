@@ -300,6 +300,18 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 				}
 #endif
 			}
+			
+			// SIZE_RESTORED 또는 SIZE_MAXIMIZED일 때 복원 처리
+			if (InWParam == SIZE_RESTORED || InWParam == SIZE_MAXIMIZED)
+			{
+#if WITH_EDITOR
+				// 최소화 상태였다면 복원
+				if (UUIManager::GetInstance().IsWindowMinimized())
+				{
+					UUIManager::GetInstance().OnWindowRestored();
+				}
+#endif
+			}
 		}
 		else // SIZE_MINIMIZED
 		{
@@ -313,11 +325,9 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 		break;
 
 	case WM_SETFOCUS:
-		// 윈도우가 포커스를 얻었을 때 입력 활성화 및 상태 복원
+		// 윈도우가 포커스를 얻었을 때 입력 활성화
 		UInputManager::GetInstance().SetWindowFocus(true);
-#if WITH_EDITOR
-		UUIManager::GetInstance().OnWindowRestored();
-#endif
+		// 주의: OnWindowRestored는 WM_SIZE에서 처리
 		break;
 
 	case WM_KILLFOCUS:
@@ -331,15 +341,12 @@ LRESULT CALLBACK FAppWindow::WndProc(HWND InWindowHandle, uint32 InMessage, WPAR
 		{
 			// 윈도우가 비활성화될 때
 			UInputManager::GetInstance().SetWindowFocus(false);
-			// 주의: WM_ACTIVATE에서 OnWindowMinimized를 호출하지 않음 (최소화가 아닌 단순 비활성화)
 		}
 		else
 		{
 			// 윈도우가 활성화될 때 (WA_ACTIVE 또는 WA_CLICKACTIVE)
 			UInputManager::GetInstance().SetWindowFocus(true);
-#if WITH_EDITOR
-			UUIManager::GetInstance().OnWindowRestored();
-#endif
+			// 주의: OnWindowRestored는 WM_SIZE에서 처리
 		}
 		break;
 
