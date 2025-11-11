@@ -91,7 +91,6 @@ class FFbxImporter
 public:
 	struct Configuration
 	{
-		bool bConvertToUEBasis = true;
 		bool bIsBinaryEnabled = false;
 	};
 
