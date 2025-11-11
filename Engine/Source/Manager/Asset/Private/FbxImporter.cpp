@@ -154,6 +154,38 @@ FbxScene* FFbxImporter::ImportFbxScene(const std::filesystem::path& FilePath, bo
 	Importer->Import(Scene);
 	Importer->Destroy();
 
+	// FBX 파일의 원본 좌표계 확인 (디버그용)
+	FbxAxisSystem SceneAxisSystem = Scene->GetGlobalSettings().GetAxisSystem();
+
+	int upSign, frontSign;
+	FbxAxisSystem::EUpVector UpVector = SceneAxisSystem.GetUpVector(upSign);
+	FbxAxisSystem::EFrontVector FrontVector = SceneAxisSystem.GetFrontVector(frontSign);
+	FbxAxisSystem::ECoordSystem CoordSystem = SceneAxisSystem.GetCoorSystem();
+
+	UE_LOG("[FbxImporter] FBX 원본 좌표계:");
+	UE_LOG("  - Up: %s (sign: %d), Front: %s (sign: %d), %s",
+		UpVector == FbxAxisSystem::eXAxis ? "X" :
+		UpVector == FbxAxisSystem::eYAxis ? "Y" : "Z", upSign,
+		FrontVector == FbxAxisSystem::eParityEven ? "ParityEven" : "ParityOdd", frontSign,
+		CoordSystem == FbxAxisSystem::eRightHanded ? "RightHanded" : "LeftHanded");
+
+	// 엔진 좌표계로 자동 변환 (Z-up, X-forward, Left-handed - 언리얼 스타일)
+	FbxAxisSystem EngineAxisSystem(
+		FbxAxisSystem::eZAxis,        // Z-up
+		FbxAxisSystem::eParityOdd,    // X-forward (ParityOdd + ZAxis = X forward)
+		FbxAxisSystem::eLeftHanded    // Left-handed
+	);
+
+	if (SceneAxisSystem != EngineAxisSystem)
+	{
+		UE_LOG("[FbxImporter] 엔진 좌표계로 변환 중... (Z-up, X-forward, LH)");
+		EngineAxisSystem.ConvertScene(Scene);
+	}
+	else
+	{
+		UE_LOG("[FbxImporter] 이미 엔진 좌표계와 일치합니다.");
+	}
+
 	// 모든 지오메트리를 삼각형으로 변환
 	if (bTriangulateScene)
 	{
@@ -186,12 +218,8 @@ void FFbxImporter::ExtractVertices(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInf
 	OutMeshInfo->VertexList.Reserve(ControlPointCount);
 	for (int i = 0; i < ControlPointCount; ++i)
 	{
+		// ConvertScene()이 이미 엔진 좌표계로 변환했으므로 그대로 사용
 		FVector Pos(ControlPoints[i][0], ControlPoints[i][1], ControlPoints[i][2]);
-		if (Config.bConvertToUEBasis)
-		{
-			// FBX(Y-up, Z-forward) → UE(Z-up, X-forward)
-			Pos = FVector(Pos.Z, Pos.X, -Pos.Y);
-		}
 		OutMeshInfo->VertexList.Add(Pos);
 	}
 }
@@ -393,12 +421,8 @@ void FFbxImporter::ExtractGeometryData(
 			}
 			if (bHasNormal)
 			{
+				// ConvertScene()이 이미 엔진 좌표계로 변환했으므로 그대로 사용
 				FVector N(Normal[0], Normal[1], Normal[2]);
-				if (Config.bConvertToUEBasis)
-				{
-					// FBX(Y-up, Z-forward) → UE(Z-up, X-forward)
-					N = FVector(N.Z, N.X, -N.Y);
-				}
 				OutMeshInfo->NormalList.Add(N);
 			}
 			else
@@ -443,9 +467,16 @@ void FFbxImporter::ExtractGeometryData(
 	OutMeshInfo->Indices.Empty();
 	for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
 	{
-		for (uint32 Index : IndicesPerMaterial[i])
+		// Right-handed → Left-handed 변환시 Winding Order 뒤집기
+		// 삼각형 단위로 (0,1,2) → (2,1,0)으로 역순 변환
+		for (int j = 0; j < IndicesPerMaterial[i].Num(); j += 3)
 		{
-			OutMeshInfo->Indices.Add(Index);
+			if (j + 2 < IndicesPerMaterial[i].Num())
+			{
+				OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 2]);  // 2
+				OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 1]);  // 1
+				OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 0]);  // 0
+			}
 		}
 	}
 
@@ -768,15 +799,15 @@ bool FFbxImporter::ExtractSkeleton(FbxScene* Scene, FbxMesh* Mesh, FFbxSkeletalM
 		BoneInfo.BoneName = LinkNode->GetName();
 		BoneInfo.ParentIndex = -1; // 나중에 설정
 
-		// 로컬 변환 추출
+		// 로컬 변환 추출 (ConvertScene()이 이미 엔진 좌표계로 변환했으므로 그대로 사용)
 		FbxAMatrix LocalTransform = LinkNode->EvaluateLocalTransform();
 		FbxVector4 T = LocalTransform.GetT();
 		FbxQuaternion R = LocalTransform.GetQ();
 		FbxVector4 S = LocalTransform.GetS();
 
-		BoneInfo.LocalTransform.Translation = FVector(T[2], T[0], -T[1]);
-		BoneInfo.LocalTransform.Rotation = FQuaternion(R[2], R[0], -R[1], R[3]);
-		BoneInfo.LocalTransform.Scale = FVector(S[2], S[0], S[1]);
+		BoneInfo.LocalTransform.Translation = FVector(T[0], T[1], T[2]);
+		BoneInfo.LocalTransform.Rotation = FQuaternion(R[0], R[1], R[2], R[3]);
+		BoneInfo.LocalTransform.Scale = FVector(S[0], S[1], S[2]);
 
 		int32 BoneIndex = OutMeshInfo->Bones.Num();
 		OutMeshInfo->Bones.Add(BoneInfo);
@@ -927,12 +958,8 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 
 	for (int i = 0; i < ControlPointCount; ++i)
 	{
+		// ConvertScene()이 이미 엔진 좌표계로 변환했으므로 그대로 사용
 		FVector Pos(ControlPoints[i][0], ControlPoints[i][1], ControlPoints[i][2]);
-		if (Config.bConvertToUEBasis)
-		{
-			// FBX(Y-up, Z-forward) → UE(Z-up, X-forward)
-			Pos = FVector(Pos.Z, Pos.X, -Pos.Y);
-		}
 		ControlPointPositions.Add(Pos);
 	}
 
@@ -1010,12 +1037,8 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 			FbxVector4 Normal;
 			if (Mesh->GetPolygonVertexNormal(p, v, Normal))
 			{
+				// ConvertScene()이 이미 엔진 좌표계로 변환했으므로 그대로 사용
 				FVector N(Normal[0], Normal[1], Normal[2]);
-				if (Config.bConvertToUEBasis)
-				{
-					// FBX(Y-up, Z-forward) → UE(Z-up, X-forward)
-					N = FVector(N.X, -N.Y, N.Z);
-				}
 				OutMeshInfo->NormalList.Add(N);
 			}
 			else
@@ -1056,9 +1079,16 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 		OutMeshInfo->Indices.Empty();
 		for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
 		{
-			for (uint32 Index : IndicesPerMaterial[i])
+			// Right-handed → Left-handed 변환시 Winding Order 뒤집기
+			// 삼각형 단위로 (0,1,2) → (2,1,0)으로 역순 변환
+			for (int j = 0; j < IndicesPerMaterial[i].Num(); j += 3)
 			{
-				OutMeshInfo->Indices.Add(Index);
+				if (j + 2 < IndicesPerMaterial[i].Num())
+				{
+					OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 2]);  // 2
+					OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 1]);  // 1
+					OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 0]);  // 0
+				}
 			}
 		}
 		BuildMeshSections(IndicesPerMaterial, OutMeshInfo);
@@ -1076,6 +1106,18 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 		for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
 		{
 			if (IndicesPerMaterial[i].Num() == 0) continue;
+
+			// Right-handed → Left-handed 변환시 Winding Order 뒤집기
+			for (int j = 0; j < IndicesPerMaterial[i].Num(); j += 3)
+			{
+				if (j + 2 < IndicesPerMaterial[i].Num())
+				{
+					OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 2]);  // 2
+					OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 1]);  // 1
+					OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 0]);  // 0
+				}
+			}
+
 			FFbxMeshSection Section;
 			Section.StartIndex = CurrentOffset;
 			Section.IndexCount = IndicesPerMaterial[i].Num();
