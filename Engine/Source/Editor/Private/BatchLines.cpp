@@ -213,28 +213,6 @@ void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMesh
 		return;
 	}
 
-	// 각 본에 대해 월드 변환 계산
-	//TArray<FVector> BoneWorldPositions;
-	//BoneWorldPositions.SetNum(NumBones);
-
-	//for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
-	//{
-	//	FTransform BoneTransform = SkeletalMeshComponent->GetBoneTransformLocal(BoneIndex);
-	//	
-	//	// 부모 본의 변환을 누적 적용
-	//	int32 ParentIndex = RefSkeleton.GetRawParentIndex(BoneIndex);
-	//	while (ParentIndex != INDEX_NONE)
-	//	{
-	//		FTransform ParentTransform = SkeletalMeshComponent->GetBoneTransformLocal(ParentIndex);
-	//		BoneTransform = BoneTransform * ParentTransform;
-	//		ParentIndex = RefSkeleton.GetRawParentIndex(ParentIndex);
-	//	}
-
-	//	// 컴포넌트 월드 변환 적용
-	//	BoneTransform = BoneTransform * SkeletalMeshComponent->GetWorldTransform();
-	//	BoneWorldPositions[BoneIndex] = BoneTransform.Translation;
-	//}
-
 	// ComponentSpaceTransforms이 정상적으로 갱신되어 있는지 확인
 	if(SkeletalMeshComponent->IsSkinningDirty() == false)
 	{
@@ -246,10 +224,7 @@ void UBatchLines::UpdateBonePyramidVertices(USkeletalMeshComponent* SkeletalMesh
 
 	uint32 CurrentVertexIndex = 0;
 
-	// InBoneIndex에 해당하는 본과 관련된 피라미드만 생성
 	// 1. 주황색 피라미드: 부모 본 -> InBoneIndex 본
-	/*FTransform BoneTransform = SkeletalMeshComponent->GetBoneTransformLocal(InBoneIndex);
-	FVector BonePosition = BoneTransform.Translation;*/
 	int32 ParentIndex = RefSkeleton.GetRawParentIndex(InBoneIndex);
 	const TArray<FTransform>& ComponentSpaceTransforms = SkeletalMeshComponent->GetComponentSpaceTransforms();
 	FVector WorldPosition = SkeletalMeshComponent->GetWorldLocation();
@@ -583,6 +558,9 @@ void UBatchLines::RenderBonePyramids()
 
 	if (NumBonePyramidIndices > 0)
 	{
+		// Depth Test를 끄기 위해 DisabledDepthStencilState로 설정
+		Primitive.bShouldAlwaysVisible = true;
+
 		Renderer.RenderEditorPrimitiveIndexed(
 			Primitive,
 			Primitive.RenderState,
@@ -591,7 +569,11 @@ void UBatchLines::RenderBonePyramids()
 			BonePyramidStartIndex,
 			NumBonePyramidIndices
 		);
+
+		// 이전 DepthStencilState 복원
+		Primitive.bShouldAlwaysVisible = false;
 	}
+		
 }
 
 void UBatchLines::SetIndices()
