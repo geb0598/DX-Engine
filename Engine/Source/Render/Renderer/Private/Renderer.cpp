@@ -720,12 +720,18 @@ void URenderer::HotReloadShaders()
 			CreateStaticMeshShader();
 			for (FRenderPass* RenderPass : RenderPasses)
 			{
+				/** @todo dynamic_cast를 virtual getter를 활용해 타입 정보를 확인하는 방식으로 대체합시다. */
 				if (auto* StaticMeshPass = dynamic_cast<FStaticMeshPass*>(RenderPass))
 				{
 					StaticMeshPass->SetInputLayout(UberLitInputLayout);
 					StaticMeshPass->SetVertexShader(UberLitVertexShader);
 					StaticMeshPass->SetPixelShader(UberLitPixelShader);
-					break;
+				}
+				else if (auto* SkeletalMeshPass = dynamic_cast<FSkeletalMeshPass*>(RenderPass))
+				{
+					SkeletalMeshPass->SetInputLayout(UberLitInputLayout);
+					SkeletalMeshPass->SetVertexShader(UberLitVertexShader);
+					SkeletalMeshPass->SetPixelShader(UberLitPixelShader);
 				}
 			}
 			break;

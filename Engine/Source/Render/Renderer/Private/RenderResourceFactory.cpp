@@ -182,39 +182,26 @@ void FRenderResourceFactory::CreatePixelShader(const wstring& InFilePath, ID3D11
 }
 
 void FRenderResourceFactory::CreatePixelShader(const wstring& InFilePath, ID3D11PixelShader** OutPixelShader,
-                                                const char* InEntryPoint, const D3D_SHADER_MACRO* InMacros)
+												const char* InEntryPoint, const D3D_SHADER_MACRO* InMacros)
 {
-	const char* ShaderModel = "ps_5_0";
+	ID3DBlob* PixelShaderBlob = nullptr;
+	ID3DBlob* ErrorBlob = nullptr;
 	UINT Flag = 0;
 #ifdef _DEBUG
 	Flag = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
 #endif
 
-	// CSO 파일 경로 생성
-	wstring CSOPath = GetCompiledShaderPath(InFilePath, InEntryPoint, "ps");
-
-	ID3DBlob* PixelShaderBlob = nullptr;
-
-	// 캐시 확인 및 로드/컴파일
-	if (IsShaderUpToDate(InFilePath, CSOPath))
+	HRESULT Result = D3DCompileFromFile(InFilePath.data(), InMacros, D3D_COMPILE_STANDARD_FILE_INCLUDE, InEntryPoint, "ps_5_0", Flag, 0, &PixelShaderBlob, &ErrorBlob);
+	if (FAILED(Result))
 	{
-		// 캐시된 CSO 로드
-		PixelShaderBlob = LoadPrecompiledShader(CSOPath);
+		if (ErrorBlob) { OutputDebugStringA(static_cast<char*>(ErrorBlob->GetBufferPointer())); SafeRelease(ErrorBlob); }
+		SafeRelease(PixelShaderBlob);
+		return;
 	}
 
-	// 캐시 미스 또는 로드 실패 시 컴파일
-	if (!PixelShaderBlob)
-	{
-		if (!CompileAndSaveShader(InFilePath, CSOPath, InEntryPoint, ShaderModel, InMacros, Flag, &PixelShaderBlob))
-		{
-			return;
-		}
-	}
-
-	// PixelShader 생성
 	URenderer::GetInstance().GetDevice()->CreatePixelShader(PixelShaderBlob->GetBufferPointer(), PixelShaderBlob->GetBufferSize(), nullptr, OutPixelShader);
-
 	SafeRelease(PixelShaderBlob);
+	SafeRelease(ErrorBlob);
 }
 
 void FRenderResourceFactory::CreateComputeShader(const wstring& InFilePath, ID3D11ComputeShader** OutComputeShader,
