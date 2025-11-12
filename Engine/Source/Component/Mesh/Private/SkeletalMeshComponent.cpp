@@ -8,6 +8,9 @@
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Render/UI/Widget/Public/SkeletalMeshComponentWidget.h"
 #include "Runtime/Engine/Public/SkeletalMesh.h"
+#include "Utility/Public/JsonSerializer.h"
+#include "Texture/Public/Texture.h"
+#include "Core/Public/ObjectIterator.h"
 
 IMPLEMENT_CLASS(USkeletalMeshComponent, USkinnedMeshComponent)
 
@@ -81,7 +84,150 @@ void USkeletalMeshComponent::DuplicateSubObjects(UObject* DuplicatedObject)
 
 void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
-	/** @todo */
+	Super::Serialize(bInIsLoading, InOutHandle);
+
+	// 불러오기
+	if (bInIsLoading)
+	{
+		FString AssetPath;
+		FJsonSerializer::ReadString(InOutHandle, "SkeletalMeshAsset", AssetPath);
+		
+		if (!AssetPath.IsEmpty())
+		{
+			LoadSkeletalMeshAsset(AssetPath);
+		}
+
+		// OverrideMaterials 불러오기
+		JSON OverrideMaterialJson;
+		if (FJsonSerializer::ReadObject(InOutHandle, "OverrideMaterial", OverrideMaterialJson, nullptr, false))
+		{
+			for (auto& Pair : OverrideMaterialJson.ObjectRange())
+			{
+				const FString& IdString = Pair.first;
+				JSON& MaterialPathDataJson = Pair.second;
+
+				int32 MaterialId;
+				try { MaterialId = std::stoi(IdString); }
+				catch (const std::exception&) { continue; }
+
+				FString MaterialPath;
+				FJsonSerializer::ReadString(MaterialPathDataJson, "Path", MaterialPath);
+
+				for (TObjectIterator<UMaterial> It; It; ++It)
+				{
+					UMaterial* Mat = *It;
+					if (!Mat) continue;
+
+					if (Mat->GetDiffuseTexture()->GetFilePath() == MaterialPath)
+					{
+						SetMaterial(MaterialId, Mat);
+						break;
+					}
+				}
+			}
+		}
+
+		// NormalMap 활성화 여부
+		FJsonSerializer::ReadBool(InOutHandle, "bNormalMapEnabled", bNormalMapEnabled, false);
+
+		// BoneSpaceTransforms 불러오기 (포즈 정보)
+		JSON BoneTransformsJson;
+		if (FJsonSerializer::ReadObject(InOutHandle, "BoneSpaceTransforms", BoneTransformsJson, nullptr, false))
+		{
+			BoneSpaceTransforms.Empty();
+			for (auto& Pair : BoneTransformsJson.ObjectRange())
+			{
+				JSON& TransformJson = Pair.second;
+				FTransform Transform;
+				
+				// Location
+				FVector Location;
+				FJsonSerializer::ReadVector(TransformJson, "Location", Location, FVector::Zero(), false);
+				Transform.Translation = Location;
+
+				// Rotation
+				JSON RotationJson;
+				if (FJsonSerializer::ReadObject(TransformJson, "Rotation", RotationJson, nullptr, false))
+				{
+					FQuaternion Rotation;
+					FJsonSerializer::ReadFloat(RotationJson, "X", Rotation.X, 0.0f, false);
+					FJsonSerializer::ReadFloat(RotationJson, "Y", Rotation.Y, 0.0f, false);
+					FJsonSerializer::ReadFloat(RotationJson, "Z", Rotation.Z, 0.0f, false);
+					FJsonSerializer::ReadFloat(RotationJson, "W", Rotation.W, 1.0f, false);
+					Transform.Rotation = Rotation;
+				}
+
+				// Scale
+				FVector Scale;
+				FJsonSerializer::ReadVector(TransformJson, "Scale", Scale, FVector::One(), false);
+				Transform.Scale = Scale;
+
+				BoneSpaceTransforms.Add(Transform);
+			}
+
+			if (BoneSpaceTransforms.Num() > 0)
+			{
+				bPoseDirty = true;
+			}
+		}
+	}
+	// 저장
+	else
+	{
+		if (SkeletalMeshAsset)
+		{
+			InOutHandle["SkeletalMeshAsset"] = SkeletalMeshAsset->GetStaticMesh()->GetAssetPathFileName().ToString();
+
+			// OverrideMaterials 저장
+			if (OverrideMaterials.Num() > 0)
+			{
+				JSON MaterialsJson = json::Object();
+				for (int32 Idx = 0; Idx < OverrideMaterials.Num(); ++Idx)
+				{
+					const UMaterial* Material = OverrideMaterials[Idx];
+					if (Material)
+					{
+						JSON MaterialJson;
+						MaterialJson["Path"] = Material->GetDiffuseTexture()->GetFilePath().ToString();
+						MaterialsJson[std::to_string(Idx)] = MaterialJson;
+					}
+				}
+				InOutHandle["OverrideMaterial"] = MaterialsJson;
+			}
+
+			// NormalMap 활성화 여부
+			InOutHandle["bNormalMapEnabled"] = bNormalMapEnabled;
+
+			// BoneSpaceTransforms 저장 (포즈 정보)
+			if (BoneSpaceTransforms.Num() > 0)
+			{
+				JSON BoneTransformsJson = json::Object();
+				for (int32 BoneIdx = 0; BoneIdx < BoneSpaceTransforms.Num(); ++BoneIdx)
+				{
+					const FTransform& Transform = BoneSpaceTransforms[BoneIdx];
+					JSON TransformJson = json::Object();
+
+					// Location
+					TransformJson["Location"] = FJsonSerializer::VectorToJson(Transform.Translation);
+
+					// Rotation
+					FQuaternion Rotation = Transform.Rotation;
+					JSON RotationJson = json::Object();
+					RotationJson["X"] = Rotation.X;
+					RotationJson["Y"] = Rotation.Y;
+					RotationJson["Z"] = Rotation.Z;
+					RotationJson["W"] = Rotation.W;
+					TransformJson["Rotation"] = RotationJson;
+
+					// Scale
+					TransformJson["Scale"] = FJsonSerializer::VectorToJson(Transform.Scale);
+
+					BoneTransformsJson[std::to_string(BoneIdx)] = TransformJson;
+				}
+				InOutHandle["BoneSpaceTransforms"] = BoneTransformsJson;
+			}
+		}
+	}
 }
 
 void USkeletalMeshComponent::BeginPlay()
