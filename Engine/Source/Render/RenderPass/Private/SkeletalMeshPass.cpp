@@ -111,7 +111,7 @@ void FSkeletalMeshPass::Execute(FRenderingContext& Context)
 
 		for (const FMeshSection& Section : MeshAsset->Sections)
 		{
-			UMaterial* Material = MeshComp->GetSkeletalMeshAsset()->GetStaticMesh()->GetMaterial(Section.MaterialSlot);
+			UMaterial* Material = MeshComp->GetMaterial(Section.MaterialSlot);
 			if (CurrentMaterial != Material) {
 				FMaterialConstants MaterialConstants = {};
 				FVector AmbientColor = Material->GetAmbientColor(); MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);
