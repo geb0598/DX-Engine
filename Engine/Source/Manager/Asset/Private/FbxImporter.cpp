@@ -882,17 +882,21 @@ FbxMesh* FFbxImporter::FindFirstSkinnedMesh(FbxNode* RootNode, FbxNode** OutNode
 
 void FFbxImporter::FindAllSkinnedMeshes(FbxNode* RootNode, TArray<FbxNode*>& OutMeshNodes)
 {
-	if (!RootNode)
-		return;
+	if (!RootNode) { return; }
 
 	// 현재 노드에 메시가 있는지 확인
 	if (FbxMesh* Mesh = RootNode->GetMesh())
 	{
-		// 스킨 디포머가 있는지 확인
 		int DeformerCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
-		if (DeformerCount > 0)
+
+		// 폴리곤이 존재하는 메시라면 추가
+		if (DeformerCount > 0 || Mesh->GetPolygonCount() > 0)
 		{
 			OutMeshNodes.Add(RootNode);
+			if (DeformerCount == 0)
+			{
+				UE_LOG_WARNING("[FbxImporter] 스킨이 없는 메시 발견: '%s' (예: 눈동자, 치아 등)", RootNode->GetName());
+			}
 		}
 	}
 
@@ -998,6 +1002,22 @@ bool FFbxImporter::ExtractSkeleton(FbxScene* Scene, FbxMesh* Mesh, FFbxSkeletalM
 
 bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, uint32 VertexOffset, int32 ControlPointOffset)
 {
+	// 스킨이 없는 메시일 경우 (예: 눈동자)
+	if (Mesh->GetDeformerCount(FbxDeformer::eSkin) == 0)
+	{
+		UE_LOG_WARNING("[FbxImporter] 스킨이 없는 메시입니다. (예: 눈동자) - 기본 Influence로 채웁니다.");
+
+		// 현재 버텍스 개수 계산
+		int32 CurrentVertexCount = OutMeshInfo->VertexList.Num();
+		for (uint32 i = VertexOffset; i < CurrentVertexCount; ++i)
+		{
+			OutMeshInfo->SkinWeights.Add(FFbxBoneInfluence());
+		}
+
+		return true; // 스킨 없음 처리 완료
+	}
+
+	// 기존 스킨 처리 루틴 (변경 없음)
 	FbxSkin* Skin = (FbxSkin*)Mesh->GetDeformer(0, FbxDeformer::eSkin);
 	if (!Skin)
 	{
@@ -1011,11 +1031,7 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 	// 1단계: ControlPoint 기반으로 가중치 추출
 	TArray<FFbxBoneInfluence> ControlPointWeights;
 	ControlPointWeights.Reset(ControlPointCount);
-
-	for (int i = 0; i < ControlPointCount; ++i)
-	{
-		ControlPointWeights[i] = FFbxBoneInfluence();
-	}
+	ControlPointWeights.SetNum(ControlPointCount);
 
 	for (int ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
 	{
@@ -1033,7 +1049,6 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 			{
 				FFbxBoneInfluence& Influence = ControlPointWeights[CtrlPointIndex];
 
-				// 빈 슬롯 찾기
 				for (int j = 0; j < FFbxBoneInfluence::MAX_INFLUENCES; ++j)
 				{
 					if (Influence.BoneIndices[j] == -1)
@@ -1047,10 +1062,8 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 		}
 	}
 
-	// 2단계: ControlPoint 가중치를 Polygon Vertex로 확장
+	// 2단계: ControlPoint → Vertex 매핑
 	int32 CurrentVertexCount = OutMeshInfo->VertexList.Num();
-
-	// VertexOffset이 0이면 첫 메시 (Reset 사용), 아니면 추가 메시 (Add만 사용)
 	if (VertexOffset == 0)
 	{
 		OutMeshInfo->SkinWeights.Reset(CurrentVertexCount);
@@ -1059,33 +1072,21 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 	for (uint32 i = VertexOffset; i < CurrentVertexCount; ++i)
 	{
 		int32 CtrlPointIndex = OutMeshInfo->ControlPointIndices[i];
-
-		// ControlPointOffset을 빼서 원래 인덱스로 복원 (추가 메시의 경우)
 		int32 LocalCtrlPointIndex = CtrlPointIndex - ControlPointOffset;
 
 		if (LocalCtrlPointIndex >= 0 && LocalCtrlPointIndex < ControlPointCount)
 		{
-			// ControlPoint의 가중치를 복사/추가
 			if (VertexOffset == 0)
-			{
 				OutMeshInfo->SkinWeights[i] = ControlPointWeights[LocalCtrlPointIndex];
-			}
 			else
-			{
 				OutMeshInfo->SkinWeights.Add(ControlPointWeights[LocalCtrlPointIndex]);
-			}
 		}
 		else
 		{
-			// 잘못된 인덱스인 경우 빈 가중치 추가
 			if (VertexOffset == 0)
-			{
 				OutMeshInfo->SkinWeights[i] = FFbxBoneInfluence();
-			}
 			else
-			{
 				OutMeshInfo->SkinWeights.Add(FFbxBoneInfluence());
-			}
 		}
 	}
 
