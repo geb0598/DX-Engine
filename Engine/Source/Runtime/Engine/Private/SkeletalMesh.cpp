@@ -49,7 +49,7 @@ void USkeletalMesh::CalculateInvRefMatrices()
 			{
 				const int32 Parent = GetRefSkeleton().GetRawParentIndex(b);
 
-				ComposedRefPoseTransforms[b] = ComposedRefPoseTransforms[Parent] * LocalTransform;
+				ComposedRefPoseTransforms[b] = LocalTransform * ComposedRefPoseTransforms[Parent];
 			}
 			else
 			{

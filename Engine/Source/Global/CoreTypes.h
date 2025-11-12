@@ -127,8 +127,8 @@ struct FTransform
 
 		Result.Rotation = Rotation * Other.Rotation;
 
-		FVector ScaledTranslation = Scale * Other.Translation;
-		Result.Translation = Translation + Rotation.RotateVector(ScaledTranslation);
+		FVector ScaledTranslation = Other.Scale * Translation;
+		Result.Translation = Other.Rotation.RotateVector(ScaledTranslation) + Other.Translation;
 
 		return Result;
 	}
