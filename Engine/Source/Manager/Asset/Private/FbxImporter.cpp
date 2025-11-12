@@ -277,6 +277,54 @@ void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& 
 			}
 		}
 
+		// Normal 텍스처 추출
+		if (FbxProperty NormalProp = Material->FindProperty(FbxSurfaceMaterial::sNormalMap); NormalProp.IsValid())
+		{
+			int LayeredTextureCount = NormalProp.GetSrcObjectCount<FbxLayeredTexture>();
+			if (LayeredTextureCount > 0)
+			{
+				UE_LOG_WARNING("[FbxImporter] Normal Layered Texture는 아직 지원하지 않습니다.");
+			}
+			else
+			{
+				int TextureCount = NormalProp.GetSrcObjectCount<FbxFileTexture>();
+				if (TextureCount > 0)
+				{
+					if (FbxFileTexture* Texture = NormalProp.GetSrcObject<FbxFileTexture>(0))
+					{
+						std::string OriginalTexturePath = Texture->GetFileName();
+						std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
+						std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
+
+						if (!ResolvedPath.empty())
+						{
+							MatInfo.NormalTexturePath = ResolvedPath;
+						}
+					}
+				}
+			}
+		}
+		// Bump 맵이 있으면 Normal 맵으로 사용 (NormalMap 속성이 없을 경우 대체)
+		else if (FbxProperty BumpProp = Material->FindProperty(FbxSurfaceMaterial::sBump); BumpProp.IsValid())
+		{
+			int TextureCount = BumpProp.GetSrcObjectCount<FbxFileTexture>();
+			if (TextureCount > 0)
+			{
+				if (FbxFileTexture* Texture = BumpProp.GetSrcObject<FbxFileTexture>(0))
+				{
+					std::string OriginalTexturePath = Texture->GetFileName();
+					std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
+					std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
+
+					if (!ResolvedPath.empty())
+					{
+						MatInfo.NormalTexturePath = ResolvedPath;
+						UE_LOG("[FbxImporter] Bump 맵을 Normal 맵으로 사용합니다.");
+					}
+				}
+			}
+		}
+
 		OutMeshInfo->Materials.Add(MatInfo);
 	}
 
@@ -354,6 +402,7 @@ void FFbxImporter::ExtractGeometryData(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMes
 	OutMeshInfo->VertexList.Empty();
 	OutMeshInfo->NormalList.Empty();
 	OutMeshInfo->TexCoordList.Empty();
+	OutMeshInfo->TangentList.Empty();
 	OutMeshInfo->Indices.Empty();
 
 	// Material별 인덱스 그룹 초기화
@@ -367,6 +416,24 @@ void FFbxImporter::ExtractGeometryData(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMes
 	uint32 VertexCounter = 0;
 
 	const FbxGeometryElementNormal* LayerNormal = Mesh->GetElementNormal(0);
+	const FbxGeometryElementTangent* LayerTangent = Mesh->GetElementTangent(0);
+
+	// Tangent가 없으면 자동 생성
+	if (!LayerTangent)
+	{
+		UE_LOG("[FbxImporter] Tangent 데이터가 없어 자동 생성합니다.");
+		bool bResult = Mesh->GenerateTangentsDataForAllUVSets();
+		if (bResult)
+		{
+			LayerTangent = Mesh->GetElementTangent(0);
+			UE_LOG_SUCCESS("[FbxImporter] Tangent 자동 생성 완료");
+		}
+		else
+		{
+			UE_LOG_WARNING("[FbxImporter] Tangent 자동 생성 실패");
+		}
+	}
+
 	FbxStringList UVSetNames;
 	Mesh->GetUVSetNames(UVSetNames);
 	const char* ActiveUVSet = (UVSetNames.GetCount() > 0) ? UVSetNames[0] : nullptr;
@@ -436,6 +503,53 @@ void FFbxImporter::ExtractGeometryData(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMes
 			{
 				OutMeshInfo->NormalList.Add(FVector(0, 1, 0));
 			}
+
+			// Tangent 추출
+			FbxVector4 Tangent(1, 0, 0, 1);  // 기본값: X축 방향, Handedness = 1
+			if (LayerTangent)
+			{
+				int TangentIndex = 0;
+				if (LayerTangent->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
+				{
+					if (LayerTangent->GetReferenceMode() == FbxGeometryElement::eDirect)
+					{
+						int PolyVertIndex = p * 3 + v;  // 삼각형이므로 폴리곤당 3개 버텍스
+						if (PolyVertIndex < LayerTangent->GetDirectArray().GetCount())
+						{
+							Tangent = LayerTangent->GetDirectArray().GetAt(PolyVertIndex);
+						}
+					}
+					else if (LayerTangent->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+					{
+						int PolyVertIndex = p * 3 + v;
+						if (PolyVertIndex < LayerTangent->GetIndexArray().GetCount())
+						{
+							TangentIndex = LayerTangent->GetIndexArray().GetAt(PolyVertIndex);
+							Tangent = LayerTangent->GetDirectArray().GetAt(TangentIndex);
+						}
+					}
+				}
+				else if (LayerTangent->GetMappingMode() == FbxGeometryElement::eByControlPoint)
+				{
+					if (LayerTangent->GetReferenceMode() == FbxGeometryElement::eDirect)
+					{
+						Tangent = LayerTangent->GetDirectArray().GetAt(CtrlPointIndex);
+					}
+					else if (LayerTangent->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+					{
+						TangentIndex = LayerTangent->GetIndexArray().GetAt(CtrlPointIndex);
+						Tangent = LayerTangent->GetDirectArray().GetAt(TangentIndex);
+					}
+				}
+			}
+
+			// Handedness 계산 (Cross product를 이용한 검증)
+			FVector T(Tangent[0], Tangent[1], Tangent[2]);
+			FVector N = OutMeshInfo->NormalList.Last();
+			FVector BiTangent = N.Cross(T);
+			float Handedness = (BiTangent.Length() > 0.0001f) ? 1.0f : -1.0f;
+
+			OutMeshInfo->TangentList.Add(FVector4(T.X, T.Y, T.Z, Handedness));
 
 			// UV 추출
 			if (Mesh->GetElementUVCount() > 0)
@@ -1028,6 +1142,24 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 
 	uint32 VertexCounter = VertexOffset;
 
+	const FbxGeometryElementTangent* LayerTangent = Mesh->GetElementTangent(0);
+
+	// Tangent가 없으면 자동 생성
+	if (!LayerTangent)
+	{
+		UE_LOG("[FbxImporter] Tangent 데이터가 없어 자동 생성합니다.");
+		bool bResult = Mesh->GenerateTangentsDataForAllUVSets();
+		if (bResult)
+		{
+			LayerTangent = Mesh->GetElementTangent(0);
+			UE_LOG_SUCCESS("[FbxImporter] Tangent 자동 생성 완료");
+		}
+		else
+		{
+			UE_LOG_WARNING("[FbxImporter] Tangent 자동 생성 실패");
+		}
+	}
+
 	// 폴리곤별 처리
 	const int PolygonCount = Mesh->GetPolygonCount();
 	for (int p = 0; p < PolygonCount; ++p)
@@ -1083,6 +1215,53 @@ void FFbxImporter::ExtractSkeletalGeometryData(FbxMesh* Mesh, FFbxSkeletalMeshIn
 			{
 				OutMeshInfo->NormalList.Add(FVector(0, 1, 0));
 			}
+
+			// Tangent 추출
+			FbxVector4 Tangent(1, 0, 0, 1);  // 기본값: X축 방향, Handedness = 1
+			if (LayerTangent)
+			{
+				int TangentIndex = 0;
+				if (LayerTangent->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
+				{
+					if (LayerTangent->GetReferenceMode() == FbxGeometryElement::eDirect)
+					{
+						int PolyVertIndex = p * 3 + v;  // 삼각형이므로 폴리곤당 3개 버텍스
+						if (PolyVertIndex < LayerTangent->GetDirectArray().GetCount())
+						{
+							Tangent = LayerTangent->GetDirectArray().GetAt(PolyVertIndex);
+						}
+					}
+					else if (LayerTangent->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+					{
+						int PolyVertIndex = p * 3 + v;
+						if (PolyVertIndex < LayerTangent->GetIndexArray().GetCount())
+						{
+							TangentIndex = LayerTangent->GetIndexArray().GetAt(PolyVertIndex);
+							Tangent = LayerTangent->GetDirectArray().GetAt(TangentIndex);
+						}
+					}
+				}
+				else if (LayerTangent->GetMappingMode() == FbxGeometryElement::eByControlPoint)
+				{
+					if (LayerTangent->GetReferenceMode() == FbxGeometryElement::eDirect)
+					{
+						Tangent = LayerTangent->GetDirectArray().GetAt(CtrlPointIndex);
+					}
+					else if (LayerTangent->GetReferenceMode() == FbxGeometryElement::eIndexToDirect)
+					{
+						TangentIndex = LayerTangent->GetIndexArray().GetAt(CtrlPointIndex);
+						Tangent = LayerTangent->GetDirectArray().GetAt(TangentIndex);
+					}
+				}
+			}
+
+			// Handedness 계산 (Cross product를 이용한 검증)
+			FVector T(Tangent[0], Tangent[1], Tangent[2]);
+			FVector N = OutMeshInfo->NormalList.Last();
+			FVector BiTangent = N.Cross(T);
+			float Handedness = (BiTangent.Length() > 0.0001f) ? 1.0f : -1.0f;
+
+			OutMeshInfo->TangentList.Add(FVector4(T.X, T.Y, T.Z, Handedness));
 
 			// UV
 			FbxStringList UVSetNames;

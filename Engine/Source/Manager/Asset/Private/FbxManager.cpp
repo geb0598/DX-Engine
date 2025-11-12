@@ -103,6 +103,7 @@ void FFbxManager::ConvertFbxToStaticMesh(const FFbxStaticMeshInfo& MeshInfo, FSt
 		Vertex.Position = MeshInfo.VertexList[i];
 		Vertex.Normal = MeshInfo.NormalList.IsValidIndex(i) ? MeshInfo.NormalList[i] : FVector(0, 1, 0);
 		Vertex.TexCoord = MeshInfo.TexCoordList.IsValidIndex(i) ? MeshInfo.TexCoordList[i] : FVector2(0, 0);
+		Vertex.Tangent = MeshInfo.TangentList.IsValidIndex(i) ? MeshInfo.TangentList[i] : FVector4(1, 0, 0, 1);
 		OutStaticMesh->Vertices.Add(Vertex);
 	}
 
@@ -122,6 +123,10 @@ void FFbxManager::ConvertFbxToStaticMesh(const FFbxStaticMeshInfo& MeshInfo, FSt
 		if (!FbxMat.DiffuseTexturePath.empty())
 		{
 			Material.KdMap = FbxMat.DiffuseTexturePath.generic_string();
+		}
+		if (!FbxMat.NormalTexturePath.empty())
+		{
+			Material.NormalMap = FbxMat.NormalTexturePath.generic_string();
 		}
 		OutStaticMesh->MaterialInfo.Add(Material);
 	}
@@ -146,22 +151,39 @@ UMaterial* FFbxManager::CreateMaterialFromInfo(const FMaterial& MaterialInfo, in
 	// Diffuse Texture 로드
 	if (!MaterialInfo.KdMap.empty())
 	{
-		UE_LOG("[FbxManager] Material %d - Texture Path: %s", MaterialIndex, MaterialInfo.KdMap.c_str());
+		UE_LOG("[FbxManager] Material %d - Diffuse Texture Path: %s", MaterialIndex, MaterialInfo.KdMap.c_str());
 
 		UTexture* DiffuseTexture = UAssetManager::GetInstance().LoadTexture(FName(MaterialInfo.KdMap));
 		if (DiffuseTexture)
 		{
 			NewMaterial->SetDiffuseTexture(DiffuseTexture);
-			UE_LOG_SUCCESS("[FbxManager] Material %d - Texture Loaded Successfully", MaterialIndex);
+			UE_LOG_SUCCESS("[FbxManager] Material %d - Diffuse Texture Loaded Successfully", MaterialIndex);
 		}
 		else
 		{
-			UE_LOG_ERROR("[FbxManager] Material %d - Texture Load Failed: %s", MaterialIndex, MaterialInfo.KdMap.c_str());
+			UE_LOG_ERROR("[FbxManager] Material %d - Diffuse Texture Load Failed: %s", MaterialIndex, MaterialInfo.KdMap.c_str());
 		}
 	}
 	else
 	{
-		UE_LOG_WARNING("[FbxManager] Material %d - No Texture Path", MaterialIndex);
+		UE_LOG_WARNING("[FbxManager] Material %d - No Diffuse Texture Path", MaterialIndex);
+	}
+
+	// Normal Texture 로드
+	if (!MaterialInfo.NormalMap.empty())
+	{
+		UE_LOG("[FbxManager] Material %d - Normal Map Path: %s", MaterialIndex, MaterialInfo.NormalMap.c_str());
+
+		UTexture* NormalTexture = UAssetManager::GetInstance().LoadTexture(FName(MaterialInfo.NormalMap));
+		if (NormalTexture)
+		{
+			NewMaterial->SetNormalTexture(NormalTexture);
+			UE_LOG_SUCCESS("[FbxManager] Material %d - Normal Map Loaded Successfully", MaterialIndex);
+		}
+		else
+		{
+			UE_LOG_ERROR("[FbxManager] Material %d - Normal Map Load Failed: %s", MaterialIndex, MaterialInfo.NormalMap.c_str());
+		}
 	}
 
 	return NewMaterial;
@@ -369,6 +391,7 @@ void FFbxManager::ConvertFbxSkeletalToStaticMesh(const FFbxSkeletalMeshInfo& Fbx
 		Vertex.Position = FbxData.VertexList[i];
 		Vertex.Normal = FbxData.NormalList.IsValidIndex(i) ? FbxData.NormalList[i] : FVector(0, 1, 0);
 		Vertex.TexCoord = FbxData.TexCoordList.IsValidIndex(i) ? FbxData.TexCoordList[i] : FVector2(0, 0);
+		Vertex.Tangent = FbxData.TangentList.IsValidIndex(i) ? FbxData.TangentList[i] : FVector4(1, 0, 0, 1);
 		OutStaticMesh->Vertices.Add(Vertex);
 	}
 
@@ -388,6 +411,10 @@ void FFbxManager::ConvertFbxSkeletalToStaticMesh(const FFbxSkeletalMeshInfo& Fbx
 		if (!FbxMat.DiffuseTexturePath.empty())
 		{
 			Material.KdMap = FbxMat.DiffuseTexturePath.generic_string();
+		}
+		if (!FbxMat.NormalTexturePath.empty())
+		{
+			Material.NormalMap = FbxMat.NormalTexturePath.generic_string();
 		}
 		OutStaticMesh->MaterialInfo.Add(Material);
 	}

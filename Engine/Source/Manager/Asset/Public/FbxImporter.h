@@ -9,6 +9,7 @@ struct FFbxMaterialInfo
 {
 	std::string MaterialName;
 	std::filesystem::path DiffuseTexturePath;
+	std::filesystem::path NormalTexturePath;
 };
 
 struct FFbxMeshSection
@@ -23,6 +24,7 @@ struct FFbxStaticMeshInfo
 	TArray<FVector> VertexList;
 	TArray<FVector> NormalList;
 	TArray<FVector2> TexCoordList;
+	TArray<FVector4> TangentList;  // XYZ: Tangent, W: Handedness
 	TArray<uint32> Indices;
 
 	TArray<FFbxMaterialInfo> Materials;
@@ -186,6 +188,10 @@ inline FArchive& operator<<(FArchive& Ar, FFbxMaterialInfo& MaterialInfo)
 		FString TempPath;
 		Ar << TempPath;
 		MaterialInfo.DiffuseTexturePath = TempPath;
+
+		FString TempNormalPath;
+		Ar << TempNormalPath;
+		MaterialInfo.NormalTexturePath = TempNormalPath;
 	}
 	else {
 		FString TempName = MaterialInfo.MaterialName;
@@ -193,6 +199,9 @@ inline FArchive& operator<<(FArchive& Ar, FFbxMaterialInfo& MaterialInfo)
 
 		FString TempPath = MaterialInfo.DiffuseTexturePath.string();
 		Ar << TempPath;
+
+		FString TempNormalPath = MaterialInfo.NormalTexturePath.string();
+		Ar << TempNormalPath;
 	}
 	return Ar;
 }
@@ -210,6 +219,7 @@ inline FArchive& operator<<(FArchive& Ar, FFbxStaticMeshInfo& MeshInfo)
 	Ar << MeshInfo.VertexList;
 	Ar << MeshInfo.NormalList;
 	Ar << MeshInfo.TexCoordList;
+	Ar << MeshInfo.TangentList;
 	Ar << MeshInfo.Indices;
 	Ar << MeshInfo.Materials;
 	Ar << MeshInfo.Sections;
