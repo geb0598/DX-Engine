@@ -25,10 +25,8 @@ void USkinnedMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle
 {
 	Super::Serialize(bInIsLoading, InOutHandle);
 
-	// 불러오기
 	if (bInIsLoading)
 	{
-		// BoneVisibilityStates 불러오기 - Array 사용
 		JSON BoneVisibilityArray;
 		if (FJsonSerializer::ReadArray(InOutHandle, "BoneVisibilityStates", BoneVisibilityArray, nullptr, false))
 		{
@@ -50,10 +48,8 @@ void USkinnedMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle
 			}
 		}
 	}
-	// 저장
 	else
 	{
-		// BoneVisibilityStates 저장 - Array 사용
 		if (BoneVisibilityStates.Num() > 0)
 		{
 			JSON BoneVisibilityArray = JSON::Make(JSON::Class::Array);

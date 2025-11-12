@@ -40,7 +40,7 @@ UObject* USkeletalMeshComponent::Duplicate()
 {
 	USkeletalMeshComponent* SkeletalMeshComponent = Cast<USkeletalMeshComponent>(Super::Duplicate());
 
-	//SkeletalMeshComponent->SkeletalMeshAsset = Cast<USkeletalMesh>(SkeletalMeshAsset->Duplicate()); // Deep Copy 필요?
+	//SkeletalMeshComponent->SkeletalMeshAsset = Cast<USkeletalMesh>(SkeletalMeshAsset->Duplicate()); // 만약, Viewer에서 Bone자체를 수정하는 기능을 넣는다면 Deep Copy 필요
 	SkeletalMeshComponent->SkeletalMeshAsset = SkeletalMeshAsset;
 
 	SkeletalMeshComponent->BoneSpaceTransforms = BoneSpaceTransforms;
@@ -52,7 +52,7 @@ UObject* USkeletalMeshComponent::Duplicate()
 	SkeletalMeshComponent->SkinnedVertices.SetNum(SkinnedVertices.Num());
 	SkeletalMeshComponent->SkinningMatrices.SetNum(SkinningMatrices.Num());
 
-	// VertexBuffer와 IndexBuffer는 새로 생성
+	// VertexBuffer와 IndexBuffer는 새로 생성: CPU SKinning을 하므로.
 	UStaticMesh* StaticMesh = SkeletalMeshAsset->GetStaticMesh();
 
 	SkeletalMeshComponent->VertexBuffer = FRenderResourceFactory::CreateVertexBuffer(
@@ -86,7 +86,6 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 {
 	Super::Serialize(bInIsLoading, InOutHandle);
 
-	// 불러오기
 	if (bInIsLoading)
 	{
 		FString AssetPath;
@@ -97,7 +96,6 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 			LoadSkeletalMeshAsset(AssetPath);
 		}
 
-		// OverrideMaterials 불러오기
 		JSON OverrideMaterialJson;
 		if (FJsonSerializer::ReadObject(InOutHandle, "OverrideMaterial", OverrideMaterialJson, nullptr, false))
 		{
@@ -127,10 +125,8 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 			}
 		}
 
-		// NormalMap 활성화 여부
 		FJsonSerializer::ReadBool(InOutHandle, "bNormalMapEnabled", bNormalMapEnabled, false);
 
-		// BoneSpaceTransforms 불러오기 (포즈 정보) - Array 사용
 		JSON BoneTransformsArray;
 		if (FJsonSerializer::ReadArray(InOutHandle, "BoneSpaceTransforms", BoneTransformsArray, nullptr, false))
 		{
@@ -142,17 +138,14 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 				JSON& TransformJson = BoneTransformsArray[BoneIdx];
 				FTransform Transform;
 				
-				// Location
 				FVector Location;
 				FJsonSerializer::ReadVector(TransformJson, "Location", Location, FVector::Zero(), false);
 				Transform.Translation = Location;
 
-				// Rotation (Euler 각도로 저장됨)
 				FVector RotationEuler;
 				FJsonSerializer::ReadVector(TransformJson, "Rotation", RotationEuler, FVector::ZeroVector(), false);
 				Transform.Rotation = FQuaternion::FromEuler(RotationEuler);
 
-				// Scale
 				FVector Scale;
 				FJsonSerializer::ReadVector(TransformJson, "Scale", Scale, FVector::One(), false);
 				Transform.Scale = Scale;
@@ -166,17 +159,16 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 			}
 		}
 
+		// 불러온 BoneSpaceTransforms에 맞춰 정점들 갱신
 		RefreshBoneTransforms();
 		UpdateSkinnedVertices();
 	}
-	// 저장
 	else
 	{
 		if (SkeletalMeshAsset)
 		{
 			InOutHandle["SkeletalMeshAsset"] = SkeletalMeshAsset->GetStaticMesh()->GetAssetPathFileName().ToString();
 
-			// OverrideMaterials 저장
 			if (OverrideMaterials.Num() > 0)
 			{
 				JSON MaterialsJson = json::Object();
@@ -193,10 +185,8 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 				InOutHandle["OverrideMaterial"] = MaterialsJson;
 			}
 
-			// NormalMap 활성화 여부
 			InOutHandle["bNormalMapEnabled"] = bNormalMapEnabled;
 
-			// BoneSpaceTransforms 저장 (포즈 정보) - Array 사용
 			if (BoneSpaceTransforms.Num() > 0)
 			{
 				JSON BoneTransformsArray = JSON::Make(JSON::Class::Array);
@@ -205,13 +195,8 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 					const FTransform& Transform = BoneSpaceTransforms[BoneIdx];
 					JSON TransformJson = json::Object();
 
-					// Location
 					TransformJson["Location"] = FJsonSerializer::VectorToJson(Transform.Translation);
-
-					// Rotation (Euler 각도로 저장)
 					TransformJson["Rotation"] = FJsonSerializer::VectorToJson(Transform.Rotation.ToEuler());
-
-					// Scale
 					TransformJson["Scale"] = FJsonSerializer::VectorToJson(Transform.Scale);
 
 					BoneTransformsArray.append(TransformJson);
