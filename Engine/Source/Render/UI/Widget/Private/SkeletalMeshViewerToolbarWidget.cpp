@@ -269,138 +269,27 @@ void USkeletalMeshViewerToolbarWidget::RenderWidget()
 
 	ImGui::SameLine(0.0f, RightButtonSpacing);
 
-	// 우측 버튼 2: Camera Settings (아이콘 + 속도 표시)
-	if (IconCamera && IconCamera->GetTextureSRV())
+	// 우측 버튼 2: Camera Settings (Base 클래스 함수 사용)
+	RenderCameraSpeedButton(Camera, CameraSpeedButtonWidth);
+
+	// 카메라 설정 팝업
+	if (ImGui::BeginPopup("##CameraSettingsPopup"))
 	{
-		// 카메라 속도 텍스트
-		float CameraMoveSpeed = Camera->GetMoveSpeed();
-		char CameraSpeedText[16];
-		(void)snprintf(CameraSpeedText, sizeof(CameraSpeedText), "%.1f", CameraMoveSpeed);
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
 
-		constexpr float CameraSpeedButtonHeight = 24.0f;
-		constexpr float CameraSpeedPadding = 8.0f;
-		constexpr float CameraSpeedIconSize = 16.0f;
+		RenderCameraSettingsPopupContent();
 
-		ImVec2 CameraSpeedButtonPos = ImGui::GetCursorScreenPos();
-		ImGui::InvisibleButton("##CameraSpeedButton", ImVec2(CameraSpeedButtonWidth, CameraSpeedButtonHeight));
-		bool bCameraSpeedClicked = ImGui::IsItemClicked();
-		bool bCameraSpeedHovered = ImGui::IsItemHovered();
-
-		ImDrawList* CameraSpeedDrawList = ImGui::GetWindowDrawList();
-		ImU32 CameraSpeedBgColor = bCameraSpeedHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-		if (ImGui::IsItemActive())
-		{
-			CameraSpeedBgColor = IM_COL32(38, 38, 38, 255);
-		}
-		CameraSpeedDrawList->AddRectFilled(CameraSpeedButtonPos, ImVec2(CameraSpeedButtonPos.x + CameraSpeedButtonWidth, CameraSpeedButtonPos.y + CameraSpeedButtonHeight), CameraSpeedBgColor, 4.0f);
-		CameraSpeedDrawList->AddRect(CameraSpeedButtonPos, ImVec2(CameraSpeedButtonPos.x + CameraSpeedButtonWidth, CameraSpeedButtonPos.y + CameraSpeedButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
-
-		// 아이콘 (왼쪽)
-		const ImVec2 CameraSpeedIconPos = ImVec2(
-			CameraSpeedButtonPos.x + CameraSpeedPadding,
-			CameraSpeedButtonPos.y + (CameraSpeedButtonHeight - CameraSpeedIconSize) * 0.5f
-		);
-		CameraSpeedDrawList->AddImage(
-			IconCamera->GetTextureSRV(),
-			CameraSpeedIconPos,
-			ImVec2(CameraSpeedIconPos.x + CameraSpeedIconSize, CameraSpeedIconPos.y + CameraSpeedIconSize)
-		);
-
-		// 텍스트 (오른쪽 정렬)
-		const ImVec2 CameraSpeedTextSize = ImGui::CalcTextSize(CameraSpeedText);
-		const ImVec2 CameraSpeedTextPos = ImVec2(
-			CameraSpeedButtonPos.x + CameraSpeedButtonWidth - CameraSpeedTextSize.x - CameraSpeedPadding,
-			CameraSpeedButtonPos.y + (CameraSpeedButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
-		);
-		CameraSpeedDrawList->AddText(CameraSpeedTextPos, IM_COL32(220, 220, 220, 255), CameraSpeedText);
-
-		if (bCameraSpeedClicked)
-		{
-			ImGui::OpenPopup("##CameraSettingsPopup");
-		}
-
-		// 카메라 설정 팝업
-		if (ImGui::BeginPopup("##CameraSettingsPopup"))
-		{
-			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-			ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-
-			RenderCameraSettingsPopupContent();
-
-			ImGui::PopStyleColor(4);
-			ImGui::EndPopup();
-		}
-
-		if (bCameraSpeedHovered)
-		{
-			ImGui::SetTooltip("Camera Settings");
-		}
+		ImGui::PopStyleColor(4);
+		ImGui::EndPopup();
 	}
 
 	ImGui::SameLine(0.0f, RightButtonSpacing);
 
-	// 우측 버튼 3: ViewMode
-	{
-		ImVec2 ViewModeButtonPos = ImGui::GetCursorScreenPos();
-		ImGui::InvisibleButton("##ViewModeButton", ImVec2(ViewModeButtonWidth, ViewModeButtonHeight));
-		bool bViewModeClicked = ImGui::IsItemClicked();
-		bool bViewModeHovered = ImGui::IsItemHovered();
-
-		ImDrawList* ViewModeDrawList = ImGui::GetWindowDrawList();
-		ImU32 ViewModeBgColor = bViewModeHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-		if (ImGui::IsItemActive())
-		{
-			ViewModeBgColor = IM_COL32(38, 38, 38, 255);
-		}
-		ViewModeDrawList->AddRectFilled(ViewModeButtonPos, ImVec2(ViewModeButtonPos.x + ViewModeButtonWidth, ViewModeButtonPos.y + ViewModeButtonHeight), ViewModeBgColor, 4.0f);
-		ViewModeDrawList->AddRect(ViewModeButtonPos, ImVec2(ViewModeButtonPos.x + ViewModeButtonWidth, ViewModeButtonPos.y + ViewModeButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
-
-		// LitCube 아이콘
-		if (IconLitCube && IconLitCube->GetTextureSRV())
-		{
-			const ImVec2 ViewModeIconPos = ImVec2(ViewModeButtonPos.x + ViewModePadding, ViewModeButtonPos.y + (ViewModeButtonHeight - ViewModeIconSize) * 0.5f);
-			ViewModeDrawList->AddImage(
-				IconLitCube->GetTextureSRV(),
-				ViewModeIconPos,
-				ImVec2(ViewModeIconPos.x + ViewModeIconSize, ViewModeIconPos.y + ViewModeIconSize)
-			);
-		}
-
-		// 텍스트
-		const ImVec2 ViewModeTextPos = ImVec2(ViewModeButtonPos.x + ViewModePadding + ViewModeIconSize + ViewModePadding, ViewModeButtonPos.y + (ViewModeButtonHeight - ImGui::GetTextLineHeight()) * 0.5f);
-		ViewModeDrawList->AddText(ViewModeTextPos, IM_COL32(220, 220, 220, 255), ViewModeLabels[CurrentModeIndex]);
-
-		if (bViewModeClicked)
-		{
-			ImGui::OpenPopup("##ViewModePopup");
-		}
-
-		// ViewMode 팝업
-		if (ImGui::BeginPopup("##ViewModePopup"))
-		{
-			for (int i = 0; i < 7; ++i)
-			{
-				if (IconLitCube && IconLitCube->GetTextureSRV())
-				{
-					ImGui::Image(IconLitCube->GetTextureSRV(), ImVec2(16, 16));
-					ImGui::SameLine();
-				}
-
-				if (ImGui::MenuItem(ViewModeLabels[i], nullptr, i == CurrentModeIndex))
-				{
-					ViewportClient->SetViewMode(static_cast<EViewModeIndex>(i));
-				}
-			}
-			ImGui::EndPopup();
-		}
-
-		if (bViewModeHovered)
-		{
-			ImGui::SetTooltip("View Mode");
-		}
-	}
+	// 우측 버튼 3: ViewMode (Base 클래스 함수 사용)
+	RenderViewModeButton(ViewportClient, ViewModeLabels);
 
 	ImGui::PopStyleVar(3);
 }
