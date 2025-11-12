@@ -84,6 +84,11 @@ private:
 		const FFbxSkeletalMeshInfo& FbxData,
 		FStaticMesh* OutStaticMesh);
 
+	/** 이미 로드된 FFbxSkeletalMeshInfo로부터 FStaticMesh를 가져오거나 생성 (캐싱 지원) */
+	static FStaticMesh* GetOrCreateStaticMeshFromInfo(
+		const FName& FilePath,
+		const FFbxSkeletalMeshInfo& MeshInfo);
+
 	// ========================================
 	// 🔸 Caching
 	// ========================================

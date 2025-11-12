@@ -249,62 +249,39 @@ void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& 
 			? MaterialName
 			: "Material_" + std::to_string(MaterialOffset + m);
 
-		// Diffuse 텍스처 추출
+		// 🔸 Diffuse 텍스처 추출
 		if (FbxProperty Prop = Material->FindProperty(FbxSurfaceMaterial::sDiffuse); Prop.IsValid())
 		{
-			int LayeredTextureCount = Prop.GetSrcObjectCount<FbxLayeredTexture>();
-			if (LayeredTextureCount > 0)
+			int TextureCount = Prop.GetSrcObjectCount<FbxFileTexture>();
+			if (TextureCount > 0)
 			{
-				UE_LOG_WARNING("[FbxImporter] Layered Texture는 아직 지원하지 않습니다.");
-			}
-			else
-			{
-				int TextureCount = Prop.GetSrcObjectCount<FbxFileTexture>();
-				if (TextureCount > 0)
+				if (FbxFileTexture* Texture = Prop.GetSrcObject<FbxFileTexture>(0))
 				{
-					if (FbxFileTexture* Texture = Prop.GetSrcObject<FbxFileTexture>(0))
-					{
-						std::string OriginalTexturePath = Texture->GetFileName();
-						std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
-						std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
-
-						if (!ResolvedPath.empty())
-						{
-							MatInfo.DiffuseTexturePath = ResolvedPath;
-						}
-					}
+					std::string OriginalTexturePath = Texture->GetFileName();
+					std::filesystem::path ResolvedPath = ResolveTexturePath(
+						OriginalTexturePath, FbxFilePath.parent_path(), FbxFilePath);
+					if (!ResolvedPath.empty())
+						MatInfo.DiffuseTexturePath = ResolvedPath;
 				}
 			}
 		}
 
-		// Normal 텍스처 추출
+		// 🔸 Normal 맵 추출 (Bump 포함)
 		if (FbxProperty NormalProp = Material->FindProperty(FbxSurfaceMaterial::sNormalMap); NormalProp.IsValid())
 		{
-			int LayeredTextureCount = NormalProp.GetSrcObjectCount<FbxLayeredTexture>();
-			if (LayeredTextureCount > 0)
+			int TextureCount = NormalProp.GetSrcObjectCount<FbxFileTexture>();
+			if (TextureCount > 0)
 			{
-				UE_LOG_WARNING("[FbxImporter] Normal Layered Texture는 아직 지원하지 않습니다.");
-			}
-			else
-			{
-				int TextureCount = NormalProp.GetSrcObjectCount<FbxFileTexture>();
-				if (TextureCount > 0)
+				if (FbxFileTexture* Texture = NormalProp.GetSrcObject<FbxFileTexture>(0))
 				{
-					if (FbxFileTexture* Texture = NormalProp.GetSrcObject<FbxFileTexture>(0))
-					{
-						std::string OriginalTexturePath = Texture->GetFileName();
-						std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
-						std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
-
-						if (!ResolvedPath.empty())
-						{
-							MatInfo.NormalTexturePath = ResolvedPath;
-						}
-					}
+					std::string OriginalTexturePath = Texture->GetFileName();
+					std::filesystem::path ResolvedPath = ResolveTexturePath(
+						OriginalTexturePath, FbxFilePath.parent_path(), FbxFilePath);
+					if (!ResolvedPath.empty())
+						MatInfo.NormalTexturePath = ResolvedPath;
 				}
 			}
 		}
-		// Bump 맵이 있으면 Normal 맵으로 사용 (NormalMap 속성이 없을 경우 대체)
 		else if (FbxProperty BumpProp = Material->FindProperty(FbxSurfaceMaterial::sBump); BumpProp.IsValid())
 		{
 			int TextureCount = BumpProp.GetSrcObjectCount<FbxFileTexture>();
@@ -313,9 +290,8 @@ void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& 
 				if (FbxFileTexture* Texture = BumpProp.GetSrcObject<FbxFileTexture>(0))
 				{
 					std::string OriginalTexturePath = Texture->GetFileName();
-					std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
-					std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
-
+					std::filesystem::path ResolvedPath = ResolveTexturePath(
+						OriginalTexturePath, FbxFilePath.parent_path(), FbxFilePath);
 					if (!ResolvedPath.empty())
 					{
 						MatInfo.NormalTexturePath = ResolvedPath;
@@ -325,24 +301,45 @@ void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& 
 			}
 		}
 
-		OutMeshInfo->Materials.Add(MatInfo);
+		// 🔹 중복 검사: 같은 텍스처 경로를 이미 가진 Material은 스킵
+		bool bDuplicate = false;
+		for (const auto& Existing : OutMeshInfo->Materials)
+		{
+			if (Existing.DiffuseTexturePath == MatInfo.DiffuseTexturePath &&
+				Existing.NormalTexturePath == MatInfo.NormalTexturePath)
+			{
+				bDuplicate = true;
+				break;
+			}
+			// 이름이 같은 경우도 중복으로 간주
+			if (Existing.MaterialName == MatInfo.MaterialName)
+			{
+				bDuplicate = true;
+				break;
+			}
+		}
+
+		if (!bDuplicate)
+		{
+			OutMeshInfo->Materials.Add(MatInfo);
+			UE_LOG("[FbxImporter] Material 추가: %s", MatInfo.MaterialName.c_str());
+		}
+		else
+		{
+			UE_LOG_WARNING("[FbxImporter] 중복 Material 무시됨: %s", MatInfo.MaterialName.c_str());
+		}
 	}
 
-	// Material이 없으면 기본 Material 추가 (MaterialOffset이 0일 때만)
-	if (MaterialCount == 0 && MaterialOffset == 0)
+	// 🔸 Material이 하나도 없으면 기본 Material 추가
+	if (MaterialCount == 0 && MaterialOffset == 0 && OutMeshInfo->Materials.Num() == 0)
 	{
 		FFbxMaterialInfo DefaultMat;
 		DefaultMat.MaterialName = "Default";
 		OutMeshInfo->Materials.Add(DefaultMat);
-		UE_LOG_WARNING("[FbxImporter] Material이 없어 기본 Material을 추가했습니다.");
-	}
-	else if (MaterialCount == 0 && MaterialOffset > 0)
-	{
-		FFbxMaterialInfo DefaultMat;
-		DefaultMat.MaterialName = "Default_" + std::to_string(MaterialOffset);
-		OutMeshInfo->Materials.Add(DefaultMat);
+		UE_LOG_WARNING("[FbxImporter] 기본 Material 추가됨 (No materials found).");
 	}
 }
+
 
 std::filesystem::path FFbxImporter::ResolveTexturePath(
 	const std::string& OriginalPath,
@@ -885,17 +882,21 @@ FbxMesh* FFbxImporter::FindFirstSkinnedMesh(FbxNode* RootNode, FbxNode** OutNode
 
 void FFbxImporter::FindAllSkinnedMeshes(FbxNode* RootNode, TArray<FbxNode*>& OutMeshNodes)
 {
-	if (!RootNode)
-		return;
+	if (!RootNode) { return; }
 
 	// 현재 노드에 메시가 있는지 확인
 	if (FbxMesh* Mesh = RootNode->GetMesh())
 	{
-		// 스킨 디포머가 있는지 확인
 		int DeformerCount = Mesh->GetDeformerCount(FbxDeformer::eSkin);
-		if (DeformerCount > 0)
+
+		// 폴리곤이 존재하는 메시라면 추가
+		if (DeformerCount > 0 || Mesh->GetPolygonCount() > 0)
 		{
 			OutMeshNodes.Add(RootNode);
+			if (DeformerCount == 0)
+			{
+				UE_LOG_WARNING("[FbxImporter] 스킨이 없는 메시 발견: '%s' (예: 눈동자, 치아 등)", RootNode->GetName());
+			}
 		}
 	}
 
@@ -1001,6 +1002,22 @@ bool FFbxImporter::ExtractSkeleton(FbxScene* Scene, FbxMesh* Mesh, FFbxSkeletalM
 
 bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMeshInfo, uint32 VertexOffset, int32 ControlPointOffset)
 {
+	// 스킨이 없는 메시일 경우 (예: 눈동자)
+	if (Mesh->GetDeformerCount(FbxDeformer::eSkin) == 0)
+	{
+		UE_LOG_WARNING("[FbxImporter] 스킨이 없는 메시입니다. (예: 눈동자) - 기본 Influence로 채웁니다.");
+
+		// 현재 버텍스 개수 계산
+		int32 CurrentVertexCount = OutMeshInfo->VertexList.Num();
+		for (uint32 i = VertexOffset; i < CurrentVertexCount; ++i)
+		{
+			OutMeshInfo->SkinWeights.Add(FFbxBoneInfluence());
+		}
+
+		return true; // 스킨 없음 처리 완료
+	}
+
+	// 기존 스킨 처리 루틴 (변경 없음)
 	FbxSkin* Skin = (FbxSkin*)Mesh->GetDeformer(0, FbxDeformer::eSkin);
 	if (!Skin)
 	{
@@ -1014,11 +1031,7 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 	// 1단계: ControlPoint 기반으로 가중치 추출
 	TArray<FFbxBoneInfluence> ControlPointWeights;
 	ControlPointWeights.Reset(ControlPointCount);
-
-	for (int i = 0; i < ControlPointCount; ++i)
-	{
-		ControlPointWeights[i] = FFbxBoneInfluence();
-	}
+	ControlPointWeights.SetNum(ControlPointCount);
 
 	for (int ClusterIndex = 0; ClusterIndex < ClusterCount; ++ClusterIndex)
 	{
@@ -1036,7 +1049,6 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 			{
 				FFbxBoneInfluence& Influence = ControlPointWeights[CtrlPointIndex];
 
-				// 빈 슬롯 찾기
 				for (int j = 0; j < FFbxBoneInfluence::MAX_INFLUENCES; ++j)
 				{
 					if (Influence.BoneIndices[j] == -1)
@@ -1050,10 +1062,8 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 		}
 	}
 
-	// 2단계: ControlPoint 가중치를 Polygon Vertex로 확장
+	// 2단계: ControlPoint → Vertex 매핑
 	int32 CurrentVertexCount = OutMeshInfo->VertexList.Num();
-
-	// VertexOffset이 0이면 첫 메시 (Reset 사용), 아니면 추가 메시 (Add만 사용)
 	if (VertexOffset == 0)
 	{
 		OutMeshInfo->SkinWeights.Reset(CurrentVertexCount);
@@ -1062,33 +1072,21 @@ bool FFbxImporter::ExtractSkinWeights(FbxMesh* Mesh, FFbxSkeletalMeshInfo* OutMe
 	for (uint32 i = VertexOffset; i < CurrentVertexCount; ++i)
 	{
 		int32 CtrlPointIndex = OutMeshInfo->ControlPointIndices[i];
-
-		// ControlPointOffset을 빼서 원래 인덱스로 복원 (추가 메시의 경우)
 		int32 LocalCtrlPointIndex = CtrlPointIndex - ControlPointOffset;
 
 		if (LocalCtrlPointIndex >= 0 && LocalCtrlPointIndex < ControlPointCount)
 		{
-			// ControlPoint의 가중치를 복사/추가
 			if (VertexOffset == 0)
-			{
 				OutMeshInfo->SkinWeights[i] = ControlPointWeights[LocalCtrlPointIndex];
-			}
 			else
-			{
 				OutMeshInfo->SkinWeights.Add(ControlPointWeights[LocalCtrlPointIndex]);
-			}
 		}
 		else
 		{
-			// 잘못된 인덱스인 경우 빈 가중치 추가
 			if (VertexOffset == 0)
-			{
 				OutMeshInfo->SkinWeights[i] = FFbxBoneInfluence();
-			}
 			else
-			{
 				OutMeshInfo->SkinWeights.Add(FFbxBoneInfluence());
-			}
 		}
 	}
 
