@@ -123,12 +123,11 @@ struct FTransform
 	{
 		FTransform Result;
 
-		Result.Scale = Scale * Other.Scale;
+		Result.Scale = Other.Scale * Scale;
 
-		Result.Rotation = Rotation * Other.Rotation;
+		Result.Rotation = Other.Rotation * Rotation ;
 
-		FVector ScaledTranslation = Other.Scale * Translation;
-		Result.Translation = Other.Rotation.RotateVector(ScaledTranslation) + Other.Translation;
+		Result.Translation = Other.Translation + Other.Rotation.RotateVector(Other.Scale * Translation);
 
 		return Result;
 	}
