@@ -105,6 +105,9 @@ private:
 	/** 스키닝용 행렬 (InvBindMatrix * ComponentSpaceTransform) */
 	TArray<FMatrix> SkinningMatrices;
 
+	/** 노말 스키닝용 행렬 (역전치 행렬) */
+	TArray<FMatrix> InvTransSkinningMatrices;
+
 	/** CPU 스키닝을 적용한 이후의 정점 정보 */
 	TArray<FNormalVertex> SkinnedVertices;
 
