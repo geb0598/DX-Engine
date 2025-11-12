@@ -20,95 +20,30 @@ const char* UViewportControlWidget::ViewTypeLabels[] = {
 };
 
 UViewportControlWidget::UViewportControlWidget()
-	: UWidget("Viewport Control Widget")
+	: UViewportToolbarWidgetBase()
 {
+	SetName("Viewport Control Widget");
 }
 
 UViewportControlWidget::~UViewportControlWidget() = default;
 
 void UViewportControlWidget::Initialize()
 {
-	LoadViewIcons();
+	LoadCommonIcons();
+	LoadViewportSpecificIcons();
 	UE_LOG("ViewportControlWidget: Initialized");
 }
 
-void UViewportControlWidget::LoadViewIcons()
+void UViewportControlWidget::LoadViewportSpecificIcons()
 {
-	if (bIconsLoaded) return;
-
-	UE_LOG("ViewportControlWidget: 아이콘 로드 시작...");
+	UE_LOG("ViewportControlWidget: 전용 아이콘 로드 시작...");
 	UAssetManager& AssetManager = UAssetManager::GetInstance();
 	UPathManager& PathManager = UPathManager::GetInstance();
 	FString IconBasePath = PathManager.GetAssetPath().string() + "\\Icon\\";
 
 	int32 LoadedCount = 0;
 
-	IconPerspective = AssetManager.LoadTexture((IconBasePath + "ViewPerspective.png").data());
-	if (IconPerspective) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'ViewPerspective' -> %p", IconPerspective);
-		LoadedCount++;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "ViewPerspective.png").c_str());
-	}
-
-	IconTop = AssetManager.LoadTexture((IconBasePath + "ViewTop.png").data());
-	if (IconTop) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'ViewTop' -> %p", IconTop);
-		LoadedCount++;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "ViewTop.png").c_str());
-	}
-
-	IconBottom = AssetManager.LoadTexture((IconBasePath + "ViewBottom.png").data());
-	if (IconBottom) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'ViewBottom' -> %p", IconBottom);
-		LoadedCount++;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "ViewBottom.png").c_str());
-	}
-
-	IconLeft = AssetManager.LoadTexture((IconBasePath + "ViewLeft.png").data());
-	if (IconLeft) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'ViewLeft' -> %p", IconLeft);
-		LoadedCount++;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "ViewLeft.png").c_str());
-	}
-
-	IconRight = AssetManager.LoadTexture((IconBasePath + "ViewRight.png").data());
-	if (IconRight) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'ViewRight' -> %p", IconRight);
-		LoadedCount++;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "ViewRight.png").c_str());
-	}
-
-	IconFront = AssetManager.LoadTexture((IconBasePath + "ViewFront.png").data());
-	if (IconFront) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'ViewFront' -> %p", IconFront);
-		LoadedCount++;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "ViewFront.png").c_str());
-	}
-
-	IconBack = AssetManager.LoadTexture((IconBasePath + "ViewBack.png").data());
-	if (IconBack) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'ViewBack' -> %p", IconBack);
-		LoadedCount++;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "ViewBack.png").c_str());
-	}
-
-	// ViewMode 아이콘 로드
-	IconLitCube = AssetManager.LoadTexture((IconBasePath + "LitCube.png").data());
-	if (IconLitCube) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'LitCube' -> %p", IconLitCube);
-		LoadedCount++;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "LitCube.png").c_str());
-	}
-
-	// 레이아웃 전환 아이콘 로드
+	// 레이아웃 전환 아이콘 로드 (ViewportControl 전용)
 	IconQuad = AssetManager.LoadTexture((IconBasePath + "quad.png").data());
 	if (IconQuad) {
 		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'quad' -> %p", IconQuad);
@@ -125,77 +60,7 @@ void UViewportControlWidget::LoadViewIcons()
 		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "square.png").c_str());
 	}
 
-	// 카메라 설정 아이콘 로드
-	IconCamera = AssetManager.LoadTexture((IconBasePath + "Camera.png").data());
-	if (IconCamera) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'Camera' -> %p", IconCamera);
-		LoadedCount++;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "Camera.png").c_str());
-	}
-
-	// Gizmo Mode 아이콘 로드
-	IconSelect = AssetManager.LoadTexture((IconBasePath + "Select.png").data());
-	if (IconSelect) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'Select' -> %p", IconSelect);
-		++LoadedCount;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "Select.png").c_str());
-	}
-
-	IconTranslate = AssetManager.LoadTexture((IconBasePath + "Translate.png").data());
-	if (IconTranslate) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'Translate' -> %p", IconTranslate);
-		++LoadedCount;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "Translate.png").c_str());
-	}
-
-	IconRotate = AssetManager.LoadTexture((IconBasePath + "Rotate.png").data());
-	if (IconRotate) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'Rotate' -> %p", IconRotate);
-		++LoadedCount;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "Rotate.png").c_str());
-	}
-
-	IconScale = AssetManager.LoadTexture((IconBasePath + "Scale.png").data());
-	if (IconScale) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'Scale' -> %p", IconScale);
-		++LoadedCount;
-	} else
-	{
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "Scale.png").c_str());
-	}
-
-	// World/Local Space 아이콘 로드
-	IconWorldSpace = AssetManager.LoadTexture((IconBasePath + "WorldSpace.png").data());
-	if (IconWorldSpace) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'WorldSpace' -> %p", IconWorldSpace);
-		++LoadedCount;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "WorldSpace.png").c_str());
-	}
-
-	IconLocalSpace = AssetManager.LoadTexture((IconBasePath + "LocalSpace.png").data());
-	if (IconLocalSpace) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'LocalSpace' -> %p", IconLocalSpace);
-		++LoadedCount;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "LocalSpace.png").c_str());
-	}
-
-	// Snap 아이콘 로드
-	IconSnapScale = AssetManager.LoadTexture((IconBasePath + "SnapScale.png").data());
-	if (IconSnapScale) {
-		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'SnapScale' -> %p", IconSnapScale);
-		++LoadedCount;
-	} else {
-		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "SnapScale.png").c_str());
-	}
-
-	UE_LOG_SUCCESS("ViewportControlWidget: 아이콘 로드 완료 (%d/18)", LoadedCount);
-	bIconsLoaded = true;
+	UE_LOG_SUCCESS("ViewportControlWidget: 전용 아이콘 로드 완료 (%d/2)", LoadedCount);
 }
 
 void UViewportControlWidget::Update()
@@ -491,6 +356,7 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 			ImGui::SameLine(0.0f, 8.0f);
 
 			// 회전 스냅 토글 버튼 (아이콘)
+			if (IconSnapRotation && IconSnapRotation->GetTextureSRV())
 			{
 				constexpr float SnapToggleButtonSize = 24.0f;
 				constexpr float SnapToggleIconSize = 16.0f;
@@ -523,16 +389,14 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 				ImU32 SnapToggleBorderColor = bSnapEnabled ? IM_COL32(150, 150, 150, 255) : IM_COL32(96, 96, 96, 255);
 				SnapToggleDrawList->AddRect(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBorderColor, 4.0f);
 
-				// 회전 아이콘 (중앙 정렬)
-				ImVec2 SnapToggleIconCenter = ImVec2(
-					SnapToggleButtonPos.x + SnapToggleButtonSize * 0.5f,
-					SnapToggleButtonPos.y + SnapToggleButtonSize * 0.5f
+				// 아이콘 렌더링 (중앙 정렬)
+				ImVec2 IconMin = ImVec2(
+					SnapToggleButtonPos.x + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f,
+					SnapToggleButtonPos.y + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f
 				);
-				float SnapToggleIconRadius = SnapToggleIconSize * 0.4f;
-				ImU32 SnapToggleIconColor = bSnapEnabled ? IM_COL32(46, 163, 255, 255) : IM_COL32(220, 220, 220, 255);
-				SnapToggleDrawList->AddCircle(SnapToggleIconCenter, SnapToggleIconRadius, SnapToggleIconColor, 12, 1.5f);
-				SnapToggleDrawList->PathArcTo(SnapToggleIconCenter, SnapToggleIconRadius + 2.0f, 0.0f, 1.5f, 8);
-				SnapToggleDrawList->PathStroke(SnapToggleIconColor, 0, 1.5f);
+				ImVec2 IconMax = ImVec2(IconMin.x + SnapToggleIconSize, IconMin.y + SnapToggleIconSize);
+				ImU32 IconTintColor = bSnapEnabled ? IM_COL32(46, 163, 255, 255) : IM_COL32(220, 220, 220, 255);
+				SnapToggleDrawList->AddImage((void*)IconSnapRotation->GetTextureSRV(), IconMin, IconMax, ImVec2(0, 0), ImVec2(1, 1), IconTintColor);
 
 				if (bSnapToggleClicked)
 				{

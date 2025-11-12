@@ -1,5 +1,5 @@
 #pragma once
-#include "Widget.h"
+#include "ViewportToolbarWidgetBase.h"
 
 class UTexture;
 
@@ -79,7 +79,7 @@ struct FUEImgui
 };
 
 
-class UViewportControlWidget : public UWidget
+class UViewportControlWidget : public UViewportToolbarWidgetBase
 {
 public:
 	UViewportControlWidget();
@@ -91,11 +91,7 @@ public:
 
 private:
 	void RenderViewportToolbar(int32 ViewportIndex);
-	void LoadViewIcons();
-	//static void RenderSplitterLines();
-	//static void RenderCameraSpeedControl(int32 ViewportIndex);
-	//static void RenderGridSizeControl();
-	//static void HandleCameraBinding(int32 ViewportIndex, EViewType NewType, int32 TypeIndex);
+	void LoadViewportSpecificIcons();
 
 private:
 	// ViewMode와 ViewType 라벨들
@@ -106,39 +102,9 @@ private:
 	enum class ELayout : uint8 { Single, Quad };
 	ELayout CurrentLayout = ELayout::Single;
 
-	// View Type 아이콘들
-	UTexture* IconPerspective = nullptr;
-	UTexture* IconTop = nullptr;
-	UTexture* IconBottom = nullptr;
-	UTexture* IconLeft = nullptr;
-	UTexture* IconRight = nullptr;
-	UTexture* IconFront = nullptr;
-	UTexture* IconBack = nullptr;
-
-	// ViewMode 아이콘
-	UTexture* IconLitCube = nullptr;
-
-	// 레이아웃 전환 아이콘
+	// 레이아웃 전환 아이콘 (ViewportControl 전용)
 	UTexture* IconQuad = nullptr;
 	UTexture* IconSquare = nullptr;
-
-	// 카메라 설정 아이콘
-	UTexture* IconCamera = nullptr;
-
-	// Gizmo Mode 아이콘들
-	UTexture* IconSelect = nullptr;
-	UTexture* IconTranslate = nullptr;
-	UTexture* IconRotate = nullptr;
-	UTexture* IconScale = nullptr;
-
-	// World/Local Space 아이콘들
-	UTexture* IconWorldSpace = nullptr;
-	UTexture* IconLocalSpace = nullptr;
-
-	// Snap 아이콘들
-	UTexture* IconSnapScale = nullptr;
-
-	bool bIconsLoaded = false;
 
 	// Pilot Mode UI 헬퍼
 	void RenderPilotModeExitButton(int32 ViewportIndex, ImVec2& InOutCursorPos);

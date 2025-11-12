@@ -530,6 +530,7 @@
     <ClInclude Include="Source\Render\UI\Widget\Public\SkeletalMeshViewerToolbarWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\ViewportControlWidget.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\ViewportMenuBarWidget.h" />
+    <ClInclude Include="Source\Render\UI\Widget\Public\ViewportToolbarWidgetBase.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\Widget.h" />
     <ClInclude Include="Source\Render\UI\Window\Public\ConsoleWindow.h" />
     <ClInclude Include="Source\Render\UI\Window\Public\ControlPanelWindow.h" />
@@ -758,6 +759,7 @@
     <ClCompile Include="Source\Render\UI\Widget\Private\SkeletalMeshViewerToolbarWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\ViewportControlWidget.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\ViewportMenuBarWidget.cpp" />
+    <ClCompile Include="Source\Render\UI\Widget\Private\ViewportToolbarWidgetBase.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\Widget.cpp" />
     <ClCompile Include="Source\Render\UI\Window\Private\ConsoleWindow.cpp" />
     <ClCompile Include="Source\Render\UI\Window\Private\ControlPanelWindow.cpp" />

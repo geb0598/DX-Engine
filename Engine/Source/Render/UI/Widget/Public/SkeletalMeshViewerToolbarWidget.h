@@ -1,5 +1,5 @@
 #pragma once
-#include "Widget.h"
+#include "ViewportToolbarWidgetBase.h"
 #include "Editor/Public/GizmoTypes.h"
 
 class FViewportClient;
@@ -12,9 +12,9 @@ class UTexture;
  * Gizmo Mode 버튼(QWER), Rotation Snap, ViewType, Camera Settings, ViewMode 등을 포함합니다.
  * 메인 에디터의 ViewportControlWidget과 유사하지만 뷰어 윈도우에 특화되어 있습니다.
  */
-class USkeletalMeshViewerToolbarWidget : public UWidget
+class USkeletalMeshViewerToolbarWidget : public UViewportToolbarWidgetBase
 {
-	DECLARE_CLASS(USkeletalMeshViewerToolbarWidget, UWidget)
+	DECLARE_CLASS(USkeletalMeshViewerToolbarWidget, UViewportToolbarWidgetBase)
 
 public:
 	USkeletalMeshViewerToolbarWidget();
@@ -75,49 +75,14 @@ private:
 	// ========================================
 
 	/**
-	 * @brief 뷰 아이콘 로드
-	 */
-	void LoadViewIcons();
-
-	/**
-	 * @brief 아이콘 버튼 렌더링 (공통 로직)
-	 */
-	bool DrawIconButton(const char* ID, UTexture* Icon, bool bActive, const char* Tooltip, float ButtonSize = 24.0f, float IconSize = 16.0f);
-
-	/**
-	 * @brief Gizmo Mode 버튼들 렌더링 (QWER)
-	 */
-	void RenderGizmoModeButtons();
-
-	/**
-	 * @brief Rotation Snap 컨트롤 렌더링
-	 */
-	void RenderRotationSnapControls();
-
-	/**
-	 * @brief Scale Snap 컨트롤 렌더링
-	 */
-	void RenderScaleSnapControls();
-
-	/**
-	 * @brief View Type 버튼 렌더링 (Perspective/Orthographic)
-	 */
-	void RenderViewTypeButton();
-
-	/**
-	 * @brief Camera Speed 버튼 렌더링
-	 */
-	void RenderCameraSpeedButton();
-
-	/**
-	 * @brief View Mode 버튼 렌더링 (Lighting Mode)
-	 */
-	void RenderViewModeButton();
-
-	/**
 	 * @brief Grid Settings 버튼 렌더링
 	 */
 	void RenderGridSettingsButton();
+
+	/**
+	 * @brief Camera Settings 팝업 내용 렌더링
+	 */
+	void RenderCameraSettingsPopupContent();
 
 private:
 	// ViewportClient (카메라 및 뷰 정보 접근용)
@@ -125,34 +90,6 @@ private:
 
 	// Owning Window (그리드 설정 접근용)
 	class USkeletalMeshViewerWindow* OwningWindow = nullptr;
-
-	// View Type 아이콘들
-	UTexture* IconPerspective = nullptr;
-	UTexture* IconTop = nullptr;
-	UTexture* IconBottom = nullptr;
-	UTexture* IconLeft = nullptr;
-	UTexture* IconRight = nullptr;
-	UTexture* IconFront = nullptr;
-	UTexture* IconBack = nullptr;
-
-	// Gizmo Mode 아이콘들
-	UTexture* IconSelect = nullptr;
-	UTexture* IconTranslate = nullptr;
-	UTexture* IconRotate = nullptr;
-	UTexture* IconScale = nullptr;
-
-	// Other 아이콘들
-	UTexture* IconLitCube = nullptr;
-	UTexture* IconCamera = nullptr;
-
-	// World/Local Space 아이콘들
-	UTexture* IconWorldSpace = nullptr;
-	UTexture* IconLocalSpace = nullptr;
-
-	// Snap 아이콘들
-	UTexture* IconSnapScale = nullptr;
-
-	bool bIconsLoaded = false;
 
 	// Gizmo Mode 상태
 	EGizmoMode CurrentGizmoMode = EGizmoMode::Translate;
