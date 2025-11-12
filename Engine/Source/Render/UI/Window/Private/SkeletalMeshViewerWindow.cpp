@@ -708,6 +708,9 @@ void USkeletalMeshViewerWindow::RenderSkeletonTreePanel(const USkeletalMesh* InS
 
 	// 본 정보 표시
 	ImGui::Text("Total Bones: %d", InNumBones);
+	ImGui::SameLine();
+	ImGui::Checkbox("Show All Bone Names", &bShowAllBoneNames);
+
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
@@ -764,8 +767,8 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 	// 트리 노드 플래그 설정
 	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
-	// 검색 필터가 활성화되어 있으면 모든 노드를 기본으로 열림
-	if (bHasSearchFilter)
+	// 아래 조건 만족 시, 모든 노드를 기본으로 열림
+	if (bHasSearchFilter || bShowAllBoneNames)
 	{
 		NodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
 	}
@@ -1902,13 +1905,6 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 	ImGui::PopStyleColor(3);
 
 	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::TextWrapped("추가 구현 예정:");
-	ImGui::BulletText("본 프로퍼티 편집");
-	ImGui::BulletText("애니메이션 프리뷰");
-	ImGui::BulletText("소켓 편집");
-	ImGui::BulletText("LOD 설정");
-
 
 	ImGui::Checkbox("Show All Bones", &bShowAllBones);
 
