@@ -13,6 +13,7 @@ class UWorld;
 class AActor;
 class UGizmo;
 class UObjectPicker;
+struct FHitProxyId;
 
 /**
  * @brief SkeletalMesh 뷰어 윈도우
@@ -222,6 +223,19 @@ private:
 	 * @brief 렌더 타겟 해제
 	 */
 	void ReleaseRenderTarget();
+
+	/**
+	 * @brief HitProxy 패스 렌더링 (본 피킹용)
+	 */
+	void RenderHitProxyPassForViewer();
+
+	/**
+	 * @brief 뷰어의 특정 위치에서 HitProxy ID 읽기
+	 * @param X 뷰어 로컬 X 좌표
+	 * @param Y 뷰어 로컬 Y 좌표
+	 * @return HitProxy ID
+	 */
+	FHitProxyId ReadHitProxyAtViewerLocation(int32 X, int32 Y);
 
 	/**
 	 * @brief 본 좌표 변환 헬퍼 함수들

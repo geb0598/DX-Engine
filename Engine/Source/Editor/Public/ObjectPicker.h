@@ -4,6 +4,7 @@
 #include "Render/HitProxy/Public/HitProxy.h"
 
 class UPrimitiveComponent;
+class USkeletalMeshComponent;
 class AActor;
 class ULevel;
 class UCamera;
@@ -18,6 +19,7 @@ public:
 	~UObjectPicker();
 	UPrimitiveComponent* PickPrimitive(UCamera* InActiveCamera, const FRay& WorldRay, TArray<UPrimitiveComponent*> Candidate, float* Distance);
 	UPrimitiveComponent* PickPrimitiveFromHitProxy(UCamera* InActiveCamera, int32 MouseX, int32 MouseY);
+	int32 PickBone(UCamera* InActiveCamera, int32 MouseX, int32 MouseY, USkeletalMeshComponent*& OutComponent);
 	void PickGizmo(UCamera* InActiveCamera, const FRay& WorldRay, UGizmo& Gizmo, FVector& CollisionPoint);
 	bool IsRayCollideWithPlane(const FRay& WorldRay, FVector PlanePoint, FVector Normal, FVector& PointOnPlane);
 

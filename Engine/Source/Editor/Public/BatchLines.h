@@ -61,6 +61,12 @@ public:
 	 */
 	void Render();
 
+	/**
+	 * @brief HitProxy 패스에서 본 피라미드 렌더링
+	 * @param SkeletalMeshComponent 스켈레탈 메시 컴포넌트
+	 */
+	void RenderBonePyramidsForHitProxy(USkeletalMeshComponent* SkeletalMeshComponent);
+
 private:
 	void RenderGridAndLightLines();  // Grid + Light Lines
 	void RenderBoundingBox();        // AABB
@@ -72,6 +78,9 @@ private:
 
 	// Pyramid 생성 헬퍼 함수
 	void CreatePyramid(const FVector& Base, const FVector& Tip, float BaseSize, const FVector4& Color, TArray<FVector>& OutVertices, TArray<uint32>& OutIndices, uint32 BaseVertexIndex);
+
+	// HitProxy용 Solid Pyramid 생성 (삼각형 면으로 구성)
+	void CreateSolidPyramid(const FVector& Base, const FVector& Tip, float BaseSize, TArray<FVector>& OutVertices, TArray<uint32>& OutIndices, uint32 BaseVertexIndex);
 
 	/*void AddWorldGridVerticesAndConstData();
 	void AddBoundingBoxVertices();*/

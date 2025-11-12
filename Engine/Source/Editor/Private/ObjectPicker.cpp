@@ -667,6 +667,59 @@ UPrimitiveComponent* UObjectPicker::PickPrimitiveFromHitProxy(UCamera* InActiveC
 	return nullptr;
 }
 
+int32 UObjectPicker::PickBone(UCamera* InActiveCamera, int32 MouseX, int32 MouseY, USkeletalMeshComponent*& OutComponent)
+{
+	OutComponent = nullptr;
+
+	if (!InActiveCamera)
+	{
+		return -1;
+	}
+
+	// HitProxy 패스 실행 (Click On Demand)
+	URenderer& Renderer = URenderer::GetInstance();
+	UViewportManager& ViewportManager = UViewportManager::GetInstance();
+
+	int32 ActiveViewportIndex = ViewportManager.GetActiveIndex();
+	if (ActiveViewportIndex < 0 || ActiveViewportIndex >= ViewportManager.GetViewports().Num())
+	{
+		return -1;
+	}
+
+	FViewport* ActiveViewport = ViewportManager.GetViewports()[ActiveViewportIndex];
+	D3D11_VIEWPORT DXViewport = ActiveViewport->GetRenderRect();
+
+	// HitProxy 렌더링
+	Renderer.RenderHitProxyPass(InActiveCamera, DXViewport);
+
+	// HitProxy 텍스처 픽셀 읽기
+	FHitProxyId HitProxyId = ReadHitProxyAtLocation(MouseX, MouseY, DXViewport);
+
+	if (!HitProxyId.IsValid())
+	{
+		return -1;
+	}
+
+	// HitProxyId로 HitProxy 객체 조회
+	FHitProxyManager& HitProxyManager = FHitProxyManager::GetInstance();
+	HHitProxy* HitProxy = HitProxyManager.GetHitProxy(HitProxyId);
+
+	if (!HitProxy)
+	{
+		return -1;
+	}
+
+	// 본 HitProxy인지 확인
+	if (HitProxy->IsBone())
+	{
+		HBone* BoneProxy = static_cast<HBone*>(HitProxy);
+		OutComponent = BoneProxy->SkeletalMeshComponent;
+		return BoneProxy->BoneIndex;
+	}
+
+	return -1;
+}
+
 FHitProxyId UObjectPicker::ReadHitProxyAtLocation(int32 X, int32 Y, const D3D11_VIEWPORT& Viewport)
 {
 	URenderer& Renderer = URenderer::GetInstance();

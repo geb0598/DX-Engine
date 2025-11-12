@@ -1,6 +1,7 @@
 #pragma once
 
 class UPrimitiveComponent;
+class USkeletalMeshComponent;
 
 // 기즈모 축 타입
 enum class EGizmoAxisType : uint8
@@ -62,6 +63,7 @@ public:
 
 	virtual bool IsWidgetAxis() const { return false; }
 	virtual bool IsComponent() const { return false; }
+	virtual bool IsBone() const { return false; }
 };
 
 // 기즈모 축 HitProxy
@@ -90,6 +92,21 @@ public:
 	}
 
 	virtual bool IsComponent() const override { return true; }
+};
+
+// 본 HitProxy
+class HBone : public HHitProxy
+{
+public:
+	int32 BoneIndex;
+	USkeletalMeshComponent* SkeletalMeshComponent;
+
+	HBone(int32 InBoneIndex, USkeletalMeshComponent* InComponent, FHitProxyId InId)
+		: HHitProxy(InId), BoneIndex(InBoneIndex), SkeletalMeshComponent(InComponent)
+	{
+	}
+
+	virtual bool IsBone() const override { return true; }
 };
 
 // HitProxy 관리자 (싱글톤)

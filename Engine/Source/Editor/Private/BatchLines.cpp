@@ -11,6 +11,7 @@
 #include "Runtime/Engine/Public/ReferenceSkeleton.h"
 #include "Level/Public/Level.h"
 #include "Physics/Public/OBB.h"
+#include "Render/HitProxy/Public/HitProxy.h"
 
 IMPLEMENT_CLASS(UBatchLines, UObject)
 
@@ -417,6 +418,64 @@ void UBatchLines::CreatePyramid(const FVector& Base, const FVector& Tip, float B
 	OutIndices.Add(BaseVertexIndex + 4);
 }
 
+void UBatchLines::CreateSolidPyramid(const FVector& Base, const FVector& Tip, float BaseSize,
+	TArray<FVector>& OutVertices, TArray<uint32>& OutIndices, uint32 BaseVertexIndex)
+{
+	// 방향 벡터 계산
+	FVector Direction = (Tip - Base).GetNormalized();
+
+	// Base 평면을 위한 직교 벡터 생성
+	FVector Up = (fabsf(Direction.Z) < 0.999f) ? FVector(0, 0, 1) : FVector(1, 0, 0);
+	FVector Right = Direction.Cross(Up).GetNormalized();
+	FVector Forward = Right.Cross(Direction).GetNormalized();
+
+	// 사각형 Base의 4개 코너 계산
+	float HalfSize = BaseSize * 0.5f;
+	FVector Corner0 = Base + Right * HalfSize + Forward * HalfSize;
+	FVector Corner1 = Base - Right * HalfSize + Forward * HalfSize;
+	FVector Corner2 = Base - Right * HalfSize - Forward * HalfSize;
+	FVector Corner3 = Base + Right * HalfSize - Forward * HalfSize;
+
+	// 정점 추가 (Base 4개 + Tip 1개)
+	OutVertices.Add(Corner0);
+	OutVertices.Add(Corner1);
+	OutVertices.Add(Corner2);
+	OutVertices.Add(Corner3);
+	OutVertices.Add(Tip);
+
+	// 삼각형 인덱스 추가 (Solid 렌더링)
+
+	// 바닥면 (2개의 삼각형)
+	OutIndices.Add(BaseVertexIndex + 0);
+	OutIndices.Add(BaseVertexIndex + 1);
+	OutIndices.Add(BaseVertexIndex + 2);
+
+	OutIndices.Add(BaseVertexIndex + 0);
+	OutIndices.Add(BaseVertexIndex + 2);
+	OutIndices.Add(BaseVertexIndex + 3);
+
+	// 측면 4개 (각 면이 1개의 삼각형)
+	// 면 1: Corner0 -> Corner1 -> Tip
+	OutIndices.Add(BaseVertexIndex + 0);
+	OutIndices.Add(BaseVertexIndex + 1);
+	OutIndices.Add(BaseVertexIndex + 4);
+
+	// 면 2: Corner1 -> Corner2 -> Tip
+	OutIndices.Add(BaseVertexIndex + 1);
+	OutIndices.Add(BaseVertexIndex + 2);
+	OutIndices.Add(BaseVertexIndex + 4);
+
+	// 면 3: Corner2 -> Corner3 -> Tip
+	OutIndices.Add(BaseVertexIndex + 2);
+	OutIndices.Add(BaseVertexIndex + 3);
+	OutIndices.Add(BaseVertexIndex + 4);
+
+	// 면 4: Corner3 -> Corner0 -> Tip
+	OutIndices.Add(BaseVertexIndex + 3);
+	OutIndices.Add(BaseVertexIndex + 0);
+	OutIndices.Add(BaseVertexIndex + 4);
+}
+
 void UBatchLines::TraverseOctree(const FOctree* InNode)
 {
 	if (!InNode) { return; }
@@ -757,6 +816,150 @@ void UBatchLines::SetIndices()
 		for (uint32 Idx = 0; Idx < BonePyramidIndices.Num(); ++Idx)
 		{
 			Indices.Add(BaseVertexOffset + BonePyramidIndices[Idx]);
+		}
+	}
+}
+
+void UBatchLines::RenderBonePyramidsForHitProxy(USkeletalMeshComponent* SkeletalMeshComponent)
+{
+	if (!SkeletalMeshComponent)
+	{
+		return;
+	}
+
+	USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
+	if (!SkeletalMesh)
+	{
+		return;
+	}
+
+	const FReferenceSkeleton& RefSkeleton = SkeletalMesh->GetRefSkeleton();
+	const int32 NumBones = RefSkeleton.GetRawBoneNum();
+
+	if (NumBones == 0)
+	{
+		return;
+	}
+
+	// ComponentSpaceTransforms이 정상적으로 갱신되어 있는지 확인
+	if (SkeletalMeshComponent->IsSkinningDirty() == false)
+	{
+		SkeletalMeshComponent->RefreshBoneTransforms();
+	}
+
+	const TArray<FTransform>& ComponentSpaceTransforms = SkeletalMeshComponent->GetComponentSpaceTransforms();
+	const FMatrix& ComponentWorldMatrix = SkeletalMeshComponent->GetWorldTransformMatrix();
+
+	// 사각뿔 크기 (본 간 거리에 비례하여 조정)
+	constexpr float BaseSizeRatio = 0.1f;
+
+	URenderer& Renderer = URenderer::GetInstance();
+	FHitProxyManager& HitProxyManager = FHitProxyManager::GetInstance();
+
+	// 각 본에 대해 HitProxy 생성 및 렌더링
+	for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+	{
+		int32 ParentIndex = RefSkeleton.GetRawParentIndex(BoneIndex);
+
+		// 루트 본(부모가 없는 본)은 건너뜀
+		if (ParentIndex == INDEX_NONE)
+		{
+			continue;
+		}
+
+		// 부모 본 -> 현재 본으로 이어지는 피라미드 생성
+		FVector ParentPos = ComponentWorldMatrix.TransformPosition(ComponentSpaceTransforms[ParentIndex].Translation);
+		FVector CurrentPos = ComponentWorldMatrix.TransformPosition(ComponentSpaceTransforms[BoneIndex].Translation);
+
+		float Distance = (CurrentPos - ParentPos).Length();
+
+		// 너무 짧은 본은 건너뜀 (거리가 거의 0인 경우)
+		if (Distance < MATH_EPSILON)
+		{
+			continue;
+		}
+
+		float BaseSize = Distance * BaseSizeRatio;
+
+		// HBone HitProxy 생성 및 ID 할당
+		HBone* BoneProxy = new HBone(BoneIndex, SkeletalMeshComponent, InvalidHitProxyId);
+		FHitProxyId BoneHitProxyId = HitProxyManager.AllocateHitProxyId(BoneProxy);
+
+		// 피라미드 지오메트리 생성 (Solid)
+		TArray<FVector> PyramidVertices;
+		TArray<uint32> PyramidIndices;
+		CreateSolidPyramid(ParentPos, CurrentPos, BaseSize,
+			PyramidVertices, PyramidIndices, 0);
+
+		// 버퍼 생성 및 렌더링
+		if (PyramidVertices.Num() > 0 && PyramidIndices.Num() > 0)
+		{
+			ID3D11Device* Device = Renderer.GetDevice();
+			ID3D11Buffer* VertexBuffer = nullptr;
+			ID3D11Buffer* IndexBuffer = nullptr;
+
+			// Vertex Buffer 생성
+			D3D11_BUFFER_DESC vbDesc = {};
+			vbDesc.ByteWidth = static_cast<UINT>(PyramidVertices.Num() * sizeof(FVector));
+			vbDesc.Usage = D3D11_USAGE_DEFAULT;
+			vbDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+			vbDesc.CPUAccessFlags = 0;
+
+			D3D11_SUBRESOURCE_DATA vbData = {};
+			vbData.pSysMem = PyramidVertices.GetData();
+
+			if (SUCCEEDED(Device->CreateBuffer(&vbDesc, &vbData, &VertexBuffer)))
+			{
+				// Index Buffer 생성
+				D3D11_BUFFER_DESC ibDesc = {};
+				ibDesc.ByteWidth = static_cast<UINT>(PyramidIndices.Num() * sizeof(uint32));
+				ibDesc.Usage = D3D11_USAGE_DEFAULT;
+				ibDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
+				ibDesc.CPUAccessFlags = 0;
+
+				D3D11_SUBRESOURCE_DATA ibData = {};
+				ibData.pSysMem = PyramidIndices.GetData();
+
+				if (SUCCEEDED(Device->CreateBuffer(&ibDesc, &ibData, &IndexBuffer)))
+				{
+					// EditorPrimitive 설정
+					FEditorPrimitive TempPrimitive;
+					TempPrimitive.VertexBuffer = VertexBuffer;
+					TempPrimitive.IndexBuffer = IndexBuffer;
+					TempPrimitive.NumVertices = static_cast<uint32>(PyramidVertices.Num());
+					TempPrimitive.NumIndices = static_cast<uint32>(PyramidIndices.Num());
+					TempPrimitive.Location = FVector(0.0f, 0.0f, 0.0f);
+					TempPrimitive.Rotation = FQuaternion::Identity();
+					TempPrimitive.Scale = FVector(1.0f, 1.0f, 1.0f);
+					TempPrimitive.Color = BoneHitProxyId.GetColor();
+					TempPrimitive.bShouldAlwaysVisible = true;
+					TempPrimitive.Topology = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+
+					// BatchLines의 셰이더 사용
+					TempPrimitive.VertexShader = Primitive.VertexShader;
+					TempPrimitive.PixelShader = Primitive.PixelShader;
+					TempPrimitive.InputLayout = Primitive.InputLayout;
+
+					// RenderState 설정
+					FRenderState RenderState;
+					RenderState.FillMode = EFillMode::Solid;
+					RenderState.CullMode = ECullMode::Back;
+
+					// 렌더링
+					Renderer.RenderEditorPrimitiveIndexed(
+						TempPrimitive,
+						RenderState,
+						sizeof(FVector),
+						sizeof(uint32),
+						0,
+						TempPrimitive.NumIndices
+					);
+
+					// 버퍼 해제
+					IndexBuffer->Release();
+				}
+				VertexBuffer->Release();
+			}
 		}
 	}
 }

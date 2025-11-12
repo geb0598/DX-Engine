@@ -25,6 +25,7 @@
 #include "Editor/Public/ObjectPicker.h"
 #include "Editor/Public/Axis.h"
 #include "Editor/Public/GizmoHelper.h"
+#include "Render/HitProxy/Public/HitProxy.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
 #include "Manager/Asset/Public/AssetManager.h"
@@ -1213,8 +1214,51 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 			else if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 			{
 				// 기즈모가 선택되지 않은 상태에서 왼쪽 클릭
-				// → 본 선택 해제 (바깥 클릭)
-				if (SelectedBoneIndex != INDEX_NONE)
+				// → 본 피킹 시도 또는 선택 해제
+
+				// 본 피킹 시도 (bShowAllBones가 켜져있을 때만)
+				bool bBonePicked = false;
+				if (bShowAllBones && SkeletalMeshComponent)
+				{
+					// HitProxy 패스 렌더링
+					RenderHitProxyPassForViewer();
+
+					// 마우스 위치에서 HitProxy ID 읽기
+					int32 LocalMouseX = static_cast<int32>(MouseX);
+					int32 LocalMouseY = static_cast<int32>(MouseY);
+					FHitProxyId HitProxyId = ReadHitProxyAtViewerLocation(LocalMouseX, LocalMouseY);
+
+					if (HitProxyId.IsValid())
+					{
+						// HitProxyManager에서 HitProxy 조회
+						FHitProxyManager& HitProxyManager = FHitProxyManager::GetInstance();
+						HHitProxy* HitProxy = HitProxyManager.GetHitProxy(HitProxyId);
+
+						if (HitProxy && HitProxy->IsBone())
+						{
+							HBone* BoneProxy = static_cast<HBone*>(HitProxy);
+							if (BoneProxy->SkeletalMeshComponent == SkeletalMeshComponent)
+							{
+								// 본 선택
+								SelectedBoneIndex = BoneProxy->BoneIndex;
+								bBonePicked = true;
+
+								// 기즈모를 선택된 본 위치로 이동
+								if (ViewerGizmo)
+								{
+									FVector BoneWorldLocation = GetBoneWorldLocation(SelectedBoneIndex);
+									ViewerGizmo->SetFixedLocation(BoneWorldLocation);
+								}
+							}
+						}
+					}
+
+					// HitProxy 매니저 정리
+					FHitProxyManager::GetInstance().ClearAllHitProxies();
+				}
+
+				// 본이 피킹되지 않았으면 선택 해제
+				if (!bBonePicked && SelectedBoneIndex != INDEX_NONE)
 				{
 					SelectedBoneIndex = INDEX_NONE;
 					if (ViewerGizmo)
@@ -2270,4 +2314,150 @@ FQuaternion USkeletalMeshViewerWindow::WorldToLocalBoneRotation(int32 BoneIndex,
 		// WorldSpace를 ParentBoneSpace(LocalSpace)로 변환
 		return ParentWorldRotation.Inverse() * WorldRotation;
 	}
+}
+
+void USkeletalMeshViewerWindow::RenderHitProxyPassForViewer()
+{
+	if (!SkeletalMeshComponent || !ViewerHitProxyRTV || !bShowAllBones)
+	{
+		return;
+	}
+
+	URenderer& Renderer = URenderer::GetInstance();
+	ID3D11DeviceContext* DeviceContext = Renderer.GetDeviceContext();
+	UPipeline* Pipeline = Renderer.GetPipeline();
+
+	// 현재 렌더 타겟 저장
+	ID3D11RenderTargetView* OldRTV = nullptr;
+	ID3D11DepthStencilView* OldDSV = nullptr;
+	DeviceContext->OMGetRenderTargets(1, &OldRTV, &OldDSV);
+
+	// 현재 뷰포트 저장
+	UINT NumViewports = 1;
+	D3D11_VIEWPORT OldViewport = {};
+	DeviceContext->RSGetViewports(&NumViewports, &OldViewport);
+
+	// HitProxy 렌더 타겟 설정
+	Pipeline->SetRenderTargets(1, &ViewerHitProxyRTV, ViewerDepthStencilView);
+
+	// 렌더 타겟 클리어 (검은색 = Invalid HitProxy)
+	const float ClearColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
+	DeviceContext->ClearRenderTargetView(ViewerHitProxyRTV, ClearColor);
+	DeviceContext->ClearDepthStencilView(ViewerDepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+
+	// 뷰포트 설정
+	D3D11_VIEWPORT Viewport = {};
+	Viewport.TopLeftX = 0.0f;
+	Viewport.TopLeftY = 0.0f;
+	Viewport.Width = static_cast<float>(ViewerWidth);
+	Viewport.Height = static_cast<float>(ViewerHeight);
+	Viewport.MinDepth = 0.0f;
+	Viewport.MaxDepth = 1.0f;
+	DeviceContext->RSSetViewports(1, &Viewport);
+
+	// 카메라 설정
+	UCamera* Camera = ViewerViewportClient ? ViewerViewportClient->GetCamera() : nullptr;
+	if (!Camera)
+	{
+		// 렌더 타겟 복원
+		Pipeline->SetRenderTargets(1, &OldRTV, OldDSV);
+		DeviceContext->RSSetViewports(1, &OldViewport);
+		SafeRelease(OldRTV);
+		SafeRelease(OldDSV);
+		return;
+	}
+
+	// 카메라 상수 버퍼 업데이트
+	const FCameraConstants& CameraConstants = Camera->GetCameraConstants();
+	ID3D11Buffer* ConstantBufferViewProj = Renderer.GetConstantBufferViewProj();
+	FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferViewProj, CameraConstants);
+
+	// 본 피라미드 HitProxy 렌더링
+	if (ViewerBatchLines)
+	{
+		ViewerBatchLines->RenderBonePyramidsForHitProxy(SkeletalMeshComponent);
+	}
+
+	// 렌더 타겟 복원
+	Pipeline->SetRenderTargets(1, &OldRTV, OldDSV);
+	DeviceContext->RSSetViewports(1, &OldViewport);
+
+	// 참조 카운트 해제
+	SafeRelease(OldRTV);
+	SafeRelease(OldDSV);
+
+	// HitProxy 매니저 정리는 다음 프레임 시작 시 자동으로 수행됨
+}
+
+FHitProxyId USkeletalMeshViewerWindow::ReadHitProxyAtViewerLocation(int32 X, int32 Y)
+{
+	if (!ViewerHitProxyTexture || X < 0 || Y < 0 || X >= static_cast<int32>(ViewerWidth) || Y >= static_cast<int32>(ViewerHeight))
+	{
+		return InvalidHitProxyId;
+	}
+
+	URenderer& Renderer = URenderer::GetInstance();
+	ID3D11Device* Device = Renderer.GetDevice();
+	ID3D11DeviceContext* DeviceContext = Renderer.GetDeviceContext();
+
+	// Staging Texture 생성 (CPU에서 읽기 가능)
+	static ID3D11Texture2D* StagingTexture = nullptr;
+	static uint32 StagingWidth = 0;
+	static uint32 StagingHeight = 0;
+
+	if (!StagingTexture || StagingWidth != ViewerWidth || StagingHeight != ViewerHeight)
+	{
+		if (StagingTexture)
+		{
+			StagingTexture->Release();
+			StagingTexture = nullptr;
+		}
+
+		D3D11_TEXTURE2D_DESC StagingDesc = {};
+		StagingDesc.Width = ViewerWidth;
+		StagingDesc.Height = ViewerHeight;
+		StagingDesc.MipLevels = 1;
+		StagingDesc.ArraySize = 1;
+		StagingDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		StagingDesc.SampleDesc.Count = 1;
+		StagingDesc.SampleDesc.Quality = 0;
+		StagingDesc.Usage = D3D11_USAGE_STAGING;
+		StagingDesc.BindFlags = 0;
+		StagingDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+		StagingDesc.MiscFlags = 0;
+
+		if (FAILED(Device->CreateTexture2D(&StagingDesc, nullptr, &StagingTexture)))
+		{
+			UE_LOG_ERROR("SkeletalMeshViewerWindow: Failed to create staging texture for HitProxy reading");
+			return InvalidHitProxyId;
+		}
+
+		StagingWidth = ViewerWidth;
+		StagingHeight = ViewerHeight;
+	}
+
+	// HitProxy 텍스처를 Staging 텍스처로 복사
+	DeviceContext->CopyResource(StagingTexture, ViewerHitProxyTexture);
+
+	// Staging 텍스처에서 픽셀 읽기
+	D3D11_MAPPED_SUBRESOURCE MappedResource = {};
+	if (FAILED(DeviceContext->Map(StagingTexture, 0, D3D11_MAP_READ, 0, &MappedResource)))
+	{
+		UE_LOG_ERROR("SkeletalMeshViewerWindow: Failed to map staging texture");
+		return InvalidHitProxyId;
+	}
+
+	// 픽셀 데이터 읽기 (R8G8B8A8)
+	const uint8* PixelData = static_cast<const uint8*>(MappedResource.pData);
+	const uint32 PixelOffset = (Y * MappedResource.RowPitch) + (X * 4); // 4 bytes per pixel (RGBA)
+
+	uint8 R = PixelData[PixelOffset + 0];
+	uint8 G = PixelData[PixelOffset + 1];
+	uint8 B = PixelData[PixelOffset + 2];
+
+	DeviceContext->Unmap(StagingTexture, 0);
+
+	// RGB를 HitProxyId로 변환
+	FHitProxyId HitProxyId(R, G, B);
+	return HitProxyId;
 }
