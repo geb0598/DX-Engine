@@ -114,28 +114,13 @@ void FSkeletalMeshPass::Execute(FRenderingContext& Context)
 			UMaterial* Material = MeshComp->GetMaterial(Section.MaterialSlot);
 			if (Material == nullptr)
 			{
-				UMaterial* DefaultMaterial = NewObject<UMaterial>();
-				DefaultMaterial->SetName("DefaultMaterial");
-
-				FMaterial MaterialData;
-				MaterialData.Name = "DefaultMaterial";
-				MaterialData.Kd = FVector(0.9f, 0.9f, 0.9f);
-				MaterialData.Ka = FVector(0.2f, 0.2f, 0.2f);
-				MaterialData.Ks = FVector(0.5f, 0.5f, 0.5f);
-				MaterialData.Ns = 32.0f;
-				MaterialData.D = 1.0f;
-
-				DefaultMaterial->SetMaterialData(MaterialData);
-
-				Material = DefaultMaterial;
-
 				FMaterialConstants MaterialConstants = {};
-				FVector AmbientColor = Material->GetAmbientColor(); MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);
-				FVector DiffuseColor = Material->GetDiffuseColor(); MaterialConstants.Kd = FVector4(DiffuseColor.X, DiffuseColor.Y, DiffuseColor.Z, 1.0f);
-				FVector SpecularColor = Material->GetSpecularColor(); MaterialConstants.Ks = FVector4(SpecularColor.X, SpecularColor.Y, SpecularColor.Z, 1.0f);
-				MaterialConstants.Ns = Material->GetSpecularExponent();
-				MaterialConstants.Ni = Material->GetRefractionIndex();
-				MaterialConstants.D = Material->GetDissolveFactor();
+				MaterialConstants.Ka = FVector4(0.2f, 0.2f, 0.2f, 1.0f);
+				MaterialConstants.Kd = FVector4(0.9f, 0.9f, 0.9f, 1.0f);
+				MaterialConstants.Ks = FVector4(0.5f, 0.5f, 0.5f, 1.0f);
+				MaterialConstants.Ns = 32.0f;
+				//MaterialConstants.Ni = Material->GetRefractionIndex();
+				MaterialConstants.D = 1.0f;
 				MaterialConstants.MaterialFlags = 0;
 
 				FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferMaterial, MaterialConstants);
