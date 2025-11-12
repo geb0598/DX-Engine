@@ -18,7 +18,7 @@ using JSON = json::JSON;
 
 struct FWorldSettings
 {
-	UClass* DefaultPlayerClass = APlayer::StaticClass(); // For Demo 원래는 nullptr
+	UClass* DefaultPlayerClass = nullptr; // None: Free Camera Mode, Set: Game Mode with Player
 };
 
 // It represents the context in which the world is being used.

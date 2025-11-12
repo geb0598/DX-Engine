@@ -100,8 +100,17 @@ void UEditor::Update()
 					continue;
 				}
 
-				// 마우스 우클릭 중이고 해당 뷰포트가 활성화된 뷰포트면 카메라 입력 활성화
-				bool bEnableInput = (ActiveViewportIndexForInput == i && bIsRightMouseDown);
+				// PIE Free Camera Mode일 때는 항상 입력 활성화, 아니면 우클릭 시에만
+				bool bEnableInput = false;
+				if (Cam->IsPIEFreeCameraMode())
+				{
+					bEnableInput = true;
+				}
+				else
+				{
+					// 마우스 우클릭 중이고 해당 뷰포트가 활성화된 뷰포트면 카메라 입력 활성화
+					bEnableInput = (ActiveViewportIndexForInput == i && bIsRightMouseDown);
+				}
 				Cam->SetInputEnabled(bEnableInput);
 
 				// 오쏘 뷰가 활성화되었고 이동이 있었다면 기록
@@ -194,8 +203,17 @@ void UEditor::Update()
 			}
 			else
 			{
-				// Single 모드에서는 ActiveViewportIndexForInput이 유효한 뷰포트면 입력 활성화
-				bool bEnableInput = (ActiveViewportIndexForInput >= 0 && bIsRightMouseDown);
+				// PIE Free Camera Mode일 때는 항상 입력 활성화, 아니면 우클릭 시에만
+				bool bEnableInput = false;
+				if (Camera->IsPIEFreeCameraMode())
+				{
+					bEnableInput = true;
+				}
+				else
+				{
+					// Single 모드에서는 ActiveViewportIndexForInput이 유효한 뷰포트면 입력 활성화
+					bEnableInput = (ActiveViewportIndexForInput >= 0 && bIsRightMouseDown);
+				}
 				Camera->SetInputEnabled(bEnableInput);
 			}
 		}

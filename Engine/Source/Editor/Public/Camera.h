@@ -85,6 +85,10 @@ public:
 	void SetInputEnabled(bool b) { bInputEnabled = b; }
 	bool GetInputEnabled() const { return bInputEnabled; }
 
+	// PIE Free Camera Mode (for PIE with no player spawned)
+	void SetPIEFreeCameraMode(bool b) { bPIEFreeCameraMode = b; }
+	bool IsPIEFreeCameraMode() const { return bPIEFreeCameraMode; }
+
 	// Camera Movement Speed Control
 	float GetMoveSpeed() const { return CurrentMoveSpeed; }
 	void SetMoveSpeed(float InSpeed)
@@ -128,6 +132,9 @@ private:
 	// Whether this camera consumes input (movement/rotation). Only used by editor main camera.
 	bool bInputEnabled = true;
 	bool bIsMainDrraging = false;
+
+	// PIE Free Camera Mode (PIE without player, camera moves freely with WASD/QE/Mouse)
+	bool bPIEFreeCameraMode = false;
 
 	// Dynamic Movement Speed
 	float CurrentMoveSpeed = DEFAULT_SPEED;
