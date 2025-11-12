@@ -657,7 +657,7 @@ void USkeletalMeshViewerWindow::RenderLayout()
 	ImGui::SameLine();
 
 	// === 우측 패널: Edit Tools ===
-	if (ImGui::BeginChild("EditToolsPanel", ImVec2(RightPanelWidth - SplitterWidth * 0.5f, PanelHeight), true))
+	if (ImGui::BeginChild("EditToolsPanel", ImVec2(0, PanelHeight), true))
 	{
 		RenderEditToolsPanel(SkeletalMesh, RefSkeleton, NumBones);
 	}
