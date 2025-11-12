@@ -32,8 +32,9 @@ FVector UCamera::UpdateInput()
 
 	/**
 	 * @brief 마우스 우클릭을 하고 있는 동안 카메라 제어가 가능합니다.
+	 * PIE Free Camera Mode일 때는 우클릭 없이도 항상 제어 가능합니다.
 	 */
-	if (Input.IsKeyDown(EKeyInput::MouseRight))
+	if (Input.IsKeyDown(EKeyInput::MouseRight) || bPIEFreeCameraMode)
 	{
 		if (CameraType == ECameraType::ECT_Perspective)
 		{
@@ -55,7 +56,16 @@ FVector UCamera::UpdateInput()
 			RelativeLocation += Direction * CurrentMoveSpeed * DT;
 
 			// 마우스 드래그로 회전
-			const FVector MouseDelta = UInputManager::GetInstance().GetMouseDelta();
+			// PIE Free Camera Mode에서는 Raw Input이 누적되므로 Consume 필요
+			FVector MouseDelta;
+			if (bPIEFreeCameraMode)
+			{
+				MouseDelta = UInputManager::GetInstance().ConsumeMouseDelta();
+			}
+			else
+			{
+				MouseDelta = UInputManager::GetInstance().GetMouseDelta();
+			}
 
 			// Yaw/Pitch 델타 계산
 			const float YawDelta = MouseDelta.X * KeySensitivityDegPerPixel * 2;

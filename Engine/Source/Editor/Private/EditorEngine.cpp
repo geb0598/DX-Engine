@@ -192,8 +192,38 @@ void UEditorEngine::StartPIE()
         GWorld = PIEWorld;
         PIEWorld->BeginPlay();
 
-        // Inject game camera into PIE viewport
-        InjectGameCameraIntoPIEViewport(PIEWorld, LastClickedViewport);
+        // WorldSettings 확인하여 Free Camera Mode vs Game Mode 결정
+        const FWorldSettings& WorldSettings = PIEWorld->GetWorldSettings();
+        if (WorldSettings.DefaultPlayerClass == nullptr)
+        {
+            // Free Camera Mode: 플레이어 없이 Editor Camera로 자유 비행
+            UE_LOG_INFO("EditorEngine: PIE Free Camera Mode (No player spawned)");
+
+            // Editor Camera PIE Free Camera Mode 활성화
+            if (LastClickedViewport >= 0 && LastClickedViewport < ViewportMgr.GetViewports().Num())
+            {
+                FViewport* PIEViewport = ViewportMgr.GetViewports()[LastClickedViewport];
+                if (PIEViewport)
+                {
+                    FViewportClient* ViewportClient = PIEViewport->GetViewportClient();
+                    if (ViewportClient)
+                    {
+                        UCamera* EditorCamera = ViewportClient->GetCamera();
+                        if (EditorCamera)
+                        {
+                            EditorCamera->SetPIEFreeCameraMode(true);
+                            UE_LOG_INFO("EditorEngine: Editor Camera PIE Free Camera Mode enabled");
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Game Mode: 플레이어 스폰하고 PlayerCameraManager 사용 (기존 방식)
+            UE_LOG_INFO("EditorEngine: PIE Game Mode (Player will be spawned)");
+            InjectGameCameraIntoPIEViewport(PIEWorld, LastClickedViewport);
+        }
 
         // PIE 시작 시 커서 숨김
         while (ShowCursor(FALSE) >= 0);
@@ -231,6 +261,25 @@ void UEditorEngine::EndPIE()
     UViewportManager& ViewportMgr = UViewportManager::GetInstance();
     int32 PIEActiveViewport = ViewportMgr.GetPIEActiveViewportIndex();
     RemoveGameCameraFromPIEViewport(PIEActiveViewport);
+
+    // PIE Free Camera Mode 비활성화
+    if (PIEActiveViewport >= 0 && PIEActiveViewport < ViewportMgr.GetViewports().Num())
+    {
+        FViewport* PIEViewport = ViewportMgr.GetViewports()[PIEActiveViewport];
+        if (PIEViewport)
+        {
+            FViewportClient* ViewportClient = PIEViewport->GetViewportClient();
+            if (ViewportClient)
+            {
+                UCamera* EditorCamera = ViewportClient->GetCamera();
+                if (EditorCamera && EditorCamera->IsPIEFreeCameraMode())
+                {
+                    EditorCamera->SetPIEFreeCameraMode(false);
+                    UE_LOG_INFO("EditorEngine: Editor Camera PIE Free Camera Mode disabled");
+                }
+            }
+        }
+    }
 
     // PIE 전용 뷰포트 인덱스 리셋
     ViewportMgr.SetPIEActiveViewportIndex(-1);
