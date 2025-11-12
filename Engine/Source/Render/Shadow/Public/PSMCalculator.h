@@ -7,6 +7,8 @@
 #include "Global/CameraTypes.h"
 #include <vector>
 
+#include "Component/Mesh/Public/SkeletalMeshComponent.h"
+
 class UStaticMeshComponent;
 
 /**
@@ -65,7 +67,8 @@ public:
 	 * @param OutProjectionMatrix 출력 라이트 투영 행렬
 	 * @param LightDirection 디렉셔널 라이트 방향 (월드 공간)
 	 * @param Camera 씬 카메라
-	 * @param Meshes AABB 계산용 씬 메시들
+	 * @param StaticMeshes AABB 계산용 씬 메시들
+	 * @param SkeletalMeshes AABB 계산용 씬 메시들
 	 * @param InOutParams PSM 파라미터 (입력/출력)
 	 */
 	static void CalculateShadowProjection(
@@ -74,7 +77,8 @@ public:
 		FMatrix& OutProjectionMatrix,
 		const FVector& LightDirection,
 		const FMinimalViewInfo& ViewInfo,
-		const TArray<UStaticMeshComponent*>& Meshes,
+		const TArray<UStaticMeshComponent*>& StaticMeshes,
+		const TArray<USkeletalMeshComponent*>& SkeletalMeshes,
 		FPSMParameters& InOutParams
 	);
 
@@ -86,7 +90,8 @@ private:
 	static void ComputeVirtualCameraParameters(
 		const FVector& LightDirection,
 		const FMinimalViewInfo& ViewInfo,
-		const TArray<UStaticMeshComponent*>& Meshes,
+		const TArray<UStaticMeshComponent*>& StaticMeshes,
+		const TArray<USkeletalMeshComponent*>& SkeletalMeshes,
 		TArray<FPSMBoundingBox>& OutShadowCasters,
 		TArray<FPSMBoundingBox>& OutShadowReceivers,
 		FPSMParameters& InOutParams

@@ -5,6 +5,7 @@
 #include "Render/RenderPass/Public/ShadowData.h"
 #include "Manager/Render/Public/CascadeManager.h"
 
+class UMeshComponent;
 class ULightComponent;
 class UDirectionalLightComponent;
 class USpotLightComponent;
@@ -125,11 +126,13 @@ private:
 	/**
 	 * @brief Directional light의 shadow map을 렌더링합니다.
 	 * @param Light Directional light component
-	 * @param Meshes 렌더링할 static mesh 목록
+	 * @param StaticMeshes 렌더링할 static mesh 목록
+	 * @param SkeletalMeshes 렌더링할 skeletal mesh 목록
 	 */
 	void RenderDirectionalShadowMap(
 		UDirectionalLightComponent* Light,
-		const TArray<UStaticMeshComponent*>& Meshes,
+		const TArray<UStaticMeshComponent*>& StaticMeshes,
+		const TArray<USkeletalMeshComponent*>& SkeletalMeshes,
 		const FMinimalViewInfo& InViewInfo
 		);
 
@@ -137,25 +140,29 @@ private:
 	/**
 	 * @brief Spot light의 shadow map을 렌더링합니다.
 	 * @param Light Spot light component
-	 * @param Meshes 렌더링할 static mesh 목록
+	 * @param StaticMeshes 렌더링할 static mesh 목록
+	 * @param SkeletalMeshes 렌더링할 skeletal mesh 목록
 	 */
 	void RenderSpotShadowMap(
 		USpotLightComponent* Light,
 		uint32 AtlasIndex,
-		const TArray<UStaticMeshComponent*>& Meshes
-		);
+		const TArray<UStaticMeshComponent*>& StaticMeshes,
+		const TArray<USkeletalMeshComponent*>& SkeletalMeshes
+	);
 
 	// --- Point Light Shadow Rendering (6 faces) ---
 	/**
 	 * @brief Point light의 cube shadow map을 렌더링합니다 (6면).
 	 * @param Light Point light component
-	 * @param Meshes 렌더링할 static mesh 목록
+	 * @param StaticMeshes 렌더링할 static mesh 목록
+	 * @param SkeletalMeshes 렌더링할 skeletal mesh 목록
 	 */
 	void RenderPointShadowMap(
 		UPointLightComponent* Light,
 		uint32 AtlasIndex,
-		const TArray<UStaticMeshComponent*>& Meshes
-		);
+		const TArray<UStaticMeshComponent*>& StaticMeshes,
+		const TArray<USkeletalMeshComponent*>& SkeletalMeshes
+	);
 
 	void SetShadowAtlasTilePositionStructuredBuffer();
 
@@ -163,33 +170,42 @@ private:
 	/**
 	 * @brief Directional light의 view-projection 행렬을 계산합니다.
 	 * @param Light Directional light component
-	 * @param Meshes 렌더링할 메시 목록 (AABB 계산용)
+	 * @param StaticMeshes 렌더링할 메시 목록 (AABB 계산용)
+	 * @param SkeletalMeshes 렌더링할 메시 목록 (AABB 계산용)
 	 * @param InCamera Scene camera for PSM calculation
 	 * @param OutView 출력 view matrix
 	 * @param OutProj 출력 projection matrix
 	 */
-	void CalculateDirectionalLightViewProj(UDirectionalLightComponent* Light,
-		const TArray<UStaticMeshComponent*>& Meshes, const FMinimalViewInfo& InViewInfo, FMatrix& OutView, FMatrix& OutProj);
+	void CalculateDirectionalLightViewProj(
+		UDirectionalLightComponent* Light,
+		const TArray<UStaticMeshComponent*>& StaticMeshes,
+		const TArray<USkeletalMeshComponent*>& SkeletalMeshes,
+		const FMinimalViewInfo& InViewInfo,
+		FMatrix& OutView,
+		FMatrix& OutProj);
 
 	/**
 	 * @brief Uniform Shadow Map의 view-projection 행렬을 계산합니다 (Sample 버전).
 	 * @param Light Directional light component
-	 * @param Meshes 렌더링할 메시 목록
+	 * @param StaticMeshes 렌더링할 스태틱 메시 목록
+	 * @param SkeletalMeshes 렌더링할 스켈레탈 메시 목록
 	 * @param OutView 출력 view matrix
 	 * @param OutProj 출력 projection matrix
 	 */
-	void CalculateUniformShadowMapViewProj(UDirectionalLightComponent* Light,
-		const TArray<UStaticMeshComponent*>& Meshes, FMatrix& OutView, FMatrix& OutProj);
+	void CalculateUniformShadowMapViewProj(
+		UDirectionalLightComponent* Light,
+		const TArray<UStaticMeshComponent*>& StaticMeshes,
+		const TArray<USkeletalMeshComponent*>& SkeletalMeshes,
+		FMatrix& OutView,
+		FMatrix& OutProj);
 
 	/**
 	 * @brief Spot light의 view-projection 행렬을 계산합니다.
 	 * @param Light Spot light component
-	 * @param Meshes 렌더링할 메시 목록 (현재 사용 안 함, Directional과 시그니처 일관성 유지)
 	 * @param OutView 출력 view matrix
 	 * @param OutProj 출력 projection matrix
 	 */
-	void CalculateSpotLightViewProj(USpotLightComponent* Light,
-		const TArray<UStaticMeshComponent*>& Meshes, FMatrix& OutView, FMatrix& OutProj);
+	void CalculateSpotLightViewProj(USpotLightComponent* Light, FMatrix& OutView, FMatrix& OutProj);
 
 	/**
 	 * @brief Point light의 6면에 대한 view-projection 행렬을 계산합니다.
@@ -212,7 +228,7 @@ private:
 	 */
 	FCubeShadowMapResource* GetOrCreateCubeShadowMap(UPointLightComponent* Light);
 
-	void RenderMeshDepth(const UStaticMeshComponent* InMesh, const FMatrix& InView, const FMatrix& InProj) const;
+	void RenderMeshDepth(const UMeshComponent* InMesh, const FMatrix& InView, const FMatrix& InProj) const;
 
 	// /**
 	//  * @brief Directional light의 rasterizer state를 가져오거나 생성합니다.

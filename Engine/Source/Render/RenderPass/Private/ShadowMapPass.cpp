@@ -7,6 +7,7 @@
 #include "Component/Public/SpotLightComponent.h"
 #include "Component/Public/PointLightComponent.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
+#include "Component/Mesh/Public/SkeletalMeshComponent.h"
 #include "Render/Shadow/Public/PSMCalculator.h"
 
 #define MAX_LIGHT_NUM 8
@@ -180,7 +181,7 @@ void FShadowMapPass::Execute(FRenderingContext& Context)
 		if (DirLight->GetCastShadows() && DirLight->GetLightEnabled())
 		{
 			// 유효한 첫번째 Dir Light만 사용
-			RenderDirectionalShadowMap(DirLight, Context.StaticMeshes, Context.ViewInfo);
+			RenderDirectionalShadowMap(DirLight, Context.StaticMeshes, Context.SkeletalMeshes, Context.ViewInfo);
 			ActiveDirectionalLightCount = 1;
 			ActiveDirectionalCascadeCount = UCascadeManager::GetInstance().GetSplitNum();
 			break;
@@ -204,7 +205,7 @@ void FShadowMapPass::Execute(FRenderingContext& Context)
 	ActiveSpotLightCount = static_cast<uint32>(ValidSpotLights.Num());
 	for (int32 i = 0; i < ValidSpotLights.Num(); i++)
 	{
-		RenderSpotShadowMap(ValidSpotLights[i], i, Context.StaticMeshes);
+		RenderSpotShadowMap(ValidSpotLights[i], i, Context.StaticMeshes, Context.SkeletalMeshes);
 	}
 
 	// Phase 3: Point Lights
@@ -223,7 +224,7 @@ void FShadowMapPass::Execute(FRenderingContext& Context)
 	ActivePointLightCount = static_cast<uint32>(ValidPointLights.Num());
 	for (int32 i = 0; i < ValidPointLights.Num(); i++)
 	{
-		RenderPointShadowMap(ValidPointLights[i], i, Context.StaticMeshes);
+		RenderPointShadowMap(ValidPointLights[i], i, Context.StaticMeshes, Context.SkeletalMeshes);
 	}
 
 	SetShadowAtlasTilePositionStructuredBuffer();
@@ -231,7 +232,8 @@ void FShadowMapPass::Execute(FRenderingContext& Context)
 
 void FShadowMapPass::RenderDirectionalShadowMap(
 	UDirectionalLightComponent* Light,
-	const TArray<UStaticMeshComponent*>& Meshes,
+	const TArray<UStaticMeshComponent*>& StaticMeshes,
+	const TArray<USkeletalMeshComponent*>& SkeletalMeshes,
 	const FMinimalViewInfo& InViewInfo
 	)
 {
@@ -309,7 +311,7 @@ void FShadowMapPass::RenderDirectionalShadowMap(
 		CascadeShadowMapData.SplitNum = 1;
 
 		FMatrix LightView, LightProj;
-		CalculateDirectionalLightViewProj(Light, Meshes, InViewInfo, LightView, LightProj);
+		CalculateDirectionalLightViewProj(Light, StaticMeshes, SkeletalMeshes, InViewInfo, LightView, LightProj);
 
 		CascadeShadowMapData.View = LightView;
 		CascadeShadowMapData.Proj[0] = LightProj;
@@ -323,7 +325,7 @@ void FShadowMapPass::RenderDirectionalShadowMap(
 		CascadeShadowMapData.SplitNum = 1;
 
 		FMatrix LightView, LightProj;
-		CalculateUniformShadowMapViewProj(Light, Meshes, LightView, LightProj);
+		CalculateUniformShadowMapViewProj(Light, StaticMeshes, SkeletalMeshes, LightView, LightProj);
 
 		CascadeShadowMapData.View = LightView;
 		CascadeShadowMapData.Proj[0] = LightProj;
@@ -357,7 +359,15 @@ void FShadowMapPass::RenderDirectionalShadowMap(
 		// Light->SetShadowViewProjection(LightViewProj);
 
 		// 5. 각 메시 렌더링
-		for (auto Mesh : Meshes)
+		for (auto Mesh : StaticMeshes)
+		{
+			if (Mesh->IsVisible())
+			{
+				RenderMeshDepth(Mesh, LightView, LightProj);
+			}
+		}
+
+		for (auto Mesh : SkeletalMeshes)
 		{
 			if (Mesh->IsVisible())
 			{
@@ -385,7 +395,8 @@ void FShadowMapPass::RenderDirectionalShadowMap(
 void FShadowMapPass::RenderSpotShadowMap(
 	USpotLightComponent* Light,
 	uint32 AtlasIndex,
-	const TArray<UStaticMeshComponent*>& Meshes
+	const TArray<UStaticMeshComponent*>& StaticMeshes,
+	const TArray<USkeletalMeshComponent*>& SkeletalMeshes
 	)
 {
 	// FShadowMapResource* ShadowMap = GetOrCreateShadowMap(Light);
@@ -450,7 +461,7 @@ void FShadowMapPass::RenderSpotShadowMap(
 
 	// 4. Light view-projection 계산 (Perspective projection for cone-shaped frustum)
 	FMatrix LightView, LightProj;
-	CalculateSpotLightViewProj(Light, Meshes, LightView, LightProj);
+	CalculateSpotLightViewProj(Light, LightView, LightProj);
 
 	// Store the calculated shadow view-projection matrix in the light component
 	FMatrix LightViewProj = LightView * LightProj;
@@ -463,7 +474,15 @@ void FShadowMapPass::RenderSpotShadowMap(
 	Pipeline->SetConstantBuffer(2, EShaderType::PS, PointLightShadowParamsBuffer);
 
 	// 5. 각 메시 렌더링
-	for (auto Mesh : Meshes)
+	for (auto Mesh : StaticMeshes)
+	{
+		if (Mesh->IsVisible())
+		{
+			RenderMeshDepth(Mesh, LightView, LightProj);
+		}
+	}
+
+	for (auto Mesh : SkeletalMeshes)
 	{
 		if (Mesh->IsVisible())
 		{
@@ -490,8 +509,9 @@ void FShadowMapPass::RenderSpotShadowMap(
 void FShadowMapPass::RenderPointShadowMap(
 	UPointLightComponent* Light,
 	uint32 AtlasIndex,
-	const TArray<UStaticMeshComponent*>& Meshes
-	)
+	const TArray<UStaticMeshComponent*>& StaticMeshes,
+	const TArray<USkeletalMeshComponent*>& SkeletalMeshes
+)
 {
 	// FCubeShadowMapResource* ShadowMap = GetOrCreateCubeShadowMap(Light);
 	// if (!ShadowMap || !ShadowMap->IsValid())
@@ -573,7 +593,32 @@ void FShadowMapPass::RenderPointShadowMap(
 		Pipeline->SetConstantBuffer(1, EShaderType::VS, ShadowViewProjConstantBuffer);
 
 		// 4-3. 메시 렌더링
-		for (auto Mesh : Meshes)
+		for (auto Mesh : StaticMeshes)
+		{
+			if (Mesh->IsVisible())
+			{
+				// Model transform 업데이트
+				FMatrix WorldMatrix = Mesh->GetWorldTransformMatrix();
+				FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferModel, WorldMatrix);
+				Pipeline->SetConstantBuffer(0, EShaderType::VS, ConstantBufferModel);
+
+				// Vertex/Index buffer 바인딩
+				ID3D11Buffer* VertexBuffer = Mesh->GetVertexBuffer();
+				ID3D11Buffer* IndexBuffer = Mesh->GetIndexBuffer();
+				uint32 IndexCount = Mesh->GetNumIndices();
+
+				if (!VertexBuffer || !IndexBuffer || IndexCount == 0)
+					continue;
+
+				Pipeline->SetVertexBuffer(VertexBuffer, sizeof(FNormalVertex));
+				Pipeline->SetIndexBuffer(IndexBuffer, 0);
+
+				// Draw call
+				Pipeline->DrawIndexed(IndexCount, 0, 0);
+			}
+		}
+
+		for (auto Mesh : SkeletalMeshes)
 		{
 			if (Mesh->IsVisible())
 			{
@@ -645,8 +690,13 @@ void FShadowMapPass::SetShadowAtlasTilePositionStructuredBuffer()
 		);
 }
 
-void FShadowMapPass::CalculateDirectionalLightViewProj(UDirectionalLightComponent* Light,
-	const TArray<UStaticMeshComponent*>& Meshes, const FMinimalViewInfo& InViewInfo, FMatrix& OutView, FMatrix& OutProj)
+void FShadowMapPass::CalculateDirectionalLightViewProj(
+	UDirectionalLightComponent* Light,
+	const TArray<UStaticMeshComponent*>& StaticMeshes,
+	const TArray<USkeletalMeshComponent*>& SkeletalMeshes,
+	const FMinimalViewInfo& InViewInfo,
+	FMatrix& OutView,
+	FMatrix& OutProj)
 {
 	// 빛 방향 가져오기 (빛이 비추는 방향)
 	FVector LightDir = Light->GetForwardVector();
@@ -671,13 +721,18 @@ void FShadowMapPass::CalculateDirectionalLightViewProj(UDirectionalLightComponen
 		OutProj,
 		LightDir,
 		InViewInfo,
-		Meshes,
+		StaticMeshes,
+		SkeletalMeshes,
 		Params
 	);
 }
 
-void FShadowMapPass::CalculateUniformShadowMapViewProj(UDirectionalLightComponent* Light,
-	const TArray<UStaticMeshComponent*>& Meshes, FMatrix& OutView, FMatrix& OutProj)
+void FShadowMapPass::CalculateUniformShadowMapViewProj(
+	UDirectionalLightComponent* Light,
+	const TArray<UStaticMeshComponent*>& StaticMeshes,
+	const TArray<USkeletalMeshComponent*>& SkeletalMeshes,
+	FMatrix& OutView,
+	FMatrix& OutProj)
 {
 	// Sample 버전의 Uniform Shadow Map 구현
 	// 1. 모든 메시의 AABB를 포함하는 bounding box 계산
@@ -685,7 +740,27 @@ void FShadowMapPass::CalculateUniformShadowMapViewProj(UDirectionalLightComponen
 	FVector MaxBounds(-FLT_MAX, -FLT_MAX, -FLT_MAX);
 
 	bool bHasValidMeshes = false;
-	for (auto Mesh : Meshes)
+	for (auto Mesh : StaticMeshes)
+	{
+		if (!Mesh->IsVisible())
+			continue;
+
+		// 메시의 world AABB 가져오기
+		FVector WorldMin, WorldMax;
+		Mesh->GetWorldAABB(WorldMin, WorldMax);
+
+		MinBounds.X = std::min(MinBounds.X, WorldMin.X);
+		MinBounds.Y = std::min(MinBounds.Y, WorldMin.Y);
+		MinBounds.Z = std::min(MinBounds.Z, WorldMin.Z);
+
+		MaxBounds.X = std::max(MaxBounds.X, WorldMax.X);
+		MaxBounds.Y = std::max(MaxBounds.Y, WorldMax.Y);
+		MaxBounds.Z = std::max(MaxBounds.Z, WorldMax.Z);
+
+		bHasValidMeshes = true;
+	}
+
+	for (auto Mesh : SkeletalMeshes)
 	{
 		if (!Mesh->IsVisible())
 			continue;
@@ -784,8 +859,7 @@ void FShadowMapPass::CalculateUniformShadowMapViewProj(UDirectionalLightComponen
 	OutProj = FMatrix::CreateOrthoLH(Left, Right, Bottom, Top, Near, Far);
 }
 
-void FShadowMapPass::CalculateSpotLightViewProj(USpotLightComponent* Light,
-	const TArray<UStaticMeshComponent*>& Meshes, FMatrix& OutView, FMatrix& OutProj)
+void FShadowMapPass::CalculateSpotLightViewProj(USpotLightComponent* Light, FMatrix& OutView, FMatrix& OutProj)
 {
 	// 1. Light의 위치와 방향 가져오기
 	FVector LightPos = Light->GetWorldLocation();
@@ -1016,11 +1090,11 @@ uint32 FShadowMapPass::GetMaxAtlasTileCount()
 
 /**
  * @brief 메시를 shadow depth로 렌더링
- * @param InMesh Static mesh component
+ * @param InMesh Mesh component
  * @param InView Light space view 행렬
  * @param InProj Light space projection 행렬
  */
-void FShadowMapPass::RenderMeshDepth(const UStaticMeshComponent* InMesh, const FMatrix& InView, const FMatrix& InProj) const
+void FShadowMapPass::RenderMeshDepth(const UMeshComponent* InMesh, const FMatrix& InView, const FMatrix& InProj) const
 {
 	// Constant buffer 업데이트
 	FShadowViewProjConstant CBData;

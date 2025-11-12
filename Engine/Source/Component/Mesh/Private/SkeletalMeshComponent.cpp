@@ -313,27 +313,33 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 	if (SkeletalMeshAsset)
 	{
 		const FReferenceSkeleton& RefSkeleton = SkeletalMeshAsset->GetRefSkeleton();
-		const int32 NumBones = RefSkeleton.GetRawBoneNum();
-		const int32 NumVertices = SkeletalMeshAsset->GetStaticMesh()->GetVertices().Num();
-
-		BoneSpaceTransforms = RefSkeleton.GetRawRefBonePose();
-		SkinnedVertices.SetNum(NumVertices);
-		SkinningMatrices.SetNum(NumBones);
-		InvTransSkinningMatrices.SetNum(NumVertices);
-		GetEditableComponentSpaceTransform().SetNum(NumBones);
-		GetEditableBoneVisibilityStates().SetNum(NumBones);
-
 		UStaticMesh* StaticMesh = SkeletalMeshAsset->GetStaticMesh();
 
+		const int32 NewNumBones = RefSkeleton.GetRawBoneNum();
+		const int32 NewNumVertices = StaticMesh->GetVertices().Num();
+
+		BoneSpaceTransforms = RefSkeleton.GetRawRefBonePose();
+		SkinnedVertices.SetNum(NewNumVertices);
+		SkinningMatrices.SetNum(NewNumBones);
+		InvTransSkinningMatrices.SetNum(NewNumVertices);
+		GetEditableComponentSpaceTransform().SetNum(NewNumBones);
+		GetEditableBoneVisibilityStates().SetNum(NewNumBones);
+
+
+		Vertices = &(StaticMesh->GetVertices());
 		VertexBuffer = FRenderResourceFactory::CreateVertexBuffer(
 			StaticMesh->GetVertices().GetData(),
 			static_cast<uint32>(StaticMesh->GetVertices().Num()) * sizeof(FNormalVertex),
 			true
 		);
+		NumVertices = static_cast<uint32>(NewNumVertices);
+
+		Indices = &(StaticMesh->GetIndices());
 		IndexBuffer = FRenderResourceFactory::CreateIndexBuffer(
 			StaticMesh->GetIndices().GetData(),
 			static_cast<uint32>(StaticMesh->GetIndices().Num()) * sizeof(uint32)
 		);
+		NumIndices = static_cast<uint32>(Indices->Num());
 
 		bPoseDirty = true;
 		bSkinningDirty = true;

@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <cmath>
 
+#include "Component/Mesh/Public/SkeletalMeshComponent.h"
+
 #define W_EPSILON 0.001f
 #define Z_EPSILON 0.0001f
 #define ZNEAR_MIN 0.1f       // LSPSM용 최소 near plane
@@ -22,13 +24,14 @@ void FPSMCalculator::CalculateShadowProjection(
 	FMatrix& OutProjectionMatrix,
 	const FVector& LightDirection,
 	const FMinimalViewInfo& ViewInfo,
-	const TArray<UStaticMeshComponent*>& Meshes,
+	const TArray<UStaticMeshComponent*>& StaticMeshes,
+	const TArray<USkeletalMeshComponent*>& SkeletalMeshes,
 	FPSMParameters& InOutParams)
 {
 	// 그림자 캐스터와 리시버 분류
 	TArray<FPSMBoundingBox> ShadowCasters, ShadowReceivers;
 	ComputeVirtualCameraParameters(
-		LightDirection, ViewInfo, Meshes,
+		LightDirection, ViewInfo, StaticMeshes, SkeletalMeshes,
 		ShadowCasters, ShadowReceivers, InOutParams
 	);
 
@@ -48,7 +51,7 @@ void FPSMCalculator::CalculateShadowProjection(
 	case EShadowProjectionMode::LSPSM:
 		// LiSPSM은 world space 데이터가 필요하므로 Meshes를 직접 전달
 		BuildLSPSMProjection(OutViewMatrix, OutProjectionMatrix, LightDirection, ViewInfo,
-			Meshes, InOutParams);
+			StaticMeshes, InOutParams);
 		break;
 
 	case EShadowProjectionMode::TSM:
@@ -70,7 +73,8 @@ void FPSMCalculator::CalculateShadowProjection(
 void FPSMCalculator::ComputeVirtualCameraParameters(
 	const FVector& LightDirection,
 	const FMinimalViewInfo& ViewInfo,
-	const TArray<UStaticMeshComponent*>& Meshes,
+	const TArray<UStaticMeshComponent*>& StaticMeshes,
+	const TArray<USkeletalMeshComponent*>& SkeletalMeshes,
 	TArray<FPSMBoundingBox>& OutShadowCasters,
 	TArray<FPSMBoundingBox>& OutShadowReceivers,
 	FPSMParameters& InOutParams)
@@ -91,7 +95,7 @@ void FPSMCalculator::ComputeVirtualCameraParameters(
 	FVector SweepDir = -LightDirection.GetNormalized();
 
 	// 각 메시 테스트
-	for (auto* Mesh : Meshes)
+	for (auto* Mesh : StaticMeshes)
 	{
 		if (!Mesh || !Mesh->IsVisible())
 			continue;
@@ -121,6 +125,50 @@ void FPSMCalculator::ComputeVirtualCameraParameters(
 			}
 			break;
 		}
+
+		case 1:  // 완전히 내부 - 캐스터이자 리시버
+			OutShadowCasters.Add(ViewSpaceBox);
+			OutShadowReceivers.Add(ViewSpaceBox);
+			break;
+
+		case 2:  // 교차 - 캐스터이자 리시버
+			OutShadowCasters.Add(ViewSpaceBox);
+			OutShadowReceivers.Add(ViewSpaceBox);
+			break;
+		}
+	}
+
+	// 각 메시 테스트
+	for (auto* Mesh : SkeletalMeshes)
+	{
+		if (!Mesh || !Mesh->IsVisible())
+			continue;
+
+		// 메시 월드 AABB 가져오기
+		FPSMBoundingBox MeshBox;
+		GetMeshWorldBoundingBox(MeshBox, Mesh);
+
+		if (!MeshBox.IsValid())
+			continue;
+
+		// 프러스텀에 대해 테스트
+		int FrustumTest = SceneFrustum.TestBox(MeshBox);
+
+		// 저장을 위해 뷰 공간으로 변환
+		FPSMBoundingBox ViewSpaceBox;
+		TransformBoundingBox(ViewSpaceBox, MeshBox, ViewMatrix);
+
+		switch (FrustumTest)
+		{
+		case 0:  // 프러스텀 밖 - 그림자 투사를 위해 swept sphere 테스트
+			{
+				FPSMBoundingSphere MeshSphere(MeshBox);
+				if (SceneFrustum.TestSweptSphere(MeshSphere, SweepDir))
+				{
+					OutShadowCasters.Add(ViewSpaceBox);
+				}
+				break;
+			}
 
 		case 1:  // 완전히 내부 - 캐스터이자 리시버
 			OutShadowCasters.Add(ViewSpaceBox);
