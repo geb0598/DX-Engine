@@ -173,6 +173,7 @@ void USkeletalMeshViewerWindow::Initialize()
 	if (ViewerGizmo)
 	{
 		// 뷰어의 Gizmo는 ViewportManager 대신 자체 툴바 설정 사용
+		ViewerGizmo->SetUseCustomLocationSnap(true);
 		ViewerGizmo->SetUseCustomRotationSnap(true);
 		ViewerGizmo->SetUseCustomScaleSnap(true);
 		UE_LOG("SkeletalMeshViewerWindow: Gizmo 생성 및 초기 선택 완료");
@@ -1044,6 +1045,8 @@ void USkeletalMeshViewerWindow::RenderToViewportTexture()
 
 				if (ToolbarWidget)
 				{
+					ViewerGizmo->SetCustomLocationSnapEnabled(ToolbarWidget->IsLocationSnapEnabled());
+					ViewerGizmo->SetCustomLocationSnapValue(ToolbarWidget->GetLocationSnapValue());
 					ViewerGizmo->SetCustomRotationSnapEnabled(ToolbarWidget->IsRotationSnapEnabled());
 					ViewerGizmo->SetCustomRotationSnapAngle(ToolbarWidget->GetRotationSnapAngle());
 					ViewerGizmo->SetCustomScaleSnapEnabled(ToolbarWidget->IsScaleSnapEnabled());
@@ -1329,7 +1332,7 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 					case EGizmoMode::Translate:
 					{
 						// 기즈모로부터 월드 좌표 얻기
-						FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
+						FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay, true);
 
 						// 월드 좌표 → 본 로컬 좌표 변환
 						FVector BoneLocalLocation = WorldToLocalBoneTranslation(SelectedBoneIndex, GizmoDragLocation);
@@ -1395,7 +1398,7 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 				{
 				case EGizmoMode::Translate:
 				{
-					FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
+					FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay, true);
 					ViewerGizmo->SetLocation(GizmoDragLocation);
 					break;
 				}

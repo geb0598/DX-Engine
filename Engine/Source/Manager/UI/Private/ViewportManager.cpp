@@ -92,6 +92,9 @@ void UViewportManager::Initialize(FAppWindow* InWindow)
 	LoadViewportLayoutFromConfig();
 	LoadCameraSettingsFromConfig();
 
+	// CellSize를 로드하여 LocationSnapValue 초기화
+	LocationSnapValue = UConfigManager::GetInstance().LoadCellSize();
+
 	// Config에서 로드한 IniSaveSharedV/H를 SplitterValueV/H에 적용
 	SplitterValueV = IniSaveSharedV;
 	SplitterValueH = IniSaveSharedH;

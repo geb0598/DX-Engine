@@ -114,6 +114,24 @@ public:
     };
 
     // ========================================
+    // Location Snap Settings
+    // ========================================
+    bool IsLocationSnapEnabled() const { return bLocationSnapEnabled; }
+    void SetLocationSnapEnabled(bool bEnabled)
+    {
+        bLocationSnapEnabled = bEnabled;
+        UConfigManager::GetInstance().SetCachedLocationSnapEnabled(bEnabled);
+    }
+    float GetLocationSnapValue() const { return LocationSnapValue; }
+    void SetLocationSnapValue(float InValue)
+    {
+        LocationSnapValue = InValue;
+        UConfigManager::GetInstance().SetCachedLocationSnapValue(InValue);
+        UConfigManager::GetInstance().SaveCellSize(InValue);
+    }
+    static constexpr float DEFAULT_LOCATION_SNAP_VALUE = 10.0f;
+
+    // ========================================
     // Rotation Snap Settings
     // ========================================
     bool IsRotationSnapEnabled() const { return bRotationSnapEnabled; }
@@ -219,6 +237,12 @@ private:
     // PIE State
     // ========================================
     int32 PIEActiveViewportIndex = -1;
+
+    // ========================================
+    // Location Snap State
+    // ========================================
+    bool bLocationSnapEnabled = false;
+    float LocationSnapValue = DEFAULT_LOCATION_SNAP_VALUE;
 
     // ========================================
     // Rotation Snap State

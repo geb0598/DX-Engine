@@ -11,6 +11,9 @@ class UTexture;
  *
  * Gizmo Mode 버튼(QWER), Rotation Snap, ViewType, Camera Settings, ViewMode 등을 포함합니다.
  * 메인 에디터의 ViewportControlWidget과 유사하지만 뷰어 윈도우에 특화되어 있습니다.
+ *
+ * @note 언리얼에선 스냅 값 설정이나 활성화가 메인이랑 연결되어있다.
+ * 보니까 스냅 설정만 연결되어있다.
  */
 class USkeletalMeshViewerToolbarWidget : public UViewportToolbarWidgetBase
 {
@@ -50,6 +53,16 @@ public:
 	bool IsSelectModeActive() const { return bSelectModeActive; }
 
 	/**
+	 * @brief Location Snap 활성화 여부
+	 */
+	bool IsLocationSnapEnabled() const { return bLocationSnapEnabled; }
+
+	/**
+	 * @brief Location Snap 값
+	 */
+	float GetLocationSnapValue() const { return LocationSnapValue; }
+
+	/**
 	 * @brief Rotation Snap 활성화 여부
 	 */
 	bool IsRotationSnapEnabled() const { return bRotationSnapEnabled; }
@@ -75,11 +88,6 @@ private:
 	// ========================================
 
 	/**
-	 * @brief Grid Settings 버튼 렌더링
-	 */
-	void RenderGridSettingsButton();
-
-	/**
 	 * @brief Camera Settings 팝업 내용 렌더링
 	 */
 	void RenderCameraSettingsPopupContent();
@@ -94,6 +102,10 @@ private:
 	// Gizmo Mode 상태
 	EGizmoMode CurrentGizmoMode = EGizmoMode::Translate;
 	bool bSelectModeActive = false;
+
+	// Location Snap 상태
+	bool bLocationSnapEnabled = false;
+	float LocationSnapValue = 10.0f;
 
 	// Rotation Snap 상태
 	bool bRotationSnapEnabled = false;

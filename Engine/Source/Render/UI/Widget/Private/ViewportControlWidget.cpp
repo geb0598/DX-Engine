@@ -328,6 +328,36 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 
 				if (bHovered) ImGui::SetTooltip("%s", Tooltip);
 			}
+
+			// ========================================
+			// Location Snap 버튼들
+			// ========================================
+			bool bLocationSnapEnabled = ViewportManager.IsLocationSnapEnabled();
+			float LocationSnapValue = ViewportManager.GetLocationSnapValue();
+			float OldLocationSnapValue = LocationSnapValue;
+
+			// Base 클래스의 공통 렌더링 함수 사용
+			RenderLocationSnapControls(bLocationSnapEnabled, LocationSnapValue);
+
+			// 값이 변경되었으면 ViewportManager에 반영 및 Grid 동기화
+			if (bLocationSnapEnabled != ViewportManager.IsLocationSnapEnabled())
+			{
+				ViewportManager.SetLocationSnapEnabled(bLocationSnapEnabled);
+			}
+			if (std::abs(LocationSnapValue - OldLocationSnapValue) > 0.01f)
+			{
+				ViewportManager.SetLocationSnapValue(LocationSnapValue);
+
+				// Grid 크기 동기화
+				if (Editor)
+				{
+					UBatchLines* BatchLine = Editor->GetBatchLines();
+					if (BatchLine)
+					{
+						BatchLine->UpdateUGridVertices(LocationSnapValue);
+					}
+				}
+			}
 		}
 		else
 		{

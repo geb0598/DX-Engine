@@ -13,6 +13,7 @@ class UGizmo;
  * ViewportControlWidget과 SkeletalMeshViewerToolbarWidget의 공통 기능을 제공합니다.
  * - Gizmo Mode 버튼 (Select/Translate/Rotate/Scale)
  * - World/Local Space 토글
+ * - Location Snap 컨트롤
  * - Rotation Snap 컨트롤
  * - Scale Snap 컨트롤
  * - ViewType 버튼 (Perspective/Ortho)
@@ -58,6 +59,13 @@ protected:
 	 * @param Gizmo 기즈모 객체
 	 */
 	void RenderWorldLocalToggle(UGizmo* Gizmo);
+
+	/**
+	 * @brief Location Snap 컨트롤 렌더링
+	 * @param bSnapEnabled 스냅 활성화 여부 (입출력)
+	 * @param SnapValue 스냅 값 (입출력)
+	 */
+	void RenderLocationSnapControls(bool& bSnapEnabled, float& SnapValue);
 
 	/**
 	 * @brief Rotation Snap 컨트롤 렌더링
@@ -131,6 +139,7 @@ protected:
 	UTexture* IconLocalSpace = nullptr;
 
 	// Snap 아이콘들
+	UTexture* IconSnapLocation = nullptr;
 	UTexture* IconSnapRotation = nullptr;
 	UTexture* IconSnapScale = nullptr;
 

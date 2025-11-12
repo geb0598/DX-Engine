@@ -72,6 +72,9 @@ void UViewportToolbarWidgetBase::LoadCommonIcons()
 	if (IconLocalSpace) { ++LoadedCount; }
 
 	// Snap 아이콘 로드
+	IconSnapLocation = AssetManager.LoadTexture((IconBasePath + "SnapLocation.png").data());
+	if (IconSnapLocation) { ++LoadedCount; }
+
 	IconSnapRotation = AssetManager.LoadTexture((IconBasePath + "SnapRotation.png").data());
 	if (IconSnapRotation) { ++LoadedCount; }
 
@@ -86,7 +89,7 @@ void UViewportToolbarWidgetBase::LoadCommonIcons()
 	IconCamera = AssetManager.LoadTexture((IconBasePath + "Camera.png").data());
 	if (IconCamera) { ++LoadedCount; }
 
-	UE_LOG_SUCCESS("ViewportToolbarWidgetBase: 공통 아이콘 로드 완료 (%d/17)", LoadedCount);
+	UE_LOG_SUCCESS("ViewportToolbarWidgetBase: 공통 아이콘 로드 완료 (%d/18)", LoadedCount);
 	bIconsLoaded = true;
 }
 
@@ -200,6 +203,145 @@ void UViewportToolbarWidgetBase::RenderWorldLocalToggle(UGizmo* Gizmo)
 		else
 		{
 			Gizmo->SetWorld();
+		}
+	}
+}
+
+void UViewportToolbarWidgetBase::RenderLocationSnapControls(bool& bSnapEnabled, float& SnapValue)
+{
+	ImGui::SameLine(0.0f, 8.0f);
+
+	// 위치 스냅 토글 버튼
+	if (IconSnapLocation && IconSnapLocation->GetTextureSRV())
+	{
+		constexpr float SnapToggleButtonSize = 24.0f;
+		constexpr float SnapToggleIconSize = 16.0f;
+
+		ImVec2 SnapToggleButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##LocationSnapToggle", ImVec2(SnapToggleButtonSize, SnapToggleButtonSize));
+		bool bSnapToggleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+		bool bSnapToggleHovered = ImGui::IsItemHovered();
+
+		ImDrawList* SnapToggleDrawList = ImGui::GetWindowDrawList();
+		ImU32 SnapToggleBgColor;
+		if (bSnapEnabled)
+		{
+			SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(40, 40, 40, 255) : IM_COL32(20, 20, 20, 255);
+		}
+		else
+		{
+			SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+		}
+		if (ImGui::IsItemActive())
+		{
+			SnapToggleBgColor = IM_COL32(50, 50, 50, 255);
+		}
+		SnapToggleDrawList->AddRectFilled(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBgColor, 4.0f);
+
+		// 테두리
+		ImU32 SnapToggleBorderColor = bSnapEnabled ? IM_COL32(150, 150, 150, 255) : IM_COL32(96, 96, 96, 255);
+		SnapToggleDrawList->AddRect(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBorderColor, 4.0f);
+
+		// 아이콘 렌더링 (중앙 정렬)
+		ImVec2 IconMin = ImVec2(
+			SnapToggleButtonPos.x + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f,
+			SnapToggleButtonPos.y + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f
+		);
+		ImVec2 IconMax = ImVec2(IconMin.x + SnapToggleIconSize, IconMin.y + SnapToggleIconSize);
+		ImU32 IconTintColor = bSnapEnabled ? IM_COL32(46, 163, 255, 255) : IM_COL32(220, 220, 220, 255);
+		SnapToggleDrawList->AddImage((void*)IconSnapLocation->GetTextureSRV(), IconMin, IconMax, ImVec2(0, 0), ImVec2(1, 1), IconTintColor);
+
+		if (bSnapToggleClicked)
+		{
+			bSnapEnabled = !bSnapEnabled;
+		}
+
+		if (bSnapToggleHovered)
+		{
+			ImGui::SetTooltip("Toggle location snap");
+		}
+	}
+
+	ImGui::SameLine(0.0f, 4.0f);
+
+	// 위치 스냅 값 선택 버튼
+	{
+		char SnapValueText[16];
+		// Format with commas for readability (e.g., "10,000" instead of "1e+04")
+		if (SnapValue >= 1000.0f)
+		{
+			(void)snprintf(SnapValueText, sizeof(SnapValueText), "%.0f", SnapValue);
+			// Add commas manually
+			std::string FormattedText = SnapValueText;
+			int InsertPosition = FormattedText.length() - 3;
+			while (InsertPosition > 0)
+			{
+				FormattedText.insert(InsertPosition, ",");
+				InsertPosition -= 3;
+			}
+			strncpy_s(SnapValueText, FormattedText.c_str(), sizeof(SnapValueText) - 1);
+		}
+		else
+		{
+			(void)snprintf(SnapValueText, sizeof(SnapValueText), "%.0f", SnapValue);
+		}
+
+		constexpr float SnapValueButtonHeight = 24.0f;
+		constexpr float SnapValuePadding = 8.0f;
+		const ImVec2 SnapValueTextSize = ImGui::CalcTextSize(SnapValueText);
+		const float SnapValueButtonWidth = SnapValueTextSize.x + SnapValuePadding * 2;
+
+		ImVec2 SnapValueButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##LocationSnapValue", ImVec2(SnapValueButtonWidth, SnapValueButtonHeight));
+		bool bSnapValueClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+		bool bSnapValueHovered = ImGui::IsItemHovered();
+
+		// 버튼 배경 그리기
+		ImDrawList* SnapValueDrawList = ImGui::GetWindowDrawList();
+		ImU32 SnapValueBgColor = bSnapValueHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+		if (ImGui::IsItemActive())
+		{
+			SnapValueBgColor = IM_COL32(38, 38, 38, 255);
+		}
+		SnapValueDrawList->AddRectFilled(SnapValueButtonPos, ImVec2(SnapValueButtonPos.x + SnapValueButtonWidth, SnapValueButtonPos.y + SnapValueButtonHeight), SnapValueBgColor, 4.0f);
+		SnapValueDrawList->AddRect(SnapValueButtonPos, ImVec2(SnapValueButtonPos.x + SnapValueButtonWidth, SnapValueButtonPos.y + SnapValueButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
+
+		// 텍스트 그리기
+		ImVec2 SnapValueTextPos = ImVec2(
+			SnapValueButtonPos.x + SnapValuePadding,
+			SnapValueButtonPos.y + (SnapValueButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
+		);
+		SnapValueDrawList->AddText(SnapValueTextPos, IM_COL32(220, 220, 220, 255), SnapValueText);
+
+		if (bSnapValueClicked)
+		{
+			ImGui::OpenPopup("##LocationSnapValuePopup");
+		}
+
+		// 값 선택 팝업
+		if (ImGui::BeginPopup("##LocationSnapValuePopup"))
+		{
+			ImGui::Text("Location Snap Value");
+			ImGui::Separator();
+
+			constexpr float SnapValues[] = { 10000.0f, 5000.0f, 1000.0f, 500.0f, 100.0f, 50.0f, 10.0f, 5.0f, 1.0f };
+			constexpr const char* SnapValueLabels[] = { "10,000", "5,000", "1,000", "500", "100", "50", "10", "5", "1" };
+
+			for (int i = 0; i < IM_ARRAYSIZE(SnapValues); ++i)
+			{
+				const bool bIsSelected = (std::abs(SnapValue - SnapValues[i]) < 0.01f);
+				if (ImGui::MenuItem(SnapValueLabels[i], nullptr, bIsSelected))
+				{
+					SnapValue = SnapValues[i];
+				}
+			}
+
+			ImGui::EndPopup();
+		}
+
+		if (bSnapValueHovered)
+		{
+			ImGui::SetTooltip("Choose location snap value");
 		}
 	}
 }

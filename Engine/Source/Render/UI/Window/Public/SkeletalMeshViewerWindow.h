@@ -179,7 +179,7 @@ private:
 	bool bIsDraggingMiddleButton = false;
 
 	// 그리드 설정
-	float GridCellSize = 1.0f;
+	float GridCellSize = 10.0f;
 
 	bool bShowAllBones = false;
 
