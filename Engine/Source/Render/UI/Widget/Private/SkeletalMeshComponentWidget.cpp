@@ -206,6 +206,10 @@ void USkeletalMeshComponentWidget::RenderAvailableMaterials(int32 TargetSlotInde
 	{
 		UMaterial* Mat = *It;
 		if (!Mat) continue;
+		if (Mat->GetDiffuseTexture() == nullptr)
+		{
+			continue;
+		}
 
 		FString MatName = GetMaterialDisplayName(Mat);
 		bool bIsSelected = (SkeletalMeshComponent->GetMaterial(TargetSlotIndex) == Mat);

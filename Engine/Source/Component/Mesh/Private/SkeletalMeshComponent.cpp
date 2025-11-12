@@ -115,8 +115,13 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 				{
 					UMaterial* Mat = *It;
 					if (!Mat) continue;
+					if (Mat->GetDiffuseTexture() == nullptr)
+					{
+						continue;
+					}
 
-					if (Mat->GetDiffuseTexture()->GetFilePath() == MaterialPath)
+					FString DiffuseTexturePath = Mat->GetDiffuseTexture()->GetFilePath().ToString();
+					if (DiffuseTexturePath == MaterialPath)
 					{
 						SetMaterial(MaterialId, Mat);
 						break;

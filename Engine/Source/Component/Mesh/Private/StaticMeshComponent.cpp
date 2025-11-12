@@ -53,6 +53,10 @@ void UStaticMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 				{
 					UMaterial* Mat = *It;
 					if (!Mat) continue;
+					if (Mat->GetDiffuseTexture() == nullptr)
+					{
+						continue;
+					}
 
 					if (Mat->GetDiffuseTexture()->GetFilePath() == MaterialPath)
 					{
