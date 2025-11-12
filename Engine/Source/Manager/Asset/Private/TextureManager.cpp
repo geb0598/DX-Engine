@@ -38,10 +38,18 @@ UTexture* FTextureManager::LoadTexture(const FName& InFilePath, bool bSRGB)
     {
         path CanonicalPath = canonical(AbsolutePath);
         RelativeKeyPath = relative(CanonicalPath, RootPath);
+        
+        // 경로 구분자를 /로 변경
+        FString NormalizedPath = RelativeKeyPath.generic_string();
+        RelativeKeyPath = NormalizedPath;
     }
     catch (const filesystem::filesystem_error&)
     {
         RelativeKeyPath = InputPath;
+
+        // 예외 발생 시에도 경로 구분자를 /로 변경
+        FString NormalizedPath = RelativeKeyPath.generic_string();
+        RelativeKeyPath = NormalizedPath;
     }
     FName CacheKey(RelativeKeyPath.string());
 
