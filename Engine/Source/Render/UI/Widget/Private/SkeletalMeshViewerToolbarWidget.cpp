@@ -871,6 +871,19 @@ void USkeletalMeshViewerToolbarWidget::RenderCameraSpeedButton()
 	{
 		Camera->SetMoveSpeed(MoveSpeed);
 	}
+
+	ImGui::Spacing();
+	ImGui::Separator();
+
+	// 카메라 리셋 버튼
+	if (ImGui::Button("Reset Camera", ImVec2(-1, 0)))
+	{
+		Camera->SetLocation(FVector(0.0f, -5.0f, 4.0f));
+		Camera->SetRotation(FVector(0.0f, 0.0f, 90.0f));
+		Camera->SetFovY(90.0f);
+		Camera->SetOrthoZoom(1000.0f);
+		Camera->SetMoveSpeed(10.0f);
+	}
 }
 
 void USkeletalMeshViewerToolbarWidget::RenderViewModeButton()

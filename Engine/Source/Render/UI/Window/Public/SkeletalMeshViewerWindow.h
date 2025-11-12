@@ -186,6 +186,10 @@ private:
 	// 본 스케일 설정
 	bool bUniformBoneScale = false;
 
+	// Lock/Unlock 아이콘
+	class UTexture* LockIcon = nullptr;
+	class UTexture* UnlockIcon = nullptr;
+
 	// Preview World (EWorldType::EditorPreview)
 	UWorld* PreviewWorld = nullptr;
 

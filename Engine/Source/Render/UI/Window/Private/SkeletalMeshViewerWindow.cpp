@@ -27,6 +27,8 @@
 #include "Editor/Public/GizmoHelper.h"
 #include "Manager/Input/Public/InputManager.h"
 #include "Render/UI/Overlay/Public/D2DOverlayManager.h"
+#include "Manager/Asset/Public/AssetManager.h"
+#include "Texture/Public/Texture.h"
 
 IMPLEMENT_CLASS(USkeletalMeshViewerWindow, UUIWindow)
 
@@ -89,10 +91,10 @@ void USkeletalMeshViewerWindow::Initialize()
 	if (ViewerViewportClient->GetCamera())
 	{
 		ViewerViewportClient->GetCamera()->SetInputEnabled(false);
-		// 카메라를 더 뒤로 이동 (메쉬가 잘 보이도록)
-		ViewerViewportClient->GetCamera()->SetLocation(FVector(-50.0f, 0.0f, 20.0f));
-		ViewerViewportClient->GetCamera()->SetRotation(FVector(0.0f, 0.0f, 0.0f));
-		UE_LOG("SkeletalMeshViewerWindow: 카메라 위치 설정 완료: (-50, 0, 20)");
+		// 카메라를 -Y 위치에 두고 +Y 방향(스켈레탈 메쉬 정면)을 보도록 설정
+		ViewerViewportClient->GetCamera()->SetLocation(FVector(0.0f, -5.0f, 4.0f));
+		ViewerViewportClient->GetCamera()->SetRotation(FVector(0.0f, 0.0f, 90.0f));
+		UE_LOG("SkeletalMeshViewerWindow: 카메라 위치 설정 완료: (0, -5, 4), Roll: 90");
 	}
 
 	ViewerViewport->SetViewportClient(ViewerViewportClient);
@@ -181,6 +183,20 @@ void USkeletalMeshViewerWindow::Initialize()
 	if (ViewerObjectPicker)
 	{
 		UE_LOG("SkeletalMeshViewerWindow: ObjectPicker 생성 완료");
+	}
+
+	// Lock/Unlock 아이콘 로드
+	UAssetManager& AssetManager = UAssetManager::GetInstance();
+	std::string IconBasePath = "Engine/Asset/Icon/";
+	LockIcon = AssetManager.LoadTexture((IconBasePath + "Lock.png").data());
+	UnlockIcon = AssetManager.LoadTexture((IconBasePath + "Unlock.png").data());
+	if (LockIcon && UnlockIcon)
+	{
+		UE_LOG("SkeletalMeshViewerWindow: Lock/Unlock 아이콘 로드 성공");
+	}
+	else
+	{
+		UE_LOG_WARNING("SkeletalMeshViewerWindow: Lock/Unlock 아이콘 로드 실패");
 	}
 
 	bIsInitialized = true;
@@ -332,6 +348,14 @@ void USkeletalMeshViewerWindow::OpenViewer(USkeletalMeshComponent* InSkeletalMes
 		// 초기에는 아무것도 선택하지 않음
 		SelectedComponent = nullptr;
 		SelectedBoneIndex = INDEX_NONE;
+	}
+
+	// 카메라를 초기 위치로 리셋
+	if (ViewerViewportClient && ViewerViewportClient->GetCamera())
+	{
+		ViewerViewportClient->GetCamera()->SetLocation(FVector(0.0f, -5.0f, 4.0f));
+		ViewerViewportClient->GetCamera()->SetRotation(FVector(0.0f, 0.0f, 90.0f));
+		UE_LOG("SkeletalMeshViewerWindow: OpenViewer - 카메라 초기 위치로 리셋");
 	}
 }
 bool USkeletalMeshViewerWindow::OnWindowClose()
@@ -1598,9 +1622,9 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// Translation
 		ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "Translation:");
 
-		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.2f, 0.2f, 0.2f, 1.0f));
-		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.25f, 0.25f, 0.25f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
 
 		ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
@@ -1735,7 +1759,31 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		// Scale
 		ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "Scale:");
 		ImGui::SameLine();
-		ImGui::Checkbox("Uniform", &bUniformBoneScale);
+
+		// Lock button (Uniform Scale toggle) - 이미지 렌더링
+		UTexture* CurrentLockIcon = bUniformBoneScale ? LockIcon : UnlockIcon;
+		if (CurrentLockIcon)
+		{
+			ID3D11ShaderResourceView* LockSRV = CurrentLockIcon->GetTextureSRV();
+			ImTextureID LockTexID = reinterpret_cast<ImTextureID>(LockSRV);
+
+			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));
+			ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f));
+
+			ImVec2 ButtonSize(16.0f, 16.0f);
+			if (ImGui::ImageButton("##LockBoneScale", LockTexID, ButtonSize))
+			{
+				bUniformBoneScale = !bUniformBoneScale;
+			}
+
+			ImGui::PopStyleColor(3);
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip(bUniformBoneScale ? "Locked: Uniform Scale" : "Unlocked: Non-uniform Scale");
+			}
+		}
 
 		// 이전 스케일 값 저장 (Uniform 모드용)
 		static FVector PrevScale = TempTransform.Scale;
@@ -1997,8 +2045,8 @@ void USkeletalMeshViewerWindow::RenderCameraControls(UCamera& InCamera)
 	// 카메라 리셋 버튼
 	if (ImGui::Button("Reset Camera", ImVec2(-1, 0)))
 	{
-		InCamera.SetLocation(FVector(0, -500, 300));
-		InCamera.SetRotation(FVector(0, 0, 0));
+		InCamera.SetLocation(FVector(0.0f, -5.0f, 4.0f));
+		InCamera.SetRotation(FVector(0.0f, 0.0f, 90.0f));
 		InCamera.SetFovY(90.0f);
 		InCamera.SetOrthoZoom(1000.0f);
 		InCamera.SetMoveSpeed(10.0f);

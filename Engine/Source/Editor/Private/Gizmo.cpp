@@ -701,15 +701,26 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 				SnapValue = UViewportManager::GetInstance().GetScaleSnapValue();
 			}
 
+			// 충분히 드래그했을 때만 스냅 적용 (클릭만으로는 스냅 안 됨)
 			if (bSnapEnabled && SnapValue > 0.0001f)
 			{
-				NewScale.X = std::round(NewScale.X / SnapValue) * SnapValue;
-				NewScale.Y = std::round(NewScale.Y / SnapValue) * SnapValue;
-				NewScale.Z = std::round(NewScale.Z / SnapValue) * SnapValue;
+				// 변화량 계산
+				const float DeltaX = std::abs(NewScale.X - DragStartScale.X);
+				const float DeltaY = std::abs(NewScale.Y - DragStartScale.Y);
+				const float DeltaZ = std::abs(NewScale.Z - DragStartScale.Z);
+				const float MaxDelta = std::max({ DeltaX, DeltaY, DeltaZ });
 
-				NewScale.X = std::max(NewScale.X, MIN_SCALE_VALUE);
-				NewScale.Y = std::max(NewScale.Y, MIN_SCALE_VALUE);
-				NewScale.Z = std::max(NewScale.Z, MIN_SCALE_VALUE);
+				// 아주 작은 변화(클릭만)가 아니면 스냅 적용
+				if (MaxDelta >= 0.01f)
+				{
+					NewScale.X = std::round(NewScale.X / SnapValue) * SnapValue;
+					NewScale.Y = std::round(NewScale.Y / SnapValue) * SnapValue;
+					NewScale.Z = std::round(NewScale.Z / SnapValue) * SnapValue;
+
+					NewScale.X = std::max(NewScale.X, MIN_SCALE_VALUE);
+					NewScale.Y = std::max(NewScale.Y, MIN_SCALE_VALUE);
+					NewScale.Z = std::max(NewScale.Z, MIN_SCALE_VALUE);
+				}
 			}
 
 			return NewScale;
@@ -798,23 +809,35 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 				bModifiedZ = true;
 			}
 
-			// 변경된 축만 스냅 적용
+			// 변경된 축만 스냅 적용 (충분히 드래그했을 때만)
 			if (bSnapEnabled && SnapValue > 0.0001f)
 			{
 				if (bModifiedX)
 				{
-					NewScale.X = std::round(NewScale.X / SnapValue) * SnapValue;
-					NewScale.X = std::max(NewScale.X, MIN_SCALE_VALUE);
+					const float DeltaX = std::abs(NewScale.X - DragStartScale.X);
+					if (DeltaX >= 0.01f)
+					{
+						NewScale.X = std::round(NewScale.X / SnapValue) * SnapValue;
+						NewScale.X = std::max(NewScale.X, MIN_SCALE_VALUE);
+					}
 				}
 				if (bModifiedY)
 				{
-					NewScale.Y = std::round(NewScale.Y / SnapValue) * SnapValue;
-					NewScale.Y = std::max(NewScale.Y, MIN_SCALE_VALUE);
+					const float DeltaY = std::abs(NewScale.Y - DragStartScale.Y);
+					if (DeltaY >= 0.01f)
+					{
+						NewScale.Y = std::round(NewScale.Y / SnapValue) * SnapValue;
+						NewScale.Y = std::max(NewScale.Y, MIN_SCALE_VALUE);
+					}
 				}
 				if (bModifiedZ)
 				{
-					NewScale.Z = std::round(NewScale.Z / SnapValue) * SnapValue;
-					NewScale.Z = std::max(NewScale.Z, MIN_SCALE_VALUE);
+					const float DeltaZ = std::abs(NewScale.Z - DragStartScale.Z);
+					if (DeltaZ >= 0.01f)
+					{
+						NewScale.Z = std::round(NewScale.Z / SnapValue) * SnapValue;
+						NewScale.Z = std::max(NewScale.Z, MIN_SCALE_VALUE);
+					}
 				}
 			}
 
@@ -893,33 +916,45 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 		if (abs(CardinalAxis.X) > 0.5f)
 		{
 			NewScale.X = std::max(DragStartScale.X + ScaleDelta, MIN_SCALE_VALUE);
-			// 드래그한 축만 스냅 적용
+			// 드래그한 축만 스냅 적용 (충분히 드래그했을 때만)
 			if (bSnapEnabled && SnapValue > 0.0001f)
 			{
-				NewScale.X = std::round(NewScale.X / SnapValue) * SnapValue;
-				NewScale.X = std::max(NewScale.X, MIN_SCALE_VALUE);
+				const float Delta = std::abs(NewScale.X - DragStartScale.X);
+				if (Delta >= 0.01f)
+				{
+					NewScale.X = std::round(NewScale.X / SnapValue) * SnapValue;
+					NewScale.X = std::max(NewScale.X, MIN_SCALE_VALUE);
+				}
 			}
 		}
 		// Y축 (0,1,0)
 		else if (abs(CardinalAxis.Y) > 0.5f)
 		{
 			NewScale.Y = std::max(DragStartScale.Y + ScaleDelta, MIN_SCALE_VALUE);
-			// 드래그한 축만 스냅 적용
+			// 드래그한 축만 스냅 적용 (충분히 드래그했을 때만)
 			if (bSnapEnabled && SnapValue > 0.0001f)
 			{
-				NewScale.Y = std::round(NewScale.Y / SnapValue) * SnapValue;
-				NewScale.Y = std::max(NewScale.Y, MIN_SCALE_VALUE);
+				const float Delta = std::abs(NewScale.Y - DragStartScale.Y);
+				if (Delta >= 0.01f)
+				{
+					NewScale.Y = std::round(NewScale.Y / SnapValue) * SnapValue;
+					NewScale.Y = std::max(NewScale.Y, MIN_SCALE_VALUE);
+				}
 			}
 		}
 		// Z축 (0,0,1)
 		else if (abs(CardinalAxis.Z) > 0.5f)
 		{
 			NewScale.Z = std::max(DragStartScale.Z + ScaleDelta, MIN_SCALE_VALUE);
-			// 드래그한 축만 스냅 적용
+			// 드래그한 축만 스냅 적용 (충분히 드래그했을 때만)
 			if (bSnapEnabled && SnapValue > 0.0001f)
 			{
-				NewScale.Z = std::round(NewScale.Z / SnapValue) * SnapValue;
-				NewScale.Z = std::max(NewScale.Z, MIN_SCALE_VALUE);
+				const float Delta = std::abs(NewScale.Z - DragStartScale.Z);
+				if (Delta >= 0.01f)
+				{
+					NewScale.Z = std::round(NewScale.Z / SnapValue) * SnapValue;
+					NewScale.Z = std::max(NewScale.Z, MIN_SCALE_VALUE);
+				}
 			}
 		}
 
