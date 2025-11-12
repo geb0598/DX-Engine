@@ -383,127 +383,20 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 		// ========================================
 		if (!bIsPIEViewport)
 		{
-			ImGui::SameLine(0.0f, 8.0f);
+			bool bRotationSnapEnabled = ViewportManager.IsRotationSnapEnabled();
+			float RotationSnapAngle = ViewportManager.GetRotationSnapAngle();
 
-			// 회전 스냅 토글 버튼 (아이콘)
-			if (IconSnapRotation && IconSnapRotation->GetTextureSRV())
+			// Base 클래스의 공통 렌더링 함수 사용
+			RenderRotationSnapControls(bRotationSnapEnabled, RotationSnapAngle);
+
+			// 값이 변경되었으면 ViewportManager에 반영
+			if (bRotationSnapEnabled != ViewportManager.IsRotationSnapEnabled())
 			{
-				constexpr float SnapToggleButtonSize = 24.0f;
-				constexpr float SnapToggleIconSize = 16.0f;
-
-				bool bSnapEnabled = ViewportManager.IsRotationSnapEnabled();
-
-				ImVec2 SnapToggleButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##RotationSnapToggle", ImVec2(SnapToggleButtonSize, SnapToggleButtonSize));
-				bool bSnapToggleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
-				bool bSnapToggleHovered = ImGui::IsItemHovered();
-
-				// 버튼 배경 그리기
-				ImDrawList* SnapToggleDrawList = ImGui::GetWindowDrawList();
-				ImU32 SnapToggleBgColor;
-				if (bSnapEnabled)
-				{
-					SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(40, 40, 40, 255) : IM_COL32(20, 20, 20, 255);
-				}
-				else
-				{
-					SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				}
-				if (ImGui::IsItemActive())
-				{
-					SnapToggleBgColor = IM_COL32(50, 50, 50, 255);
-				}
-				SnapToggleDrawList->AddRectFilled(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBgColor, 4.0f);
-
-				// 테두리
-				ImU32 SnapToggleBorderColor = bSnapEnabled ? IM_COL32(150, 150, 150, 255) : IM_COL32(96, 96, 96, 255);
-				SnapToggleDrawList->AddRect(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBorderColor, 4.0f);
-
-				// 아이콘 렌더링 (중앙 정렬)
-				ImVec2 IconMin = ImVec2(
-					SnapToggleButtonPos.x + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f,
-					SnapToggleButtonPos.y + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f
-				);
-				ImVec2 IconMax = ImVec2(IconMin.x + SnapToggleIconSize, IconMin.y + SnapToggleIconSize);
-				ImU32 IconTintColor = bSnapEnabled ? IM_COL32(46, 163, 255, 255) : IM_COL32(220, 220, 220, 255);
-				SnapToggleDrawList->AddImage((void*)IconSnapRotation->GetTextureSRV(), IconMin, IconMax, ImVec2(0, 0), ImVec2(1, 1), IconTintColor);
-
-				if (bSnapToggleClicked)
-				{
-					ViewportManager.SetRotationSnapEnabled(!bSnapEnabled);
-				}
-
-				if (bSnapToggleHovered)
-				{
-					ImGui::SetTooltip("Toggle rotation snap");
-				}
+				ViewportManager.SetRotationSnapEnabled(bRotationSnapEnabled);
 			}
-
-			ImGui::SameLine(0.0f, 4.0f);
-
-			// 회전 스냅 각도 선택 버튼
+			if (std::abs(RotationSnapAngle - ViewportManager.GetRotationSnapAngle()) > 0.01f)
 			{
-				char SnapAngleText[16];
-				(void)snprintf(SnapAngleText, sizeof(SnapAngleText), "%.0f°", ViewportManager.GetRotationSnapAngle());
-
-				constexpr float SnapAngleButtonHeight = 24.0f;
-				constexpr float SnapAnglePadding = 8.0f;
-				const ImVec2 SnapAngleTextSize = ImGui::CalcTextSize(SnapAngleText);
-				const float SnapAngleButtonWidth = SnapAngleTextSize.x + SnapAnglePadding * 2;
-
-				ImVec2 SnapAngleButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##RotationSnapAngle", ImVec2(SnapAngleButtonWidth, SnapAngleButtonHeight));
-				bool bSnapAngleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
-				bool bSnapAngleHovered = ImGui::IsItemHovered();
-
-				// 버튼 배경 그리기
-				ImDrawList* SnapAngleDrawList = ImGui::GetWindowDrawList();
-				ImU32 SnapAngleBgColor = bSnapAngleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				if (ImGui::IsItemActive())
-				{
-					SnapAngleBgColor = IM_COL32(38, 38, 38, 255);
-				}
-				SnapAngleDrawList->AddRectFilled(SnapAngleButtonPos, ImVec2(SnapAngleButtonPos.x + SnapAngleButtonWidth, SnapAngleButtonPos.y + SnapAngleButtonHeight), SnapAngleBgColor, 4.0f);
-				SnapAngleDrawList->AddRect(SnapAngleButtonPos, ImVec2(SnapAngleButtonPos.x + SnapAngleButtonWidth, SnapAngleButtonPos.y + SnapAngleButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
-
-				// 텍스트 그리기
-				ImVec2 SnapAngleTextPos = ImVec2(
-					SnapAngleButtonPos.x + SnapAnglePadding,
-					SnapAngleButtonPos.y + (SnapAngleButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
-				);
-				SnapAngleDrawList->AddText(SnapAngleTextPos, IM_COL32(220, 220, 220, 255), SnapAngleText);
-
-				if (bSnapAngleClicked)
-				{
-					ImGui::OpenPopup("##RotationSnapAnglePopup");
-				}
-
-				// 각도 선택 팝업
-				if (ImGui::BeginPopup("##RotationSnapAnglePopup"))
-				{
-					ImGui::Text("Rotation Snap Angle");
-					ImGui::Separator();
-
-					const float CurrentSnapAngle = ViewportManager.GetRotationSnapAngle();
-					constexpr float SnapAngles[] = { 5.0f, 10.0f, 15.0f, 22.5f, 30.0f, 45.0f, 60.0f, 90.0f };
-					constexpr const char* SnapAngleLabels[] = { "5°", "10°", "15°", "22.5°", "30°", "45°", "60°", "90°" };
-
-					for (int i = 0; i < IM_ARRAYSIZE(SnapAngles); ++i)
-					{
-						const bool bIsSelected = (std::abs(CurrentSnapAngle - SnapAngles[i]) < 0.1f);
-						if (ImGui::MenuItem(SnapAngleLabels[i], nullptr, bIsSelected))
-						{
-							ViewportManager.SetRotationSnapAngle(SnapAngles[i]);
-						}
-					}
-
-					ImGui::EndPopup();
-				}
-
-				if (bSnapAngleHovered)
-				{
-					ImGui::SetTooltip("Choose rotation snap angle");
-				}
+				ViewportManager.SetRotationSnapAngle(RotationSnapAngle);
 			}
 		}
 
@@ -512,127 +405,20 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 		// ========================================
 		if (!bIsPIEViewport)
 		{
-			ImGui::SameLine(0.0f, 8.0f);
+			bool bScaleSnapEnabled = ViewportManager.IsScaleSnapEnabled();
+			float ScaleSnapValue = ViewportManager.GetScaleSnapValue();
 
-			// 스케일 스냅 토글 버튼 (아이콘)
-			if (IconSnapScale && IconSnapScale->GetTextureSRV())
+			// Base 클래스의 공통 렌더링 함수 사용
+			RenderScaleSnapControls(bScaleSnapEnabled, ScaleSnapValue);
+
+			// 값이 변경되었으면 ViewportManager에 반영
+			if (bScaleSnapEnabled != ViewportManager.IsScaleSnapEnabled())
 			{
-				constexpr float SnapToggleButtonSize = 24.0f;
-				constexpr float SnapToggleIconSize = 16.0f;
-
-				bool bScaleSnapEnabled = ViewportManager.IsScaleSnapEnabled();
-
-				ImVec2 SnapToggleButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##ScaleSnapToggle", ImVec2(SnapToggleButtonSize, SnapToggleButtonSize));
-				bool bSnapToggleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
-				bool bSnapToggleHovered = ImGui::IsItemHovered();
-
-				// 버튼 배경 그리기
-				ImDrawList* SnapToggleDrawList = ImGui::GetWindowDrawList();
-				ImU32 SnapToggleBgColor;
-				if (bScaleSnapEnabled)
-				{
-					SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(40, 40, 40, 255) : IM_COL32(20, 20, 20, 255);
-				}
-				else
-				{
-					SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				}
-				if (ImGui::IsItemActive())
-				{
-					SnapToggleBgColor = IM_COL32(50, 50, 50, 255);
-				}
-				SnapToggleDrawList->AddRectFilled(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBgColor, 4.0f);
-
-				// 테두리
-				ImU32 SnapToggleBorderColor = bScaleSnapEnabled ? IM_COL32(150, 150, 150, 255) : IM_COL32(96, 96, 96, 255);
-				SnapToggleDrawList->AddRect(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBorderColor, 4.0f);
-
-				// 아이콘 렌더링 (중앙 정렬)
-				ImVec2 IconMin = ImVec2(
-					SnapToggleButtonPos.x + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f,
-					SnapToggleButtonPos.y + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f
-				);
-				ImVec2 IconMax = ImVec2(IconMin.x + SnapToggleIconSize, IconMin.y + SnapToggleIconSize);
-				ImU32 IconTintColor = bScaleSnapEnabled ? IM_COL32(46, 163, 255, 255) : IM_COL32(220, 220, 220, 255);
-				SnapToggleDrawList->AddImage((void*)IconSnapScale->GetTextureSRV(), IconMin, IconMax, ImVec2(0, 0), ImVec2(1, 1), IconTintColor);
-
-				if (bSnapToggleClicked)
-				{
-					ViewportManager.SetScaleSnapEnabled(!bScaleSnapEnabled);
-				}
-
-				if (bSnapToggleHovered)
-				{
-					ImGui::SetTooltip("Toggle scale snap");
-				}
+				ViewportManager.SetScaleSnapEnabled(bScaleSnapEnabled);
 			}
-
-			ImGui::SameLine(0.0f, 4.0f);
-
-			// 스케일 스냅 값 선택 버튼
+			if (std::abs(ScaleSnapValue - ViewportManager.GetScaleSnapValue()) > 0.0001f)
 			{
-				char SnapValueText[16];
-				(void)snprintf(SnapValueText, sizeof(SnapValueText), "%.4g", ViewportManager.GetScaleSnapValue());
-
-				constexpr float SnapValueButtonHeight = 24.0f;
-				constexpr float SnapValuePadding = 8.0f;
-				const ImVec2 SnapValueTextSize = ImGui::CalcTextSize(SnapValueText);
-				const float SnapValueButtonWidth = SnapValueTextSize.x + SnapValuePadding * 2;
-
-				ImVec2 SnapValueButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##ScaleSnapValue", ImVec2(SnapValueButtonWidth, SnapValueButtonHeight));
-				bool bSnapValueClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
-				bool bSnapValueHovered = ImGui::IsItemHovered();
-
-				// 버튼 배경 그리기
-				ImDrawList* SnapValueDrawList = ImGui::GetWindowDrawList();
-				ImU32 SnapValueBgColor = bSnapValueHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				if (ImGui::IsItemActive())
-				{
-					SnapValueBgColor = IM_COL32(38, 38, 38, 255);
-				}
-				SnapValueDrawList->AddRectFilled(SnapValueButtonPos, ImVec2(SnapValueButtonPos.x + SnapValueButtonWidth, SnapValueButtonPos.y + SnapValueButtonHeight), SnapValueBgColor, 4.0f);
-				SnapValueDrawList->AddRect(SnapValueButtonPos, ImVec2(SnapValueButtonPos.x + SnapValueButtonWidth, SnapValueButtonPos.y + SnapValueButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
-
-				// 텍스트 그리기
-				ImVec2 SnapValueTextPos = ImVec2(
-					SnapValueButtonPos.x + SnapValuePadding,
-					SnapValueButtonPos.y + (SnapValueButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
-				);
-				SnapValueDrawList->AddText(SnapValueTextPos, IM_COL32(220, 220, 220, 255), SnapValueText);
-
-				if (bSnapValueClicked)
-				{
-					ImGui::OpenPopup("##ScaleSnapValuePopup");
-				}
-
-				// 값 선택 팝업
-				if (ImGui::BeginPopup("##ScaleSnapValuePopup"))
-				{
-					ImGui::Text("Scale Snap Value");
-					ImGui::Separator();
-
-					const float CurrentSnapValue = ViewportManager.GetScaleSnapValue();
-					constexpr float SnapValues[] = { 10.0f, 1.0f, 0.5f, 0.25f, 0.125f, 0.1f, 0.0625f, 0.03125f };
-					constexpr const char* SnapValueLabels[] = { "10", "1", "0.5", "0.25", "0.125", "0.1", "0.0625", "0.03125" };
-
-					for (int i = 0; i < IM_ARRAYSIZE(SnapValues); ++i)
-					{
-						const bool bIsSelected = (std::abs(CurrentSnapValue - SnapValues[i]) < 0.0001f);
-						if (ImGui::MenuItem(SnapValueLabels[i], nullptr, bIsSelected))
-						{
-							ViewportManager.SetScaleSnapValue(SnapValues[i]);
-						}
-					}
-
-					ImGui::EndPopup();
-				}
-
-				if (bSnapValueHovered)
-				{
-					ImGui::SetTooltip("Choose scale snap value");
-				}
+				ViewportManager.SetScaleSnapValue(ScaleSnapValue);
 			}
 		}
 
