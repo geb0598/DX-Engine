@@ -1864,19 +1864,15 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 			}
 		}
 
-		//Reset 버튼
+		//Reset 버튼들
 		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.5f, 0.3f, 0.2f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.6f, 0.4f, 0.3f, 1.0f));
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.45f, 0.25f, 0.15f, 1.0f));
 
 		if (ImGui::Button("Reset to Last Value", ImVec2(-1, 30)))
 		{
-			// 현재 컴포넌트의 값으로 리셋
-			for (int32 i = 0; i < InNumBones; ++i)
-			{
-				TempBoneSpaceTransforms[i] = OriginalSkeletalMeshComponent->GetBoneTransformLocal(i);
-				SkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
-			}
+			TempBoneSpaceTransforms[SelectedBoneIndex] = OriginalSkeletalMeshComponent->GetBoneTransformLocal(SelectedBoneIndex);
+			SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, TempBoneSpaceTransforms[SelectedBoneIndex]);
 			// 캐시 초기화
 			CachedRotation = TempBoneSpaceTransforms[SelectedBoneIndex].Rotation.ToEuler();
 			bIsDraggingRotation = false;
@@ -1885,12 +1881,8 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 
 		if(ImGui::Button("Reset to Reference Pose", ImVec2(-1, 30)))
 		{
-			// 레퍼런스 포즈로 리셋
-			for (int32 i = 0; i < InNumBones; ++i)
-			{
-				TempBoneSpaceTransforms[i] = RefBonePoses[i];
-				SkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
-			}
+			TempBoneSpaceTransforms[SelectedBoneIndex] = RefBonePoses[SelectedBoneIndex];
+			SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, TempBoneSpaceTransforms[SelectedBoneIndex]);
 			// 캐시 초기화
 			CachedRotation = TempBoneSpaceTransforms[SelectedBoneIndex].Rotation.ToEuler();
 			bIsDraggingRotation = false;
@@ -1939,14 +1931,33 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 
 	ImGui::Checkbox("Show All Bones", &bShowAllBones);
 
-	// Apply Changes 버튼 - 우측 하단에 고정
+	// All Value Change 버튼들 - 우측 하단에 고정
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.2f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.6f, 0.3f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.15f, 0.45f, 0.15f, 1.0f));
 
+	if (ImGui::Button("Reset All Value to Last Value", ImVec2(-1, 30)))
+	{
+		for (int32 i = 0; i < InNumBones; ++i)
+		{
+			TempBoneSpaceTransforms[i] = OriginalSkeletalMeshComponent->GetBoneTransformLocal(i);
+			SkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
+		}
+		UE_LOG("SkeletalMeshViewerWindow: Reset temp bone transforms to last value");
+	}
+
+	if (ImGui::Button("Reset All Value to Reference Pose", ImVec2(-1, 30)))
+	{
+		for (int32 i = 0; i < InNumBones; ++i)
+		{
+			TempBoneSpaceTransforms[i] = RefBonePoses[i];
+			SkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);
+		}
+		UE_LOG("SkeletalMeshViewerWindow: Reset temp bone transforms to reference pose");
+	}
+
 	if (ImGui::Button("Apply All Changes", ImVec2(-1, 30)))
 	{
-		// TempBoneSpaceTransforms를 실제 BoneSpaceTransforms에 적용
 		for (int32 i = 0; i < InNumBones; ++i)
 		{
 			OriginalSkeletalMeshComponent->SetBoneTransformLocal(i, TempBoneSpaceTransforms[i]);

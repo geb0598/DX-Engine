@@ -52,6 +52,9 @@ struct FMaterial
 
 	/** Bump map (map_bump or bump). */
 	FString BumpMap;
+
+	/** Normal map (map_Norm or norm). */
+	FString NormalMap;
 };
 
 UCLASS()

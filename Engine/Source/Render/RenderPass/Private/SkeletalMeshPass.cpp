@@ -77,12 +77,12 @@ void FSkeletalMeshPass::Execute(FRenderingContext& Context)
 	Pipeline->SetConstantBuffer(0, EShaderType::VS, ConstantBufferModel);
 	Pipeline->SetConstantBuffer(1, EShaderType::VS | EShaderType::PS, ConstantBufferCamera);
 
-	if (!(Context.ShowFlags & EEngineShowFlags::SF_StaticMesh)) { return; }
-	TArray<UStaticMeshComponent*>& MeshComponents = Context.StaticMeshes;
+	if (!(Context.ShowFlags & EEngineShowFlags::SF_SkeletalMesh)) { return; }
+	TArray<USkeletalMeshComponent*>& MeshComponents = Context.SkeletalMeshes;
 	sort(MeshComponents.begin(), MeshComponents.end(),
-		[](UStaticMeshComponent* A, UStaticMeshComponent* B) {
-			int32 MeshA = A->GetStaticMesh() ? A->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
-			int32 MeshB = B->GetStaticMesh() ? B->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
+		[](USkeletalMeshComponent* A, USkeletalMeshComponent* B) {
+			int32 MeshA = A->GetSkeletalMeshAsset()->GetStaticMesh() ? A->GetSkeletalMeshAsset()->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
+			int32 MeshB = B->GetSkeletalMeshAsset()->GetStaticMesh() ? B->GetSkeletalMeshAsset()->GetStaticMesh()->GetAssetPathFileName().GetComparisonIndex() : 0;
 			return MeshA < MeshB;
 		});
 
@@ -111,7 +111,7 @@ void FSkeletalMeshPass::Execute(FRenderingContext& Context)
 
 		for (const FMeshSection& Section : MeshAsset->Sections)
 		{
-			UMaterial* Material = MeshComp->GetSkeletalMeshAsset()->GetStaticMesh()->GetMaterial(Section.MaterialSlot);
+			UMaterial* Material = MeshComp->GetMaterial(Section.MaterialSlot);
 			if (CurrentMaterial != Material) {
 				FMaterialConstants MaterialConstants = {};
 				FVector AmbientColor = Material->GetAmbientColor(); MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);

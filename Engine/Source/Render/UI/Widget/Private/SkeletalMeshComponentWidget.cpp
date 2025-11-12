@@ -48,8 +48,8 @@ void USkeletalMeshComponentWidget::RenderWidget()
 
 	RenderSkeletalMeshSelector();
 	ImGui::Separator();
-	// RenderMaterialSections();
-	// ImGui::Separator();
+	RenderMaterialSections();
+	ImGui::Separator();
 	RenderOptions();
 
 	ImGui::PopStyleColor(5);
@@ -88,7 +88,6 @@ void USkeletalMeshComponentWidget::RenderSkeletalMeshSelector()
 void USkeletalMeshComponentWidget::RenderMaterialSections()
 {
 	USkeletalMesh* CurrentMesh = SkeletalMeshComponent->GetSkeletalMeshAsset();
-	UStaticMesh* CurrentStaticMesh = CurrentMesh->GetStaticMesh();
 	if (!CurrentMesh || !CurrentMesh->GetStaticMesh())
 	{
 		return;
@@ -99,7 +98,7 @@ void USkeletalMeshComponentWidget::RenderMaterialSections()
 
 	for (int32 SlotIndex = 0; SlotIndex < MeshAsset->MaterialInfo.Num(); ++SlotIndex)
 	{
-		UMaterial* CurrentMaterial = CurrentStaticMesh->GetMaterial(SlotIndex);
+		UMaterial* CurrentMaterial = SkeletalMeshComponent->GetMaterial(SlotIndex);
 
 		if (!CurrentMaterial)
 		{
@@ -203,42 +202,42 @@ void USkeletalMeshComponentWidget::RenderMaterialSections()
 
 void USkeletalMeshComponentWidget::RenderAvailableMaterials(int32 TargetSlotIndex)
 {
-	// for (TObjectIterator<UMaterial> It; It; ++It)
-	// {
-	// 	UMaterial* Mat = *It;
-	// 	if (!Mat) continue;
-	//
-	// 	FString MatName = GetMaterialDisplayName(Mat);
-	// 	bool bIsSelected = (SkeletalMeshComponent->GetMaterial(TargetSlotIndex) == Mat);
-	// 	const float RowPreviewSize = 20.0f;
-	// 	UTexture* RowPreviewTexture = GetPreviewTextureForMaterial(Mat);
-	// 	ID3D11ShaderResourceView* RowShaderResourceView = nullptr;
-	// 	if (RowPreviewTexture != nullptr)
-	// 	{
-	// 		RowShaderResourceView = RowPreviewTexture->GetTextureSRV();
-	// 	}
-	//
-	// 	if (RowShaderResourceView != nullptr)
-	// 	{
-	// 		ImGui::Image((ImTextureID)RowShaderResourceView,
-	// 			ImVec2(RowPreviewSize, RowPreviewSize), ImVec2(0, 0), ImVec2(1, 1));
-	// 	}
-	// 	else
-	// 	{
-	// 		ImGui::Dummy(ImVec2(RowPreviewSize, RowPreviewSize));
-	// 	}
-	// 	ImGui::SameLine();
-	//
-	// 	if (ImGui::Selectable(MatName.c_str(), bIsSelected))
-	// 	{
-	// 		SkeletalMeshComponent->SetMaterial(TargetSlotIndex, Mat);
-	// 	}
-	//
-	// 	if (bIsSelected)
-	// 	{
-	// 		ImGui::SetItemDefaultFocus();
-	// 	}
-	// }
+	for (TObjectIterator<UMaterial> It; It; ++It)
+	{
+		UMaterial* Mat = *It;
+		if (!Mat) continue;
+
+		FString MatName = GetMaterialDisplayName(Mat);
+		bool bIsSelected = (SkeletalMeshComponent->GetMaterial(TargetSlotIndex) == Mat);
+		const float RowPreviewSize = 20.0f;
+		UTexture* RowPreviewTexture = GetPreviewTextureForMaterial(Mat);
+		ID3D11ShaderResourceView* RowShaderResourceView = nullptr;
+		if (RowPreviewTexture != nullptr)
+		{
+			RowShaderResourceView = RowPreviewTexture->GetTextureSRV();
+		}
+
+		if (RowShaderResourceView != nullptr)
+		{
+			ImGui::Image((ImTextureID)RowShaderResourceView,
+				ImVec2(RowPreviewSize, RowPreviewSize), ImVec2(0, 0), ImVec2(1, 1));
+		}
+		else
+		{
+			ImGui::Dummy(ImVec2(RowPreviewSize, RowPreviewSize));
+		}
+		ImGui::SameLine();
+
+		if (ImGui::Selectable(MatName.c_str(), bIsSelected))
+		{
+			SkeletalMeshComponent->SetMaterial(TargetSlotIndex, Mat);
+		}
+
+		if (bIsSelected)
+		{
+			ImGui::SetItemDefaultFocus();
+		}
+	}
 }
 
 void USkeletalMeshComponentWidget::RenderOptions()
