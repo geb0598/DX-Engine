@@ -305,16 +305,25 @@ void USkeletalMeshComponent::UpdateSkinnedVertices()
 			}
 
 			const FMatrix& FinalMatrix = SkinningMatrices[BoneIndex];
+			FMatrix FinalInvTransMatrix = FinalMatrix.Inverse().Transpose();
 
 			FinalPosition += FinalMatrix.TransformPosition(Vertex.Position) * Weight;
-			FinalNormal += FinalMatrix.TransformVector(Vertex.Normal) * Weight;
+			FinalNormal += FinalInvTransMatrix.TransformVector(Vertex.Normal) * Weight;
 			FinalTangent += FinalMatrix.TransformVector(FVector(Vertex.Tangent)) * Weight;
 		}
+		FinalPosition = FinalPosition / TotalWeight;
+
+		FinalNormal = FinalNormal / TotalWeight;
+		FinalNormal.Normalize();
+
+		FinalTangent = FinalTangent / TotalWeight;
+		FinalTangent = FinalTangent - (FinalNormal.Dot(FinalTangent)) * FinalNormal;
+		FinalTangent.Normalize();
 
 		FNormalVertex& ResultVertex = SkinnedVertices[VertexIndex];
-		ResultVertex.Position = FinalPosition / TotalWeight;
-		ResultVertex.Normal = FinalNormal / TotalWeight;
-		ResultVertex.Tangent = FVector4(FinalTangent / TotalWeight, Vertex.Tangent.W);
+		ResultVertex.Position = FinalPosition;
+		ResultVertex.Normal = FinalNormal;
+		ResultVertex.Tangent = FVector4(FinalTangent, Vertex.Tangent.W);
 	}
 
 	FRenderResourceFactory::UpdateVertexBufferData(VertexBuffer, SkinnedVertices);
