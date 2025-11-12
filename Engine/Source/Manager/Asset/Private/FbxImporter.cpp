@@ -249,62 +249,39 @@ void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& 
 			? MaterialName
 			: "Material_" + std::to_string(MaterialOffset + m);
 
-		// Diffuse 텍스처 추출
+		// 🔸 Diffuse 텍스처 추출
 		if (FbxProperty Prop = Material->FindProperty(FbxSurfaceMaterial::sDiffuse); Prop.IsValid())
 		{
-			int LayeredTextureCount = Prop.GetSrcObjectCount<FbxLayeredTexture>();
-			if (LayeredTextureCount > 0)
+			int TextureCount = Prop.GetSrcObjectCount<FbxFileTexture>();
+			if (TextureCount > 0)
 			{
-				UE_LOG_WARNING("[FbxImporter] Layered Texture는 아직 지원하지 않습니다.");
-			}
-			else
-			{
-				int TextureCount = Prop.GetSrcObjectCount<FbxFileTexture>();
-				if (TextureCount > 0)
+				if (FbxFileTexture* Texture = Prop.GetSrcObject<FbxFileTexture>(0))
 				{
-					if (FbxFileTexture* Texture = Prop.GetSrcObject<FbxFileTexture>(0))
-					{
-						std::string OriginalTexturePath = Texture->GetFileName();
-						std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
-						std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
-
-						if (!ResolvedPath.empty())
-						{
-							MatInfo.DiffuseTexturePath = ResolvedPath;
-						}
-					}
+					std::string OriginalTexturePath = Texture->GetFileName();
+					std::filesystem::path ResolvedPath = ResolveTexturePath(
+						OriginalTexturePath, FbxFilePath.parent_path(), FbxFilePath);
+					if (!ResolvedPath.empty())
+						MatInfo.DiffuseTexturePath = ResolvedPath;
 				}
 			}
 		}
 
-		// Normal 텍스처 추출
+		// 🔸 Normal 맵 추출 (Bump 포함)
 		if (FbxProperty NormalProp = Material->FindProperty(FbxSurfaceMaterial::sNormalMap); NormalProp.IsValid())
 		{
-			int LayeredTextureCount = NormalProp.GetSrcObjectCount<FbxLayeredTexture>();
-			if (LayeredTextureCount > 0)
+			int TextureCount = NormalProp.GetSrcObjectCount<FbxFileTexture>();
+			if (TextureCount > 0)
 			{
-				UE_LOG_WARNING("[FbxImporter] Normal Layered Texture는 아직 지원하지 않습니다.");
-			}
-			else
-			{
-				int TextureCount = NormalProp.GetSrcObjectCount<FbxFileTexture>();
-				if (TextureCount > 0)
+				if (FbxFileTexture* Texture = NormalProp.GetSrcObject<FbxFileTexture>(0))
 				{
-					if (FbxFileTexture* Texture = NormalProp.GetSrcObject<FbxFileTexture>(0))
-					{
-						std::string OriginalTexturePath = Texture->GetFileName();
-						std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
-						std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
-
-						if (!ResolvedPath.empty())
-						{
-							MatInfo.NormalTexturePath = ResolvedPath;
-						}
-					}
+					std::string OriginalTexturePath = Texture->GetFileName();
+					std::filesystem::path ResolvedPath = ResolveTexturePath(
+						OriginalTexturePath, FbxFilePath.parent_path(), FbxFilePath);
+					if (!ResolvedPath.empty())
+						MatInfo.NormalTexturePath = ResolvedPath;
 				}
 			}
 		}
-		// Bump 맵이 있으면 Normal 맵으로 사용 (NormalMap 속성이 없을 경우 대체)
 		else if (FbxProperty BumpProp = Material->FindProperty(FbxSurfaceMaterial::sBump); BumpProp.IsValid())
 		{
 			int TextureCount = BumpProp.GetSrcObjectCount<FbxFileTexture>();
@@ -313,9 +290,8 @@ void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& 
 				if (FbxFileTexture* Texture = BumpProp.GetSrcObject<FbxFileTexture>(0))
 				{
 					std::string OriginalTexturePath = Texture->GetFileName();
-					std::filesystem::path FbxDirectory = FbxFilePath.parent_path();
-					std::filesystem::path ResolvedPath = ResolveTexturePath(OriginalTexturePath, FbxDirectory, FbxFilePath);
-
+					std::filesystem::path ResolvedPath = ResolveTexturePath(
+						OriginalTexturePath, FbxFilePath.parent_path(), FbxFilePath);
 					if (!ResolvedPath.empty())
 					{
 						MatInfo.NormalTexturePath = ResolvedPath;
@@ -325,24 +301,45 @@ void FFbxImporter::ExtractMaterials(FbxNode* Node, const std::filesystem::path& 
 			}
 		}
 
-		OutMeshInfo->Materials.Add(MatInfo);
+		// 🔹 중복 검사: 같은 텍스처 경로를 이미 가진 Material은 스킵
+		bool bDuplicate = false;
+		for (const auto& Existing : OutMeshInfo->Materials)
+		{
+			if (Existing.DiffuseTexturePath == MatInfo.DiffuseTexturePath &&
+				Existing.NormalTexturePath == MatInfo.NormalTexturePath)
+			{
+				bDuplicate = true;
+				break;
+			}
+			// 이름이 같은 경우도 중복으로 간주
+			if (Existing.MaterialName == MatInfo.MaterialName)
+			{
+				bDuplicate = true;
+				break;
+			}
+		}
+
+		if (!bDuplicate)
+		{
+			OutMeshInfo->Materials.Add(MatInfo);
+			UE_LOG("[FbxImporter] Material 추가: %s", MatInfo.MaterialName.c_str());
+		}
+		else
+		{
+			UE_LOG_WARNING("[FbxImporter] 중복 Material 무시됨: %s", MatInfo.MaterialName.c_str());
+		}
 	}
 
-	// Material이 없으면 기본 Material 추가 (MaterialOffset이 0일 때만)
-	if (MaterialCount == 0 && MaterialOffset == 0)
+	// 🔸 Material이 하나도 없으면 기본 Material 추가
+	if (MaterialCount == 0 && MaterialOffset == 0 && OutMeshInfo->Materials.Num() == 0)
 	{
 		FFbxMaterialInfo DefaultMat;
 		DefaultMat.MaterialName = "Default";
 		OutMeshInfo->Materials.Add(DefaultMat);
-		UE_LOG_WARNING("[FbxImporter] Material이 없어 기본 Material을 추가했습니다.");
-	}
-	else if (MaterialCount == 0 && MaterialOffset > 0)
-	{
-		FFbxMaterialInfo DefaultMat;
-		DefaultMat.MaterialName = "Default_" + std::to_string(MaterialOffset);
-		OutMeshInfo->Materials.Add(DefaultMat);
+		UE_LOG_WARNING("[FbxImporter] 기본 Material 추가됨 (No materials found).");
 	}
 }
+
 
 std::filesystem::path FFbxImporter::ResolveTexturePath(
 	const std::string& OriginalPath,
