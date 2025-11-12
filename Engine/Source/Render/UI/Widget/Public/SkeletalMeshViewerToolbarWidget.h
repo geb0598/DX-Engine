@@ -130,6 +130,10 @@ private:
 	UTexture* IconLitCube = nullptr;
 	UTexture* IconCamera = nullptr;
 
+	// World/Local Space 아이콘들
+	UTexture* IconWorldSpace = nullptr;
+	UTexture* IconLocalSpace = nullptr;
+
 	bool bIconsLoaded = false;
 
 	// Gizmo Mode 상태

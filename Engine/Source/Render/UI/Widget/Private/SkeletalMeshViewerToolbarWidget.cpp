@@ -98,6 +98,10 @@ void USkeletalMeshViewerToolbarWidget::LoadViewIcons()
 	IconLitCube = AssetManager.LoadTexture((IconBasePath + "LitCube.png").data());
 	IconCamera = AssetManager.LoadTexture((IconBasePath + "Camera.png").data());
 
+	// World/Local Space 아이콘 로드
+	IconWorldSpace = AssetManager.LoadTexture((IconBasePath + "WorldSpace.png").data());
+	IconLocalSpace = AssetManager.LoadTexture((IconBasePath + "LocalSpace.png").data());
+
 	bIconsLoaded = true;
 }
 
@@ -358,6 +362,40 @@ void USkeletalMeshViewerToolbarWidget::RenderWidget()
 	// ========================================
 
 	RenderGizmoModeButtons();
+
+	// ========================================
+	// World/Local Space Toggle
+	// ========================================
+
+	// QWER 버튼 다음에 8px 간격
+	ImGui::SameLine(0.0f, 8.0f);
+
+	// World/Local 토글 버튼
+	if (OwningWindow)
+	{
+		UGizmo* ViewerGizmo = OwningWindow->GetGizmo();
+		if (ViewerGizmo)
+		{
+			bool bIsWorldMode = ViewerGizmo->IsWorldMode();
+			UTexture* CurrentSpaceIcon = bIsWorldMode ? IconWorldSpace : IconLocalSpace;
+			const char* Tooltip = bIsWorldMode ? "월드 스페이스 좌표 \n좌표계를 순환하려면 클릭하거나 Ctrl+`을 누르세요"
+				:"로컬 스페이스 좌표 \n좌표계를 순환하려면 클릭하거나 Ctrl+`을 누르세요";
+
+			// 파란색 활성화 스타일 없이 렌더링
+			if (DrawIconButton("##WorldLocalToggle", CurrentSpaceIcon, false, Tooltip, GizmoButtonSize, GizmoIconSize))
+			{
+				// World ↔ Local 토글
+				if (bIsWorldMode)
+				{
+					ViewerGizmo->SetLocal();
+				}
+				else
+				{
+					ViewerGizmo->SetWorld();
+				}
+			}
+		}
+	}
 
 	// ========================================
 	// Rotation Snap

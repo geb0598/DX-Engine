@@ -203,6 +203,9 @@ public:
 	float GetGridCellSize() const { return GridCellSize; }
 	void SetGridCellSize(float NewCellSize);
 
+	// Gizmo 접근자 (툴바 위젯에서 World/Local 모드 토글용)
+	UGizmo* GetGizmo() const { return ViewerGizmo; }
+
 private:
 	/**
 	 * @brief 렌더 타겟 생성

@@ -168,7 +168,24 @@ void UViewportControlWidget::LoadViewIcons()
 		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "Scale.png").c_str());
 	}
 
-	UE_LOG_SUCCESS("ViewportControlWidget: 아이콘 로드 완료 (%d/15)", LoadedCount);
+	// World/Local Space 아이콘 로드
+	IconWorldSpace = AssetManager.LoadTexture((IconBasePath + "WorldSpace.png").data());
+	if (IconWorldSpace) {
+		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'WorldSpace' -> %p", IconWorldSpace);
+		++LoadedCount;
+	} else {
+		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "WorldSpace.png").c_str());
+	}
+
+	IconLocalSpace = AssetManager.LoadTexture((IconBasePath + "LocalSpace.png").data());
+	if (IconLocalSpace) {
+		UE_LOG("ViewportControlWidget: 아이콘 로드 성공: 'LocalSpace' -> %p", IconLocalSpace);
+		++LoadedCount;
+	} else {
+		UE_LOG_WARNING("ViewportControlWidget: 아이콘 로드 실패: %s", (IconBasePath + "LocalSpace.png").c_str());
+	}
+
+	UE_LOG_SUCCESS("ViewportControlWidget: 아이콘 로드 완료 (%d/17)", LoadedCount);
 	bIconsLoaded = true;
 }
 
@@ -388,6 +405,54 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 
 				if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Scale);
 				if (bHovered) ImGui::SetTooltip("Scale (R)");
+			}
+
+			// ========================================
+			// World/Local Space Toggle
+			// ========================================
+
+			ImGui::SameLine(0.0f, 8.0f);
+
+			// World/Local 토글 버튼
+			if (Gizmo && IconWorldSpace && IconWorldSpace->GetTextureSRV() && IconLocalSpace && IconLocalSpace->GetTextureSRV())
+			{
+				bool bIsWorldMode = Gizmo->IsWorldMode();
+				UTexture* CurrentSpaceIcon = bIsWorldMode ? IconWorldSpace : IconLocalSpace;
+				const char* Tooltip = bIsWorldMode ? "월드 스페이스 좌표 \n좌표계를 순환하려면 클릭하거나 Ctrl+`을 누르세요"
+					:"로컬 스페이스 좌표 \n 좌표계를 순환하려면 클릭하거나 Ctrl+`을 누르세요";
+
+				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+				ImGui::InvisibleButton("##WorldLocalToggle", ImVec2(GizmoButtonSize, GizmoButtonSize));
+				bool bClicked = ImGui::IsItemClicked();
+				bool bHovered = ImGui::IsItemHovered();
+
+				ImDrawList* DL = ImGui::GetWindowDrawList();
+				// 다른 버튼들과 동일한 스타일: 기본 검은색, 호버 시 어두운 회색, 클릭 시 더 밝은 회색
+				ImU32 BgColor = bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+
+				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
+				ImU32 BorderColor = IM_COL32(96, 96, 96, 255);
+				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
+
+				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
+				ImU32 TintColor = IM_COL32(255, 255, 255, 255);
+				DL->AddImage(CurrentSpaceIcon->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
+
+				if (bClicked)
+				{
+					// World ↔ Local 토글
+					if (bIsWorldMode)
+					{
+						Gizmo->SetLocal();
+					}
+					else
+					{
+						Gizmo->SetWorld();
+					}
+				}
+
+				if (bHovered) ImGui::SetTooltip("%s", Tooltip);
 			}
 		}
 		else

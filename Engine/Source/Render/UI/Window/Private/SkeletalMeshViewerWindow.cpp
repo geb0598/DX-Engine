@@ -1101,52 +1101,18 @@ void USkeletalMeshViewerWindow::DisplayViewportImage(const ImVec2& ViewportSize)
 	WindowPos.y -= ViewportSize.y;
 
 	ImVec2 InfoPos = ImVec2(WindowPos.x + 10, WindowPos.y + 10);
-	ImVec2 InfoSize = ImVec2(320, 230);
+	ImVec2 InfoSize = ImVec2(280, 70);
 
 	DrawList->AddRectFilled(InfoPos, ImVec2(InfoPos.x + InfoSize.x, InfoPos.y + InfoSize.y),
 	                        IM_COL32(0, 0, 0, 180), 4.0f);
 
-	DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 10), IM_COL32(80, 200, 200, 255), "3D Viewport");
-	DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 30), IM_COL32(200, 200, 200, 255),
+	// 화면 사이즈 정보
+	DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 10), IM_COL32(80, 200, 200, 255),
 	                  (FString("Size: ") + std::to_string(ViewerWidth) + " x " + std::to_string(ViewerHeight)).c_str());
 
-	if (ViewerViewportClient)
-	{
-		UCamera* Camera = ViewerViewportClient->GetCamera();
-		if (Camera)
-		{
-			FVector CameraPos = Camera->GetLocation();
-			FVector CameraRot = Camera->GetRotation();
-			float CameraFOV = Camera->GetFovY();
-			float CameraAspect = Camera->GetAspect();
-
-			char CameraInfoText[256];
-			sprintf_s(CameraInfoText, "Pos: %.1f, %.1f, %.1f", CameraPos.X, CameraPos.Y, CameraPos.Z);
-			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 55), IM_COL32(200, 200, 100, 255), CameraInfoText);
-
-			sprintf_s(CameraInfoText, "Rot: %.1f, %.1f, %.1f", CameraRot.X, CameraRot.Y, CameraRot.Z);
-			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 75), IM_COL32(200, 200, 100, 255), CameraInfoText);
-
-			sprintf_s(CameraInfoText, "FOV: %.1f | Aspect: %.2f", CameraFOV, CameraAspect);
-			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 95), IM_COL32(200, 200, 100, 255), CameraInfoText);
-
-			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 120), IM_COL32(150, 150, 150, 255), "RMB: Rotate | MMB: Pan");
-			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 140), IM_COL32(150, 150, 150, 255), "Wheel: Zoom | Q/W/E/R: Gizmo");
-			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 160), IM_COL32(150, 150, 150, 255), "F: Focus | Alt+G: Toggle Grid");
-			// Gizmo 모드 표시
-			if (ViewerGizmo)
-			{
-				const char* ModeText = ViewerGizmo->IsWorldMode() ? "Gizmo: WORLD" : "Gizmo: LOCAL";
-				const ImU32 ModeColor = ViewerGizmo->IsWorldMode() ? IM_COL32(255, 100, 100, 255) : IM_COL32(100, 255, 100, 255);
-				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 180), ModeColor, ModeText);
-				DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 200), IM_COL32(150, 150, 150, 255), "Ctrl+`: Toggle World/Local");
-			}
-		}
-		else
-		{
-			DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 50), IM_COL32(200, 200, 200, 255), "Camera: Not Available");
-		}
-	}
+	// 단축키 정보
+	DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 30), IM_COL32(150, 150, 150, 255), "RMB: Rotate | MMB: Pan");
+	DrawList->AddText(ImVec2(InfoPos.x + 10, InfoPos.y + 50), IM_COL32(150, 150, 150, 255), "Wheel: Zoom | Q/W/E/R: Gizmo");
 }
 
 /**
