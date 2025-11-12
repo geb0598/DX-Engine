@@ -749,6 +749,9 @@
     <ClCompile Include="Source\Optimization\Private\ViewVolumeCuller.cpp">
       <Filter>Source\Optimization\Private</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Actor\Private\SkeletalMeshActor.cpp" />
+    <ClCompile Include="Source\Render\UI\Widget\Private\SkeletalMeshComponentWidget.cpp" />
+    <ClCompile Include="Source\Render\UI\Widget\Private\ViewportToolbarWidgetBase.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Render\UI\Layout\Public\SplitterH.h">
@@ -1541,6 +1544,9 @@
     <ClInclude Include="Source\Optimization\Public\ViewVolumeCuller.h">
       <Filter>Source\Optimization\Public</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Actor\Public\SkeletalMeshActor.h" />
+    <ClInclude Include="Source\Render\UI\Widget\Public\SkeletalMeshComponentWidget.h" />
+    <ClInclude Include="Source\Render\UI\Widget\Public\ViewportToolbarWidgetBase.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Source\Render\UI\Widget">
