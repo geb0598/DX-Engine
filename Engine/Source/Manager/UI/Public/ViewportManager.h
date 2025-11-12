@@ -131,6 +131,23 @@ public:
     static constexpr float DEFAULT_ROTATION_SNAP_ANGLE = 10.0f;
 
     // ========================================
+    // Scale Snap Settings
+    // ========================================
+    bool IsScaleSnapEnabled() const { return bScaleSnapEnabled; }
+    void SetScaleSnapEnabled(bool bEnabled)
+    {
+        bScaleSnapEnabled = bEnabled;
+        UConfigManager::GetInstance().SetCachedScaleSnapEnabled(bEnabled);
+    }
+    float GetScaleSnapValue() const { return ScaleSnapValue; }
+    void SetScaleSnapValue(float InValue)
+    {
+        ScaleSnapValue = InValue;
+        UConfigManager::GetInstance().SetCachedScaleSnapValue(InValue);
+    }
+    static constexpr float DEFAULT_SCALE_SNAP_VALUE = 1.0f;
+
+    // ========================================
     // Splitter Management
     // ========================================
     void PersistSplitterRatios();
@@ -208,6 +225,12 @@ private:
     // ========================================
     bool bRotationSnapEnabled = true;
     float RotationSnapAngle = DEFAULT_ROTATION_SNAP_ANGLE;
+
+    // ========================================
+    // Scale Snap State
+    // ========================================
+    bool bScaleSnapEnabled = false;
+    float ScaleSnapValue = DEFAULT_SCALE_SNAP_VALUE;
 
     // ========================================
     // Animation State

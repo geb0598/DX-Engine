@@ -172,6 +172,7 @@ void USkeletalMeshViewerWindow::Initialize()
 	{
 		// 뷰어의 Gizmo는 ViewportManager 대신 자체 툴바 설정 사용
 		ViewerGizmo->SetUseCustomRotationSnap(true);
+		ViewerGizmo->SetUseCustomScaleSnap(true);
 		UE_LOG("SkeletalMeshViewerWindow: Gizmo 생성 및 초기 선택 완료");
 	}
 
@@ -1021,6 +1022,8 @@ void USkeletalMeshViewerWindow::RenderToViewportTexture()
 				{
 					ViewerGizmo->SetCustomRotationSnapEnabled(ToolbarWidget->IsRotationSnapEnabled());
 					ViewerGizmo->SetCustomRotationSnapAngle(ToolbarWidget->GetRotationSnapAngle());
+					ViewerGizmo->SetCustomScaleSnapEnabled(ToolbarWidget->IsScaleSnapEnabled());
+					ViewerGizmo->SetCustomScaleSnapValue(ToolbarWidget->GetScaleSnapValue());
 				}
 
 				ViewerGizmo->UpdateScale(Camera, D3DViewport);
@@ -1731,12 +1734,24 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 
 		// Scale
 		ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "Scale:");
+		ImGui::SameLine();
+		ImGui::Checkbox("Uniform", &bUniformBoneScale);
+
+		// 이전 스케일 값 저장 (Uniform 모드용)
+		static FVector PrevScale = TempTransform.Scale;
 
 		// Scale X
 		ImVec2 ScaleX = ImGui::GetCursorScreenPos();
 		ImGui::SetNextItemWidth(80.0f);
 		if (ImGui::DragFloat("##ScaleX", &TempTransform.Scale.X, 0.01f, 0.0f, 0.0f, "%.3f"))
 		{
+			if (bUniformBoneScale)
+			{
+				// Uniform: X축 변화 비율을 Y, Z축에도 적용 (언리얼 방식)
+				const float ScaleRatio = TempTransform.Scale.X / PrevScale.X;
+				TempTransform.Scale.Y = PrevScale.Y * ScaleRatio;
+				TempTransform.Scale.Z = PrevScale.Z * ScaleRatio;
+			}
 			bDirtyBoneTransforms = true;
 		}
 		ImVec2 SizeScaleX = ImGui::GetItemRectSize();
@@ -1749,6 +1764,13 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		ImGui::SetNextItemWidth(80.0f);
 		if (ImGui::DragFloat("##ScaleY", &TempTransform.Scale.Y, 0.01f, 0.0f, 0.0f, "%.3f"))
 		{
+			if (bUniformBoneScale)
+			{
+				// Uniform: Y축 변화 비율을 X, Z축에도 적용 (언리얼 방식)
+				const float ScaleRatio = TempTransform.Scale.Y / PrevScale.Y;
+				TempTransform.Scale.X = PrevScale.X * ScaleRatio;
+				TempTransform.Scale.Z = PrevScale.Z * ScaleRatio;
+			}
 			bDirtyBoneTransforms = true;
 		}
 		ImVec2 SizeScaleY = ImGui::GetItemRectSize();
@@ -1761,11 +1783,21 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 		ImGui::SetNextItemWidth(80.0f);
 		if (ImGui::DragFloat("##ScaleZ", &TempTransform.Scale.Z, 0.01f, 0.0f, 0.0f, "%.3f"))
 		{
+			if (bUniformBoneScale)
+			{
+				// Uniform: Z축 변화 비율을 X, Y축에도 적용 (언리얼 방식)
+				const float ScaleRatio = TempTransform.Scale.Z / PrevScale.Z;
+				TempTransform.Scale.X = PrevScale.X * ScaleRatio;
+				TempTransform.Scale.Y = PrevScale.Y * ScaleRatio;
+			}
 			bDirtyBoneTransforms = true;
 		}
 		ImVec2 SizeScaleZ = ImGui::GetItemRectSize();
 		DrawList->AddLine(ImVec2(ScaleZ.x + 5, ScaleZ.y + 2), ImVec2(ScaleZ.x + 5, ScaleZ.y + SizeScaleZ.y - 2),
 			IM_COL32(0, 0, 255, 255), 2.0f);
+
+		// 다음 프레임을 위해 현재 스케일 저장
+		PrevScale = TempTransform.Scale;
 
 		ImGui::PopStyleColor(3);
 

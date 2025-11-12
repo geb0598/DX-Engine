@@ -687,6 +687,31 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 			NewScale.Y = max(DragStartScale.Y * UniformScale, MIN_SCALE_VALUE);
 			NewScale.Z = max(DragStartScale.Z * UniformScale, MIN_SCALE_VALUE);
 
+			// 스냅 설정 가져오기 (Center는 모든 축에 동일하게 스냅)
+			bool bSnapEnabled = false;
+			float SnapValue = 1.0f;
+			if (bUseCustomScaleSnap)
+			{
+				bSnapEnabled = bCustomScaleSnapEnabled;
+				SnapValue = CustomScaleSnapValue;
+			}
+			else
+			{
+				bSnapEnabled = UViewportManager::GetInstance().IsScaleSnapEnabled();
+				SnapValue = UViewportManager::GetInstance().GetScaleSnapValue();
+			}
+
+			if (bSnapEnabled && SnapValue > 0.0001f)
+			{
+				NewScale.X = std::round(NewScale.X / SnapValue) * SnapValue;
+				NewScale.Y = std::round(NewScale.Y / SnapValue) * SnapValue;
+				NewScale.Z = std::round(NewScale.Z / SnapValue) * SnapValue;
+
+				NewScale.X = std::max(NewScale.X, MIN_SCALE_VALUE);
+				NewScale.Y = std::max(NewScale.Y, MIN_SCALE_VALUE);
+				NewScale.Z = std::max(NewScale.Z, MIN_SCALE_VALUE);
+			}
+
 			return NewScale;
 		}
 		return GetComponentScale();
@@ -725,30 +750,72 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 			const FVector DragStartScale = GetDragStartActorScale();
 			FVector NewScale = DragStartScale;
 
+			// 스냅 설정 가져오기
+			bool bSnapEnabled = false;
+			float SnapValue = 1.0f;
+			if (bUseCustomScaleSnap)
+			{
+				bSnapEnabled = bCustomScaleSnapEnabled;
+				SnapValue = CustomScaleSnapValue;
+			}
+			else
+			{
+				bSnapEnabled = UViewportManager::GetInstance().IsScaleSnapEnabled();
+				SnapValue = UViewportManager::GetInstance().GetScaleSnapValue();
+			}
+
 			// 평면의 두 축에 동일한 스케일 적용
+			bool bModifiedX = false, bModifiedY = false, bModifiedZ = false;
+
 			if (abs(Tangent1.X) > 0.5f)
 			{
 				NewScale.X = max(DragStartScale.X + ScaleDelta, MIN_SCALE_VALUE);
+				bModifiedX = true;
 			}
 			if (abs(Tangent1.Y) > 0.5f)
 			{
 				NewScale.Y = max(DragStartScale.Y + ScaleDelta, MIN_SCALE_VALUE);
+				bModifiedY = true;
 			}
 			if (abs(Tangent1.Z) > 0.5f)
 			{
 				NewScale.Z = max(DragStartScale.Z + ScaleDelta, MIN_SCALE_VALUE);
+				bModifiedZ = true;
 			}
 			if (abs(Tangent2.X) > 0.5f)
 			{
 				NewScale.X = max(DragStartScale.X + ScaleDelta, MIN_SCALE_VALUE);
+				bModifiedX = true;
 			}
 			if (abs(Tangent2.Y) > 0.5f)
 			{
 				NewScale.Y = max(DragStartScale.Y + ScaleDelta, MIN_SCALE_VALUE);
+				bModifiedY = true;
 			}
 			if (abs(Tangent2.Z) > 0.5f)
 			{
 				NewScale.Z = max(DragStartScale.Z + ScaleDelta, MIN_SCALE_VALUE);
+				bModifiedZ = true;
+			}
+
+			// 변경된 축만 스냅 적용
+			if (bSnapEnabled && SnapValue > 0.0001f)
+			{
+				if (bModifiedX)
+				{
+					NewScale.X = std::round(NewScale.X / SnapValue) * SnapValue;
+					NewScale.X = std::max(NewScale.X, MIN_SCALE_VALUE);
+				}
+				if (bModifiedY)
+				{
+					NewScale.Y = std::round(NewScale.Y / SnapValue) * SnapValue;
+					NewScale.Y = std::max(NewScale.Y, MIN_SCALE_VALUE);
+				}
+				if (bModifiedZ)
+				{
+					NewScale.Z = std::round(NewScale.Z / SnapValue) * SnapValue;
+					NewScale.Z = std::max(NewScale.Z, MIN_SCALE_VALUE);
+				}
 			}
 
 			return NewScale;
@@ -805,38 +872,54 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 		const float ScaleDelta = AxisDragDistance * ScaleSensitivity;
 
 		const FVector DragStartScale = GetDragStartActorScale();
-		FVector NewScale;
+		FVector NewScale = DragStartScale;
 
-		if (TargetComponent->IsUniformScale())
+		// 스냅 설정 가져오기
+		bool bSnapEnabled = false;
+		float SnapValue = 1.0f;
+		if (bUseCustomScaleSnap)
 		{
-			// Uniform Scale: 모든 축에 동일한 스케일 델타 적용
-			const float UniformDelta = ScaleDelta;
-			NewScale = DragStartScale + FVector(UniformDelta, UniformDelta, UniformDelta);
-
-			// 모든 축이 최소값 이상이 되도록 보장
-			NewScale.X = std::max(NewScale.X, MIN_SCALE_VALUE);
-			NewScale.Y = std::max(NewScale.Y, MIN_SCALE_VALUE);
-			NewScale.Z = std::max(NewScale.Z, MIN_SCALE_VALUE);
+			bSnapEnabled = bCustomScaleSnapEnabled;
+			SnapValue = CustomScaleSnapValue;
 		}
 		else
 		{
-			// Non-uniform Scale: 선택한 축에만 스케일 델타 적용
-			NewScale = DragStartScale;
+			bSnapEnabled = UViewportManager::GetInstance().IsScaleSnapEnabled();
+			SnapValue = UViewportManager::GetInstance().GetScaleSnapValue();
+		}
 
-			// X축 (1,0,0)
-			if (abs(CardinalAxis.X) > 0.5f)
+		// 기즈모는 uniform scale lock 상태와 무관하게 드래그한 축만 스케일
+		// X축 (1,0,0)
+		if (abs(CardinalAxis.X) > 0.5f)
+		{
+			NewScale.X = std::max(DragStartScale.X + ScaleDelta, MIN_SCALE_VALUE);
+			// 드래그한 축만 스냅 적용
+			if (bSnapEnabled && SnapValue > 0.0001f)
 			{
-				NewScale.X = std::max(DragStartScale.X + ScaleDelta, MIN_SCALE_VALUE);
+				NewScale.X = std::round(NewScale.X / SnapValue) * SnapValue;
+				NewScale.X = std::max(NewScale.X, MIN_SCALE_VALUE);
 			}
-			// Y축 (0,1,0)
-			else if (abs(CardinalAxis.Y) > 0.5f)
+		}
+		// Y축 (0,1,0)
+		else if (abs(CardinalAxis.Y) > 0.5f)
+		{
+			NewScale.Y = std::max(DragStartScale.Y + ScaleDelta, MIN_SCALE_VALUE);
+			// 드래그한 축만 스냅 적용
+			if (bSnapEnabled && SnapValue > 0.0001f)
 			{
-				NewScale.Y = std::max(DragStartScale.Y + ScaleDelta, MIN_SCALE_VALUE);
+				NewScale.Y = std::round(NewScale.Y / SnapValue) * SnapValue;
+				NewScale.Y = std::max(NewScale.Y, MIN_SCALE_VALUE);
 			}
-			// Z축 (0,0,1)
-			else if (abs(CardinalAxis.Z) > 0.5f)
+		}
+		// Z축 (0,0,1)
+		else if (abs(CardinalAxis.Z) > 0.5f)
+		{
+			NewScale.Z = std::max(DragStartScale.Z + ScaleDelta, MIN_SCALE_VALUE);
+			// 드래그한 축만 스냅 적용
+			if (bSnapEnabled && SnapValue > 0.0001f)
 			{
-				NewScale.Z = std::max(DragStartScale.Z + ScaleDelta, MIN_SCALE_VALUE);
+				NewScale.Z = std::round(NewScale.Z / SnapValue) * SnapValue;
+				NewScale.Z = std::max(NewScale.Z, MIN_SCALE_VALUE);
 			}
 		}
 

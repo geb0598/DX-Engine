@@ -135,6 +135,9 @@ private:
 	UTexture* IconWorldSpace = nullptr;
 	UTexture* IconLocalSpace = nullptr;
 
+	// Snap 아이콘들
+	UTexture* IconSnapScale = nullptr;
+
 	bool bIconsLoaded = false;
 
 	// Pilot Mode UI 헬퍼

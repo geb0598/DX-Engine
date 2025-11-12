@@ -183,6 +183,9 @@ private:
 
 	bool bShowAllBones = false;
 
+	// 본 스케일 설정
+	bool bUniformBoneScale = false;
+
 	// Preview World (EWorldType::EditorPreview)
 	UWorld* PreviewWorld = nullptr;
 

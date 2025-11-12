@@ -42,6 +42,13 @@ public:
 	float GetCachedRotationSnapAngle() const { return CachedRotationSnapAngle; }
 	void SetCachedRotationSnapAngle(float InAngle) { CachedRotationSnapAngle = InAngle; }
 
+	// Scale Snap Settings
+	bool GetCachedScaleSnapEnabled() const { return bCachedScaleSnapEnabled; }
+	void SetCachedScaleSnapEnabled(bool bEnabled) { bCachedScaleSnapEnabled = bEnabled; }
+
+	float GetCachedScaleSnapValue() const { return CachedScaleSnapValue; }
+	void SetCachedScaleSnapValue(float InValue) { CachedScaleSnapValue = InValue; }
+
 	// Gizmo Settings
 	EGizmoMode GetCachedGizmoMode() const { return CachedGizmoMode; }
 	void SetCachedGizmoMode(EGizmoMode InMode) { CachedGizmoMode = InMode; }
@@ -56,5 +63,7 @@ private:
 	float CachedSharedOrthoZoom = 500.0f;
 	bool bCachedRotationSnapEnabled = true;
 	float CachedRotationSnapAngle = 10.0f;
+	bool bCachedScaleSnapEnabled = false;
+	float CachedScaleSnapValue = 1.0f;
 	EGizmoMode CachedGizmoMode;
 };

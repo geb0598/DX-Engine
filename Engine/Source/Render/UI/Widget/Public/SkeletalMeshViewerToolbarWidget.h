@@ -59,6 +59,16 @@ public:
 	 */
 	float GetRotationSnapAngle() const { return RotationSnapAngle; }
 
+	/**
+	 * @brief Scale Snap 활성화 여부
+	 */
+	bool IsScaleSnapEnabled() const { return bScaleSnapEnabled; }
+
+	/**
+	 * @brief Scale Snap 값
+	 */
+	float GetScaleSnapValue() const { return ScaleSnapValue; }
+
 private:
 	// ========================================
 	// Rendering Functions
@@ -83,6 +93,11 @@ private:
 	 * @brief Rotation Snap 컨트롤 렌더링
 	 */
 	void RenderRotationSnapControls();
+
+	/**
+	 * @brief Scale Snap 컨트롤 렌더링
+	 */
+	void RenderScaleSnapControls();
 
 	/**
 	 * @brief View Type 버튼 렌더링 (Perspective/Orthographic)
@@ -134,6 +149,9 @@ private:
 	UTexture* IconWorldSpace = nullptr;
 	UTexture* IconLocalSpace = nullptr;
 
+	// Snap 아이콘들
+	UTexture* IconSnapScale = nullptr;
+
 	bool bIconsLoaded = false;
 
 	// Gizmo Mode 상태
@@ -143,4 +161,8 @@ private:
 	// Rotation Snap 상태
 	bool bRotationSnapEnabled = false;
 	float RotationSnapAngle = 10.0f;
+
+	// Scale Snap 상태
+	bool bScaleSnapEnabled = false;
+	float ScaleSnapValue = 1.0f;
 };

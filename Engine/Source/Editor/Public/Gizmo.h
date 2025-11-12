@@ -103,6 +103,14 @@ public:
 	bool IsCustomRotationSnapEnabled() const { return bCustomRotationSnapEnabled; }
 	float GetCustomRotationSnapAngle() const { return CustomRotationSnapAngle; }
 
+	// Scale Snap 설정 (뷰어용 독립 설정)
+	void SetUseCustomScaleSnap(bool bEnable) { bUseCustomScaleSnap = bEnable; }
+	void SetCustomScaleSnapEnabled(bool bEnable) { bCustomScaleSnapEnabled = bEnable; }
+	void SetCustomScaleSnapValue(float Value) { CustomScaleSnapValue = Value; }
+	bool ShouldUseCustomScaleSnap() const { return bUseCustomScaleSnap; }
+	bool IsCustomScaleSnapEnabled() const { return bCustomScaleSnapEnabled; }
+	float GetCustomScaleSnapValue() const { return CustomScaleSnapValue; }
+
 	// Pilot Mode 기즈모 고정 위치 & 본 뷰어 기즈모용
 	void SetFixedLocation(const FVector& InFixedLocation) { bUseFixedLocation = true; FixedLocation = InFixedLocation; }
 	void ClearFixedLocation() { bUseFixedLocation = false; }
@@ -255,6 +263,11 @@ private:
 	bool bUseCustomRotationSnap = false;      // true면 ViewportManager 대신 커스텀 설정 사용
 	bool bCustomRotationSnapEnabled = false;  // 커스텀 스냅 활성화 여부
 	float CustomRotationSnapAngle = 15.0f;    // 커스텀 스냅 각도
+
+	// Scale Snap 커스텀 설정 (뷰어용)
+	bool bUseCustomScaleSnap = false;         // true면 ViewportManager 대신 커스텀 설정 사용
+	bool bCustomScaleSnapEnabled = false;     // 커스텀 스냅 활성화 여부
+	float CustomScaleSnapValue = 1.0f;        // 커스텀 스냅 값
 
 	// 렌더 시 하이라이트 색상 계산 (상태 오염 방지)
 	FVector4 ColorFor(EGizmoDirection InAxis) const;
