@@ -220,37 +220,65 @@ void UAssetManager::LoadAllFbxMesh()
 	FFbxImporter::Configuration Config;
 	Config.bIsBinaryEnabled = true;
 
+	// 1. FBX 파일 순회 로드
 	for (const FName& FbxPath : FbxList)
 	{
-		// 통합 로더를 통해 자동으로 타입 판단 후 로드
-		UObject* LoadedMesh = FFbxManager::LoadFbxMesh(FbxPath, Config);
-
-		if (LoadedMesh)
+		UObject* LoadedObject = FFbxManager::LoadFbxMesh(FbxPath, Config);
+		if (!LoadedObject)
 		{
-			// UStaticMesh인지 USkeletalMesh인지 판단하여 적절한 캐시에 저장
-			if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(LoadedMesh))
+			UE_LOG_ERROR("FBX 로드 실패: %s", FbxPath.ToString().c_str());
+			continue;
+		}
+
+		// Static Mesh 타입이면 바로 등록
+		if (UStaticMesh* StaticMesh = Cast<UStaticMesh>(LoadedObject))
+		{
+			StaticMeshCache.Emplace(FbxPath, StaticMesh);
+			StaticMeshVertexBuffers.Emplace(FbxPath, CreateVertexBuffer(StaticMesh->GetVertices()));
+			StaticMeshIndexBuffers.Emplace(FbxPath, CreateIndexBuffer(StaticMesh->GetIndices()));
+
+			UE_LOG_SUCCESS("[UAssetManager] FBX StaticMesh 로드 완료: %s", FbxPath.ToString().c_str());
+		}
+		// Skeletal Mesh 타입이면 캐싱 + StaticMesh 캐싱 병행
+		else if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(LoadedObject))
+		{
+			AddSkeletalMeshToCache(FbxPath, SkeletalMesh);
+			UE_LOG_SUCCESS("[UAssetManager] FBX SkeletalMesh 로드 완료: %s", FbxPath.ToString().c_str());
+
+			// 내부 StaticMesh를 StaticMeshCache에도 등록 (스태틱 렌더링용)
+			if (UStaticMesh* InnerStaticMesh = SkeletalMesh->GetStaticMesh())
 			{
-				StaticMeshCache.Emplace(FbxPath, StaticMesh);
-				StaticMeshVertexBuffers.Emplace(FbxPath, this->CreateVertexBuffer(StaticMesh->GetVertices()));
-				StaticMeshIndexBuffers.Emplace(FbxPath, this->CreateIndexBuffer(StaticMesh->GetIndices()));
-				UE_LOG_SUCCESS("FBX Static Mesh 로드 성공: %s", FbxPath.ToString().c_str());
-			}
-			else if (USkeletalMesh* SkeletalMesh = Cast<USkeletalMesh>(LoadedMesh))
-			{
-				SkeletalMeshCache.Emplace(FbxPath, SkeletalMesh);
-				SkeletalMeshVertexBuffers.Emplace(FbxPath, this->CreateVertexBuffer(SkeletalMesh->GetVertices()));
-				SkeletalMeshIndexBuffers.Emplace(FbxPath, this->CreateIndexBuffer(SkeletalMesh->GetIndices()));
-				UE_LOG_SUCCESS("FBX Skeletal Mesh 로드 성공: %s", FbxPath.ToString().c_str());
+				StaticMeshCache.Emplace(FbxPath, InnerStaticMesh);
+				StaticMeshVertexBuffers.Emplace(FbxPath, CreateVertexBuffer(InnerStaticMesh->GetVertices()));
+				StaticMeshIndexBuffers.Emplace(FbxPath, CreateIndexBuffer(InnerStaticMesh->GetIndices()));
+
+				UE_LOG_SUCCESS("[UAssetManager] FBX SkeletalMesh → StaticMesh 캐싱 완료: %s", FbxPath.ToString().c_str());
 			}
 			else
 			{
-				UE_LOG_ERROR("FBX 메시 타입을 알 수 없습니다: %s", FbxPath.ToString().c_str());
+				UE_LOG_WARNING("[UAssetManager] SkeletalMesh에 StaticMesh 데이터가 없습니다: %s", FbxPath.ToString().c_str());
 			}
 		}
 		else
 		{
-			UE_LOG_ERROR("FBX 메시 로드 실패: %s", FbxPath.ToString().c_str());
+			UE_LOG_WARNING("[UAssetManager] 알 수 없는 FBX 타입: %s", FbxPath.ToString().c_str());
 		}
+	}
+
+	// 2. 스태틱 메시 AABB 계산 (스켈레탈 내부 메시 포함)
+	for (const auto& MeshPair : StaticMeshCache)
+	{
+		const FName& ObjPath = MeshPair.first;
+		UStaticMesh* StaticMesh = MeshPair.second;
+
+		if (!StaticMesh || !StaticMesh->IsValid())
+			continue;
+
+		const auto& Vertices = StaticMesh->GetVertices();
+		if (Vertices.IsEmpty())
+			continue;
+
+		StaticMeshAABBs[ObjPath] = CalculateAABB(Vertices);
 	}
 }
 
