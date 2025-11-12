@@ -186,6 +186,8 @@ private:
 	// 본 스케일 설정
 	bool bUniformBoneScale = false;
 
+	bool bShowAllBoneNames = false; // tree node에 모든 본 이름 표시 여부
+
 	// Lock/Unlock 아이콘
 	class UTexture* LockIcon = nullptr;
 	class UTexture* UnlockIcon = nullptr;

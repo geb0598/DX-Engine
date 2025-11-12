@@ -51,6 +51,7 @@ UObject* USkeletalMeshComponent::Duplicate()
 
 	SkeletalMeshComponent->SkinnedVertices.SetNum(SkinnedVertices.Num());
 	SkeletalMeshComponent->SkinningMatrices.SetNum(SkinningMatrices.Num());
+	SkeletalMeshComponent->InvTransSkinningMatrices.SetNum(SkinningMatrices.Num());
 
 	// VertexBuffer와 IndexBuffer는 새로 생성: CPU SKinning을 하므로.
 	UStaticMesh* StaticMesh = SkeletalMeshAsset->GetStaticMesh();
@@ -90,7 +91,7 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 	{
 		FString AssetPath;
 		FJsonSerializer::ReadString(InOutHandle, "SkeletalMeshAsset", AssetPath);
-		
+
 		if (!AssetPath.IsEmpty())
 		{
 			LoadSkeletalMeshAsset(AssetPath);
@@ -142,7 +143,7 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 			{
 				JSON& TransformJson = BoneTransformsArray[BoneIdx];
 				FTransform Transform;
-				
+
 				FVector Location;
 				FJsonSerializer::ReadVector(TransformJson, "Location", Location, FVector::Zero(), false);
 				Transform.Translation = Location;
@@ -275,6 +276,7 @@ void USkeletalMeshComponent::RefreshBoneTransformsCustom(const TArray<FTransform
 
 		/** 스키닝 행렬 = (모델 공간 -> 본 공간) * (본 공간 -> 포즈 모델 공간) */
 		SkinningMatrices[BoneIndex] = InvBindMatrices[BoneIndex] * EditableSpaceBases[BoneIndex].ToMatrixWithScale();
+		InvTransSkinningMatrices[BoneIndex] = SkinningMatrices[BoneIndex].Inverse().Transpose();
 	}
 
 	InbPoseDirty = false;
@@ -317,9 +319,9 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 		BoneSpaceTransforms = RefSkeleton.GetRawRefBonePose();
 		SkinnedVertices.SetNum(NumVertices);
 		SkinningMatrices.SetNum(NumBones);
+		InvTransSkinningMatrices.SetNum(NumVertices);
 		GetEditableComponentSpaceTransform().SetNum(NumBones);
 		GetEditableBoneVisibilityStates().SetNum(NumBones);
-		SkinningMatrices.SetNum(NumBones); // 임시
 
 		UStaticMesh* StaticMesh = SkeletalMeshAsset->GetStaticMesh();
 
@@ -341,6 +343,7 @@ void USkeletalMeshComponent::SetSkeletalMeshAsset(USkeletalMesh* NewMesh)
 		BoneSpaceTransforms.Empty();
 		SkinnedVertices.Empty();
 		SkinningMatrices.Empty();
+		InvTransSkinningMatrices.Empty();
 		GetEditableComponentSpaceTransform().Empty();
 		GetEditableBoneVisibilityStates().Empty();
 	}
@@ -433,7 +436,7 @@ void USkeletalMeshComponent::UpdateSkinnedVertices()
 			}
 
 			const FMatrix& FinalMatrix = SkinningMatrices[BoneIndex];
-			FMatrix FinalInvTransMatrix = FinalMatrix.Inverse().Transpose();
+			const FMatrix& FinalInvTransMatrix = InvTransSkinningMatrices[BoneIndex];
 
 			FinalPosition += FinalMatrix.TransformPosition(Vertex.Position) * Weight;
 			FinalNormal += FinalInvTransMatrix.TransformVector(Vertex.Normal) * Weight;

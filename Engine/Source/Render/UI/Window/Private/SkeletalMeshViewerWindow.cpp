@@ -709,6 +709,9 @@ void USkeletalMeshViewerWindow::RenderSkeletonTreePanel(const USkeletalMesh* InS
 
 	// 본 정보 표시
 	ImGui::Text("Total Bones: %d", InNumBones);
+	ImGui::SameLine();
+	ImGui::Checkbox("Show All Bone Names", &bShowAllBoneNames);
+
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
@@ -752,31 +755,6 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 
 	FString BoneName = BoneInfo.Name.ToString();
 
-	// 검색 필터 적용: 본인은 매칭되지 않지만 자식 본들 중에 매칭되는 것이 있는지 확인
-	if (bHasSearchFilter && !BoneName.Contains(SearchFilter))
-	{
-		// 자식 본들 중에 매칭되는 것이 있는지 확인
-		bool bHasMatchingChild = false;
-		for (int32 ChildIndex = 0; ChildIndex < BoneInfoArray.Num(); ++ChildIndex)
-		{
-			if (BoneInfoArray[ChildIndex].ParentIndex == BoneIndex)
-			{
-				FString ChildName = BoneInfoArray[ChildIndex].Name.ToString();
-				if (ChildName.Contains(SearchFilter))
-				{
-					bHasMatchingChild = true;
-					break;
-				}
-			}
-		}
-
-		// 본인도 매칭 안되고 자식도 매칭 안되면 렌더링 안함
-		if (!bHasMatchingChild)
-		{
-			return;
-		}
-	}
-
 	// 자식 본들 찾기
 	TArray<int32> ChildBoneIndices;
 	for (int32 ChildIndex = 0; ChildIndex < BoneInfoArray.Num(); ++ChildIndex)
@@ -790,17 +768,23 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 	// 트리 노드 플래그 설정
 	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
+	// 아래 조건 만족 시, 모든 노드를 기본으로 열림
+	if (bHasSearchFilter || bShowAllBoneNames)
+	{
+		NodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
+	}
+
 	// 자식이 없으면 Leaf 플래그 추가
 	if (ChildBoneIndices.IsEmpty())
 	{
 		NodeFlags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 	}
 
-	 // 선택 상태 표시
-	 if (SelectedBoneIndex == BoneIndex)
-	 {
-	     NodeFlags |= ImGuiTreeNodeFlags_Selected;
-	 }
+	// 선택 상태 표시
+	if (SelectedBoneIndex == BoneIndex)
+	{
+		NodeFlags |= ImGuiTreeNodeFlags_Selected;
+	}
 
 	// 검색 필터에 매칭되면 하이라이트
 	bool bIsMatching = false;
@@ -1924,13 +1908,6 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 	ImGui::PopStyleColor(3);
 
 	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::TextWrapped("추가 구현 예정:");
-	ImGui::BulletText("본 프로퍼티 편집");
-	ImGui::BulletText("애니메이션 프리뷰");
-	ImGui::BulletText("소켓 편집");
-	ImGui::BulletText("LOD 설정");
-
 
 	ImGui::Checkbox("Show All Bones", &bShowAllBones);
 
