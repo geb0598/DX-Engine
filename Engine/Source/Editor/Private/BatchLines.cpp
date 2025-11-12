@@ -856,7 +856,18 @@ void UBatchLines::RenderBonePyramidsForHitProxy(USkeletalMeshComponent* Skeletal
 	URenderer& Renderer = URenderer::GetInstance();
 	FHitProxyManager& HitProxyManager = FHitProxyManager::GetInstance();
 
-	// 각 본에 대해 HitProxy 생성 및 렌더링
+	// 본 정보를 저장할 구조체
+	struct FBoneRenderInfo
+	{
+		int32 BoneIndex;
+		int32 ParentIndex;
+		FVector ParentPos;
+		FVector CurrentPos;
+		float Distance;
+	};
+
+	// 모든 본 정보를 먼저 수집
+	TArray<FBoneRenderInfo> BoneInfos;
 	for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
 	{
 		int32 ParentIndex = RefSkeleton.GetRawParentIndex(BoneIndex);
@@ -879,16 +890,34 @@ void UBatchLines::RenderBonePyramidsForHitProxy(USkeletalMeshComponent* Skeletal
 			continue;
 		}
 
-		float BaseSize = Distance * BaseSizeRatio;
+		// 본 정보 저장
+		FBoneRenderInfo Info;
+		Info.BoneIndex = BoneIndex;
+		Info.ParentIndex = ParentIndex;
+		Info.ParentPos = ParentPos;
+		Info.CurrentPos = CurrentPos;
+		Info.Distance = Distance;
+		BoneInfos.Add(Info);
+	}
+
+	// 본 크기 순으로 정렬 (큰 본부터 작은 본 순으로) - 작은 본이 나중에 렌더링됨
+	BoneInfos.Sort([](const FBoneRenderInfo& A, const FBoneRenderInfo& B) {
+		return A.Distance > B.Distance;
+	});
+
+	// 정렬된 순서대로 본 렌더링
+	for (const FBoneRenderInfo& BoneInfo : BoneInfos)
+	{
+		float BaseSize = BoneInfo.Distance * BaseSizeRatio;
 
 		// HBone HitProxy 생성 및 ID 할당
-		HBone* BoneProxy = new HBone(BoneIndex, SkeletalMeshComponent, InvalidHitProxyId);
+		HBone* BoneProxy = new HBone(BoneInfo.BoneIndex, SkeletalMeshComponent, InvalidHitProxyId);
 		FHitProxyId BoneHitProxyId = HitProxyManager.AllocateHitProxyId(BoneProxy);
 
 		// 피라미드 지오메트리 생성 (Solid)
 		TArray<FVector> PyramidVertices;
 		TArray<uint32> PyramidIndices;
-		CreateSolidPyramid(ParentPos, CurrentPos, BaseSize,
+		CreateSolidPyramid(BoneInfo.ParentPos, BoneInfo.CurrentPos, BaseSize,
 			PyramidVertices, PyramidIndices, 0);
 
 		// 버퍼 생성 및 렌더링
