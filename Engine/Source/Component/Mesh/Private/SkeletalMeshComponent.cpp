@@ -16,7 +16,7 @@ USkeletalMeshComponent::USkeletalMeshComponent()
 	, bSkinningDirty(false)
 	, bNormalMapEnabled(false)
 {
-	FName DefaultFbxPath = "Data/DefaultSkeletalMesh.fbx";
+	FName DefaultFbxPath = "Data/DefaultSkeletalMesh3.fbx";
 	LoadSkeletalMeshAsset(DefaultFbxPath);
 }
 

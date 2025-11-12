@@ -99,8 +99,9 @@ bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxSta
 		return false;
 	}
 
-	// FBX Scene 임포트
-	FbxScene* Scene = ImportFbxScene(FilePath);
+	// FBX Scene 임포트 (원본 좌표계가 달랐는지 확인)
+	bool bReverseWinding = false;
+	FbxScene* Scene = ImportFbxScene(FilePath, true, &bReverseWinding);
 	if (!Scene) { return false; }
 
 	// Scene RAII 보장
@@ -125,7 +126,7 @@ bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxSta
 
 	ExtractVertices(Mesh, OutMeshInfo, Config);
 	ExtractMaterials(MeshNode, FilePath, OutMeshInfo);
-	ExtractGeometryData(Mesh, OutMeshInfo, Config);
+	ExtractGeometryData(Mesh, OutMeshInfo, Config, bReverseWinding);
 
 	if (Config.bIsBinaryEnabled)
 	{
@@ -140,7 +141,7 @@ bool FFbxImporter::LoadStaticMesh(const std::filesystem::path& FilePath, FFbxSta
 // 🔸 Private Helper Functions
 // ========================================
 
-FbxScene* FFbxImporter::ImportFbxScene(const std::filesystem::path& FilePath, bool bTriangulateScene)
+FbxScene* FFbxImporter::ImportFbxScene(const std::filesystem::path& FilePath, bool bTriangulateScene, bool* OutNeedsWindingReversal)
 {
 	FbxImporter* Importer = FbxImporter::Create(SdkManager, "");
 	if (!Importer->Initialize(FilePath.string().c_str(), -1, IoSettings))
@@ -154,7 +155,7 @@ FbxScene* FFbxImporter::ImportFbxScene(const std::filesystem::path& FilePath, bo
 	Importer->Import(Scene);
 	Importer->Destroy();
 
-	// FBX 파일의 원본 좌표계 확인 (디버그용)
+	// FBX 파일의 원본 좌표계 확인 (변환 전에 체크)
 	FbxAxisSystem SceneAxisSystem = Scene->GetGlobalSettings().GetAxisSystem();
 
 	int upSign, frontSign;
@@ -176,14 +177,23 @@ FbxScene* FFbxImporter::ImportFbxScene(const std::filesystem::path& FilePath, bo
 		FbxAxisSystem::eLeftHanded    // Left-handed
 	);
 
+	// 변환 전에 winding order 반전 필요 여부 판단
+	bool bNeedsReversal = false;
 	if (SceneAxisSystem != EngineAxisSystem)
 	{
+		bNeedsReversal = true;
 		UE_LOG("[FbxImporter] 엔진 좌표계로 변환 중... (Z-up, X-forward, LH)");
 		EngineAxisSystem.ConvertScene(Scene);
 	}
 	else
 	{
 		UE_LOG("[FbxImporter] 이미 엔진 좌표계와 일치합니다.");
+	}
+
+	// 호출자에게 winding order 반전 필요 여부 전달
+	if (OutNeedsWindingReversal)
+	{
+		*OutNeedsWindingReversal = bNeedsReversal;
 	}
 
 	// 모든 지오메트리를 삼각형으로 변환
@@ -326,10 +336,7 @@ std::filesystem::path FFbxImporter::ResolveTexturePath(
 	return {};
 }
 
-void FFbxImporter::ExtractGeometryData(
-	FbxMesh* Mesh,
-	FFbxStaticMeshInfo* OutMeshInfo,
-	const Configuration& Config)
+void FFbxImporter::ExtractGeometryData(FbxMesh* Mesh, FFbxStaticMeshInfo* OutMeshInfo, const Configuration& Config, bool bReverseWinding)
 {
 	// Material Mapping 정보 가져오기
 	FbxLayerElementMaterial* MaterialElement = Mesh->GetElementMaterial();
@@ -431,19 +438,42 @@ void FFbxImporter::ExtractGeometryData(
 			}
 
 			// UV 추출
-			if (ActiveUVSet)
+			if (Mesh->GetElementUVCount() > 0)
 			{
-				FbxVector2 UV;
-				bool bUnmapped = false;
-				if (Mesh->GetPolygonVertexUV(p, v, ActiveUVSet, UV, bUnmapped))
+				const FbxGeometryElementUV* ElementUV = Mesh->GetElementUV(0);
+				FbxGeometryElement::EMappingMode MappingMode = ElementUV->GetMappingMode();
+				FbxGeometryElement::EReferenceMode RefMode = ElementUV->GetReferenceMode();
+
+				int PolyVertexIndex = Mesh->GetPolygonVertex(p, v);
+				FVector2 UVConv(0, 0);
+
+				switch (MappingMode)
 				{
-					FVector2 UVConv(UV[0], 1.0f - UV[1]);
-					OutMeshInfo->TexCoordList.Add(UVConv);
-				}
-				else
+				case FbxGeometryElement::eByControlPoint:
 				{
-					OutMeshInfo->TexCoordList.Add(FVector2(0, 0));
+					int UVIndex = (RefMode == FbxGeometryElement::eIndexToDirect)
+						? ElementUV->GetIndexArray().GetAt(PolyVertexIndex)
+						: PolyVertexIndex;
+
+					FbxVector2 UV = ElementUV->GetDirectArray().GetAt(UVIndex);
+					UVConv = FVector2(UV[0], 1.0f - UV[1]);
 				}
+				break;
+
+				case FbxGeometryElement::eByPolygonVertex:
+				{
+					int UVIndex = Mesh->GetTextureUVIndex(p, v);
+					FbxVector2 UV = ElementUV->GetDirectArray().GetAt(UVIndex);
+					UVConv = FVector2(UV[0], 1.0f - UV[1]);
+				}
+				break;
+
+				default:
+					UVConv = FVector2(0, 0);
+					break;
+				}
+
+				OutMeshInfo->TexCoordList.Add(UVConv);
 			}
 			else
 			{
@@ -467,15 +497,23 @@ void FFbxImporter::ExtractGeometryData(
 	OutMeshInfo->Indices.Empty();
 	for (int i = 0; i < IndicesPerMaterial.Num(); ++i)
 	{
-		// Right-handed → Left-handed 변환시 Winding Order 뒤집기
-		// 삼각형 단위로 (0,1,2) → (2,1,0)으로 역순 변환
-		for (int j = 0; j < IndicesPerMaterial[i].Num(); j += 3)
+		if (bReverseWinding)
 		{
-			if (j + 2 < IndicesPerMaterial[i].Num())
+			for (int j = 0; j < IndicesPerMaterial[i].Num(); j += 3)
 			{
-				OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 2]);  // 2
-				OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 1]);  // 1
-				OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 0]);  // 0
+				if (j + 2 < IndicesPerMaterial[i].Num())
+				{
+					OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 2]);
+					OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 1]);
+					OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j + 0]);
+				}
+			}
+		}
+		else
+		{
+			for (int j = 0; j < IndicesPerMaterial[i].Num(); ++j)
+			{
+				OutMeshInfo->Indices.Add(IndicesPerMaterial[i][j]);
 			}
 		}
 	}
