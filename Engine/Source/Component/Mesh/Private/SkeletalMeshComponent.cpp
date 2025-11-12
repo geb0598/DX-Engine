@@ -455,6 +455,8 @@ void USkeletalMeshComponent::UpdateSkinnedVertices()
 		ResultVertex.Position = FinalPosition;
 		ResultVertex.Normal = FinalNormal;
 		ResultVertex.Tangent = FVector4(FinalTangent, Vertex.Tangent.W);
+		ResultVertex.Color = Vertex.Color;
+		ResultVertex.TexCoord = Vertex.TexCoord;
 	}
 
 	FRenderResourceFactory::UpdateVertexBufferData(VertexBuffer, SkinnedVertices);
