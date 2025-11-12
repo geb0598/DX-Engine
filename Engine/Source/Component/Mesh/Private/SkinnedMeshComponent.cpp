@@ -28,31 +28,40 @@ void USkinnedMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle
 	// 불러오기
 	if (bInIsLoading)
 	{
-		// BoneVisibilityStates 불러오기
-		JSON BoneVisibilityJson;
-		if (FJsonSerializer::ReadArray(InOutHandle, "BoneVisibilityStates", BoneVisibilityJson, nullptr, false))
+		// BoneVisibilityStates 불러오기 - Array 사용
+		JSON BoneVisibilityArray;
+		if (FJsonSerializer::ReadArray(InOutHandle, "BoneVisibilityStates", BoneVisibilityArray, nullptr, false))
 		{
 			BoneVisibilityStates.Empty();
-			for (size_t i = 0; i < BoneVisibilityJson.size(); ++i)
+			BoneVisibilityStates.Reserve(BoneVisibilityArray.size());
+
+			for (size_t i = 0; i < BoneVisibilityArray.size(); ++i)
 			{
-				int32 VisibilityState;
-				FJsonSerializer::ReadInt32(BoneVisibilityJson, std::to_string(i), VisibilityState, BVS_Visible, false);
-				BoneVisibilityStates.Add(static_cast<uint8>(VisibilityState));
+				const JSON& VisibilityStateJson = BoneVisibilityArray[i];
+				if (VisibilityStateJson.JSONType() == JSON::Class::Integral)
+				{
+					int32 VisibilityState = VisibilityStateJson.ToInt();
+					BoneVisibilityStates.Add(static_cast<uint8>(VisibilityState));
+				}
+				else
+				{
+					BoneVisibilityStates.Add(BVS_Visible);
+				}
 			}
 		}
 	}
 	// 저장
 	else
 	{
-		// BoneVisibilityStates 저장
+		// BoneVisibilityStates 저장 - Array 사용
 		if (BoneVisibilityStates.Num() > 0)
 		{
-			JSON BoneVisibilityJson = json::Object();
+			JSON BoneVisibilityArray = JSON::Make(JSON::Class::Array);
 			for (int32 i = 0; i < BoneVisibilityStates.Num(); ++i)
 			{
-				BoneVisibilityJson[std::to_string(i)] = static_cast<int32>(BoneVisibilityStates[i]);
+				BoneVisibilityArray.append(static_cast<int32>(BoneVisibilityStates[i]));
 			}
-			InOutHandle["BoneVisibilityStates"] = BoneVisibilityJson;
+			InOutHandle["BoneVisibilityStates"] = BoneVisibilityArray;
 		}
 	}
 }

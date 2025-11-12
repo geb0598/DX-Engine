@@ -130,14 +130,16 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 		// NormalMap 활성화 여부
 		FJsonSerializer::ReadBool(InOutHandle, "bNormalMapEnabled", bNormalMapEnabled, false);
 
-		// BoneSpaceTransforms 불러오기 (포즈 정보)
-		JSON BoneTransformsJson;
-		if (FJsonSerializer::ReadObject(InOutHandle, "BoneSpaceTransforms", BoneTransformsJson, nullptr, false))
+		// BoneSpaceTransforms 불러오기 (포즈 정보) - Array 사용
+		JSON BoneTransformsArray;
+		if (FJsonSerializer::ReadArray(InOutHandle, "BoneSpaceTransforms", BoneTransformsArray, nullptr, false))
 		{
 			BoneSpaceTransforms.Empty();
-			for (auto& Pair : BoneTransformsJson.ObjectRange())
+			BoneSpaceTransforms.Reserve(BoneTransformsArray.size());
+
+			for (size_t BoneIdx = 0; BoneIdx < BoneTransformsArray.size(); ++BoneIdx)
 			{
-				JSON& TransformJson = Pair.second;
+				JSON& TransformJson = BoneTransformsArray[BoneIdx];
 				FTransform Transform;
 				
 				// Location
@@ -145,17 +147,10 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 				FJsonSerializer::ReadVector(TransformJson, "Location", Location, FVector::Zero(), false);
 				Transform.Translation = Location;
 
-				// Rotation
-				JSON RotationJson;
-				if (FJsonSerializer::ReadObject(TransformJson, "Rotation", RotationJson, nullptr, false))
-				{
-					FQuaternion Rotation;
-					FJsonSerializer::ReadFloat(RotationJson, "X", Rotation.X, 0.0f, false);
-					FJsonSerializer::ReadFloat(RotationJson, "Y", Rotation.Y, 0.0f, false);
-					FJsonSerializer::ReadFloat(RotationJson, "Z", Rotation.Z, 0.0f, false);
-					FJsonSerializer::ReadFloat(RotationJson, "W", Rotation.W, 1.0f, false);
-					Transform.Rotation = Rotation;
-				}
+				// Rotation (Euler 각도로 저장됨)
+				FVector RotationEuler;
+				FJsonSerializer::ReadVector(TransformJson, "Rotation", RotationEuler, FVector::ZeroVector(), false);
+				Transform.Rotation = FQuaternion::FromEuler(RotationEuler);
 
 				// Scale
 				FVector Scale;
@@ -170,6 +165,9 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 				bPoseDirty = true;
 			}
 		}
+
+		RefreshBoneTransforms();
+		UpdateSkinnedVertices();
 	}
 	// 저장
 	else
@@ -198,10 +196,10 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 			// NormalMap 활성화 여부
 			InOutHandle["bNormalMapEnabled"] = bNormalMapEnabled;
 
-			// BoneSpaceTransforms 저장 (포즈 정보)
+			// BoneSpaceTransforms 저장 (포즈 정보) - Array 사용
 			if (BoneSpaceTransforms.Num() > 0)
 			{
-				JSON BoneTransformsJson = json::Object();
+				JSON BoneTransformsArray = JSON::Make(JSON::Class::Array);
 				for (int32 BoneIdx = 0; BoneIdx < BoneSpaceTransforms.Num(); ++BoneIdx)
 				{
 					const FTransform& Transform = BoneSpaceTransforms[BoneIdx];
@@ -210,21 +208,15 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
 					// Location
 					TransformJson["Location"] = FJsonSerializer::VectorToJson(Transform.Translation);
 
-					// Rotation
-					FQuaternion Rotation = Transform.Rotation;
-					JSON RotationJson = json::Object();
-					RotationJson["X"] = Rotation.X;
-					RotationJson["Y"] = Rotation.Y;
-					RotationJson["Z"] = Rotation.Z;
-					RotationJson["W"] = Rotation.W;
-					TransformJson["Rotation"] = RotationJson;
+					// Rotation (Euler 각도로 저장)
+					TransformJson["Rotation"] = FJsonSerializer::VectorToJson(Transform.Rotation.ToEuler());
 
 					// Scale
 					TransformJson["Scale"] = FJsonSerializer::VectorToJson(Transform.Scale);
 
-					BoneTransformsJson[std::to_string(BoneIdx)] = TransformJson;
+					BoneTransformsArray.append(TransformJson);
 				}
-				InOutHandle["BoneSpaceTransforms"] = BoneTransformsJson;
+				InOutHandle["BoneSpaceTransforms"] = BoneTransformsArray;
 			}
 		}
 	}
