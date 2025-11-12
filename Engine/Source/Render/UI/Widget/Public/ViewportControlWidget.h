@@ -131,6 +131,10 @@ private:
 	UTexture* IconRotate = nullptr;
 	UTexture* IconScale = nullptr;
 
+	// World/Local Space 아이콘들
+	UTexture* IconWorldSpace = nullptr;
+	UTexture* IconLocalSpace = nullptr;
+
 	bool bIconsLoaded = false;
 
 	// Pilot Mode UI 헬퍼
