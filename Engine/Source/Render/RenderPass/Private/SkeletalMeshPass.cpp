@@ -112,7 +112,36 @@ void FSkeletalMeshPass::Execute(FRenderingContext& Context)
 		for (const FMeshSection& Section : MeshAsset->Sections)
 		{
 			UMaterial* Material = MeshComp->GetMaterial(Section.MaterialSlot);
-			if (CurrentMaterial != Material) {
+			if (Material == nullptr)
+			{
+				UMaterial* DefaultMaterial = NewObject<UMaterial>();
+				DefaultMaterial->SetName("DefaultMaterial");
+
+				FMaterial MaterialData;
+				MaterialData.Name = "DefaultMaterial";
+				MaterialData.Kd = FVector(0.9f, 0.9f, 0.9f);
+				MaterialData.Ka = FVector(0.2f, 0.2f, 0.2f);
+				MaterialData.Ks = FVector(0.5f, 0.5f, 0.5f);
+				MaterialData.Ns = 32.0f;
+				MaterialData.D = 1.0f;
+
+				DefaultMaterial->SetMaterialData(MaterialData);
+
+				Material = DefaultMaterial;
+
+				FMaterialConstants MaterialConstants = {};
+				FVector AmbientColor = Material->GetAmbientColor(); MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);
+				FVector DiffuseColor = Material->GetDiffuseColor(); MaterialConstants.Kd = FVector4(DiffuseColor.X, DiffuseColor.Y, DiffuseColor.Z, 1.0f);
+				FVector SpecularColor = Material->GetSpecularColor(); MaterialConstants.Ks = FVector4(SpecularColor.X, SpecularColor.Y, SpecularColor.Z, 1.0f);
+				MaterialConstants.Ns = Material->GetSpecularExponent();
+				MaterialConstants.Ni = Material->GetRefractionIndex();
+				MaterialConstants.D = Material->GetDissolveFactor();
+				MaterialConstants.MaterialFlags = 0;
+
+				FRenderResourceFactory::UpdateConstantBufferData(ConstantBufferMaterial, MaterialConstants);
+				Pipeline->SetConstantBuffer(2, EShaderType::VS | EShaderType::PS, ConstantBufferMaterial);
+			}
+			else if (CurrentMaterial != Material) {
 				FMaterialConstants MaterialConstants = {};
 				FVector AmbientColor = Material->GetAmbientColor(); MaterialConstants.Ka = FVector4(AmbientColor.X, AmbientColor.Y, AmbientColor.Z, 1.0f);
 				FVector DiffuseColor = Material->GetDiffuseColor(); MaterialConstants.Kd = FVector4(DiffuseColor.X, DiffuseColor.Y, DiffuseColor.Z, 1.0f);
