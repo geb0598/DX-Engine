@@ -310,6 +310,53 @@ void UDirectionalLightComponentWidget::RenderWidget()
 
 			ImGui::Unindent();
 		}
+
+		/*
+		 * Light Shadow Map 출력 UI
+		 * 임시로 NormalSRV 출력
+		 */
+
+		ID3D11ShaderResourceView* ShadowSRV = URenderer::GetInstance().GetShadowMapPass()->GetShadowAtlas()->ShadowSRV.Get();
+		ImTextureID TextureID = (ImTextureID)ShadowSRV;
+
+		if (ShadowSRV)
+		{
+			// CSM (4)일 때만 Cascade SubFrustum Number 표시
+			if (CurrentProjectionMode == 4)
+			{
+				UCascadeManager& CascadeManager = UCascadeManager::GetInstance();
+				int splitNum = CascadeManager.GetSplitNum();
+
+				static int currentCascade = 0;
+				ImGui::Text("Cascade SubFrustum Number");
+				ImGui::SliderInt("##CascadeSlider", &currentCascade, 0, splitNum - 1);
+
+				ImVec2 imageSize(256, 256);
+				ImVec2 startPos(0.125f * currentCascade, 0.0f);
+				ImVec2 endPos = startPos + ImVec2(
+					1.0f / (8192.0f / DirectionalLightComponent->GetShadowResolutionScale()),
+					1.0f / (8192.0f / DirectionalLightComponent->GetShadowResolutionScale())
+					);
+
+				ImGui::Image(TextureID, imageSize, startPos, endPos);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("광원의 Shadow Map 출력");
+			}
+			else
+			{
+				// Uniform SM 또는 PSM일 때는 단일 Shadow Map만 표시
+				ImVec2 imageSize(256, 256);
+				ImVec2 startPos(0.0f, 0.0f);
+				ImVec2 endPos = startPos + ImVec2(
+					1.0f / (8192.0f / DirectionalLightComponent->GetShadowResolutionScale()),
+					1.0f / (8192.0f / DirectionalLightComponent->GetShadowResolutionScale())
+					);
+
+				ImGui::Image(TextureID, imageSize, startPos, endPos);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("광원의 Shadow Map 출력");
+			}
+		}
     }
 
     if (ImGui::Button("Override Camera With Light's Perspective"))
@@ -327,35 +374,6 @@ void UDirectionalLightComponentWidget::RenderWidget()
     if (ImGui::IsItemHovered())
     {
         ImGui::SetTooltip("카메라의 시점을 광원의 시점으로 변경\n");
-    }
-
-    /*
-     * Light Shadow Map 출력 UI
-     * 임시로 NormalSRV 출력
-     */
-
-    ID3D11ShaderResourceView* ShadowSRV = URenderer::GetInstance().GetShadowMapPass()->GetShadowAtlas()->ShadowSRV.Get();
-    ImTextureID TextureID = (ImTextureID)ShadowSRV;
-
-    if (ShadowSRV)
-    {
-        UCascadeManager& CascadeManager = UCascadeManager::GetInstance();
-        int splitNum = CascadeManager.GetSplitNum();
-
-        static int currentCascade = 0;
-        ImGui::Text("Cascade SubFrustum Number");
-        ImGui::SliderInt("##CascadeSlider", &currentCascade, 0, splitNum - 1);
-
-        ImVec2 imageSize(256, 256);
-        ImVec2 startPos(0.125f * currentCascade, 0.0f);
-        ImVec2 endPos = startPos + ImVec2(
-            1.0f / (8192.0f / DirectionalLightComponent->GetShadowResolutionScale()),
-            1.0f / (8192.0f / DirectionalLightComponent->GetShadowResolutionScale())
-            );
-
-        ImGui::Image(TextureID, imageSize, startPos, endPos);
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("광원의 Shadow Map 출력");
     }
     
     ImGui::PopStyleColor(3);
