@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #include "MeshComponent.h"
 #include "Runtime/Engine/Public/ReferenceSkeleton.h"
@@ -136,7 +136,9 @@ protected:
 
 private:
 	/**
-	 * 메쉬를 렌더링하기 위해 매 프레임 업데이트하는 컴포넌트-공간 본 행렬의 임시 배열
+	 * @brief 메쉬를 렌더링하기 위해 매 프레임 업데이트하는 컴포넌트-공간 본 행렬의 임시 배열.
+	 * 
+	 * 루트부터 해당 본까지의 모든 부모 본들의 Transform을 곱하여 계산된다.
 	 * @note 언리얼 엔진에서는 더블 버퍼링을 수행하지만 여기서는 하나의 버퍼만 활용한다.
 	 */
 	TArray<FTransform> ComponentSpaceTransformArray;

@@ -73,13 +73,6 @@ UGizmo::~UGizmo() = default;
 
 void UGizmo::UpdateScale(const UCamera* InCamera, const D3D11_VIEWPORT& InViewport)
 {
-	// TargetComponent가 이미 설정되어 있지 않으면 GEditor에서 가져오기
-	// (뷰어 같은 곳에서는 SetSelectedComponent로 직접 설정됨)
-	if (!TargetComponent)
-	{
-		TargetComponent = Cast<USceneComponent>(GEditor->GetEditorModule()->GetSelectedComponent());
-	}
-
 	if (!InCamera)
 	{
 		return;
@@ -92,15 +85,25 @@ void UGizmo::UpdateScale(const UCamera* InCamera, const D3D11_VIEWPORT& InViewpo
 		// 본 선택 시: 고정 위치 사용
 		GizmoLocation = FixedLocation;
 	}
-	else if (TargetComponent)
-	{
-		// 컴포넌트 선택 시: TargetComponent 위치 사용
-		GizmoLocation = TargetComponent->GetWorldLocation();
-	}
 	else
 	{
-		// 아무것도 선택되지 않음
-		return;
+		// TargetComponent가 이미 설정되어 있지 않으면 GEditor에서 가져오기
+		// (뷰어 같은 곳에서는 SetSelectedComponent로 직접 설정됨)
+		if (!TargetComponent)
+		{
+			TargetComponent = Cast<USceneComponent>(GEditor->GetEditorModule()->GetSelectedComponent());
+		}
+
+		if (TargetComponent)
+		{
+			// 컴포넌트 선택 시: TargetComponent 위치 사용
+			GizmoLocation = TargetComponent->GetWorldLocation();
+		}
+		else
+		{
+			// 아무것도 선택되지 않음
+			return;
+		}
 	}
 
 	// 스크린에서 균일한 사이즈를 가지도록 하기 위한 스케일 조정

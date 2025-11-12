@@ -77,11 +77,18 @@ protected:
 	/**
 	 * @brief Render3DViewportPanel의 세부 함수들 (리팩토링)
 	 */
+
+	/** @brief 툴바 업데이트 및 기즈모 동기화 처리 */
 	void UpdateToolbarAndGizmoSync();
+	/** @brief 뷰포트 크기 변경 시 렌더 타겟 업데이트 */
 	void UpdateViewportRenderTarget(uint32 NewWidth, uint32 NewHeight);
+	/** @brief 뷰포트 렌더 타겟에 3D 씬 렌더링 */
 	void RenderToViewportTexture();
+	/** @brief 뷰포트 이미지 표시 및 정보 오버레이 렌더링 */
 	void DisplayViewportImage(const ImVec2& ViewportSize);
+	/** @brief 뷰포트 입력 처리 (키보드, 마우스, 기즈모, 카메라) */
 	void ProcessViewportInput(bool bViewerHasFocus, const ImVec2& ViewportWindowPos);
+
 
 	/**
 	 * @brief 우측 패널: Edit Tools 영역 렌더링 (Placeholder)

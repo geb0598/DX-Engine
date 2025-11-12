@@ -103,7 +103,7 @@ public:
 	bool IsCustomRotationSnapEnabled() const { return bCustomRotationSnapEnabled; }
 	float GetCustomRotationSnapAngle() const { return CustomRotationSnapAngle; }
 
-	// Pilot Mode 기즈모 고정 위치
+	// Pilot Mode 기즈모 고정 위치 & 본 뷰어 기즈모용
 	void SetFixedLocation(const FVector& InFixedLocation) { bUseFixedLocation = true; FixedLocation = InFixedLocation; }
 	void ClearFixedLocation() { bUseFixedLocation = false; }
 	bool IsFixedLocation() const { return bUseFixedLocation; }
@@ -247,7 +247,7 @@ private:
 	FVector2 DragStartScreenPos;      // 드래그 시작 시 스크린 좌표
 	FVector2 PreviousScreenPos;       // 이전 프레임 스크린 좌표
 
-	// Pilot Mode 고정 위치
+	// Pilot Mode 고정 위치 & 본 뷰어 기즈모용
 	bool bUseFixedLocation = false;
 	FVector FixedLocation;
 

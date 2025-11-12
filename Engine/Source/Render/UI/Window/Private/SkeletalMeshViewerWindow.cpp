@@ -1333,66 +1333,66 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 
 				switch (ViewerGizmo->GetGizmoMode())
 				{
-				case EGizmoMode::Translate:
-				{
-					// 기즈모로부터 월드 좌표 얻기
-					FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
+					case EGizmoMode::Translate:
+					{
+						// 기즈모로부터 월드 좌표 얻기
+						FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
 
-					// 월드 좌표 → 본 로컬 좌표 변환
-					FVector BoneLocalLocation = WorldToLocalBoneTranslation(SelectedBoneIndex, GizmoDragLocation);
+						// 월드 좌표 → 본 로컬 좌표 변환
+						FVector BoneLocalLocation = WorldToLocalBoneTranslation(SelectedBoneIndex, GizmoDragLocation);
 
-					// 본 로컬 트랜스폼 업데이트
-					BoneLocalTransform.Translation = BoneLocalLocation;
+						// 본 로컬 트랜스폼 업데이트
+						BoneLocalTransform.Translation = BoneLocalLocation;
 
-					// SkeletalMeshComponent에 적용
-					SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, BoneLocalTransform);
+						// SkeletalMeshComponent에 적용
+						SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, BoneLocalTransform);
 
-					// 기즈모 위치 업데이트 (다음 프레임을 위해)
-					ViewerGizmo->SetFixedLocation(GizmoDragLocation);
-					break;
-				}
-				case EGizmoMode::Rotate:
-				{
-					// 뷰어의 ViewportRect 생성
-					FRect ViewportRect;
-					ViewportRect.Left = static_cast<uint32>(ViewportWindowPos.x);
-					ViewportRect.Top = static_cast<uint32>(ViewportWindowPos.y);
-					ViewportRect.Width = ViewerWidth;
-					ViewportRect.Height = ViewerHeight;
+						// 기즈모 위치 업데이트 (다음 프레임을 위해)
+						ViewerGizmo->SetFixedLocation(GizmoDragLocation);
+						break;
+					}
+					case EGizmoMode::Rotate:
+					{
+						// 뷰어의 ViewportRect 생성
+						FRect ViewportRect;
+						ViewportRect.Left = static_cast<uint32>(ViewportWindowPos.x);
+						ViewportRect.Top = static_cast<uint32>(ViewportWindowPos.y);
+						ViewportRect.Width = ViewerWidth;
+						ViewportRect.Height = ViewerHeight;
 
-					// 기즈모로부터 월드 회전 얻기
-					FQuaternion GizmoDragRotation = FGizmoHelper::ProcessDragRotation(ViewerGizmo, Camera, WorldRay, ViewportRect, true);
+						// 기즈모로부터 월드 회전 얻기
+						FQuaternion GizmoDragRotation = FGizmoHelper::ProcessDragRotation(ViewerGizmo, Camera, WorldRay, ViewportRect, true);
 
-					// 월드 회전 → 본 로컬 회전 변환
-					FQuaternion BoneLocalRotation = WorldToLocalBoneRotation(SelectedBoneIndex, GizmoDragRotation);
+						// 월드 회전 → 본 로컬 회전 변환
+						FQuaternion BoneLocalRotation = WorldToLocalBoneRotation(SelectedBoneIndex, GizmoDragRotation);
 
-					// 본 로컬 트랜스폼 업데이트
-					BoneLocalTransform.Rotation = BoneLocalRotation;
+						// 본 로컬 트랜스폼 업데이트
+						BoneLocalTransform.Rotation = BoneLocalRotation;
 
-					// SkeletalMeshComponent에 적용
-					SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, BoneLocalTransform);
+						// SkeletalMeshComponent에 적용
+						SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, BoneLocalTransform);
 
-					// 기즈모 위치는 그대로 유지 (회전 시 위치는 변하지 않음)
-					FVector BoneWorldLocation = GetBoneWorldLocation(SelectedBoneIndex);
-					ViewerGizmo->SetFixedLocation(BoneWorldLocation);
-					break;
-				}
-				case EGizmoMode::Scale:
-				{
-					// 기즈모로부터 스케일 얻기
-					FVector GizmoDragScale = FGizmoHelper::ProcessDragScale(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
+						// 기즈모 위치는 그대로 유지 (회전 시 위치는 변하지 않음)
+						FVector BoneWorldLocation = GetBoneWorldLocation(SelectedBoneIndex);
+						ViewerGizmo->SetFixedLocation(BoneWorldLocation);
+						break;
+					}
+					case EGizmoMode::Scale:
+					{
+						// 기즈모로부터 스케일 얻기
+						FVector GizmoDragScale = FGizmoHelper::ProcessDragScale(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
 
-					// 스케일은 로컬 스케일을 직접 사용 (월드→로컬 변환 불필요)
-					BoneLocalTransform.Scale = GizmoDragScale;
+						// 스케일은 로컬 스케일을 직접 사용 (월드→로컬 변환 불필요)
+						BoneLocalTransform.Scale = GizmoDragScale;
 
-					// SkeletalMeshComponent에 적용
-					SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, BoneLocalTransform);
+						// SkeletalMeshComponent에 적용
+						SkeletalMeshComponent->SetBoneTransformLocal(SelectedBoneIndex, BoneLocalTransform);
 
-					// 기즈모 위치는 그대로 유지
-					FVector BoneWorldLocation = GetBoneWorldLocation(SelectedBoneIndex);
-					ViewerGizmo->SetFixedLocation(BoneWorldLocation);
-					break;
-				}
+						// 기즈모 위치는 그대로 유지
+						FVector BoneWorldLocation = GetBoneWorldLocation(SelectedBoneIndex);
+						ViewerGizmo->SetFixedLocation(BoneWorldLocation);
+						break;
+					}
 				}
 			}
 			// 컴포넌트 선택 시: 기존 방식 (SceneComponent의 World Transform 수정)
