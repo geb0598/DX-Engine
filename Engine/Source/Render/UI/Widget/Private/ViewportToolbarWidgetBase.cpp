@@ -719,3 +719,154 @@ void UViewportToolbarWidgetBase::RenderViewModeButton(FViewportClient* Client, c
 		ImGui::SetTooltip("View Mode");
 	}
 }
+
+void UViewportToolbarWidgetBase::RenderViewTypeButton(FViewportClient* Client, const char** ViewTypeLabels, float ButtonWidth, bool bIsPilotMode, const char* PilotedActorName)
+{
+	if (!Client)
+	{
+		return;
+	}
+
+	EViewType CurrentViewType = Client->GetViewType();
+	int32 CurrentViewTypeIndex = static_cast<int32>(CurrentViewType);
+
+	UTexture* ViewTypeIcons[7] = { IconPerspective, IconTop, IconBottom, IconLeft, IconRight, IconFront, IconBack };
+	UTexture* CurrentViewTypeIcon = ViewTypeIcons[CurrentViewTypeIndex];
+
+	constexpr float ButtonHeight = 24.0f;
+	constexpr float IconSize = 16.0f;
+	constexpr float Padding = 4.0f;
+
+	// 파일럿 모드일 경우 액터 이름 표시, 아니면 ViewType 표시
+	const char* DisplayText = ViewTypeLabels[CurrentViewTypeIndex];
+	char TruncatedActorName[128] = "";
+
+	if (bIsPilotMode && PilotedActorName && strlen(PilotedActorName) > 0)
+	{
+		// 최대 표시 가능한 텍스트 폭 계산
+		const float MaxTextWidth = 250.0f - Padding - IconSize - Padding * 2;
+		const ImVec2 ActorNameSize = ImGui::CalcTextSize(PilotedActorName);
+
+		if (ActorNameSize.x > MaxTextWidth)
+		{
+			// 텍스트가 너무 길면 "..." 축약
+			size_t Len = strlen(PilotedActorName);
+			while (Len > 3)
+			{
+				snprintf(TruncatedActorName, sizeof(TruncatedActorName), "%.*s...", static_cast<int>(Len - 3), PilotedActorName);
+				ImVec2 TruncatedSize = ImGui::CalcTextSize(TruncatedActorName);
+				if (TruncatedSize.x <= MaxTextWidth)
+				{
+					break;
+				}
+				Len--;
+			}
+			DisplayText = TruncatedActorName;
+		}
+		else
+		{
+			DisplayText = PilotedActorName;
+		}
+	}
+
+	ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+	ImGui::InvisibleButton("##ViewTypeButton", ImVec2(ButtonWidth, ButtonHeight));
+	bool bClicked = ImGui::IsItemClicked();
+	bool bHovered = ImGui::IsItemHovered();
+
+	// 버튼 배경 (파일럿 모드면 강조 색상)
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	ImU32 BgColor;
+	ImU32 BorderColor;
+	ImU32 TextColor;
+
+	if (bIsPilotMode)
+	{
+		BgColor = bHovered ? IM_COL32(40, 60, 80, 255) : IM_COL32(30, 50, 70, 255);
+		if (ImGui::IsItemActive()) BgColor = IM_COL32(50, 70, 90, 255);
+		BorderColor = IM_COL32(100, 150, 200, 255);
+		TextColor = IM_COL32(180, 220, 255, 255);
+	}
+	else
+	{
+		BgColor = bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+		if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+		BorderColor = IM_COL32(96, 96, 96, 255);
+		TextColor = IM_COL32(220, 220, 220, 255);
+	}
+
+	DrawList->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + ButtonWidth, ButtonPos.y + ButtonHeight), BgColor, 4.0f);
+	DrawList->AddRect(ButtonPos, ImVec2(ButtonPos.x + ButtonWidth, ButtonPos.y + ButtonHeight), BorderColor, 4.0f);
+
+	// 아이콘
+	if (CurrentViewTypeIcon && CurrentViewTypeIcon->GetTextureSRV())
+	{
+		const ImVec2 IconPos = ImVec2(ButtonPos.x + Padding, ButtonPos.y + (ButtonHeight - IconSize) * 0.5f);
+		DrawList->AddImage(
+			CurrentViewTypeIcon->GetTextureSRV(),
+			IconPos,
+			ImVec2(IconPos.x + IconSize, IconPos.y + IconSize)
+		);
+	}
+
+	// 텍스트
+	const ImVec2 TextPos = ImVec2(ButtonPos.x + Padding + IconSize + Padding, ButtonPos.y + (ButtonHeight - ImGui::GetTextLineHeight()) * 0.5f);
+	DrawList->AddText(TextPos, TextColor, DisplayText);
+
+	if (bClicked)
+	{
+		ImGui::OpenPopup("##ViewTypeDropdown");
+	}
+
+	// ViewType 드롭다운
+	if (ImGui::BeginPopup("##ViewTypeDropdown"))
+	{
+		ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+
+		// 파일럿 모드 항목 (최상단, 선택된 상태로 표시)
+		if (bIsPilotMode && PilotedActorName && strlen(PilotedActorName) > 0)
+		{
+			if (IconPerspective && IconPerspective->GetTextureSRV())
+			{
+				ImGui::Image((ImTextureID)IconPerspective->GetTextureSRV(), ImVec2(16, 16));
+				ImGui::SameLine();
+			}
+
+			ImGui::MenuItem(PilotedActorName, nullptr, true, false); // 선택됨, 비활성화
+			ImGui::Separator();
+		}
+
+		// 일반 ViewType 항목들
+		for (int i = 0; i < 7; ++i)
+		{
+			if (ViewTypeIcons[i] && ViewTypeIcons[i]->GetTextureSRV())
+			{
+				ImGui::Image((ImTextureID)ViewTypeIcons[i]->GetTextureSRV(), ImVec2(16, 16));
+				ImGui::SameLine();
+			}
+
+			bool bIsCurrentViewType = (i == CurrentViewTypeIndex && !bIsPilotMode);
+			if (ImGui::MenuItem(ViewTypeLabels[i], nullptr, bIsCurrentViewType))
+			{
+				EViewType NewType = static_cast<EViewType>(i);
+				Client->SetViewType(NewType);
+
+				// Update camera type
+				if (UCamera* Camera = Client->GetCamera())
+				{
+					if (NewType == EViewType::Perspective)
+					{
+						Camera->SetCameraType(ECameraType::ECT_Perspective);
+					}
+					else
+					{
+						Camera->SetCameraType(ECameraType::ECT_Orthographic);
+					}
+				}
+			}
+		}
+
+		ImGui::PopStyleColor();
+		ImGui::EndPopup();
+	}
+}

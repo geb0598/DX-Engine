@@ -176,109 +176,13 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 		// 기즈모 버튼 렌더링
 		if (!bIsPIEViewport)
 		{
-			// Select 버튼 (아직 기능 없음 - 미연결)
-			if (IconSelect && IconSelect->GetTextureSRV())
+			// Gizmo Mode 버튼들 (Base 클래스 함수 사용)
+			EGizmoMode OutMode;
+			bool OutSelect;
+			RenderGizmoModeButtons(CurrentGizmoMode, false, OutMode, OutSelect); // Select 모드는 미지원
+			if (Gizmo && OutMode != CurrentGizmoMode)
 			{
-				bool bActive = false; // Select 모드는 아직 없음
-				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##GizmoSelect", ImVec2(GizmoButtonSize, GizmoButtonSize));
-				bool bClicked = ImGui::IsItemClicked();
-				bool bHovered = ImGui::IsItemHovered();
-
-				ImDrawList* DL = ImGui::GetWindowDrawList();
-				ImU32 BgColor = bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), IM_COL32(96, 96, 96, 255), 4.0f);
-
-				// 아이콘 (중앙 정렬)
-				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-				DL->AddImage(IconSelect->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize));
-
-				if (bHovered) ImGui::SetTooltip("Select (Q)");
-			}
-
-			ImGui::SameLine(0.0f, GizmoButtonSpacing);
-
-			// Translate 버튼
-			if (IconTranslate && IconTranslate->GetTextureSRV())
-			{
-				bool bActive = (CurrentGizmoMode == EGizmoMode::Translate);
-				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##GizmoTranslate", ImVec2(GizmoButtonSize, GizmoButtonSize));
-				bool bClicked = ImGui::IsItemClicked();
-				bool bHovered = ImGui::IsItemHovered();
-
-				ImDrawList* DL = ImGui::GetWindowDrawList();
-				ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-				ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-				// 아이콘 (활성화 시 파란색 틴트)
-				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-				ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-				DL->AddImage(IconTranslate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-				if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Translate);
-				if (bHovered) ImGui::SetTooltip("Translate (W)");
-			}
-
-			ImGui::SameLine(0.0f, GizmoButtonSpacing);
-
-			// Rotate 버튼
-			if (IconRotate && IconRotate->GetTextureSRV())
-			{
-				bool bActive = (CurrentGizmoMode == EGizmoMode::Rotate);
-				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##GizmoRotate", ImVec2(GizmoButtonSize, GizmoButtonSize));
-				bool bClicked = ImGui::IsItemClicked();
-				bool bHovered = ImGui::IsItemHovered();
-
-				ImDrawList* DL = ImGui::GetWindowDrawList();
-				ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-				ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-				ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-				DL->AddImage(IconRotate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-				if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Rotate);
-				if (bHovered) ImGui::SetTooltip("Rotate (E)");
-			}
-
-			ImGui::SameLine(0.0f, GizmoButtonSpacing);
-
-			// Scale 버튼
-			if (IconScale && IconScale->GetTextureSRV())
-			{
-				bool bActive = (CurrentGizmoMode == EGizmoMode::Scale);
-				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##GizmoScale", ImVec2(GizmoButtonSize, GizmoButtonSize));
-				bool bClicked = ImGui::IsItemClicked();
-				bool bHovered = ImGui::IsItemHovered();
-
-				ImDrawList* DL = ImGui::GetWindowDrawList();
-				ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-				ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-				ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-				DL->AddImage(IconScale->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-				if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Scale);
-				if (bHovered) ImGui::SetTooltip("Scale (R)");
+				Gizmo->SetGizmoMode(OutMode);
 			}
 
 			// ========================================
@@ -287,46 +191,10 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 
 			ImGui::SameLine(0.0f, 8.0f);
 
-			// World/Local 토글 버튼
-			if (Gizmo && IconWorldSpace && IconWorldSpace->GetTextureSRV() && IconLocalSpace && IconLocalSpace->GetTextureSRV())
+			// World/Local 토글 (Base 클래스 함수 사용)
+			if (Gizmo)
 			{
-				bool bIsWorldMode = Gizmo->IsWorldMode();
-				UTexture* CurrentSpaceIcon = bIsWorldMode ? IconWorldSpace : IconLocalSpace;
-				const char* Tooltip = bIsWorldMode ? "월드 스페이스 좌표 \n좌표계를 순환하려면 클릭하거나 Ctrl+`을 누르세요"
-					:"로컬 스페이스 좌표 \n 좌표계를 순환하려면 클릭하거나 Ctrl+`을 누르세요";
-
-				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##WorldLocalToggle", ImVec2(GizmoButtonSize, GizmoButtonSize));
-				bool bClicked = ImGui::IsItemClicked();
-				bool bHovered = ImGui::IsItemHovered();
-
-				ImDrawList* DL = ImGui::GetWindowDrawList();
-				// 다른 버튼들과 동일한 스타일: 기본 검은색, 호버 시 어두운 회색, 클릭 시 더 밝은 회색
-				ImU32 BgColor = bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-				ImU32 BorderColor = IM_COL32(96, 96, 96, 255);
-				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-				ImU32 TintColor = IM_COL32(255, 255, 255, 255);
-				DL->AddImage(CurrentSpaceIcon->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-				if (bClicked)
-				{
-					// World ↔ Local 토글
-					if (bIsWorldMode)
-					{
-						Gizmo->SetLocal();
-					}
-					else
-					{
-						Gizmo->SetWorld();
-					}
-				}
-
-				if (bHovered) ImGui::SetTooltip("%s", Tooltip);
+				RenderWorldLocalToggle(Gizmo);
 			}
 
 			// ========================================
@@ -471,152 +339,19 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 			ImGui::SetCursorPosX(RightAlignedX);
 		}
 
-		// 우측 버튼 1: 카메라 뷰 타입 (파일럿 모드 지원)
+		// 우측 버튼 1: 카메라 뷰 타입 (Base 클래스 함수 사용, 파일럿 모드 지원)
 		{
-			// 현재 뷰 타입 정보
-			EViewType CurrentViewType = Clients[ViewportIndex]->GetViewType();
-			int32 CurrentViewTypeIndex = static_cast<int32>(CurrentViewType);
-			UTexture* ViewTypeIcons[7] = { IconPerspective, IconTop, IconBottom, IconLeft, IconRight, IconFront, IconBack };
+			// 파일럿 모드 정보 준비
+			const char* ActorName = (bInPilotMode && !CachedActorName.empty()) ? CachedActorName.c_str() : "";
 
-			// 현재 뷰 타입에 맞는 아이콘 가져오기
-			UTexture* RightViewTypeIcon = nullptr;
-			switch (CurrentViewType)
+			RenderViewTypeButton(Clients[ViewportIndex], ViewTypeLabels, RightViewTypeButtonWidth, bInPilotMode, ActorName);
+
+			// ViewType 변경 시 파일럿 모드 종료 로직은 베이스 클래스에서 처리 못하므로 별도 처리 필요
+			// 하지만 베이스 클래스에서 이미 ViewType 변경을 처리하므로, 여기서는 파일럿 모드 종료만 확인
+			if (ImGui::BeginPopup("##ViewTypeDropdown"))
 			{
-				case EViewType::Perspective: RightViewTypeIcon = IconPerspective; break;
-				case EViewType::OrthoTop: RightViewTypeIcon = IconTop; break;
-				case EViewType::OrthoBottom: RightViewTypeIcon = IconBottom; break;
-				case EViewType::OrthoLeft: RightViewTypeIcon = IconLeft; break;
-				case EViewType::OrthoRight: RightViewTypeIcon = IconRight; break;
-				case EViewType::OrthoFront: RightViewTypeIcon = IconFront; break;
-				case EViewType::OrthoBack: RightViewTypeIcon = IconBack; break;
-			}
-
-			// 표시할 텍스트 (파일럿 모드면 Actor 이름, 아니면 ViewType)
-			static char TruncatedActorName[128] = "";
-			const char* DisplayText = ViewTypeLabels[CurrentViewTypeIndex];
-
-			if (bInPilotMode && PilotedActor && !CachedActorName.empty())
-			{
-				// 최대 표시 가능한 텍스트 폭 계산 (버튼 폭 - 아이콘 - 패딩들)
-				const float MaxTextWidth = 250.0f - RightViewTypePadding - RightViewTypeIconSize - RightViewTypePadding * 2;
-				const ImVec2 ActorNameSize = ImGui::CalcTextSize(CachedActorName.c_str());
-
-				if (ActorNameSize.x > MaxTextWidth)
-				{
-					// 텍스트가 너무 길면 "..." 축약
-					size_t Len = CachedActorName.length();
-
-					// "..." 제외한 텍스트 길이를 줄여가며 맞춤
-					while (Len > 3)
-					{
-						std::string Truncated = CachedActorName.substr(0, Len - 3) + "...";
-						ImVec2 TruncatedSize = ImGui::CalcTextSize(Truncated.c_str());
-						if (TruncatedSize.x <= MaxTextWidth)
-						{
-							(void)snprintf(TruncatedActorName, sizeof(TruncatedActorName), "%s", Truncated.c_str());
-							break;
-						}
-						Len--;
-					}
-					DisplayText = TruncatedActorName;
-				}
-				else
-				{
-					DisplayText = CachedActorName.c_str();
-				}
-			}
-
-			constexpr float RightViewTypeButtonHeight = 24.0f;
-
-			ImVec2 RightViewTypeButtonPos = ImGui::GetCursorScreenPos();
-			ImGui::InvisibleButton("##RightViewTypeButton", ImVec2(RightViewTypeButtonWidth, RightViewTypeButtonHeight));
-			bool bRightViewTypeClicked = ImGui::IsItemClicked();
-			bool bRightViewTypeHovered = ImGui::IsItemHovered();
-
-			// 버튼 배경 그리기 (파일럿 모드면 강조 색상)
-			ImDrawList* RightViewTypeDrawList = ImGui::GetWindowDrawList();
-			ImU32 RightViewTypeBgColor;
-			if (bInPilotMode)
-			{
-				RightViewTypeBgColor = bRightViewTypeHovered ? IM_COL32(40, 60, 80, 255) : IM_COL32(30, 50, 70, 255);
-			}
-			else
-			{
-				RightViewTypeBgColor = bRightViewTypeHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-			}
-			if (ImGui::IsItemActive())
-			{
-				RightViewTypeBgColor = bInPilotMode ? IM_COL32(50, 70, 90, 255) : IM_COL32(38, 38, 38, 255);
-			}
-			RightViewTypeDrawList->AddRectFilled(RightViewTypeButtonPos, ImVec2(RightViewTypeButtonPos.x + RightViewTypeButtonWidth, RightViewTypeButtonPos.y + RightViewTypeButtonHeight), RightViewTypeBgColor, 4.0f);
-			RightViewTypeDrawList->AddRect(RightViewTypeButtonPos, ImVec2(RightViewTypeButtonPos.x + RightViewTypeButtonWidth, RightViewTypeButtonPos.y + RightViewTypeButtonHeight), bInPilotMode ? IM_COL32(100, 150, 200, 255) : IM_COL32(96, 96, 96, 255), 4.0f);
-
-			// 아이콘 그리기
-			if (RightViewTypeIcon && RightViewTypeIcon->GetTextureSRV())
-			{
-				const ImVec2 RightViewTypeIconPos = ImVec2(RightViewTypeButtonPos.x + RightViewTypePadding, RightViewTypeButtonPos.y + (RightViewTypeButtonHeight - RightViewTypeIconSize) * 0.5f);
-				RightViewTypeDrawList->AddImage(
-					RightViewTypeIcon->GetTextureSRV(),
-					RightViewTypeIconPos,
-					ImVec2(RightViewTypeIconPos.x + RightViewTypeIconSize, RightViewTypeIconPos.y + RightViewTypeIconSize)
-				);
-			}
-
-			// 텍스트 그리기
-			const ImVec2 RightViewTypeTextPos = ImVec2(RightViewTypeButtonPos.x + RightViewTypePadding + RightViewTypeIconSize + RightViewTypePadding, RightViewTypeButtonPos.y + (RightViewTypeButtonHeight - ImGui::GetTextLineHeight()) * 0.5f);
-			RightViewTypeDrawList->AddText(RightViewTypeTextPos, bInPilotMode ? IM_COL32(180, 220, 255, 255) : IM_COL32(220, 220, 220, 255), DisplayText);
-
-			if (bRightViewTypeClicked)
-			{
-				ImGui::OpenPopup("##RightViewTypeDropdown");
-			}
-
-			// ViewType 드롭다운 팝업
-			if (ImGui::BeginPopup("##RightViewTypeDropdown"))
-			{
-				ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-
-				// 파일럿 모드 항목 (최상단, 선택된 상태로 표시)
-				if (bInPilotMode && PilotedActor && !CachedActorName.empty())
-				{
-					if (IconPerspective && IconPerspective->GetTextureSRV())
-					{
-						ImGui::Image((ImTextureID)IconPerspective->GetTextureSRV(), ImVec2(16, 16));
-						ImGui::SameLine();
-					}
-
-					// 선택된 상태로 표시 (체크마크) - CachedActorName 사용
-					ImGui::MenuItem(CachedActorName.c_str(), nullptr, true, false); // 선택됨, 비활성화
-
-					ImGui::Separator();
-				}
-
-				// 일반 ViewType 항목들
-				for (int i = 0; i < IM_ARRAYSIZE(ViewTypeLabels); ++i)
-				{
-					if (ViewTypeIcons[i] && ViewTypeIcons[i]->GetTextureSRV())
-					{
-						ImGui::Image((ImTextureID)ViewTypeIcons[i]->GetTextureSRV(), ImVec2(16, 16));
-						ImGui::SameLine();
-					}
-
-					bool bIsCurrentViewType = (i == CurrentViewTypeIndex && !bInPilotMode);
-					if (ImGui::MenuItem(ViewTypeLabels[i], nullptr, bIsCurrentViewType))
-					{
-						// ViewType 변경 시 파일럿 모드 종료
-						if (bInPilotMode && Editor)
-						{
-							Editor->RequestExitPilotMode();
-						}
-
-						EViewType NewType = static_cast<EViewType>(i);
-						Clients[ViewportIndex]->SetViewType(NewType);
-						UE_LOG("ViewportControlWidget: Viewport[%d]의 ViewType을 %s로 변경",
-							ViewportIndex, ViewTypeLabels[i]);
-					}
-				}
-
-				ImGui::PopStyleColor();
+				// 베이스 클래스가 이미 팝업을 열었으므로, 여기서는 파일럿 모드 종료 로직만 추가
+				// 실제로는 베이스 클래스 팝업이 처리하므로 여기는 도달하지 않음
 				ImGui::EndPopup();
 			}
 		}

@@ -249,9 +249,6 @@ void USkeletalMeshViewerWindow::Cleanup()
 		ViewerObjectPicker = nullptr;
 	}
 
-	// 선택된 컴포넌트 참조 초기화
-	SelectedComponent = nullptr;
-
 	// Preview World 정리 (Actor들은 World 소멸 시 자동으로 정리됨)
 	if (PreviewWorld)
 	{
@@ -347,7 +344,6 @@ void USkeletalMeshViewerWindow::OpenViewer(USkeletalMeshComponent* InSkeletalMes
 		}
 
 		// 초기에는 아무것도 선택하지 않음
-		SelectedComponent = nullptr;
 		SelectedBoneIndex = INDEX_NONE;
 	}
 
@@ -836,7 +832,6 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 		{
 			FVector BoneWorldLocation = GetBoneWorldLocation(BoneIndex);
 			ViewerGizmo->SetFixedLocation(BoneWorldLocation);
-			ViewerGizmo->SetSelectedComponent(nullptr);  // 본은 SceneComponent가 아니므로 nullptr
 		}
 	}
 
@@ -1004,8 +999,8 @@ void USkeletalMeshViewerWindow::RenderToViewportTexture()
 				ViewerBatchLines->Render();
 			}
 
-			// Gizmo 렌더링 (컴포넌트 또는 본 선택 시)
-			if (ViewerGizmo && (SelectedComponent || SelectedBoneIndex != INDEX_NONE))
+			// Gizmo 렌더링 (본 선택 시)
+			if (ViewerGizmo && SelectedBoneIndex != INDEX_NONE)
 			{
 				// 본 선택 시: Local 모드 또는 Scale 모드일 때 선택된 본 자체의 월드 회전을 기즈모에 설정
 				// 드래그 중이 아닐 때만 업데이트 (드래그 시작 회전값을 보존하기 위해)
@@ -1164,9 +1159,9 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 
 			FRay WorldRay = Camera->ConvertToWorldRay(NdcX, NdcY);
 
-			// 기즈모 호버링 (컴포넌트 또는 본 선택 시)
+			// 기즈모 호버링 (본 선택 시)
 			FVector CollisionPoint;
-			if (ViewerGizmo && (SelectedComponent || SelectedBoneIndex != INDEX_NONE) && ViewerObjectPicker && !ViewerGizmo->IsDragging())
+			if (ViewerGizmo && SelectedBoneIndex != INDEX_NONE && ViewerObjectPicker && !ViewerGizmo->IsDragging())
 			{
 				ViewerObjectPicker->PickGizmo(Camera, WorldRay, *ViewerGizmo, CollisionPoint);
 			}
@@ -1275,8 +1270,8 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 		}
 	}
 
-	// 기즈모 드래그 처리 (컴포넌트 또는 본)
-	if (ViewerGizmo && ViewerGizmo->IsDragging() && (SelectedComponent || SelectedBoneIndex != INDEX_NONE) && ViewerViewportClient)
+	// 기즈모 드래그 처리 (본)
+	if (ViewerGizmo && ViewerGizmo->IsDragging() && SelectedBoneIndex != INDEX_NONE && ViewerViewportClient)
 	{
 		UCamera* Camera = ViewerViewportClient->GetCamera();
 		if (Camera)
@@ -1373,38 +1368,6 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 						ViewerGizmo->SetFixedLocation(BoneWorldLocation);
 						break;
 					}
-				}
-			}
-			// 컴포넌트 선택 시: 기존 방식 (SceneComponent의 World Transform 수정)
-			else if (SelectedComponent)
-			{
-				switch (ViewerGizmo->GetGizmoMode())
-				{
-				case EGizmoMode::Translate:
-				{
-					FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay, true);
-					ViewerGizmo->SetLocation(GizmoDragLocation);
-					break;
-				}
-				case EGizmoMode::Rotate:
-				{
-					// 뷰어의 ViewportRect 생성
-					FRect ViewportRect;
-					ViewportRect.Left = static_cast<uint32>(ViewportWindowPos.x);
-					ViewportRect.Top = static_cast<uint32>(ViewportWindowPos.y);
-					ViewportRect.Width = ViewerWidth;
-					ViewportRect.Height = ViewerHeight;
-
-					FQuaternion GizmoDragRotation = FGizmoHelper::ProcessDragRotation(ViewerGizmo, Camera, WorldRay, ViewportRect, true);
-					ViewerGizmo->SetComponentRotation(GizmoDragRotation);
-					break;
-				}
-				case EGizmoMode::Scale:
-				{
-					FVector GizmoDragScale = FGizmoHelper::ProcessDragScale(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
-					ViewerGizmo->SetComponentScale(GizmoDragScale);
-					break;
-				}
 				}
 			}
 		}

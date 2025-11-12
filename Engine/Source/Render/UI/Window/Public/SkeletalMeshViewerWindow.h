@@ -204,9 +204,6 @@ private:
 	UGizmo* ViewerGizmo = nullptr;
 	UObjectPicker* ViewerObjectPicker = nullptr;
 
-	// 선택된 컴포넌트 (기즈모 타겟)
-	class USceneComponent* SelectedComponent = nullptr;
-
 public:
 	// 그리드 설정 접근자
 	float GetGridCellSize() const { return GridCellSize; }

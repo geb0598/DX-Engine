@@ -190,82 +190,8 @@ void USkeletalMeshViewerToolbarWidget::RenderWidget()
 		ImGui::SetCursorPosX(RightAlignedX);
 	}
 
-	// 우측 버튼 1: ViewType
-	{
-		UTexture* ViewTypeIcons[7] = { IconPerspective, IconTop, IconBottom, IconLeft, IconRight, IconFront, IconBack };
-		UTexture* RightViewTypeIcon = ViewTypeIcons[CurrentViewTypeIndex];
-
-		constexpr float RightViewTypeButtonHeight = 24.0f;
-
-		ImVec2 RightViewTypeButtonPos = ImGui::GetCursorScreenPos();
-		ImGui::InvisibleButton("##RightViewTypeButton", ImVec2(RightViewTypeButtonWidthDefault, RightViewTypeButtonHeight));
-		bool bRightViewTypeClicked = ImGui::IsItemClicked();
-		bool bRightViewTypeHovered = ImGui::IsItemHovered();
-
-		ImDrawList* RightViewTypeDrawList = ImGui::GetWindowDrawList();
-		ImU32 RightViewTypeBgColor = bRightViewTypeHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-		if (ImGui::IsItemActive())
-		{
-			RightViewTypeBgColor = IM_COL32(38, 38, 38, 255);
-		}
-		RightViewTypeDrawList->AddRectFilled(RightViewTypeButtonPos, ImVec2(RightViewTypeButtonPos.x + RightViewTypeButtonWidthDefault, RightViewTypeButtonPos.y + RightViewTypeButtonHeight), RightViewTypeBgColor, 4.0f);
-		RightViewTypeDrawList->AddRect(RightViewTypeButtonPos, ImVec2(RightViewTypeButtonPos.x + RightViewTypeButtonWidthDefault, RightViewTypeButtonPos.y + RightViewTypeButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
-
-		// 아이콘
-		if (RightViewTypeIcon && RightViewTypeIcon->GetTextureSRV())
-		{
-			const ImVec2 RightViewTypeIconPos = ImVec2(RightViewTypeButtonPos.x + RightViewTypePadding, RightViewTypeButtonPos.y + (RightViewTypeButtonHeight - RightViewTypeIconSize) * 0.5f);
-			RightViewTypeDrawList->AddImage(
-				RightViewTypeIcon->GetTextureSRV(),
-				RightViewTypeIconPos,
-				ImVec2(RightViewTypeIconPos.x + RightViewTypeIconSize, RightViewTypeIconPos.y + RightViewTypeIconSize)
-			);
-		}
-
-		// 텍스트
-		const ImVec2 RightViewTypeTextPos = ImVec2(RightViewTypeButtonPos.x + RightViewTypePadding + RightViewTypeIconSize + RightViewTypePadding, RightViewTypeButtonPos.y + (RightViewTypeButtonHeight - ImGui::GetTextLineHeight()) * 0.5f);
-		RightViewTypeDrawList->AddText(RightViewTypeTextPos, IM_COL32(220, 220, 220, 255), ViewTypeLabels[CurrentViewTypeIndex]);
-
-		if (bRightViewTypeClicked)
-		{
-			ImGui::OpenPopup("##RightViewTypeDropdown");
-		}
-
-		// ViewType 드롭다운
-		if (ImGui::BeginPopup("##RightViewTypeDropdown"))
-		{
-			ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-
-			for (int i = 0; i < 7; ++i)
-			{
-				if (ViewTypeIcons[i] && ViewTypeIcons[i]->GetTextureSRV())
-				{
-					ImGui::Image((ImTextureID)ViewTypeIcons[i]->GetTextureSRV(), ImVec2(16, 16));
-					ImGui::SameLine();
-				}
-
-				bool bIsCurrentViewType = (i == CurrentViewTypeIndex);
-				if (ImGui::MenuItem(ViewTypeLabels[i], nullptr, bIsCurrentViewType))
-				{
-					EViewType NewType = static_cast<EViewType>(i);
-					ViewportClient->SetViewType(NewType);
-
-					// Update camera type
-					if (NewType == EViewType::Perspective)
-					{
-						Camera->SetCameraType(ECameraType::ECT_Perspective);
-					}
-					else
-					{
-						Camera->SetCameraType(ECameraType::ECT_Orthographic);
-					}
-				}
-			}
-
-			ImGui::PopStyleColor();
-			ImGui::EndPopup();
-		}
-	}
+	// 우측 버튼 1: ViewType (Base 클래스 함수 사용)
+	RenderViewTypeButton(ViewportClient, ViewTypeLabels, RightViewTypeButtonWidthDefault);
 
 	ImGui::SameLine(0.0f, RightButtonSpacing);
 
