@@ -619,32 +619,6 @@ void ULevelTabBarWidget::RenderWidget()
 
 			ImGui::EndPopup();
 		}
-
-		ToolbarVSeparator(10.0f, 6.0f, 6.0f, 1.0f, SeparatorColor, 5.0f);
-
-		// Grid Spacing 조절
-		ImGui::Text("Grid:");
-		ImGui::SameLine();
-		ImGui::SetNextItemWidth(100);
-
-		// 슬라이더 색상을 검은색으로 설정
-		ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));          // 배경
-		ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0.1f, 0.1f, 0.1f, 1.0f));  // 호버
-		ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0.15f, 0.15f, 0.15f, 1.0f)); // 액티브
-		ImGui::PushStyleColor(ImGuiCol_SliderGrab, ImVec4(0.3f, 0.3f, 0.3f, 1.0f));      // 그랩
-		ImGui::PushStyleColor(ImGuiCol_SliderGrabActive, ImVec4(0.4f, 0.4f, 0.4f, 1.0f)); // 그랩 액티브
-
-		if (BatchLine && ImGui::SliderFloat("##GridSpacing", &GridCellSize, 0.1f, 10.0f, "%.1f"))
-		{
-			BatchLine->UpdateUGridVertices(GridCellSize);
-		}
-
-		ImGui::PopStyleColor(5);
-
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip("Grid Spacing");
-		}
 	}
 	ImGui::End();
 

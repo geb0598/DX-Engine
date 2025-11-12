@@ -362,7 +362,7 @@ void UGizmo::CollectRotationAngleOverlay(FD2DOverlayManager& OverlayManager, UCa
 /**
  * @brief Translation 드래그 처리
  */
-FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPicker* InObjectPicker)
+FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPicker* InObjectPicker, bool bUseCustomSnap)
 {
 	if (!InCamera || !InObjectPicker)
 	{
@@ -371,6 +371,20 @@ FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPi
 
 	FVector MouseWorld;
 	FVector PlaneOrigin{ GetGizmoLocation() };
+
+	// Snap 설정 결정: 커스텀 또는 ViewportManager
+	bool bSnapEnabled = false;
+	float SnapValue = 10.0f;
+	if (bUseCustomSnap)
+	{
+		bSnapEnabled = bCustomLocationSnapEnabled;
+		SnapValue = CustomLocationSnapValue;
+	}
+	else
+	{
+		bSnapEnabled = UViewportManager::GetInstance().IsLocationSnapEnabled();
+		SnapValue = UViewportManager::GetInstance().GetLocationSnapValue();
+	}
 
 	// Center 구체 드래그 처리
 	// UE 기준 카메라 NDC 평면에 평행하게 이동
@@ -387,7 +401,17 @@ FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPi
 		{
 			// 드래그 시작점으로부터 이동 거리 계산
 			FVector MouseDelta = MouseWorld - GetDragStartMouseLocation();
-			return GetDragStartActorLocation() + MouseDelta;
+			FVector NewLocation = GetDragStartActorLocation() + MouseDelta;
+
+			// Location Snap 적용
+			if (bSnapEnabled && SnapValue > 0.0001f)
+			{
+				NewLocation.X = std::round(NewLocation.X / SnapValue) * SnapValue;
+				NewLocation.Y = std::round(NewLocation.Y / SnapValue) * SnapValue;
+				NewLocation.Z = std::round(NewLocation.Z / SnapValue) * SnapValue;
+			}
+
+			return NewLocation;
 		}
 		return GetGizmoLocation();
 	}
@@ -423,7 +447,17 @@ FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPi
 		{
 			// 드래그 시작점으로부터 이동 거리 계산
 			FVector MouseDelta = MouseWorld - GetDragStartMouseLocation();
-			return GetDragStartActorLocation() + MouseDelta;
+			FVector NewLocation = GetDragStartActorLocation() + MouseDelta;
+
+			// Location Snap 적용
+			if (bSnapEnabled && SnapValue > 0.0001f)
+			{
+				NewLocation.X = std::round(NewLocation.X / SnapValue) * SnapValue;
+				NewLocation.Y = std::round(NewLocation.Y / SnapValue) * SnapValue;
+				NewLocation.Z = std::round(NewLocation.Z / SnapValue) * SnapValue;
+			}
+
+			return NewLocation;
 		}
 		return GetGizmoLocation();
 	}
@@ -483,7 +517,17 @@ FVector UGizmo::ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, UObjectPi
 	if (InObjectPicker->IsRayCollideWithPlane(WorldRay, PlaneOrigin, PlaneNormal, MouseWorld))
 	{
 		FVector MouseDistance = MouseWorld - GetDragStartMouseLocation();
-		return GetDragStartActorLocation() + GizmoAxis * MouseDistance.Dot(GizmoAxis);
+		FVector NewLocation = GetDragStartActorLocation() + GizmoAxis * MouseDistance.Dot(GizmoAxis);
+
+		// Location Snap 적용
+		if (bSnapEnabled && SnapValue > 0.0001f)
+		{
+			NewLocation.X = std::round(NewLocation.X / SnapValue) * SnapValue;
+			NewLocation.Y = std::round(NewLocation.Y / SnapValue) * SnapValue;
+			NewLocation.Z = std::round(NewLocation.Z / SnapValue) * SnapValue;
+		}
+
+		return NewLocation;
 	}
 	return GetGizmoLocation();
 }
@@ -967,14 +1011,14 @@ FVector UGizmo::ProcessDragScale(UCamera* InCamera, FRay& WorldRay, UObjectPicke
 // FGizmoHelper Implementation
 // ============================================================================
 
-FVector FGizmoHelper::ProcessDragLocation(UGizmo* Gizmo, UObjectPicker* Picker, UCamera* Camera, FRay& Ray)
+FVector FGizmoHelper::ProcessDragLocation(UGizmo* Gizmo, UObjectPicker* Picker, UCamera* Camera, FRay& Ray, bool bUseCustomSnap)
 {
 	if (!Gizmo || !Picker || !Camera)
 	{
 		return Gizmo ? Gizmo->GetGizmoLocation() : FVector::Zero();
 	}
 
-	return Gizmo->ProcessDragLocation(Camera, Ray, Picker);
+	return Gizmo->ProcessDragLocation(Camera, Ray, Picker, bUseCustomSnap);
 }
 
 FQuaternion FGizmoHelper::ProcessDragRotation(UGizmo* Gizmo, UCamera* Camera, FRay& Ray, const FRect& ViewportRect, bool bUseCustomSnap)

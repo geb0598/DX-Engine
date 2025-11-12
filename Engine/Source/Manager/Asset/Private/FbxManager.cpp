@@ -230,7 +230,7 @@ USkeletalMesh* FFbxManager::LoadFbxSkeletalMesh(const FName& FilePath, const FFb
 		return Cached;
 	}
 
-	// 2) FBX 스켈레탈 메시 정보 로드
+	// 2) FBX 스켈레탈 메시 정보 로드 (한 번만 로드)
 	FFbxSkeletalMeshInfo SkeletalMeshInfo;
 	if (!FFbxImporter::LoadSkeletalMesh(FilePath.ToString(), &SkeletalMeshInfo, Config))
 	{
@@ -238,11 +238,11 @@ USkeletalMesh* FFbxManager::LoadFbxSkeletalMesh(const FName& FilePath, const FFb
 		return nullptr;
 	}
 
-	// 3) FStaticMesh Asset 로드 (지오메트리 데이터)
-	FStaticMesh* StaticMeshAsset = LoadFbxSkeletalMeshAsset(FilePath, Config);
+	// 3) 이미 로드된 데이터로부터 FStaticMesh Asset 생성 (중복 로드 방지)
+	FStaticMesh* StaticMeshAsset = GetOrCreateStaticMeshFromInfo(FilePath, SkeletalMeshInfo);
 	if (!StaticMeshAsset)
 	{
-		UE_LOG_ERROR("FBX SkeletalMesh Asset 로드 실패: %s", FilePath.ToString().c_str());
+		UE_LOG_ERROR("FBX SkeletalMesh Asset 변환 실패: %s", FilePath.ToString().c_str());
 		return nullptr;
 	}
 
@@ -431,6 +431,28 @@ void FFbxManager::ConvertFbxSkeletalToStaticMesh(const FFbxSkeletalMeshInfo& Fbx
 
 	UE_LOG("[FbxManager] StaticMesh 변환 완료 - Vertices: %d, Indices: %d, Sections: %d",
 		OutStaticMesh->Vertices.Num(), OutStaticMesh->Indices.Num(), OutStaticMesh->Sections.Num());
+}
+
+FStaticMesh* FFbxManager::GetOrCreateStaticMeshFromInfo(const FName& FilePath, const FFbxSkeletalMeshInfo& MeshInfo)
+{
+	// 캐시에서 먼저 찾기
+	auto* FoundValuePtr = FbxSkeletalFStaticMeshMap.Find(FilePath);
+	if (FoundValuePtr)
+	{
+		UE_LOG("[FbxManager] StaticMesh 캐시 히트: %s", FilePath.ToString().c_str());
+		return FoundValuePtr->get();
+	}
+
+	// 캐시에 없으면 이미 로드된 MeshInfo로부터 FStaticMesh 생성
+	auto StaticMeshAsset = std::make_unique<FStaticMesh>();
+	ConvertFbxSkeletalToStaticMesh(MeshInfo, StaticMeshAsset.get());
+	StaticMeshAsset->PathFileName = FilePath;
+
+	UE_LOG_SUCCESS("[FbxManager] FBX SkeletalMesh Asset 변환 완료 (중복 로드 방지): %s", FilePath.ToString().c_str());
+
+	// 캐시에 저장
+	FbxSkeletalFStaticMeshMap.Emplace(FilePath, std::move(StaticMeshAsset));
+	return FbxSkeletalFStaticMeshMap[FilePath].get();
 }
 
 // ========================================

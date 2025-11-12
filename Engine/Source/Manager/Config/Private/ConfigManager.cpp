@@ -32,11 +32,11 @@ float UConfigManager::LoadCellSize() const
     JSON ConfigJson;
     if (!FJsonSerializer::LoadJsonFromFile(ConfigJson, EditorConfigFileName.ToString()))
     {
-        return 5.0f; // 기본값
+        return 10.0f; // 기본값
     }
 
-    float CellSize = 5.0f;
-    FJsonSerializer::ReadFloat(ConfigJson, "CellSize", CellSize, 5.0f);
+    float CellSize = 10.0f;
+    FJsonSerializer::ReadFloat(ConfigJson, "CellSize", CellSize, 10.0f);
     return CellSize;
 }
 

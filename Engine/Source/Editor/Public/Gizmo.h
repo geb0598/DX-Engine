@@ -70,7 +70,7 @@ public:
 	 * @param bUseCustomSnap Rotation 스냅 설정 사용 여부 (true면 커스텀, false면 ViewportManager)
 	 * @return 새로운 Location/Rotation/Scale 값
 	 */
-	FVector ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, class UObjectPicker* InObjectPicker);
+	FVector ProcessDragLocation(UCamera* InCamera, FRay& WorldRay, class UObjectPicker* InObjectPicker, bool bUseCustomSnap = false);
 	FQuaternion ProcessDragRotation(UCamera* InCamera, FRay& WorldRay, const FRect& ViewportRect, bool bUseCustomSnap = false);
 	FVector ProcessDragScale(UCamera* InCamera, FRay& WorldRay, class UObjectPicker* InObjectPicker);
 
@@ -94,6 +94,14 @@ public:
 	void SetWorld() { bIsWorld = true; }
 	void SetLocal() { bIsWorld = false; }
 	bool IsWorldMode() const { return bIsWorld; }
+
+	// Location Snap 설정 (뷰어용 독립 설정)
+	void SetUseCustomLocationSnap(bool bEnable) { bUseCustomLocationSnap = bEnable; }
+	void SetCustomLocationSnapEnabled(bool bEnable) { bCustomLocationSnapEnabled = bEnable; }
+	void SetCustomLocationSnapValue(float Value) { CustomLocationSnapValue = Value; }
+	bool ShouldUseCustomLocationSnap() const { return bUseCustomLocationSnap; }
+	bool IsCustomLocationSnapEnabled() const { return bCustomLocationSnapEnabled; }
+	float GetCustomLocationSnapValue() const { return CustomLocationSnapValue; }
 
 	// Rotation Snap 설정 (뷰어용 독립 설정)
 	void SetUseCustomRotationSnap(bool bEnable) { bUseCustomRotationSnap = bEnable; }
@@ -258,6 +266,11 @@ private:
 	// Pilot Mode 고정 위치 & 본 뷰어 기즈모용
 	bool bUseFixedLocation = false;
 	FVector FixedLocation;
+
+	// Location Snap 커스텀 설정 (뷰어용)
+	bool bUseCustomLocationSnap = false;      // true면 ViewportManager 대신 커스텀 설정 사용
+	bool bCustomLocationSnapEnabled = false;  // 커스텀 스냅 활성화 여부 (기본값: 비활성화)
+	float CustomLocationSnapValue = 10.0f;    // 커스텀 스냅 값
 
 	// Rotation Snap 커스텀 설정 (뷰어용)
 	bool bUseCustomRotationSnap = false;      // true면 ViewportManager 대신 커스텀 설정 사용

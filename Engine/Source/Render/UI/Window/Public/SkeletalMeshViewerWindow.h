@@ -179,12 +179,14 @@ private:
 	bool bIsDraggingMiddleButton = false;
 
 	// 그리드 설정
-	float GridCellSize = 1.0f;
+	float GridCellSize = 10.0f;
 
 	bool bShowAllBones = false;
 
 	// 본 스케일 설정
 	bool bUniformBoneScale = false;
+
+	bool bShowAllBoneNames = false; // tree node에 모든 본 이름 표시 여부
 
 	// Lock/Unlock 아이콘
 	class UTexture* LockIcon = nullptr;
@@ -201,9 +203,6 @@ private:
 	// 기즈모 및 오브젝트 피커
 	UGizmo* ViewerGizmo = nullptr;
 	UObjectPicker* ViewerObjectPicker = nullptr;
-
-	// 선택된 컴포넌트 (기즈모 타겟)
-	class USceneComponent* SelectedComponent = nullptr;
 
 public:
 	// 그리드 설정 접근자

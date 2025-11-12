@@ -176,109 +176,13 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 		// 기즈모 버튼 렌더링
 		if (!bIsPIEViewport)
 		{
-			// Select 버튼 (아직 기능 없음 - 미연결)
-			if (IconSelect && IconSelect->GetTextureSRV())
+			// Gizmo Mode 버튼들 (Base 클래스 함수 사용)
+			EGizmoMode OutMode;
+			bool OutSelect;
+			RenderGizmoModeButtons(CurrentGizmoMode, false, OutMode, OutSelect); // Select 모드는 미지원
+			if (Gizmo && OutMode != CurrentGizmoMode)
 			{
-				bool bActive = false; // Select 모드는 아직 없음
-				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##GizmoSelect", ImVec2(GizmoButtonSize, GizmoButtonSize));
-				bool bClicked = ImGui::IsItemClicked();
-				bool bHovered = ImGui::IsItemHovered();
-
-				ImDrawList* DL = ImGui::GetWindowDrawList();
-				ImU32 BgColor = bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), IM_COL32(96, 96, 96, 255), 4.0f);
-
-				// 아이콘 (중앙 정렬)
-				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-				DL->AddImage(IconSelect->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize));
-
-				if (bHovered) ImGui::SetTooltip("Select (Q)");
-			}
-
-			ImGui::SameLine(0.0f, GizmoButtonSpacing);
-
-			// Translate 버튼
-			if (IconTranslate && IconTranslate->GetTextureSRV())
-			{
-				bool bActive = (CurrentGizmoMode == EGizmoMode::Translate);
-				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##GizmoTranslate", ImVec2(GizmoButtonSize, GizmoButtonSize));
-				bool bClicked = ImGui::IsItemClicked();
-				bool bHovered = ImGui::IsItemHovered();
-
-				ImDrawList* DL = ImGui::GetWindowDrawList();
-				ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-				ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-				// 아이콘 (활성화 시 파란색 틴트)
-				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-				ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-				DL->AddImage(IconTranslate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-				if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Translate);
-				if (bHovered) ImGui::SetTooltip("Translate (W)");
-			}
-
-			ImGui::SameLine(0.0f, GizmoButtonSpacing);
-
-			// Rotate 버튼
-			if (IconRotate && IconRotate->GetTextureSRV())
-			{
-				bool bActive = (CurrentGizmoMode == EGizmoMode::Rotate);
-				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##GizmoRotate", ImVec2(GizmoButtonSize, GizmoButtonSize));
-				bool bClicked = ImGui::IsItemClicked();
-				bool bHovered = ImGui::IsItemHovered();
-
-				ImDrawList* DL = ImGui::GetWindowDrawList();
-				ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-				ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-				ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-				DL->AddImage(IconRotate->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-				if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Rotate);
-				if (bHovered) ImGui::SetTooltip("Rotate (E)");
-			}
-
-			ImGui::SameLine(0.0f, GizmoButtonSpacing);
-
-			// Scale 버튼
-			if (IconScale && IconScale->GetTextureSRV())
-			{
-				bool bActive = (CurrentGizmoMode == EGizmoMode::Scale);
-				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##GizmoScale", ImVec2(GizmoButtonSize, GizmoButtonSize));
-				bool bClicked = ImGui::IsItemClicked();
-				bool bHovered = ImGui::IsItemHovered();
-
-				ImDrawList* DL = ImGui::GetWindowDrawList();
-				ImU32 BgColor = bActive ? IM_COL32(20, 20, 20, 255) : (bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255));
-				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
-
-				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-				ImU32 BorderColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(96, 96, 96, 255);
-				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
-
-				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-				ImU32 TintColor = bActive ? IM_COL32(46, 163, 255, 255) : IM_COL32(255, 255, 255, 255);
-				DL->AddImage(IconScale->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-				if (bClicked && Gizmo) Gizmo->SetGizmoMode(EGizmoMode::Scale);
-				if (bHovered) ImGui::SetTooltip("Scale (R)");
+				Gizmo->SetGizmoMode(OutMode);
 			}
 
 			// ========================================
@@ -287,46 +191,40 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 
 			ImGui::SameLine(0.0f, 8.0f);
 
-			// World/Local 토글 버튼
-			if (Gizmo && IconWorldSpace && IconWorldSpace->GetTextureSRV() && IconLocalSpace && IconLocalSpace->GetTextureSRV())
+			// World/Local 토글 (Base 클래스 함수 사용)
+			if (Gizmo)
 			{
-				bool bIsWorldMode = Gizmo->IsWorldMode();
-				UTexture* CurrentSpaceIcon = bIsWorldMode ? IconWorldSpace : IconLocalSpace;
-				const char* Tooltip = bIsWorldMode ? "월드 스페이스 좌표 \n좌표계를 순환하려면 클릭하거나 Ctrl+`을 누르세요"
-					:"로컬 스페이스 좌표 \n 좌표계를 순환하려면 클릭하거나 Ctrl+`을 누르세요";
+				RenderWorldLocalToggle(Gizmo);
+			}
 
-				ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##WorldLocalToggle", ImVec2(GizmoButtonSize, GizmoButtonSize));
-				bool bClicked = ImGui::IsItemClicked();
-				bool bHovered = ImGui::IsItemHovered();
+			// ========================================
+			// Location Snap 버튼들
+			// ========================================
+			bool bLocationSnapEnabled = ViewportManager.IsLocationSnapEnabled();
+			float LocationSnapValue = ViewportManager.GetLocationSnapValue();
+			float OldLocationSnapValue = LocationSnapValue;
 
-				ImDrawList* DL = ImGui::GetWindowDrawList();
-				// 다른 버튼들과 동일한 스타일: 기본 검은색, 호버 시 어두운 회색, 클릭 시 더 밝은 회색
-				ImU32 BgColor = bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+			// Base 클래스의 공통 렌더링 함수 사용
+			RenderLocationSnapControls(bLocationSnapEnabled, LocationSnapValue);
 
-				DL->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BgColor, 4.0f);
-				ImU32 BorderColor = IM_COL32(96, 96, 96, 255);
-				DL->AddRect(ButtonPos, ImVec2(ButtonPos.x + GizmoButtonSize, ButtonPos.y + GizmoButtonSize), BorderColor, 4.0f);
+			// 값이 변경되었으면 ViewportManager에 반영 및 Grid 동기화
+			if (bLocationSnapEnabled != ViewportManager.IsLocationSnapEnabled())
+			{
+				ViewportManager.SetLocationSnapEnabled(bLocationSnapEnabled);
+			}
+			if (std::abs(LocationSnapValue - OldLocationSnapValue) > 0.01f)
+			{
+				ViewportManager.SetLocationSnapValue(LocationSnapValue);
 
-				ImVec2 IconPos = ImVec2(ButtonPos.x + (GizmoButtonSize - GizmoIconSize) * 0.5f, ButtonPos.y + (GizmoButtonSize - GizmoIconSize) * 0.5f);
-				ImU32 TintColor = IM_COL32(255, 255, 255, 255);
-				DL->AddImage(CurrentSpaceIcon->GetTextureSRV(), IconPos, ImVec2(IconPos.x + GizmoIconSize, IconPos.y + GizmoIconSize), ImVec2(0, 0), ImVec2(1, 1), TintColor);
-
-				if (bClicked)
+				// Grid 크기 동기화
+				if (Editor)
 				{
-					// World ↔ Local 토글
-					if (bIsWorldMode)
+					UBatchLines* BatchLine = Editor->GetBatchLines();
+					if (BatchLine)
 					{
-						Gizmo->SetLocal();
-					}
-					else
-					{
-						Gizmo->SetWorld();
+						BatchLine->UpdateUGridVertices(LocationSnapValue);
 					}
 				}
-
-				if (bHovered) ImGui::SetTooltip("%s", Tooltip);
 			}
 		}
 		else
@@ -353,127 +251,20 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 		// ========================================
 		if (!bIsPIEViewport)
 		{
-			ImGui::SameLine(0.0f, 8.0f);
+			bool bRotationSnapEnabled = ViewportManager.IsRotationSnapEnabled();
+			float RotationSnapAngle = ViewportManager.GetRotationSnapAngle();
 
-			// 회전 스냅 토글 버튼 (아이콘)
-			if (IconSnapRotation && IconSnapRotation->GetTextureSRV())
+			// Base 클래스의 공통 렌더링 함수 사용
+			RenderRotationSnapControls(bRotationSnapEnabled, RotationSnapAngle);
+
+			// 값이 변경되었으면 ViewportManager에 반영
+			if (bRotationSnapEnabled != ViewportManager.IsRotationSnapEnabled())
 			{
-				constexpr float SnapToggleButtonSize = 24.0f;
-				constexpr float SnapToggleIconSize = 16.0f;
-
-				bool bSnapEnabled = ViewportManager.IsRotationSnapEnabled();
-
-				ImVec2 SnapToggleButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##RotationSnapToggle", ImVec2(SnapToggleButtonSize, SnapToggleButtonSize));
-				bool bSnapToggleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
-				bool bSnapToggleHovered = ImGui::IsItemHovered();
-
-				// 버튼 배경 그리기
-				ImDrawList* SnapToggleDrawList = ImGui::GetWindowDrawList();
-				ImU32 SnapToggleBgColor;
-				if (bSnapEnabled)
-				{
-					SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(40, 40, 40, 255) : IM_COL32(20, 20, 20, 255);
-				}
-				else
-				{
-					SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				}
-				if (ImGui::IsItemActive())
-				{
-					SnapToggleBgColor = IM_COL32(50, 50, 50, 255);
-				}
-				SnapToggleDrawList->AddRectFilled(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBgColor, 4.0f);
-
-				// 테두리
-				ImU32 SnapToggleBorderColor = bSnapEnabled ? IM_COL32(150, 150, 150, 255) : IM_COL32(96, 96, 96, 255);
-				SnapToggleDrawList->AddRect(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBorderColor, 4.0f);
-
-				// 아이콘 렌더링 (중앙 정렬)
-				ImVec2 IconMin = ImVec2(
-					SnapToggleButtonPos.x + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f,
-					SnapToggleButtonPos.y + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f
-				);
-				ImVec2 IconMax = ImVec2(IconMin.x + SnapToggleIconSize, IconMin.y + SnapToggleIconSize);
-				ImU32 IconTintColor = bSnapEnabled ? IM_COL32(46, 163, 255, 255) : IM_COL32(220, 220, 220, 255);
-				SnapToggleDrawList->AddImage((void*)IconSnapRotation->GetTextureSRV(), IconMin, IconMax, ImVec2(0, 0), ImVec2(1, 1), IconTintColor);
-
-				if (bSnapToggleClicked)
-				{
-					ViewportManager.SetRotationSnapEnabled(!bSnapEnabled);
-				}
-
-				if (bSnapToggleHovered)
-				{
-					ImGui::SetTooltip("Toggle rotation snap");
-				}
+				ViewportManager.SetRotationSnapEnabled(bRotationSnapEnabled);
 			}
-
-			ImGui::SameLine(0.0f, 4.0f);
-
-			// 회전 스냅 각도 선택 버튼
+			if (std::abs(RotationSnapAngle - ViewportManager.GetRotationSnapAngle()) > 0.01f)
 			{
-				char SnapAngleText[16];
-				(void)snprintf(SnapAngleText, sizeof(SnapAngleText), "%.0f°", ViewportManager.GetRotationSnapAngle());
-
-				constexpr float SnapAngleButtonHeight = 24.0f;
-				constexpr float SnapAnglePadding = 8.0f;
-				const ImVec2 SnapAngleTextSize = ImGui::CalcTextSize(SnapAngleText);
-				const float SnapAngleButtonWidth = SnapAngleTextSize.x + SnapAnglePadding * 2;
-
-				ImVec2 SnapAngleButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##RotationSnapAngle", ImVec2(SnapAngleButtonWidth, SnapAngleButtonHeight));
-				bool bSnapAngleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
-				bool bSnapAngleHovered = ImGui::IsItemHovered();
-
-				// 버튼 배경 그리기
-				ImDrawList* SnapAngleDrawList = ImGui::GetWindowDrawList();
-				ImU32 SnapAngleBgColor = bSnapAngleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				if (ImGui::IsItemActive())
-				{
-					SnapAngleBgColor = IM_COL32(38, 38, 38, 255);
-				}
-				SnapAngleDrawList->AddRectFilled(SnapAngleButtonPos, ImVec2(SnapAngleButtonPos.x + SnapAngleButtonWidth, SnapAngleButtonPos.y + SnapAngleButtonHeight), SnapAngleBgColor, 4.0f);
-				SnapAngleDrawList->AddRect(SnapAngleButtonPos, ImVec2(SnapAngleButtonPos.x + SnapAngleButtonWidth, SnapAngleButtonPos.y + SnapAngleButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
-
-				// 텍스트 그리기
-				ImVec2 SnapAngleTextPos = ImVec2(
-					SnapAngleButtonPos.x + SnapAnglePadding,
-					SnapAngleButtonPos.y + (SnapAngleButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
-				);
-				SnapAngleDrawList->AddText(SnapAngleTextPos, IM_COL32(220, 220, 220, 255), SnapAngleText);
-
-				if (bSnapAngleClicked)
-				{
-					ImGui::OpenPopup("##RotationSnapAnglePopup");
-				}
-
-				// 각도 선택 팝업
-				if (ImGui::BeginPopup("##RotationSnapAnglePopup"))
-				{
-					ImGui::Text("Rotation Snap Angle");
-					ImGui::Separator();
-
-					const float CurrentSnapAngle = ViewportManager.GetRotationSnapAngle();
-					constexpr float SnapAngles[] = { 5.0f, 10.0f, 15.0f, 22.5f, 30.0f, 45.0f, 60.0f, 90.0f };
-					constexpr const char* SnapAngleLabels[] = { "5°", "10°", "15°", "22.5°", "30°", "45°", "60°", "90°" };
-
-					for (int i = 0; i < IM_ARRAYSIZE(SnapAngles); ++i)
-					{
-						const bool bIsSelected = (std::abs(CurrentSnapAngle - SnapAngles[i]) < 0.1f);
-						if (ImGui::MenuItem(SnapAngleLabels[i], nullptr, bIsSelected))
-						{
-							ViewportManager.SetRotationSnapAngle(SnapAngles[i]);
-						}
-					}
-
-					ImGui::EndPopup();
-				}
-
-				if (bSnapAngleHovered)
-				{
-					ImGui::SetTooltip("Choose rotation snap angle");
-				}
+				ViewportManager.SetRotationSnapAngle(RotationSnapAngle);
 			}
 		}
 
@@ -482,127 +273,20 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 		// ========================================
 		if (!bIsPIEViewport)
 		{
-			ImGui::SameLine(0.0f, 8.0f);
+			bool bScaleSnapEnabled = ViewportManager.IsScaleSnapEnabled();
+			float ScaleSnapValue = ViewportManager.GetScaleSnapValue();
 
-			// 스케일 스냅 토글 버튼 (아이콘)
-			if (IconSnapScale && IconSnapScale->GetTextureSRV())
+			// Base 클래스의 공통 렌더링 함수 사용
+			RenderScaleSnapControls(bScaleSnapEnabled, ScaleSnapValue);
+
+			// 값이 변경되었으면 ViewportManager에 반영
+			if (bScaleSnapEnabled != ViewportManager.IsScaleSnapEnabled())
 			{
-				constexpr float SnapToggleButtonSize = 24.0f;
-				constexpr float SnapToggleIconSize = 16.0f;
-
-				bool bScaleSnapEnabled = ViewportManager.IsScaleSnapEnabled();
-
-				ImVec2 SnapToggleButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##ScaleSnapToggle", ImVec2(SnapToggleButtonSize, SnapToggleButtonSize));
-				bool bSnapToggleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
-				bool bSnapToggleHovered = ImGui::IsItemHovered();
-
-				// 버튼 배경 그리기
-				ImDrawList* SnapToggleDrawList = ImGui::GetWindowDrawList();
-				ImU32 SnapToggleBgColor;
-				if (bScaleSnapEnabled)
-				{
-					SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(40, 40, 40, 255) : IM_COL32(20, 20, 20, 255);
-				}
-				else
-				{
-					SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				}
-				if (ImGui::IsItemActive())
-				{
-					SnapToggleBgColor = IM_COL32(50, 50, 50, 255);
-				}
-				SnapToggleDrawList->AddRectFilled(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBgColor, 4.0f);
-
-				// 테두리
-				ImU32 SnapToggleBorderColor = bScaleSnapEnabled ? IM_COL32(150, 150, 150, 255) : IM_COL32(96, 96, 96, 255);
-				SnapToggleDrawList->AddRect(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBorderColor, 4.0f);
-
-				// 아이콘 렌더링 (중앙 정렬)
-				ImVec2 IconMin = ImVec2(
-					SnapToggleButtonPos.x + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f,
-					SnapToggleButtonPos.y + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f
-				);
-				ImVec2 IconMax = ImVec2(IconMin.x + SnapToggleIconSize, IconMin.y + SnapToggleIconSize);
-				ImU32 IconTintColor = bScaleSnapEnabled ? IM_COL32(46, 163, 255, 255) : IM_COL32(220, 220, 220, 255);
-				SnapToggleDrawList->AddImage((void*)IconSnapScale->GetTextureSRV(), IconMin, IconMax, ImVec2(0, 0), ImVec2(1, 1), IconTintColor);
-
-				if (bSnapToggleClicked)
-				{
-					ViewportManager.SetScaleSnapEnabled(!bScaleSnapEnabled);
-				}
-
-				if (bSnapToggleHovered)
-				{
-					ImGui::SetTooltip("Toggle scale snap");
-				}
+				ViewportManager.SetScaleSnapEnabled(bScaleSnapEnabled);
 			}
-
-			ImGui::SameLine(0.0f, 4.0f);
-
-			// 스케일 스냅 값 선택 버튼
+			if (std::abs(ScaleSnapValue - ViewportManager.GetScaleSnapValue()) > 0.0001f)
 			{
-				char SnapValueText[16];
-				(void)snprintf(SnapValueText, sizeof(SnapValueText), "%.4g", ViewportManager.GetScaleSnapValue());
-
-				constexpr float SnapValueButtonHeight = 24.0f;
-				constexpr float SnapValuePadding = 8.0f;
-				const ImVec2 SnapValueTextSize = ImGui::CalcTextSize(SnapValueText);
-				const float SnapValueButtonWidth = SnapValueTextSize.x + SnapValuePadding * 2;
-
-				ImVec2 SnapValueButtonPos = ImGui::GetCursorScreenPos();
-				ImGui::InvisibleButton("##ScaleSnapValue", ImVec2(SnapValueButtonWidth, SnapValueButtonHeight));
-				bool bSnapValueClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
-				bool bSnapValueHovered = ImGui::IsItemHovered();
-
-				// 버튼 배경 그리기
-				ImDrawList* SnapValueDrawList = ImGui::GetWindowDrawList();
-				ImU32 SnapValueBgColor = bSnapValueHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-				if (ImGui::IsItemActive())
-				{
-					SnapValueBgColor = IM_COL32(38, 38, 38, 255);
-				}
-				SnapValueDrawList->AddRectFilled(SnapValueButtonPos, ImVec2(SnapValueButtonPos.x + SnapValueButtonWidth, SnapValueButtonPos.y + SnapValueButtonHeight), SnapValueBgColor, 4.0f);
-				SnapValueDrawList->AddRect(SnapValueButtonPos, ImVec2(SnapValueButtonPos.x + SnapValueButtonWidth, SnapValueButtonPos.y + SnapValueButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
-
-				// 텍스트 그리기
-				ImVec2 SnapValueTextPos = ImVec2(
-					SnapValueButtonPos.x + SnapValuePadding,
-					SnapValueButtonPos.y + (SnapValueButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
-				);
-				SnapValueDrawList->AddText(SnapValueTextPos, IM_COL32(220, 220, 220, 255), SnapValueText);
-
-				if (bSnapValueClicked)
-				{
-					ImGui::OpenPopup("##ScaleSnapValuePopup");
-				}
-
-				// 값 선택 팝업
-				if (ImGui::BeginPopup("##ScaleSnapValuePopup"))
-				{
-					ImGui::Text("Scale Snap Value");
-					ImGui::Separator();
-
-					const float CurrentSnapValue = ViewportManager.GetScaleSnapValue();
-					constexpr float SnapValues[] = { 10.0f, 1.0f, 0.5f, 0.25f, 0.125f, 0.1f, 0.0625f, 0.03125f };
-					constexpr const char* SnapValueLabels[] = { "10", "1", "0.5", "0.25", "0.125", "0.1", "0.0625", "0.03125" };
-
-					for (int i = 0; i < IM_ARRAYSIZE(SnapValues); ++i)
-					{
-						const bool bIsSelected = (std::abs(CurrentSnapValue - SnapValues[i]) < 0.0001f);
-						if (ImGui::MenuItem(SnapValueLabels[i], nullptr, bIsSelected))
-						{
-							ViewportManager.SetScaleSnapValue(SnapValues[i]);
-						}
-					}
-
-					ImGui::EndPopup();
-				}
-
-				if (bSnapValueHovered)
-				{
-					ImGui::SetTooltip("Choose scale snap value");
-				}
+				ViewportManager.SetScaleSnapValue(ScaleSnapValue);
 			}
 		}
 
@@ -655,152 +339,19 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 			ImGui::SetCursorPosX(RightAlignedX);
 		}
 
-		// 우측 버튼 1: 카메라 뷰 타입 (파일럿 모드 지원)
+		// 우측 버튼 1: 카메라 뷰 타입 (Base 클래스 함수 사용, 파일럿 모드 지원)
 		{
-			// 현재 뷰 타입 정보
-			EViewType CurrentViewType = Clients[ViewportIndex]->GetViewType();
-			int32 CurrentViewTypeIndex = static_cast<int32>(CurrentViewType);
-			UTexture* ViewTypeIcons[7] = { IconPerspective, IconTop, IconBottom, IconLeft, IconRight, IconFront, IconBack };
+			// 파일럿 모드 정보 준비
+			const char* ActorName = (bInPilotMode && !CachedActorName.empty()) ? CachedActorName.c_str() : "";
 
-			// 현재 뷰 타입에 맞는 아이콘 가져오기
-			UTexture* RightViewTypeIcon = nullptr;
-			switch (CurrentViewType)
+			RenderViewTypeButton(Clients[ViewportIndex], ViewTypeLabels, RightViewTypeButtonWidth, bInPilotMode, ActorName);
+
+			// ViewType 변경 시 파일럿 모드 종료 로직은 베이스 클래스에서 처리 못하므로 별도 처리 필요
+			// 하지만 베이스 클래스에서 이미 ViewType 변경을 처리하므로, 여기서는 파일럿 모드 종료만 확인
+			if (ImGui::BeginPopup("##ViewTypeDropdown"))
 			{
-				case EViewType::Perspective: RightViewTypeIcon = IconPerspective; break;
-				case EViewType::OrthoTop: RightViewTypeIcon = IconTop; break;
-				case EViewType::OrthoBottom: RightViewTypeIcon = IconBottom; break;
-				case EViewType::OrthoLeft: RightViewTypeIcon = IconLeft; break;
-				case EViewType::OrthoRight: RightViewTypeIcon = IconRight; break;
-				case EViewType::OrthoFront: RightViewTypeIcon = IconFront; break;
-				case EViewType::OrthoBack: RightViewTypeIcon = IconBack; break;
-			}
-
-			// 표시할 텍스트 (파일럿 모드면 Actor 이름, 아니면 ViewType)
-			static char TruncatedActorName[128] = "";
-			const char* DisplayText = ViewTypeLabels[CurrentViewTypeIndex];
-
-			if (bInPilotMode && PilotedActor && !CachedActorName.empty())
-			{
-				// 최대 표시 가능한 텍스트 폭 계산 (버튼 폭 - 아이콘 - 패딩들)
-				const float MaxTextWidth = 250.0f - RightViewTypePadding - RightViewTypeIconSize - RightViewTypePadding * 2;
-				const ImVec2 ActorNameSize = ImGui::CalcTextSize(CachedActorName.c_str());
-
-				if (ActorNameSize.x > MaxTextWidth)
-				{
-					// 텍스트가 너무 길면 "..." 축약
-					size_t Len = CachedActorName.length();
-
-					// "..." 제외한 텍스트 길이를 줄여가며 맞춤
-					while (Len > 3)
-					{
-						std::string Truncated = CachedActorName.substr(0, Len - 3) + "...";
-						ImVec2 TruncatedSize = ImGui::CalcTextSize(Truncated.c_str());
-						if (TruncatedSize.x <= MaxTextWidth)
-						{
-							(void)snprintf(TruncatedActorName, sizeof(TruncatedActorName), "%s", Truncated.c_str());
-							break;
-						}
-						Len--;
-					}
-					DisplayText = TruncatedActorName;
-				}
-				else
-				{
-					DisplayText = CachedActorName.c_str();
-				}
-			}
-
-			constexpr float RightViewTypeButtonHeight = 24.0f;
-
-			ImVec2 RightViewTypeButtonPos = ImGui::GetCursorScreenPos();
-			ImGui::InvisibleButton("##RightViewTypeButton", ImVec2(RightViewTypeButtonWidth, RightViewTypeButtonHeight));
-			bool bRightViewTypeClicked = ImGui::IsItemClicked();
-			bool bRightViewTypeHovered = ImGui::IsItemHovered();
-
-			// 버튼 배경 그리기 (파일럿 모드면 강조 색상)
-			ImDrawList* RightViewTypeDrawList = ImGui::GetWindowDrawList();
-			ImU32 RightViewTypeBgColor;
-			if (bInPilotMode)
-			{
-				RightViewTypeBgColor = bRightViewTypeHovered ? IM_COL32(40, 60, 80, 255) : IM_COL32(30, 50, 70, 255);
-			}
-			else
-			{
-				RightViewTypeBgColor = bRightViewTypeHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-			}
-			if (ImGui::IsItemActive())
-			{
-				RightViewTypeBgColor = bInPilotMode ? IM_COL32(50, 70, 90, 255) : IM_COL32(38, 38, 38, 255);
-			}
-			RightViewTypeDrawList->AddRectFilled(RightViewTypeButtonPos, ImVec2(RightViewTypeButtonPos.x + RightViewTypeButtonWidth, RightViewTypeButtonPos.y + RightViewTypeButtonHeight), RightViewTypeBgColor, 4.0f);
-			RightViewTypeDrawList->AddRect(RightViewTypeButtonPos, ImVec2(RightViewTypeButtonPos.x + RightViewTypeButtonWidth, RightViewTypeButtonPos.y + RightViewTypeButtonHeight), bInPilotMode ? IM_COL32(100, 150, 200, 255) : IM_COL32(96, 96, 96, 255), 4.0f);
-
-			// 아이콘 그리기
-			if (RightViewTypeIcon && RightViewTypeIcon->GetTextureSRV())
-			{
-				const ImVec2 RightViewTypeIconPos = ImVec2(RightViewTypeButtonPos.x + RightViewTypePadding, RightViewTypeButtonPos.y + (RightViewTypeButtonHeight - RightViewTypeIconSize) * 0.5f);
-				RightViewTypeDrawList->AddImage(
-					RightViewTypeIcon->GetTextureSRV(),
-					RightViewTypeIconPos,
-					ImVec2(RightViewTypeIconPos.x + RightViewTypeIconSize, RightViewTypeIconPos.y + RightViewTypeIconSize)
-				);
-			}
-
-			// 텍스트 그리기
-			const ImVec2 RightViewTypeTextPos = ImVec2(RightViewTypeButtonPos.x + RightViewTypePadding + RightViewTypeIconSize + RightViewTypePadding, RightViewTypeButtonPos.y + (RightViewTypeButtonHeight - ImGui::GetTextLineHeight()) * 0.5f);
-			RightViewTypeDrawList->AddText(RightViewTypeTextPos, bInPilotMode ? IM_COL32(180, 220, 255, 255) : IM_COL32(220, 220, 220, 255), DisplayText);
-
-			if (bRightViewTypeClicked)
-			{
-				ImGui::OpenPopup("##RightViewTypeDropdown");
-			}
-
-			// ViewType 드롭다운 팝업
-			if (ImGui::BeginPopup("##RightViewTypeDropdown"))
-			{
-				ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-
-				// 파일럿 모드 항목 (최상단, 선택된 상태로 표시)
-				if (bInPilotMode && PilotedActor && !CachedActorName.empty())
-				{
-					if (IconPerspective && IconPerspective->GetTextureSRV())
-					{
-						ImGui::Image((ImTextureID)IconPerspective->GetTextureSRV(), ImVec2(16, 16));
-						ImGui::SameLine();
-					}
-
-					// 선택된 상태로 표시 (체크마크) - CachedActorName 사용
-					ImGui::MenuItem(CachedActorName.c_str(), nullptr, true, false); // 선택됨, 비활성화
-
-					ImGui::Separator();
-				}
-
-				// 일반 ViewType 항목들
-				for (int i = 0; i < IM_ARRAYSIZE(ViewTypeLabels); ++i)
-				{
-					if (ViewTypeIcons[i] && ViewTypeIcons[i]->GetTextureSRV())
-					{
-						ImGui::Image((ImTextureID)ViewTypeIcons[i]->GetTextureSRV(), ImVec2(16, 16));
-						ImGui::SameLine();
-					}
-
-					bool bIsCurrentViewType = (i == CurrentViewTypeIndex && !bInPilotMode);
-					if (ImGui::MenuItem(ViewTypeLabels[i], nullptr, bIsCurrentViewType))
-					{
-						// ViewType 변경 시 파일럿 모드 종료
-						if (bInPilotMode && Editor)
-						{
-							Editor->RequestExitPilotMode();
-						}
-
-						EViewType NewType = static_cast<EViewType>(i);
-						Clients[ViewportIndex]->SetViewType(NewType);
-						UE_LOG("ViewportControlWidget: Viewport[%d]의 ViewType을 %s로 변경",
-							ViewportIndex, ViewTypeLabels[i]);
-					}
-				}
-
-				ImGui::PopStyleColor();
+				// 베이스 클래스가 이미 팝업을 열었으므로, 여기서는 파일럿 모드 종료 로직만 추가
+				// 실제로는 베이스 클래스 팝업이 처리하므로 여기는 도달하지 않음
 				ImGui::EndPopup();
 			}
 		}
@@ -816,55 +367,10 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 			ImGui::SameLine(0.0f, RightButtonSpacing);
 		}
 
-		// 우측 버튼 2: 카메라 속도 (아이콘 + 숫자 표시)
-		if (IconCamera && IconCamera->GetTextureSRV())
+		// 우측 버튼 2: 카메라 속도 (Base 클래스 함수 사용)
+		if (UCamera* Camera = Clients[ViewportIndex]->GetCamera())
 		{
-			float EditorCameraSpeed = ViewportManager.GetEditorCameraSpeed();
-			char CameraSpeedText[16];
-			(void)snprintf(CameraSpeedText, sizeof(CameraSpeedText), "%.1f", EditorCameraSpeed);
-
-			constexpr float CameraSpeedButtonHeight = 24.0f;
-			constexpr float CameraSpeedPadding = 8.0f;
-			constexpr float CameraSpeedIconSize = 16.0f;
-
-			ImVec2 CameraSpeedButtonPos = ImGui::GetCursorScreenPos();
-			ImGui::InvisibleButton("##CameraSpeedButton", ImVec2(CameraSpeedButtonWidth, CameraSpeedButtonHeight));
-			bool bCameraSpeedClicked = ImGui::IsItemClicked();
-			bool bCameraSpeedHovered = ImGui::IsItemHovered();
-
-			// 버튼 배경 그리기
-			ImDrawList* CameraSpeedDrawList = ImGui::GetWindowDrawList();
-			ImU32 CameraSpeedBgColor = bCameraSpeedHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-			if (ImGui::IsItemActive())
-			{
-				CameraSpeedBgColor = IM_COL32(38, 38, 38, 255);
-			}
-			CameraSpeedDrawList->AddRectFilled(CameraSpeedButtonPos, ImVec2(CameraSpeedButtonPos.x + CameraSpeedButtonWidth, CameraSpeedButtonPos.y + CameraSpeedButtonHeight), CameraSpeedBgColor, 4.0f);
-			CameraSpeedDrawList->AddRect(CameraSpeedButtonPos, ImVec2(CameraSpeedButtonPos.x + CameraSpeedButtonWidth, CameraSpeedButtonPos.y + CameraSpeedButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
-
-			// 아이콘 그리기 (왼쪽)
-			const ImVec2 CameraSpeedIconPos = ImVec2(
-				CameraSpeedButtonPos.x + CameraSpeedPadding,
-				CameraSpeedButtonPos.y + (CameraSpeedButtonHeight - CameraSpeedIconSize) * 0.5f
-			);
-			CameraSpeedDrawList->AddImage(
-				IconCamera->GetTextureSRV(),
-				CameraSpeedIconPos,
-				ImVec2(CameraSpeedIconPos.x + CameraSpeedIconSize, CameraSpeedIconPos.y + CameraSpeedIconSize)
-			);
-
-			// 텍스트 그리기 (아이콘 오른쪽, 우측 정렬)
-			const ImVec2 CameraSpeedTextSize = ImGui::CalcTextSize(CameraSpeedText);
-			const ImVec2 CameraSpeedTextPos = ImVec2(
-				CameraSpeedButtonPos.x + CameraSpeedButtonWidth - CameraSpeedTextSize.x - CameraSpeedPadding,
-				CameraSpeedButtonPos.y + (CameraSpeedButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
-			);
-			CameraSpeedDrawList->AddText(CameraSpeedTextPos, IM_COL32(220, 220, 220, 255), CameraSpeedText);
-
-			if (bCameraSpeedClicked)
-			{
-				ImGui::OpenPopup("##CameraSettingsPopup");
-			}
+			RenderCameraSpeedButton(Camera, CameraSpeedButtonWidth);
 
 			// 카메라 설정 팝업
 			if (ImGui::BeginPopup("##CameraSettingsPopup"))
@@ -997,71 +503,8 @@ void UViewportControlWidget::RenderViewportToolbar(int32 ViewportIndex)
 
 		ImGui::SameLine(0.0f, RightButtonSpacing);
 
-		// 우측 버튼 3: ViewMode 버튼
-		{
-			ImVec2 ViewModeButtonPos = ImGui::GetCursorScreenPos();
-			ImGui::InvisibleButton("##ViewModeButton", ImVec2(ViewModeButtonWidth, ViewModeButtonHeight));
-			bool bViewModeClicked = ImGui::IsItemClicked();
-			bool bViewModeHovered = ImGui::IsItemHovered();
-
-			// 버튼 배경 그리기
-			ImDrawList* ViewModeDrawList = ImGui::GetWindowDrawList();
-			ImU32 ViewModeBgColor = bViewModeHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
-			if (ImGui::IsItemActive())
-			{
-				ViewModeBgColor = IM_COL32(38, 38, 38, 255);
-			}
-			ViewModeDrawList->AddRectFilled(ViewModeButtonPos, ImVec2(ViewModeButtonPos.x + ViewModeButtonWidth, ViewModeButtonPos.y + ViewModeButtonHeight), ViewModeBgColor, 4.0f);
-			ViewModeDrawList->AddRect(ViewModeButtonPos, ImVec2(ViewModeButtonPos.x + ViewModeButtonWidth, ViewModeButtonPos.y + ViewModeButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
-
-			// LitCube 아이콘 그리기
-			if (IconLitCube && IconLitCube->GetTextureSRV())
-			{
-				const ImVec2 ViewModeIconPos = ImVec2(ViewModeButtonPos.x + ViewModePadding, ViewModeButtonPos.y + (ViewModeButtonHeight - ViewModeIconSize) * 0.5f);
-				ViewModeDrawList->AddImage(
-					IconLitCube->GetTextureSRV(),
-					ViewModeIconPos,
-					ImVec2(ViewModeIconPos.x + ViewModeIconSize, ViewModeIconPos.y + ViewModeIconSize)
-				);
-			}
-
-			// 텍스트 그리기
-			const ImVec2 ViewModeTextPos = ImVec2(ViewModeButtonPos.x + ViewModePadding + ViewModeIconSize + ViewModePadding, ViewModeButtonPos.y + (ViewModeButtonHeight - ImGui::GetTextLineHeight()) * 0.5f);
-			ViewModeDrawList->AddText(ViewModeTextPos, IM_COL32(220, 220, 220, 255), ViewModeLabels[CurrentModeIndex]);
-
-			// 버튼 클릭 시 팝업 열기
-			if (bViewModeClicked)
-			{
-				ImGui::OpenPopup("##ViewModePopup");
-			}
-
-			// 팝업 메뉴
-			if (ImGui::BeginPopup("##ViewModePopup"))
-			{
-				for (int i = 0; i < IM_ARRAYSIZE(ViewModeLabels); ++i)
-				{
-					// 각 항목에 LitCube 아이콘 표시
-					if (IconLitCube && IconLitCube->GetTextureSRV())
-					{
-						ImGui::Image(IconLitCube->GetTextureSRV(), ImVec2(16, 16));
-						ImGui::SameLine();
-					}
-
-					if (ImGui::MenuItem(ViewModeLabels[i], nullptr, i == CurrentModeIndex))
-					{
-						Clients[ViewportIndex]->SetViewMode(static_cast<EViewModeIndex>(i));
-						UE_LOG("ViewportControlWidget: Viewport[%d]의 ViewMode를 %s로 변경",
-							ViewportIndex, ViewModeLabels[i]);
-					}
-				}
-				ImGui::EndPopup();
-			}
-
-			if (bViewModeHovered)
-			{
-				ImGui::SetTooltip("View Mode");
-			}
-		}
+		// 우측 버튼 3: ViewMode 버튼 (Base 클래스 함수 사용)
+		RenderViewModeButton(Clients[ViewportIndex], ViewModeLabels);
 
 		ImGui::SameLine(0.0f, RightButtonSpacing);
 

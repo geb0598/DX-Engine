@@ -72,6 +72,9 @@ void UViewportToolbarWidgetBase::LoadCommonIcons()
 	if (IconLocalSpace) { ++LoadedCount; }
 
 	// Snap 아이콘 로드
+	IconSnapLocation = AssetManager.LoadTexture((IconBasePath + "SnapLocation.png").data());
+	if (IconSnapLocation) { ++LoadedCount; }
+
 	IconSnapRotation = AssetManager.LoadTexture((IconBasePath + "SnapRotation.png").data());
 	if (IconSnapRotation) { ++LoadedCount; }
 
@@ -86,7 +89,7 @@ void UViewportToolbarWidgetBase::LoadCommonIcons()
 	IconCamera = AssetManager.LoadTexture((IconBasePath + "Camera.png").data());
 	if (IconCamera) { ++LoadedCount; }
 
-	UE_LOG_SUCCESS("ViewportToolbarWidgetBase: 공통 아이콘 로드 완료 (%d/17)", LoadedCount);
+	UE_LOG_SUCCESS("ViewportToolbarWidgetBase: 공통 아이콘 로드 완료 (%d/18)", LoadedCount);
 	bIconsLoaded = true;
 }
 
@@ -200,6 +203,145 @@ void UViewportToolbarWidgetBase::RenderWorldLocalToggle(UGizmo* Gizmo)
 		else
 		{
 			Gizmo->SetWorld();
+		}
+	}
+}
+
+void UViewportToolbarWidgetBase::RenderLocationSnapControls(bool& bSnapEnabled, float& SnapValue)
+{
+	ImGui::SameLine(0.0f, 8.0f);
+
+	// 위치 스냅 토글 버튼
+	if (IconSnapLocation && IconSnapLocation->GetTextureSRV())
+	{
+		constexpr float SnapToggleButtonSize = 24.0f;
+		constexpr float SnapToggleIconSize = 16.0f;
+
+		ImVec2 SnapToggleButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##LocationSnapToggle", ImVec2(SnapToggleButtonSize, SnapToggleButtonSize));
+		bool bSnapToggleClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+		bool bSnapToggleHovered = ImGui::IsItemHovered();
+
+		ImDrawList* SnapToggleDrawList = ImGui::GetWindowDrawList();
+		ImU32 SnapToggleBgColor;
+		if (bSnapEnabled)
+		{
+			SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(40, 40, 40, 255) : IM_COL32(20, 20, 20, 255);
+		}
+		else
+		{
+			SnapToggleBgColor = bSnapToggleHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+		}
+		if (ImGui::IsItemActive())
+		{
+			SnapToggleBgColor = IM_COL32(50, 50, 50, 255);
+		}
+		SnapToggleDrawList->AddRectFilled(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBgColor, 4.0f);
+
+		// 테두리
+		ImU32 SnapToggleBorderColor = bSnapEnabled ? IM_COL32(150, 150, 150, 255) : IM_COL32(96, 96, 96, 255);
+		SnapToggleDrawList->AddRect(SnapToggleButtonPos, ImVec2(SnapToggleButtonPos.x + SnapToggleButtonSize, SnapToggleButtonPos.y + SnapToggleButtonSize), SnapToggleBorderColor, 4.0f);
+
+		// 아이콘 렌더링 (중앙 정렬)
+		ImVec2 IconMin = ImVec2(
+			SnapToggleButtonPos.x + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f,
+			SnapToggleButtonPos.y + (SnapToggleButtonSize - SnapToggleIconSize) * 0.5f
+		);
+		ImVec2 IconMax = ImVec2(IconMin.x + SnapToggleIconSize, IconMin.y + SnapToggleIconSize);
+		ImU32 IconTintColor = bSnapEnabled ? IM_COL32(46, 163, 255, 255) : IM_COL32(220, 220, 220, 255);
+		SnapToggleDrawList->AddImage((void*)IconSnapLocation->GetTextureSRV(), IconMin, IconMax, ImVec2(0, 0), ImVec2(1, 1), IconTintColor);
+
+		if (bSnapToggleClicked)
+		{
+			bSnapEnabled = !bSnapEnabled;
+		}
+
+		if (bSnapToggleHovered)
+		{
+			ImGui::SetTooltip("Toggle location snap");
+		}
+	}
+
+	ImGui::SameLine(0.0f, 4.0f);
+
+	// 위치 스냅 값 선택 버튼
+	{
+		char SnapValueText[16];
+		// Format with commas for readability (e.g., "10,000" instead of "1e+04")
+		if (SnapValue >= 1000.0f)
+		{
+			(void)snprintf(SnapValueText, sizeof(SnapValueText), "%.0f", SnapValue);
+			// Add commas manually
+			std::string FormattedText = SnapValueText;
+			int InsertPosition = FormattedText.length() - 3;
+			while (InsertPosition > 0)
+			{
+				FormattedText.insert(InsertPosition, ",");
+				InsertPosition -= 3;
+			}
+			strncpy_s(SnapValueText, FormattedText.c_str(), sizeof(SnapValueText) - 1);
+		}
+		else
+		{
+			(void)snprintf(SnapValueText, sizeof(SnapValueText), "%.0f", SnapValue);
+		}
+
+		constexpr float SnapValueButtonHeight = 24.0f;
+		constexpr float SnapValuePadding = 8.0f;
+		const ImVec2 SnapValueTextSize = ImGui::CalcTextSize(SnapValueText);
+		const float SnapValueButtonWidth = SnapValueTextSize.x + SnapValuePadding * 2;
+
+		ImVec2 SnapValueButtonPos = ImGui::GetCursorScreenPos();
+		ImGui::InvisibleButton("##LocationSnapValue", ImVec2(SnapValueButtonWidth, SnapValueButtonHeight));
+		bool bSnapValueClicked = ImGui::IsItemClicked(ImGuiMouseButton_Left);
+		bool bSnapValueHovered = ImGui::IsItemHovered();
+
+		// 버튼 배경 그리기
+		ImDrawList* SnapValueDrawList = ImGui::GetWindowDrawList();
+		ImU32 SnapValueBgColor = bSnapValueHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+		if (ImGui::IsItemActive())
+		{
+			SnapValueBgColor = IM_COL32(38, 38, 38, 255);
+		}
+		SnapValueDrawList->AddRectFilled(SnapValueButtonPos, ImVec2(SnapValueButtonPos.x + SnapValueButtonWidth, SnapValueButtonPos.y + SnapValueButtonHeight), SnapValueBgColor, 4.0f);
+		SnapValueDrawList->AddRect(SnapValueButtonPos, ImVec2(SnapValueButtonPos.x + SnapValueButtonWidth, SnapValueButtonPos.y + SnapValueButtonHeight), IM_COL32(96, 96, 96, 255), 4.0f);
+
+		// 텍스트 그리기
+		ImVec2 SnapValueTextPos = ImVec2(
+			SnapValueButtonPos.x + SnapValuePadding,
+			SnapValueButtonPos.y + (SnapValueButtonHeight - ImGui::GetTextLineHeight()) * 0.5f
+		);
+		SnapValueDrawList->AddText(SnapValueTextPos, IM_COL32(220, 220, 220, 255), SnapValueText);
+
+		if (bSnapValueClicked)
+		{
+			ImGui::OpenPopup("##LocationSnapValuePopup");
+		}
+
+		// 값 선택 팝업
+		if (ImGui::BeginPopup("##LocationSnapValuePopup"))
+		{
+			ImGui::Text("Location Snap Value");
+			ImGui::Separator();
+
+			constexpr float SnapValues[] = { 10000.0f, 5000.0f, 1000.0f, 500.0f, 100.0f, 50.0f, 10.0f, 5.0f, 1.0f };
+			constexpr const char* SnapValueLabels[] = { "10,000", "5,000", "1,000", "500", "100", "50", "10", "5", "1" };
+
+			for (int i = 0; i < IM_ARRAYSIZE(SnapValues); ++i)
+			{
+				const bool bIsSelected = (std::abs(SnapValue - SnapValues[i]) < 0.01f);
+				if (ImGui::MenuItem(SnapValueLabels[i], nullptr, bIsSelected))
+				{
+					SnapValue = SnapValues[i];
+				}
+			}
+
+			ImGui::EndPopup();
+		}
+
+		if (bSnapValueHovered)
+		{
+			ImGui::SetTooltip("Choose location snap value");
 		}
 	}
 }
@@ -575,5 +717,156 @@ void UViewportToolbarWidgetBase::RenderViewModeButton(FViewportClient* Client, c
 	if (bViewModeHovered)
 	{
 		ImGui::SetTooltip("View Mode");
+	}
+}
+
+void UViewportToolbarWidgetBase::RenderViewTypeButton(FViewportClient* Client, const char** ViewTypeLabels, float ButtonWidth, bool bIsPilotMode, const char* PilotedActorName)
+{
+	if (!Client)
+	{
+		return;
+	}
+
+	EViewType CurrentViewType = Client->GetViewType();
+	int32 CurrentViewTypeIndex = static_cast<int32>(CurrentViewType);
+
+	UTexture* ViewTypeIcons[7] = { IconPerspective, IconTop, IconBottom, IconLeft, IconRight, IconFront, IconBack };
+	UTexture* CurrentViewTypeIcon = ViewTypeIcons[CurrentViewTypeIndex];
+
+	constexpr float ButtonHeight = 24.0f;
+	constexpr float IconSize = 16.0f;
+	constexpr float Padding = 4.0f;
+
+	// 파일럿 모드일 경우 액터 이름 표시, 아니면 ViewType 표시
+	const char* DisplayText = ViewTypeLabels[CurrentViewTypeIndex];
+	char TruncatedActorName[128] = "";
+
+	if (bIsPilotMode && PilotedActorName && strlen(PilotedActorName) > 0)
+	{
+		// 최대 표시 가능한 텍스트 폭 계산
+		const float MaxTextWidth = 250.0f - Padding - IconSize - Padding * 2;
+		const ImVec2 ActorNameSize = ImGui::CalcTextSize(PilotedActorName);
+
+		if (ActorNameSize.x > MaxTextWidth)
+		{
+			// 텍스트가 너무 길면 "..." 축약
+			size_t Len = strlen(PilotedActorName);
+			while (Len > 3)
+			{
+				snprintf(TruncatedActorName, sizeof(TruncatedActorName), "%.*s...", static_cast<int>(Len - 3), PilotedActorName);
+				ImVec2 TruncatedSize = ImGui::CalcTextSize(TruncatedActorName);
+				if (TruncatedSize.x <= MaxTextWidth)
+				{
+					break;
+				}
+				Len--;
+			}
+			DisplayText = TruncatedActorName;
+		}
+		else
+		{
+			DisplayText = PilotedActorName;
+		}
+	}
+
+	ImVec2 ButtonPos = ImGui::GetCursorScreenPos();
+	ImGui::InvisibleButton("##ViewTypeButton", ImVec2(ButtonWidth, ButtonHeight));
+	bool bClicked = ImGui::IsItemClicked();
+	bool bHovered = ImGui::IsItemHovered();
+
+	// 버튼 배경 (파일럿 모드면 강조 색상)
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	ImU32 BgColor;
+	ImU32 BorderColor;
+	ImU32 TextColor;
+
+	if (bIsPilotMode)
+	{
+		BgColor = bHovered ? IM_COL32(40, 60, 80, 255) : IM_COL32(30, 50, 70, 255);
+		if (ImGui::IsItemActive()) BgColor = IM_COL32(50, 70, 90, 255);
+		BorderColor = IM_COL32(100, 150, 200, 255);
+		TextColor = IM_COL32(180, 220, 255, 255);
+	}
+	else
+	{
+		BgColor = bHovered ? IM_COL32(26, 26, 26, 255) : IM_COL32(0, 0, 0, 255);
+		if (ImGui::IsItemActive()) BgColor = IM_COL32(38, 38, 38, 255);
+		BorderColor = IM_COL32(96, 96, 96, 255);
+		TextColor = IM_COL32(220, 220, 220, 255);
+	}
+
+	DrawList->AddRectFilled(ButtonPos, ImVec2(ButtonPos.x + ButtonWidth, ButtonPos.y + ButtonHeight), BgColor, 4.0f);
+	DrawList->AddRect(ButtonPos, ImVec2(ButtonPos.x + ButtonWidth, ButtonPos.y + ButtonHeight), BorderColor, 4.0f);
+
+	// 아이콘
+	if (CurrentViewTypeIcon && CurrentViewTypeIcon->GetTextureSRV())
+	{
+		const ImVec2 IconPos = ImVec2(ButtonPos.x + Padding, ButtonPos.y + (ButtonHeight - IconSize) * 0.5f);
+		DrawList->AddImage(
+			CurrentViewTypeIcon->GetTextureSRV(),
+			IconPos,
+			ImVec2(IconPos.x + IconSize, IconPos.y + IconSize)
+		);
+	}
+
+	// 텍스트
+	const ImVec2 TextPos = ImVec2(ButtonPos.x + Padding + IconSize + Padding, ButtonPos.y + (ButtonHeight - ImGui::GetTextLineHeight()) * 0.5f);
+	DrawList->AddText(TextPos, TextColor, DisplayText);
+
+	if (bClicked)
+	{
+		ImGui::OpenPopup("##ViewTypeDropdown");
+	}
+
+	// ViewType 드롭다운
+	if (ImGui::BeginPopup("##ViewTypeDropdown"))
+	{
+		ImGui::PushStyleColor(ImGuiCol_PopupBg, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
+
+		// 파일럿 모드 항목 (최상단, 선택된 상태로 표시)
+		if (bIsPilotMode && PilotedActorName && strlen(PilotedActorName) > 0)
+		{
+			if (IconPerspective && IconPerspective->GetTextureSRV())
+			{
+				ImGui::Image((ImTextureID)IconPerspective->GetTextureSRV(), ImVec2(16, 16));
+				ImGui::SameLine();
+			}
+
+			ImGui::MenuItem(PilotedActorName, nullptr, true, false); // 선택됨, 비활성화
+			ImGui::Separator();
+		}
+
+		// 일반 ViewType 항목들
+		for (int i = 0; i < 7; ++i)
+		{
+			if (ViewTypeIcons[i] && ViewTypeIcons[i]->GetTextureSRV())
+			{
+				ImGui::Image((ImTextureID)ViewTypeIcons[i]->GetTextureSRV(), ImVec2(16, 16));
+				ImGui::SameLine();
+			}
+
+			bool bIsCurrentViewType = (i == CurrentViewTypeIndex && !bIsPilotMode);
+			if (ImGui::MenuItem(ViewTypeLabels[i], nullptr, bIsCurrentViewType))
+			{
+				EViewType NewType = static_cast<EViewType>(i);
+				Client->SetViewType(NewType);
+
+				// Update camera type
+				if (UCamera* Camera = Client->GetCamera())
+				{
+					if (NewType == EViewType::Perspective)
+					{
+						Camera->SetCameraType(ECameraType::ECT_Perspective);
+					}
+					else
+					{
+						Camera->SetCameraType(ECameraType::ECT_Orthographic);
+					}
+				}
+			}
+		}
+
+		ImGui::PopStyleColor();
+		ImGui::EndPopup();
 	}
 }

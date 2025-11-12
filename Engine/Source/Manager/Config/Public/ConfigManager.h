@@ -35,6 +35,13 @@ public:
 	float GetCachedSharedOrthoZoom() const { return CachedSharedOrthoZoom; }
 	void SetCachedSharedOrthoZoom(float InZoom) { CachedSharedOrthoZoom = InZoom; }
 
+	// Location Snap Settings
+	bool GetCachedLocationSnapEnabled() const { return bCachedLocationSnapEnabled; }
+	void SetCachedLocationSnapEnabled(bool bEnabled) { bCachedLocationSnapEnabled = bEnabled; }
+
+	float GetCachedLocationSnapValue() const { return CachedLocationSnapValue; }
+	void SetCachedLocationSnapValue(float InValue) { CachedLocationSnapValue = InValue; }
+
 	// Rotation Snap Settings
 	bool GetCachedRotationSnapEnabled() const { return bCachedRotationSnapEnabled; }
 	void SetCachedRotationSnapEnabled(bool bEnabled) { bCachedRotationSnapEnabled = bEnabled; }
@@ -61,6 +68,8 @@ private:
 	// ========================================
 	float CachedEditorCameraSpeed = 50.0f;
 	float CachedSharedOrthoZoom = 500.0f;
+	bool bCachedLocationSnapEnabled = false;
+	float CachedLocationSnapValue = 10.0f;
 	bool bCachedRotationSnapEnabled = true;
 	float CachedRotationSnapAngle = 10.0f;
 	bool bCachedScaleSnapEnabled = false;

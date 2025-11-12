@@ -173,6 +173,7 @@ void USkeletalMeshViewerWindow::Initialize()
 	if (ViewerGizmo)
 	{
 		// 뷰어의 Gizmo는 ViewportManager 대신 자체 툴바 설정 사용
+		ViewerGizmo->SetUseCustomLocationSnap(true);
 		ViewerGizmo->SetUseCustomRotationSnap(true);
 		ViewerGizmo->SetUseCustomScaleSnap(true);
 		UE_LOG("SkeletalMeshViewerWindow: Gizmo 생성 및 초기 선택 완료");
@@ -247,9 +248,6 @@ void USkeletalMeshViewerWindow::Cleanup()
 		delete ViewerObjectPicker;
 		ViewerObjectPicker = nullptr;
 	}
-
-	// 선택된 컴포넌트 참조 초기화
-	SelectedComponent = nullptr;
 
 	// Preview World 정리 (Actor들은 World 소멸 시 자동으로 정리됨)
 	if (PreviewWorld)
@@ -346,7 +344,6 @@ void USkeletalMeshViewerWindow::OpenViewer(USkeletalMeshComponent* InSkeletalMes
 		}
 
 		// 초기에는 아무것도 선택하지 않음
-		SelectedComponent = nullptr;
 		SelectedBoneIndex = INDEX_NONE;
 	}
 
@@ -708,6 +705,9 @@ void USkeletalMeshViewerWindow::RenderSkeletonTreePanel(const USkeletalMesh* InS
 
 	// 본 정보 표시
 	ImGui::Text("Total Bones: %d", InNumBones);
+	ImGui::SameLine();
+	ImGui::Checkbox("Show All Bone Names", &bShowAllBoneNames);
+
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
@@ -764,8 +764,8 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 	// 트리 노드 플래그 설정
 	ImGuiTreeNodeFlags NodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
-	// 검색 필터가 활성화되어 있으면 모든 노드를 기본으로 열림
-	if (bHasSearchFilter)
+	// 아래 조건 만족 시, 모든 노드를 기본으로 열림
+	if (bHasSearchFilter || bShowAllBoneNames)
 	{
 		NodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
 	}
@@ -832,7 +832,6 @@ void USkeletalMeshViewerWindow::RenderBoneTreeNode(int32 BoneIndex, const FRefer
 		{
 			FVector BoneWorldLocation = GetBoneWorldLocation(BoneIndex);
 			ViewerGizmo->SetFixedLocation(BoneWorldLocation);
-			ViewerGizmo->SetSelectedComponent(nullptr);  // 본은 SceneComponent가 아니므로 nullptr
 		}
 	}
 
@@ -1000,8 +999,8 @@ void USkeletalMeshViewerWindow::RenderToViewportTexture()
 				ViewerBatchLines->Render();
 			}
 
-			// Gizmo 렌더링 (컴포넌트 또는 본 선택 시)
-			if (ViewerGizmo && (SelectedComponent || SelectedBoneIndex != INDEX_NONE))
+			// Gizmo 렌더링 (본 선택 시)
+			if (ViewerGizmo && SelectedBoneIndex != INDEX_NONE)
 			{
 				// 본 선택 시: Local 모드 또는 Scale 모드일 때 선택된 본 자체의 월드 회전을 기즈모에 설정
 				// 드래그 중이 아닐 때만 업데이트 (드래그 시작 회전값을 보존하기 위해)
@@ -1025,6 +1024,8 @@ void USkeletalMeshViewerWindow::RenderToViewportTexture()
 
 				if (ToolbarWidget)
 				{
+					ViewerGizmo->SetCustomLocationSnapEnabled(ToolbarWidget->IsLocationSnapEnabled());
+					ViewerGizmo->SetCustomLocationSnapValue(ToolbarWidget->GetLocationSnapValue());
 					ViewerGizmo->SetCustomRotationSnapEnabled(ToolbarWidget->IsRotationSnapEnabled());
 					ViewerGizmo->SetCustomRotationSnapAngle(ToolbarWidget->GetRotationSnapAngle());
 					ViewerGizmo->SetCustomScaleSnapEnabled(ToolbarWidget->IsScaleSnapEnabled());
@@ -1158,9 +1159,9 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 
 			FRay WorldRay = Camera->ConvertToWorldRay(NdcX, NdcY);
 
-			// 기즈모 호버링 (컴포넌트 또는 본 선택 시)
+			// 기즈모 호버링 (본 선택 시)
 			FVector CollisionPoint;
-			if (ViewerGizmo && (SelectedComponent || SelectedBoneIndex != INDEX_NONE) && ViewerObjectPicker && !ViewerGizmo->IsDragging())
+			if (ViewerGizmo && SelectedBoneIndex != INDEX_NONE && ViewerObjectPicker && !ViewerGizmo->IsDragging())
 			{
 				ViewerObjectPicker->PickGizmo(Camera, WorldRay, *ViewerGizmo, CollisionPoint);
 			}
@@ -1269,8 +1270,8 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 		}
 	}
 
-	// 기즈모 드래그 처리 (컴포넌트 또는 본)
-	if (ViewerGizmo && ViewerGizmo->IsDragging() && (SelectedComponent || SelectedBoneIndex != INDEX_NONE) && ViewerViewportClient)
+	// 기즈모 드래그 처리 (본)
+	if (ViewerGizmo && ViewerGizmo->IsDragging() && SelectedBoneIndex != INDEX_NONE && ViewerViewportClient)
 	{
 		UCamera* Camera = ViewerViewportClient->GetCamera();
 		if (Camera)
@@ -1310,7 +1311,7 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 					case EGizmoMode::Translate:
 					{
 						// 기즈모로부터 월드 좌표 얻기
-						FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
+						FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay, true);
 
 						// 월드 좌표 → 본 로컬 좌표 변환
 						FVector BoneLocalLocation = WorldToLocalBoneTranslation(SelectedBoneIndex, GizmoDragLocation);
@@ -1367,38 +1368,6 @@ void USkeletalMeshViewerWindow::ProcessViewportInput(bool bViewerHasFocus, const
 						ViewerGizmo->SetFixedLocation(BoneWorldLocation);
 						break;
 					}
-				}
-			}
-			// 컴포넌트 선택 시: 기존 방식 (SceneComponent의 World Transform 수정)
-			else if (SelectedComponent)
-			{
-				switch (ViewerGizmo->GetGizmoMode())
-				{
-				case EGizmoMode::Translate:
-				{
-					FVector GizmoDragLocation = FGizmoHelper::ProcessDragLocation(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
-					ViewerGizmo->SetLocation(GizmoDragLocation);
-					break;
-				}
-				case EGizmoMode::Rotate:
-				{
-					// 뷰어의 ViewportRect 생성
-					FRect ViewportRect;
-					ViewportRect.Left = static_cast<uint32>(ViewportWindowPos.x);
-					ViewportRect.Top = static_cast<uint32>(ViewportWindowPos.y);
-					ViewportRect.Width = ViewerWidth;
-					ViewportRect.Height = ViewerHeight;
-
-					FQuaternion GizmoDragRotation = FGizmoHelper::ProcessDragRotation(ViewerGizmo, Camera, WorldRay, ViewportRect, true);
-					ViewerGizmo->SetComponentRotation(GizmoDragRotation);
-					break;
-				}
-				case EGizmoMode::Scale:
-				{
-					FVector GizmoDragScale = FGizmoHelper::ProcessDragScale(ViewerGizmo, ViewerObjectPicker, Camera, WorldRay);
-					ViewerGizmo->SetComponentScale(GizmoDragScale);
-					break;
-				}
 				}
 			}
 		}
@@ -1902,13 +1871,6 @@ void USkeletalMeshViewerWindow::RenderEditToolsPanel(const USkeletalMesh* InSkel
 	ImGui::PopStyleColor(3);
 
 	ImGui::Spacing();
-	ImGui::Separator();
-	ImGui::TextWrapped("추가 구현 예정:");
-	ImGui::BulletText("본 프로퍼티 편집");
-	ImGui::BulletText("애니메이션 프리뷰");
-	ImGui::BulletText("소켓 편집");
-	ImGui::BulletText("LOD 설정");
-
 
 	ImGui::Checkbox("Show All Bones", &bShowAllBones);
 
