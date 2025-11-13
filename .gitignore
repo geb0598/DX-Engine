@@ -459,3 +459,6 @@ GEMINI.md
 !/Mundi/Tools/Python/python311.dll
 # pip 다운로드 파일 제외
 /Mundi/Tools/Python/get-pip.py
+
+# Generated Files
+/Mundi/Generated/

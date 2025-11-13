@@ -14,6 +14,7 @@ import sys
 import os
 from pathlib import Path
 import subprocess
+import time
 
 # Add current script directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -21,6 +22,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from header_parser import HeaderParser
 from property_generator import PropertyGenerator
 from lua_generator import LuaBindingGenerator
+from cache_manager import CacheManager
+from parallel_parser import ParallelHeaderParser
 
 
 GENERATED_HEADER_TEMPLATE = """// Auto-generated file - DO NOT EDIT!
@@ -174,6 +177,21 @@ def main():
         default=None,
         help='업데이트할 .vcxproj 파일 경로 (예: Mundi.vcxproj)'
     )
+    parser.add_argument(
+        '--no-cache',
+        action='store_true',
+        help='캐시 사용 안 함 (모든 파일 재생성)'
+    )
+    parser.add_argument(
+        '--no-parallel',
+        action='store_true',
+        help='병렬 처리 사용 안 함 (순차 처리)'
+    )
+    parser.add_argument(
+        '--clear-cache',
+        action='store_true',
+        help='캐시 초기화 후 종료'
+    )
 
     args = parser.parse_args()
 
@@ -185,24 +203,87 @@ def main():
     # 출력 디렉토리 생성
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
+    # 캐시 매니저 초기화
+    cache_file = args.output_dir / ".codegen_cache.json"
+    cache = CacheManager(cache_file)
+
+    # 캐시 초기화 모드
+    if args.clear_cache:
+        print("=" * 60)
+        print(" Clearing cache...")
+        print("=" * 60)
+        cache.clear_cache()
+        print(" Cache cleared successfully!")
+        return
+
     print("=" * 60)
-    print(" Mundi Engine - Code Generator")
+    print(" Mundi Engine - Code Generator (Incremental Build)")
     print("=" * 60)
     print(f" Source: {args.source_dir}")
     print(f" Output: {args.output_dir}")
+    print(f" Cache:  {'Disabled' if args.no_cache else 'Enabled'}")
+    print(f" Parallel: {'Disabled' if args.no_parallel else 'Enabled'}")
     print()
 
+    # 시작 시간 측정
+    start_time = time.time()
+
     # 파서 초기화
-    header_parser = HeaderParser()
     prop_gen = PropertyGenerator()
     lua_gen = LuaBindingGenerator()
 
-    # 헤더 파일 스캔
-    print(" Scanning for reflection classes...")
-    classes = header_parser.find_reflection_classes(args.source_dir)
+    # 헤더 파일 스캔 (모든 헤더 파일 목록 가져오기)
+    print(" Scanning for header files...")
+    all_headers = list(args.source_dir.rglob("*.h"))
+    print(f" Found {len(all_headers)} header files")
+
+    # 캐시 확인하여 변경된 파일만 필터링
+    if not args.no_cache:
+        print("\n Checking cache for changed files...")
+        changed_headers = cache.get_changed_files(all_headers)
+        headers_to_parse = list(changed_headers)
+
+        if len(headers_to_parse) == 0:
+            print(" No changes detected - all files up to date!")
+            print()
+            print("=" * 60)
+            print(f" Code generation skipped (0.00s)")
+            print("=" * 60)
+            return
+
+        print(f" Changed files: {len(headers_to_parse)} / {len(all_headers)}")
+    else:
+        headers_to_parse = all_headers
+        print(" Cache disabled - processing all files")
+
+    # 헤더 파일 파싱 (병렬 or 순차)
+    print("\n Parsing reflection classes...")
+
+    if not args.no_parallel and len(headers_to_parse) >= 4:
+        # 병렬 파싱
+        parallel_parser = ParallelHeaderParser(project_root=Path.cwd())
+        classes = parallel_parser.parse_headers(headers_to_parse)
+    else:
+        # 순차 파싱
+        header_parser = HeaderParser()
+        classes = []
+        for header in headers_to_parse:
+            try:
+                class_info = header_parser.parse_header(header)
+                if class_info:
+                    classes.append(class_info)
+                    print(f"[OK] Found reflection class: {class_info.name} in {header.name}")
+            except Exception as e:
+                print(f" Error parsing {header}: {e}")
 
     if not classes:
-        print("[WARNING] No classes with GENERATED_REFLECTION_BODY() found.")
+        print("[WARNING] No classes with GENERATED_REFLECTION_BODY() found in changed files.")
+
+        # 변경된 파일이 있지만 reflection 클래스가 없는 경우에도 캐시 업데이트
+        if not args.no_cache:
+            for header in headers_to_parse:
+                cache.update_cache(header, [])
+
         return
 
     print(f"\n Found {len(classes)} reflection class(es)\n")
@@ -229,6 +310,10 @@ def main():
             updated_count += 1
         generated_files.append(cpp_output)
 
+        # 캐시 업데이트
+        if not args.no_cache:
+            cache.update_cache(class_info.header_file, [header_output, cpp_output])
+
         # 상태 표시
         if header_updated or cpp_updated:
             status = " Updated"
@@ -244,12 +329,17 @@ def main():
         print(f"  ├─ Properties: {len(class_info.properties)}")
         print(f"  └─ Functions:  {len([f for f in class_info.functions if f.metadata.get('lua_bind')])}")
 
+    # 경과 시간 계산
+    elapsed_time = time.time() - start_time
+
     print()
     print("=" * 60)
-    print(f" Code generation complete!")
+    print(f" Code generation complete! ({elapsed_time:.2f}s)")
     print(f"   Total files: {len(generated_files)}")
     print(f"   Updated: {updated_count}")
     print(f"   Skipped: {skipped_count * 2} (unchanged)")
+    if not args.no_cache:
+        print(f"   Cache entries: {len(cache.cache)}")
     print("=" * 60)
 
     # vcxproj 업데이트
