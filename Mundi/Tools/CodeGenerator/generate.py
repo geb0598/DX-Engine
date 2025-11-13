@@ -14,7 +14,6 @@ import sys
 import os
 from pathlib import Path
 import subprocess
-import time
 
 # Add current script directory to Python path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -22,8 +21,18 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from header_parser import HeaderParser
 from property_generator import PropertyGenerator
 from lua_generator import LuaBindingGenerator
-from cache_manager import CacheManager
-from parallel_parser import ParallelHeaderParser
+import re
+
+
+def pascal_case_to_upper_snake(name: str) -> str:
+    """
+    PascalCase를 UPPER_SNAKE_CASE로 변환
+    AActor -> A_ACTOR
+    UActorComponent -> U_ACTOR_COMPONENT
+    """
+    # 대문자 앞에 언더스코어 삽입 (첫 글자 제외)
+    result = re.sub(r'(?<!^)(?=[A-Z])', '_', name)
+    return result.upper()
 
 
 GENERATED_HEADER_TEMPLATE = """// Auto-generated file - DO NOT EDIT!
@@ -33,7 +42,14 @@ GENERATED_HEADER_TEMPLATE = """// Auto-generated file - DO NOT EDIT!
 
 // Macro expansion for GENERATED_REFLECTION_BODY()
 // This file must be included BEFORE the class definition
-#define CURRENT_CLASS_GENERATED_BODY \\
+
+// Undefine previous class's macro if exists
+#ifdef CURRENT_CLASS_GENERATED_BODY
+#undef CURRENT_CLASS_GENERATED_BODY
+#endif
+
+// Define class-specific body macro
+#define {macro_name}_BODY \\
 public: \\
     using Super = {parent_class}; \\
     using ThisClass_t = {class_name}; \\
@@ -56,6 +72,9 @@ private: \\
     static void StaticRegisterProperties(); \\
     static const bool bPropertiesRegistered; \\
 public:
+
+// Redirect generic macro to class-specific one
+#define CURRENT_CLASS_GENERATED_BODY {macro_name}_BODY
 """
 
 GENERATED_CPP_TEMPLATE = """// Auto-generated file - DO NOT EDIT!
@@ -98,9 +117,11 @@ def write_file_if_different(file_path: Path, new_content: str) -> bool:
 
 def generate_header_file(class_info):
     """.generated.h 파일 생성"""
+    macro_name = pascal_case_to_upper_snake(class_info.name)
     return GENERATED_HEADER_TEMPLATE.format(
         class_name=class_info.name,
-        parent_class=class_info.parent
+        parent_class=class_info.parent,
+        macro_name=macro_name
     )
 
 
@@ -177,21 +198,6 @@ def main():
         default=None,
         help='업데이트할 .vcxproj 파일 경로 (예: Mundi.vcxproj)'
     )
-    parser.add_argument(
-        '--no-cache',
-        action='store_true',
-        help='캐시 사용 안 함 (모든 파일 재생성)'
-    )
-    parser.add_argument(
-        '--no-parallel',
-        action='store_true',
-        help='병렬 처리 사용 안 함 (순차 처리)'
-    )
-    parser.add_argument(
-        '--clear-cache',
-        action='store_true',
-        help='캐시 초기화 후 종료'
-    )
 
     args = parser.parse_args()
 
@@ -203,87 +209,24 @@ def main():
     # 출력 디렉토리 생성
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    # 캐시 매니저 초기화
-    cache_file = args.output_dir / ".codegen_cache.json"
-    cache = CacheManager(cache_file)
-
-    # 캐시 초기화 모드
-    if args.clear_cache:
-        print("=" * 60)
-        print(" Clearing cache...")
-        print("=" * 60)
-        cache.clear_cache()
-        print(" Cache cleared successfully!")
-        return
-
     print("=" * 60)
-    print(" Mundi Engine - Code Generator (Incremental Build)")
+    print(" Mundi Engine - Code Generator")
     print("=" * 60)
     print(f" Source: {args.source_dir}")
     print(f" Output: {args.output_dir}")
-    print(f" Cache:  {'Disabled' if args.no_cache else 'Enabled'}")
-    print(f" Parallel: {'Disabled' if args.no_parallel else 'Enabled'}")
     print()
 
-    # 시작 시간 측정
-    start_time = time.time()
-
     # 파서 초기화
+    header_parser = HeaderParser()
     prop_gen = PropertyGenerator()
     lua_gen = LuaBindingGenerator()
 
-    # 헤더 파일 스캔 (모든 헤더 파일 목록 가져오기)
-    print(" Scanning for header files...")
-    all_headers = list(args.source_dir.rglob("*.h"))
-    print(f" Found {len(all_headers)} header files")
-
-    # 캐시 확인하여 변경된 파일만 필터링
-    if not args.no_cache:
-        print("\n Checking cache for changed files...")
-        changed_headers = cache.get_changed_files(all_headers)
-        headers_to_parse = list(changed_headers)
-
-        if len(headers_to_parse) == 0:
-            print(" No changes detected - all files up to date!")
-            print()
-            print("=" * 60)
-            print(f" Code generation skipped (0.00s)")
-            print("=" * 60)
-            return
-
-        print(f" Changed files: {len(headers_to_parse)} / {len(all_headers)}")
-    else:
-        headers_to_parse = all_headers
-        print(" Cache disabled - processing all files")
-
-    # 헤더 파일 파싱 (병렬 or 순차)
-    print("\n Parsing reflection classes...")
-
-    if not args.no_parallel and len(headers_to_parse) >= 4:
-        # 병렬 파싱
-        parallel_parser = ParallelHeaderParser(project_root=Path.cwd())
-        classes = parallel_parser.parse_headers(headers_to_parse)
-    else:
-        # 순차 파싱
-        header_parser = HeaderParser()
-        classes = []
-        for header in headers_to_parse:
-            try:
-                class_info = header_parser.parse_header(header)
-                if class_info:
-                    classes.append(class_info)
-                    print(f"[OK] Found reflection class: {class_info.name} in {header.name}")
-            except Exception as e:
-                print(f" Error parsing {header}: {e}")
+    # 헤더 파일 스캔
+    print(" Scanning for reflection classes...")
+    classes = header_parser.find_reflection_classes(args.source_dir)
 
     if not classes:
-        print("[WARNING] No classes with GENERATED_REFLECTION_BODY() found in changed files.")
-
-        # 변경된 파일이 있지만 reflection 클래스가 없는 경우에도 캐시 업데이트
-        if not args.no_cache:
-            for header in headers_to_parse:
-                cache.update_cache(header, [])
-
+        print("[WARNING] No classes with GENERATED_REFLECTION_BODY() found.")
         return
 
     print(f"\n Found {len(classes)} reflection class(es)\n")
@@ -310,10 +253,6 @@ def main():
             updated_count += 1
         generated_files.append(cpp_output)
 
-        # 캐시 업데이트
-        if not args.no_cache:
-            cache.update_cache(class_info.header_file, [header_output, cpp_output])
-
         # 상태 표시
         if header_updated or cpp_updated:
             status = " Updated"
@@ -329,17 +268,12 @@ def main():
         print(f"  ├─ Properties: {len(class_info.properties)}")
         print(f"  └─ Functions:  {len([f for f in class_info.functions if f.metadata.get('lua_bind')])}")
 
-    # 경과 시간 계산
-    elapsed_time = time.time() - start_time
-
     print()
     print("=" * 60)
-    print(f" Code generation complete! ({elapsed_time:.2f}s)")
+    print(f" Code generation complete!")
     print(f"   Total files: {len(generated_files)}")
     print(f"   Updated: {updated_count}")
     print(f"   Skipped: {skipped_count * 2} (unchanged)")
-    if not args.no_cache:
-        print(f"   Cache entries: {len(cache.cache)}")
     print("=" * 60)
 
     # vcxproj 업데이트
