@@ -262,11 +262,11 @@ def main():
 
         print(f"{status}: {class_info.name}")
         if header_updated:
-            print(f"  ├─ {header_output.name} (modified)")
+            print(f"  - {header_output.name} (modified)")
         if cpp_updated:
-            print(f"  ├─ {cpp_output.name} (modified)")
-        print(f"  ├─ Properties: {len(class_info.properties)}")
-        print(f"  └─ Functions:  {len([f for f in class_info.functions if f.metadata.get('lua_bind')])}")
+            print(f"  - {cpp_output.name} (modified)")
+        print(f"  - Properties: {len(class_info.properties)}")
+        print(f"  - Functions:  {len([f for f in class_info.functions if f.metadata.get('lua_bind')])}")
 
     print()
     print("=" * 60)
