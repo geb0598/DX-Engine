@@ -276,18 +276,26 @@ void SSkeletalMeshViewerWindow::OnRender()
 
             TArray<USkeletalMesh*> AllSkeletalMeshes = UResourceManager::GetInstance().GetAll<USkeletalMesh>();
 
-            const char* PreviewValue = "Auto-detect or Select...";
+            FString PreviewValueStr = "Auto-detect or Select...";
             if (ActiveState->SelectedSkeletonMesh)
             {
                 const FSkeleton* Skeleton = ActiveState->SelectedSkeletonMesh->GetSkeleton();
                 if (Skeleton)
                 {
-                    PreviewValue = Skeleton->Name.c_str();
+                    // Skeleton Name이 비어있으면 파일명 사용
+                    if (!Skeleton->Name.empty())
+                    {
+                        PreviewValueStr = Skeleton->Name;
+                    }
+                    else
+                    {
+                        PreviewValueStr = ActiveState->SelectedSkeletonMesh->GetFilePath();
+                    }
                 }
             }
 
             ImGui::PushItemWidth(-1.0f);
-            if (ImGui::BeginCombo("##SkeletonCombo", PreviewValue))
+            if (ImGui::BeginCombo("##SkeletonCombo", PreviewValueStr.c_str()))
             {
                 // "None" 옵션 추가 (With Skin의 경우)
                 bool bNoneSelected = (ActiveState->SelectedSkeletonMesh == nullptr);
@@ -303,13 +311,51 @@ void SSkeletalMeshViewerWindow::OnRender()
                     const FSkeleton* Skeleton = Mesh->GetSkeleton();
                     if (Skeleton)
                     {
-                        bool bIsSelected = (ActiveState->SelectedSkeletonIndex == i);
-                        FString Label = Skeleton->Name + " (" + Mesh->GetFilePath() + ")";
+                        bool bIsSelected = (ActiveState->SelectedSkeletonMesh == Mesh);
+
+                        // 레이블 생성: Skeleton 이름이 있으면 사용, 없으면 파일명 사용
+                        FString Label;
+                        if (!Skeleton->Name.empty())
+                        {
+                            Label = Skeleton->Name;
+                        }
+                        else
+                        {
+                            Label = Mesh->GetFilePath();
+                        }
 
                         if (ImGui::Selectable(Label.c_str(), bIsSelected))
                         {
                             ActiveState->SelectedSkeletonIndex = i;
                             ActiveState->SelectedSkeletonMesh = Mesh;
+
+                            // 선택된 SkeletalMesh 로드
+                            if (ActiveState->PreviewActor)
+                            {
+                                USkeletalMeshComponent* Component = ActiveState->PreviewActor->GetSkeletalMeshComponent();
+                                if (Component)
+                                {
+                                    Component->SetSkeletalMesh(Mesh->GetFilePath());
+                                    UE_LOG("Loaded SkeletalMesh: %s", Mesh->GetFilePath().c_str());
+
+                                    // 애니메이션 리스트도 업데이트 (첫 번째 애니메이션 자동 선택)
+                                    const TArray<UAnimSequence*>& Animations = Mesh->GetAnimations();
+                                    if (Animations.Num() > 0)
+                                    {
+                                        ActiveState->SelectedAnimationIndex = 0;
+                                        ActiveState->CurrentAnimation = Animations[0];
+                                        ActiveState->bIsPlaying = true;
+                                        ActiveState->CurrentAnimationTime = 0.0f;
+                                        UE_LOG("Auto-selected first animation (%d total animations)", Animations.Num());
+                                    }
+                                    else
+                                    {
+                                        ActiveState->SelectedAnimationIndex = -1;
+                                        ActiveState->CurrentAnimation = nullptr;
+                                        ActiveState->bIsPlaying = false;
+                                    }
+                                }
+                            }
                         }
 
                         if (bIsSelected)
