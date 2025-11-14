@@ -1,6 +1,8 @@
 ﻿#pragma once
 #include "ResourceBase.h"
 
+class UAnimSequence;
+
 class USkeletalMesh : public UResourceBase
 {
 public:
@@ -8,13 +10,18 @@ public:
 
     USkeletalMesh();
     virtual ~USkeletalMesh() override;
-    
+
     void Load(const FString& InFilePath, ID3D11Device* InDevice);
-    
+
     const FSkeletalMeshData* GetSkeletalMeshData() const { return Data; }
     const FString& GetPathFileName() const { static const FString EmptyString; if (Data) return Data->PathFileName; return EmptyString; }
     const FSkeleton* GetSkeleton() const { return Data ? &Data->Skeleton : nullptr; }
     uint32 GetBoneCount() const { return Data ? Data->Skeleton.Bones.Num() : 0; }
+
+    // Animation 관리
+    void AddAnimation(UAnimSequence* Animation) { Animations.push_back(Animation); }
+    const TArray<UAnimSequence*>& GetAnimations() const { return Animations; }
+    void ClearAnimations() { Animations.clear(); }
     
     // ID3D11Buffer* GetVertexBuffer() const { return VertexBuffer; } // W10 CPU Skinning이라 Component가 VB 소유
     ID3D11Buffer* GetIndexBuffer() const { return IndexBuffer; }
@@ -41,9 +48,12 @@ private:
     // ID3D11Buffer* VertexBuffer = nullptr; // W10 CPU Skinning이라 Component가 VB 소유
     ID3D11Buffer* IndexBuffer = nullptr;
     uint32 VertexCount = 0;     // 정점 개수
-    uint32 IndexCount = 0;     // 버텍스 점의 개수 
+    uint32 IndexCount = 0;     // 버텍스 점의 개수
     uint32 VertexStride = 0;
-    
+
     // CPU 리소스
     FSkeletalMeshData* Data = nullptr;
+
+    // Animations
+    TArray<UAnimSequence*> Animations;
 };
