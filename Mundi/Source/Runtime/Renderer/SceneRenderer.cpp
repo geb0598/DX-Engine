@@ -675,21 +675,14 @@ void FSceneRenderer::GatherVisibleProxies()
 					// 일반 컴포넌트
 					if (UMeshComponent* MeshComponent = Cast<UMeshComponent>(PrimitiveComponent))
 					{
-						bool bShouldAdd = true;
-
 						// 메시 타입이 '스태틱 메시'인 경우에만 ShowFlag를 검사하여 추가 여부를 결정
 						if (MeshComponent->IsA(UStaticMeshComponent::StaticClass()))
 						{
-							bShouldAdd = bDrawStaticMeshes;
+							if (bDrawStaticMeshes) { Proxies.Meshes.Add(MeshComponent); }
 						}
-						else if (MeshComponent->IsA(USkinnedMeshComponent::StaticClass()))
+						else if (USkinnedMeshComponent* SkinnedMeshComponent = Cast<USkinnedMeshComponent>(MeshComponent))
 						{
-						    bShouldAdd = bDrawSkeletalMeshes;
-						}
-
-						if (bShouldAdd)
-						{
-							Proxies.Meshes.Add(MeshComponent);
+						    if (bDrawSkeletalMeshes) { Proxies.SkinnedMeshes.Add(SkinnedMeshComponent); }
 						}
 					}
 					else if (UBillboardComponent* BillboardComponent = Cast<UBillboardComponent>(PrimitiveComponent); BillboardComponent && bUseBillboard)
@@ -882,6 +875,11 @@ void FSceneRenderer::RenderOpaquePass(EViewMode InRenderViewMode)
 
 	// --- 1. 수집 (Collect) ---
 	MeshBatchElements.Empty();
+	SkinnedMeshBatchElements.Empty();
+	for (USkinnedMeshComponent* SkinnedMeshComponent : Proxies.SkinnedMeshes)
+	{
+		SkinnedMeshComponent->CollectMeshBatches(SkinnedMeshBatchElements, View);
+	}
 	for (UMeshComponent* MeshComponent : Proxies.Meshes)
 	{
 		MeshComponent->CollectMeshBatches(MeshBatchElements, View);
@@ -899,9 +897,14 @@ void FSceneRenderer::RenderOpaquePass(EViewMode InRenderViewMode)
 	}
 
 	// --- 2. 정렬 (Sort) ---
+	SkinnedMeshBatchElements.Sort();
 	MeshBatchElements.Sort();
 
 	// --- 3. 그리기 (Draw) ---
+	{
+		GPU_EVENT_TIMER(RHIDevice->GetDeviceContext(), "SKINNING_GPU_TASK", OwnerRenderer->GetGPUTimer());
+		DrawMeshBatches(SkinnedMeshBatchElements, true);
+	}
 	DrawMeshBatches(MeshBatchElements, true);
 }
 
@@ -1451,6 +1454,8 @@ void FSceneRenderer::DrawMeshBatches(TArray<FMeshBatchElement>& InMeshBatches, b
 
 		if (Batch.SkinningMatrices)
 		{
+			TIME_PROFILE(SKINNING_CPU_TASK)
+
 			void* pMatrixData = (void*)Batch.SkinningMatrices->GetData();
 			size_t MatrixDataSize = Batch.SkinningMatrices->Num() * sizeof(FMatrix);
 

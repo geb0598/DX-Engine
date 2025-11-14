@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "SkinnedMeshComponent.h"
 #include "MeshBatchElement.h"
+#include "PlatformTime.h"
 #include "SceneView.h"
 
 USkinnedMeshComponent::USkinnedMeshComponent() : SkeletalMesh(nullptr)
@@ -51,6 +52,8 @@ void USkinnedMeshComponent::CollectMeshBatches(TArray<FMeshBatchElement>& OutMes
 
 	if (!bIsGPUSkinning && bSkinningMatricesDirty)
 	{
+		TIME_PROFILE(SKINNING_CPU_TASK)
+
 		PerformSkinning();
 		SkeletalMesh->UpdateVertexBuffer(SkinnedVertices, VertexBuffer);
 		bSkinningMatricesDirty = false;
