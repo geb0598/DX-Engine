@@ -8,6 +8,7 @@
 #include "WindowsBinWriter.h"
 #include "PathUtils.h"
 #include <filesystem>
+#include <cmath>
 
 IMPLEMENT_CLASS(UFbxLoader)
 
@@ -252,7 +253,14 @@ FSkeletalMeshData* UFbxLoader::LoadFbxMeshAsset(const FString& FilePath)
     FbxAxisSystem UnrealImportAxis(FbxAxisSystem::eZAxis, FbxAxisSystem::eParityEven, FbxAxisSystem::eLeftHanded);
     FbxAxisSystem SourceSetup = Scene->GetGlobalSettings().GetAxisSystem();
 
-    FbxSystemUnit::m.ConvertScene(Scene);
+    // 단위 변환: FBX의 원본 단위를 확인하고 엔진 단위(cm)로 변환
+    FbxSystemUnit SceneSystemUnit = Scene->GetGlobalSettings().GetSystemUnit();
+    if (SceneSystemUnit != FbxSystemUnit::cm)
+    {
+        // 원본 단위를 센티미터로 변환
+        FbxSystemUnit::cm.ConvertScene(Scene);
+        UE_LOG("FBX 단위 변환: %s -> cm", SceneSystemUnit.GetScaleFactorAsString().Buffer());
+    }
 
     if (SourceSetup != UnrealImportAxis)
     {
@@ -1229,6 +1237,21 @@ UAnimSequence* UFbxLoader::LoadFbxAnimation(const FString& FilePath, const FSkel
 
 	Importer->Destroy();
 
+	// 단위 변환만 적용 (축 변환은 안 함!)
+	// Animation은 로컬 Transform이므로 축 변환을 하면 안 됨
+	// 단위 변환: FBX의 원본 단위를 확인하고 엔진 단위(m)로 변환
+	FbxSystemUnit SceneSystemUnit = Scene->GetGlobalSettings().GetSystemUnit();
+	if (SceneSystemUnit != FbxSystemUnit::m)
+	{
+		// 원본 단위를 미터로 변환 (cm → m은 1/100 크기)
+		FbxSystemUnit::m.ConvertScene(Scene);
+		UE_LOG("UFbxLoader::LoadFbxAnimation: FBX 단위 변환 완료 (m)");
+	}
+	else
+	{
+		UE_LOG("UFbxLoader::LoadFbxAnimation: FBX 이미 m 단위, 변환 스킵");
+	}
+
 	// 2. 애니메이션 스택 찾기
 	int32 AnimStackCount = Scene->GetSrcObjectCount<FbxAnimStack>();
 	if (AnimStackCount == 0)
@@ -1476,6 +1499,19 @@ FSkeleton* UFbxLoader::ExtractSkeletonFromFbx(const FString& FilePath)
 	}
 
 	Importer->Destroy();
+
+	// 단위 변환만 적용 (축 변환은 안 함!)
+	FbxSystemUnit SceneSystemUnit = Scene->GetGlobalSettings().GetSystemUnit();
+	if (SceneSystemUnit != FbxSystemUnit::m)
+	{
+		// 원본 단위를 미터로 변환 (cm → m은 1/100 크기)
+		FbxSystemUnit::m.ConvertScene(Scene);
+		UE_LOG("UFbxLoader::ExtractSkeletonFromFbx: FBX 단위 변환 완료 (m)");
+	}
+	else
+	{
+		UE_LOG("UFbxLoader::ExtractSkeletonFromFbx: FBX 이미 m 단위, 변환 스킵");
+	}
 
 	// 3. Skeleton 추출
 	FSkeleton* ExtractedSkeleton = new FSkeleton();

@@ -1216,6 +1216,9 @@ void SSkeletalMeshViewerWindow::UpdateBonesFromAnimation(ViewerState* State)
     if (!Skeleton)
         return;
 
+    static bool bFirstUpdate = true;
+    int32 UpdatedBones = 0;
+
     // 현재 시간에서 각 본의 Transform 샘플링
     for (int32 BoneIndex = 0; BoneIndex < Skeleton->Bones.Num(); ++BoneIndex)
     {
@@ -1228,10 +1231,27 @@ void SSkeletalMeshViewerWindow::UpdateBonesFromAnimation(ViewerState* State)
         // Animation에서 본 Transform 가져오기
         if (State->CurrentAnimation->GetBoneTransformAtTime(Bone.Name, State->CurrentAnimationTime, Position, Rotation, Scale))
         {
+            // 첫 업데이트시 디버그 로그
+            if (bFirstUpdate && BoneIndex < 3)
+            {
+                UE_LOG("UpdateBonesFromAnimation: Bone[%d] '%s' - Pos(%.2f,%.2f,%.2f) Rot(%.2f,%.2f,%.2f,%.2f) Scale(%.2f,%.2f,%.2f)",
+                    BoneIndex, Bone.Name.c_str(),
+                    Position.X, Position.Y, Position.Z,
+                    Rotation.X, Rotation.Y, Rotation.Z, Rotation.W,
+                    Scale.X, Scale.Y, Scale.Z);
+            }
+
             // SkeletalMeshComponent에 적용
             FTransform BoneTransform(Position, Rotation, Scale);
             State->PreviewActor->GetSkeletalMeshComponent()->SetBoneLocalTransform(BoneIndex, BoneTransform);
+            UpdatedBones++;
         }
+    }
+
+    if (bFirstUpdate)
+    {
+        UE_LOG("UpdateBonesFromAnimation: Updated %d / %d bones at time %.2f", UpdatedBones, Skeleton->Bones.Num(), State->CurrentAnimationTime);
+        bFirstUpdate = false;
     }
 
     // Bone lines dirty 플래그 설정 (본 위치가 변경되었으므로 라인 재구성 필요)
