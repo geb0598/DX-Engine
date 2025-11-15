@@ -32,7 +32,8 @@ public:
 
     // Rebuild bone line overlay from the current skeletal mesh bind pose
     // SelectedBoneIndex: highlight this bone and its parent connection
-    void RebuildBoneLines(int32 SelectedBoneIndex);
+    // bUpdateAllBones: true = update all bones (for animation), false = update selected bone subtree only
+    void RebuildBoneLines(int32 SelectedBoneIndex, bool bUpdateAllBones = false);
 
     // Position the anchor
     void RepositionAnchorToBone(int32 BoneIndex);
