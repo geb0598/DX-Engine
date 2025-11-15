@@ -2,6 +2,12 @@
 
 class UWorld; class FViewport; class FViewportClient; class ASkeletalMeshActor; class USkeletalMesh; class UAnimSequence;
 
+enum class EViewerMode : uint8
+{
+    Skeletal,   // Skeleton, Bone 편집 모드
+    Animation   // Animation 재생 및 편집 모드
+};
+
 class ViewerState
 {
 public:
@@ -37,6 +43,9 @@ public:
     bool bBoneTransformChanged = false;
     bool bBoneRotationEditing = false;
 
+    // 편집된 bone transform 캐시 (애니메이션 재생 중에도 유지)
+    TMap<int32, FTransform> EditedBoneTransforms;  // BoneIndex -> 편집된 Transform
+
     // 애니메이션 재생 관련
     int32 SelectedAnimationIndex = -1;  // 선택된 Animation 인덱스
     UAnimSequence* CurrentAnimation = nullptr;  // 현재 재생 중인 Animation
@@ -44,4 +53,7 @@ public:
     float CurrentAnimationTime = 0.0f;  // 현재 재생 시간 (초)
     bool bLoopAnimation = true;  // 루프 재생 여부
     float PlaybackSpeed = 1.0f;  // 재생 속도 배율
+
+    // View Mode
+    EViewerMode ViewMode = EViewerMode::Skeletal;  // 기본값: Skeletal 모드
 };
