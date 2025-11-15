@@ -8,9 +8,9 @@
 #include "Source/Runtime/Engine/GameFramework/Character.h"
 #include "Source/Runtime/Engine/Components/CharacterMovementComponent.h"
 
-IMPLEMENT_CLASS(UAnimationStateMachine)
+IMPLEMENT_CLASS(UAnimStateMachine)
 
-UAnimationStateMachine::UAnimationStateMachine()
+UAnimStateMachine::UAnimStateMachine()
 	: CurrentState(EAnimState::Idle)
 	, PreviousState(EAnimState::Idle)
 	, bIsTransitioning(false)
@@ -33,7 +33,7 @@ UAnimationStateMachine::UAnimationStateMachine()
 /**
  * @brief State Machine 초기화
  */
-void UAnimationStateMachine::Initialize(APawn* InPawn)
+void UAnimStateMachine::Initialize(APawn* InPawn)
 {
 	OwnerPawn = InPawn;
 
@@ -53,7 +53,7 @@ void UAnimationStateMachine::Initialize(APawn* InPawn)
 /**
  * @brief 매 프레임 상태 업데이트
  */
-void UAnimationStateMachine::UpdateState(float DeltaSeconds)
+void UAnimStateMachine::UpdateState(float DeltaSeconds)
 {
 	if (!OwnerPawn)
 	{
@@ -83,7 +83,7 @@ void UAnimationStateMachine::UpdateState(float DeltaSeconds)
 /**
  * @brief 상태별 애니메이션 등록
  */
-void UAnimationStateMachine::RegisterStateAnimation(EAnimState State, UAnimSequence* Animation)
+void UAnimStateMachine::RegisterStateAnimation(EAnimState State, UAnimSequence* Animation)
 {
 	int32 StateIndex = static_cast<int32>(State);
 	if (StateIndex >= 0 && StateIndex < StateAnimations.Num())
@@ -95,7 +95,7 @@ void UAnimationStateMachine::RegisterStateAnimation(EAnimState State, UAnimSeque
 /**
  * @brief 전환 규칙 추가
  */
-void UAnimationStateMachine::AddTransition(const FAnimStateTransition& Transition)
+void UAnimStateMachine::AddTransition(const FAnimStateTransition& Transition)
 {
 	Transitions.Add(Transition);
 }
@@ -103,7 +103,7 @@ void UAnimationStateMachine::AddTransition(const FAnimStateTransition& Transitio
 /**
  * @brief 현재 재생 중인 애니메이션 가져오기
  */
-UAnimSequence* UAnimationStateMachine::GetCurrentAnimation() const
+UAnimSequence* UAnimStateMachine::GetCurrentAnimation() const
 {
 	int32 StateIndex = static_cast<int32>(CurrentState);
 	if (StateIndex >= 0 && StateIndex < StateAnimations.Num())
@@ -116,7 +116,7 @@ UAnimSequence* UAnimationStateMachine::GetCurrentAnimation() const
 /**
  * @brief 전환 진행도 가져오기 (0~1)
  */
-float UAnimationStateMachine::GetTransitionAlpha() const
+float UAnimStateMachine::GetTransitionAlpha() const
 {
 	if (!bIsTransitioning || TransitionDuration <= 0.0f)
 	{
@@ -131,7 +131,7 @@ float UAnimationStateMachine::GetTransitionAlpha() const
  *
  * Phase 1의 BlendTwoPosesTogether를 사용하여 부드러운 전환.
  */
-void UAnimationStateMachine::EvaluateCurrentPose(FPoseContext& OutPose)
+void UAnimStateMachine::EvaluateCurrentPose(FPoseContext& OutPose)
 {
 	// 전환 중이 아니면 현재 상태 애니메이션만 반환
 	if (!bIsTransitioning)
@@ -181,7 +181,7 @@ void UAnimationStateMachine::EvaluateCurrentPose(FPoseContext& OutPose)
 /**
  * @brief 전환 가능한 상태 체크
  */
-void UAnimationStateMachine::CheckTransitions()
+void UAnimStateMachine::CheckTransitions()
 {
 	// Movement 기반 상태 결정
 	EAnimState DesiredState = DetermineStateFromMovement();
@@ -196,7 +196,7 @@ void UAnimationStateMachine::CheckTransitions()
 /**
  * @brief 특정 상태로 전환
  */
-void UAnimationStateMachine::TransitionToState(EAnimState NewState)
+void UAnimStateMachine::TransitionToState(EAnimState NewState)
 {
 	// 이미 같은 상태면 무시
 	if (NewState == CurrentState && !bIsTransitioning)
@@ -227,7 +227,7 @@ void UAnimationStateMachine::TransitionToState(EAnimState NewState)
 /**
  * @brief 현재 Movement 상태 기반으로 AnimState 결정
  */
-EAnimState UAnimationStateMachine::DetermineStateFromMovement()
+EAnimState UAnimStateMachine::DetermineStateFromMovement()
 {
 	if (!OwnerPawn)
 	{
@@ -318,7 +318,7 @@ EAnimState UAnimationStateMachine::DetermineStateFromMovement()
 /**
  * @brief 상태 이름 가져오기 (디버깅용)
  */
-const char* UAnimationStateMachine::GetStateName(EAnimState State)
+const char* UAnimStateMachine::GetStateName(EAnimState State)
 {
 	switch (State)
 	{

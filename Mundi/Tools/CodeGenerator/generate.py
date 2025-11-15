@@ -84,7 +84,7 @@ GENERATED_CPP_TEMPLATE = """// Auto-generated file - DO NOT EDIT!
 #include "{header_include}"
 #include "Source/Runtime/Core/Object/ObjectMacros.h"
 #include "Source/Runtime/Engine/Scripting/LuaBindHelpers.h"
-
+{additional_includes}
 // ===== Class Factory Registration (IMPLEMENT_CLASS) =====
 {implement_class_code}
 
@@ -153,7 +153,41 @@ const bool {class_name}::bPropertiesRegistered = []() {{
 """
 
 
-def generate_cpp_file(class_info, prop_gen, lua_gen):
+def extract_additional_includes(class_info, all_classes):
+    """UFUNCTION에서 사용되는 타입의 헤더 파일을 자동으로 추출"""
+    # 모든 클래스의 타입명 -> 헤더 파일명 매핑 생성
+    type_to_header = {}
+    # all_classes가 리스트인 경우 처리
+    class_list = all_classes.values() if isinstance(all_classes, dict) else all_classes
+    for cls in class_list:
+        # 헤더 파일명만 사용 (상대 경로, 절대 경로 모두 처리)
+        header_path = Path(cls.header_file)
+        type_to_header[cls.name] = header_path.name  # 파일명만 추출
+
+    required_includes = set()
+
+    # UFUNCTION의 반환 타입과 파라미터 타입 검사
+    for func in class_info.functions:
+        if func.metadata.get('lua_bind', False):
+            # 반환 타입 체크
+            return_type = func.return_type.replace('*', '').replace('const', '').strip()
+            if return_type in type_to_header and return_type != class_info.name:
+                required_includes.add(type_to_header[return_type])
+
+            # 파라미터 타입 체크
+            for param in func.parameters:
+                param_type = param.type.replace('*', '').replace('const', '').replace('&', '').strip()
+                if param_type in type_to_header and param_type != class_info.name:
+                    required_includes.add(type_to_header[param_type])
+
+    # include 문자열 생성
+    if required_includes:
+        include_lines = '\n'.join(f'#include "{header}"' for header in sorted(required_includes))
+        return '\n' + include_lines + '\n'
+    return ''
+
+
+def generate_cpp_file(class_info, prop_gen, lua_gen, all_classes):
     """.generated.cpp 파일 생성"""
     # 헤더 파일 상대 경로 계산
     header_include = class_info.header_file.name
@@ -167,12 +201,16 @@ def generate_cpp_file(class_info, prop_gen, lua_gen):
     # Lua 바인딩 코드 생성
     lua_code = lua_gen.generate(class_info)
 
+    # 추가 include 생성 (all_classes 전달)
+    additional_includes = extract_additional_includes(class_info, all_classes)
+
     # 최종 파일 내용
     return GENERATED_CPP_TEMPLATE.format(
         header_include=header_include,
         implement_class_code=implement_class_code,
         property_code=property_code,
-        lua_code=lua_code
+        lua_code=lua_code,
+        additional_includes=additional_includes
     )
 
 
@@ -250,7 +288,7 @@ def main():
 
         # .generated.cpp 파일 생성
         cpp_output = args.output_dir / f"{class_info.name}.generated.cpp"
-        cpp_code = generate_cpp_file(class_info, prop_gen, lua_gen)
+        cpp_code = generate_cpp_file(class_info, prop_gen, lua_gen, classes)
         cpp_updated = write_file_if_different(cpp_output, cpp_code)
         if cpp_updated:
             updated_count += 1

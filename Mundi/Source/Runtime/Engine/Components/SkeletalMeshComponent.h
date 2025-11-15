@@ -1,9 +1,9 @@
-﻿#pragma once
+#pragma once
 #include "SkinnedMeshComponent.h"
 #include "USkeletalMeshComponent.generated.h"
 
 class UAnimInstance;
-class UAnimationStateMachine;
+class UAnimStateMachine;
 class UAnimSequence;
 struct FAnimNotifyEvent;
 
@@ -66,16 +66,16 @@ public:
 	 *
 	 * @param InStateMachine 설정할 State Machine
 	 */
-	void SetAnimationStateMachine(UAnimationStateMachine* InStateMachine);
+	void SetAnimationStateMachine(UAnimStateMachine* InStateMachine);
 
 	/**
 	 * @brief State Machine 가져오기
 	 */
-	UAnimationStateMachine* GetAnimationStateMachine() const { return AnimStateMachine; }
+	UAnimStateMachine* GetAnimationStateMachine() const { return AnimStateMachine; }
 
 protected:
 	UAnimInstance* AnimInstance;
-	UAnimationStateMachine* AnimStateMachine;  // Phase 4: State Machine
+	UAnimStateMachine* AnimStateMachine;  // Phase 4: State Machine
 	TArray<FTransform> CurrentLocalSpacePose;
 	TArray<FTransform> CurrentComponentSpacePose;
 	TArray<FMatrix> TempFinalSkinningMatrices;

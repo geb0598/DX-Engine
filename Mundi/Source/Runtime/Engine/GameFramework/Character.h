@@ -5,12 +5,14 @@
 #pragma once
 
 #include "Pawn.h"
+#include "AnimStateMachine.h"
 #include "ACharacter.generated.h"
+
+
 // 전방 선언
 class UCharacterMovementComponent;
 class USceneComponent;
 class USkeletalMeshComponent;
-class UAnimationStateMachine;
 
 /**
  * ACharacter
@@ -39,19 +41,22 @@ public:
 	// ────────────────────────────────────────────────
 
 	/** CharacterMovementComponent를 반환합니다 */
+	UFUNCTION(LuaBind, DisplayName = "GetCharacterMovement")
 	UCharacterMovementComponent* GetCharacterMovement() const { return CharacterMovement; }
 
 	/** SkeletalMesh 컴포넌트를 반환합니다 */
+	UFUNCTION(LuaBind, DisplayName = "GetMesh")
 	USkeletalMeshComponent* GetMesh() const { return SkeletalMeshComponent; }
 
 	/** AnimationStateMachine을 반환합니다 */
-	UAnimationStateMachine* GetAnimationStateMachine() const { return AnimStateMachine; }
+	UFUNCTION(LuaBind, DisplayName = "GetAnimationStateMachine")
+	UAnimStateMachine* GetAnimationStateMachine() const { return AnimStateMachine; }
 
 	// ────────────────────────────────────────────────
 	// 이동 입력 처리 (APawn 오버라이드)
 	// ────────────────────────────────────────────────
 
-	virtual void AddMovementInput(FVector WorldDirection, float ScaleValue = 1.0f) override;
+	virtual void AddMovementInput(FVector WorldDirection, float ScaleValue) override;
 
 	// ────────────────────────────────────────────────
 	// Character 동작
@@ -60,31 +65,37 @@ public:
 	/**
 	 * 점프를 시도합니다.
 	 */
+	UFUNCTION(LuaBind, DisplayName = "Jump")
 	virtual void Jump();
 
 	/**
 	 * 점프를 중단합니다.
 	 */
+	UFUNCTION(LuaBind, DisplayName = "StopJumping")
 	virtual void StopJumping();
 
 	/**
 	 * 점프 가능 여부를 확인합니다.
 	 */
+	UFUNCTION(LuaBind, DisplayName = "CanJump")
 	virtual bool CanJump() const;
 
 	/**
 	 * 웅크리기를 시작합니다.
 	 */
+	UFUNCTION(LuaBind, DisplayName = "Crouch")
 	virtual void Crouch();
 
 	/**
 	 * 웅크리기를 해제합니다.
 	 */
+	UFUNCTION(LuaBind, DisplayName = "UnCrouch")
 	virtual void UnCrouch();
 
 	/**
 	 * 웅크리고 있는지 확인합니다.
 	 */
+	UFUNCTION(LuaBind, DisplayName = "IsCrouched")
 	bool IsCrouched() const { return bIsCrouched; }
 
 	// ────────────────────────────────────────────────
@@ -94,16 +105,19 @@ public:
 	/**
 	 * 현재 속도를 반환합니다.
 	 */
+	UFUNCTION(LuaBind, DisplayName = "GetVelocity")
 	virtual FVector GetVelocity() const;
 
 	/**
 	 * 지면에 있는지 확인합니다.
 	 */
+	UFUNCTION(LuaBind, DisplayName = "IsGrounded")
 	bool IsGrounded() const;
 
 	/**
 	 * 낙하 중인지 확인합니다.
 	 */
+	UFUNCTION(LuaBind, DisplayName = "IsFalling")
 	bool IsFalling() const;
 
 	// ────────────────────────────────────────────────
@@ -111,15 +125,19 @@ public:
 	// ────────────────────────────────────────────────
 
 	/** 앞/뒤 이동 */
+	UFUNCTION(LuaBind, DisplayName = "MoveForward")
 	void MoveForward(float Value);
 
 	/** 좌/우 이동 */
+	UFUNCTION(LuaBind, DisplayName = "MoveRight")
 	void MoveRight(float Value);
 
 	/** 좌/우 회전 */
+	UFUNCTION(LuaBind, DisplayName = "Turn")
 	void Turn(float Value);
 
 	/** 위/아래 회전 */
+	UFUNCTION(LuaBind, DisplayName = "LookUp")
 	void LookUp(float Value);
 
 protected:
@@ -131,6 +149,12 @@ protected:
 	virtual void Tick(float DeltaSeconds) override;
 
 	// ────────────────────────────────────────────────
+	// 복제
+	// ────────────────────────────────────────────────
+
+	void DuplicateSubObjects() override;
+
+	// ────────────────────────────────────────────────
 	// 입력 바인딩 (오버라이드)
 	// ────────────────────────────────────────────────
 
@@ -139,15 +163,18 @@ protected:
 	// ────────────────────────────────────────────────
 	// 멤버 변수
 	// ────────────────────────────────────────────────
-
+public:
 	/** Character 이동 컴포넌트 */
+	//UPROPERTY(EditAnywhere, Category = "[캐릭터]", Tooltip = "캐릭터의 CharacterMovement.")
 	UCharacterMovementComponent* CharacterMovement;
 
 	/** SkeletalMesh 컴포넌트 (애니메이션 지원) */
+	UPROPERTY(EditAnywhere, Category = "[캐릭터]", Tooltip = "캐릭터의 스켈레탈메시컴포넌트를 지정합니다.")
 	USkeletalMeshComponent* SkeletalMeshComponent;
 
 	/** Animation State Machine */
-	UAnimationStateMachine* AnimStateMachine;
+	//UPROPERTY(EditAnywhere, Category = "[캐릭터]", Tooltip = "캐릭터의 AnimStateMachine.")
+	UAnimStateMachine* AnimStateMachine;
 
 	/** 웅크리기 상태 */
 	bool bIsCrouched;

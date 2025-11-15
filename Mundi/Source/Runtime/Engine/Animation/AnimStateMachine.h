@@ -2,7 +2,7 @@
 
 #include "Object.h"
 #include "PoseContext.h"
-
+#include"UAnimStateMachine.generated.h"
 class APawn;
 class ACharacter;
 class UCharacterMovementComponent;
@@ -79,20 +79,20 @@ struct FAnimStateTransition
  *
  * 사용 예시:
  * ```cpp
- * UAnimationStateMachine* SM = NewObject<UAnimationStateMachine>();
+ * UAnimStateMachine* SM = NewObject<UAnimStateMachine>();
  * SM->Initialize(MyCharacter);
  * SM->RegisterStateAnimation(EAnimState::Idle, IdleAnim);
  * SM->RegisterStateAnimation(EAnimState::Walk, WalkAnim);
  * SM->RegisterStateAnimation(EAnimState::Run, RunAnim);
  * ```
  */
-class UAnimationStateMachine : public UObject
+class UAnimStateMachine : public UObject
 {
-	DECLARE_CLASS(UAnimationStateMachine, UObject)
+	GENERATED_REFLECTION_BODY()
 
 public:
-	UAnimationStateMachine();
-	virtual ~UAnimationStateMachine() override = default;
+	UAnimStateMachine();
+	virtual ~UAnimStateMachine() override = default;
 
 	// ===== Phase 3: State Machine 메서드 =====
 

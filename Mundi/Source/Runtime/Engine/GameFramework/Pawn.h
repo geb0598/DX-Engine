@@ -36,12 +36,15 @@ public:
 	// ────────────────────────────────────────────────
 
 	/** 현재 이 Pawn을 제어하는 Controller를 반환합니다 */
+	UFUNCTION(LuaBind, DisplayName = "GetController")
 	AController* GetController() const { return Controller; }
 
 	/** Controller에 의해 빙의당할 때 호출됩니다 */
+	UFUNCTION(LuaBind, DisplayName = "PossessedBy")
 	virtual void PossessedBy(AController* NewController);
 
 	/** Controller의 빙의가 해제될 때 호출됩니다 */
+	UFUNCTION(LuaBind, DisplayName = "UnPossessed")
 	virtual void UnPossessed();
 
 	// ────────────────────────────────────────────────
@@ -70,18 +73,21 @@ public:
 	 * @param WorldDirection - 월드 스페이스 이동 방향
 	 * @param ScaleValue - 입력 스케일 (보통 -1.0 ~ 1.0)
 	 */
-	virtual void AddMovementInput(FVector WorldDirection, float ScaleValue = 1.0f);
+	UFUNCTION(LuaBind, DisplayName = "AddMovementInput")
+	virtual void AddMovementInput(FVector WorldDirection, float ScaleValue);
 
 	/**
 	 * 이번 프레임에 누적된 이동 입력을 반환합니다.
 	 * 자동으로 정규화되어 있습니다.
 	 */
+	UFUNCTION(LuaBind, DisplayName = "GetPendingMovementInput")
 	FVector GetPendingMovementInput() const { return PendingMovementInput; }
 
 	/**
 	 * 이동 입력을 소비하고 초기화합니다.
 	 * 보통 MovementComponent에서 호출합니다.
 	 */
+	UFUNCTION(LuaBind, DisplayName = "ConsumeMovementInput")
 	virtual FVector ConsumeMovementInput();
 
 	/**
@@ -90,6 +96,7 @@ public:
 	 *
 	 * @param DeltaYaw - 추가할 Yaw 값 (도 단위)
 	 */
+	UFUNCTION(LuaBind, DisplayName = "AddControllerYawInput")
 	virtual void AddControllerYawInput(float DeltaYaw);
 
 	/**
@@ -98,6 +105,7 @@ public:
 	 *
 	 * @param DeltaPitch - 추가할 Pitch 값 (도 단위)
 	 */
+	UFUNCTION(LuaBind, DisplayName = "AddControllerPitchInput")
 	virtual void AddControllerPitchInput(float DeltaPitch);
 
 	/**
@@ -106,6 +114,7 @@ public:
 	 *
 	 * @param DeltaRoll - 추가할 Roll 값 (도 단위)
 	 */
+	UFUNCTION(LuaBind, DisplayName = "AddControllerRollInput")
 	virtual void AddControllerRollInput(float DeltaRoll);
 	virtual void BeginPlay() override;
 protected:

@@ -4,6 +4,7 @@
 
 class UAnimSequence;
 class UAnimDataModel;
+struct FBoneAnimationTrack;
 
 class UFbxLoader : public UObject
 {
@@ -55,7 +56,7 @@ private:
 		FbxAnimLayer* AnimLayer,
 		const FbxTimeSpan& TimeSpan,
 		double FrameRate,
-		struct FBoneAnimationTrack& OutTrack
+		FBoneAnimationTrack& OutTrack
 	);
 
 	FVector SamplePosition(FbxNode* Node, FbxAnimLayer* Layer, FbxTime Time);

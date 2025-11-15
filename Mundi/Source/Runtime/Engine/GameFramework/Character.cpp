@@ -9,6 +9,7 @@
 #include "Source/Runtime/Engine/Components/SkeletalMeshComponent.h"
 #include "Source/Runtime/Engine/Animation/AnimStateMachine.h"
 #include "Source/Runtime/Engine/Animation/AnimSequence.h"
+#include "Source/Editor/FBXLoader.h"
 #include "InputComponent.h"
 #include "ObjectFactory.h"
 #include "GameModeBase.h"
@@ -45,8 +46,8 @@ ACharacter::ACharacter()
 		SkeletalMeshComponent->SetOwner(this);
 		SetRootComponent(SkeletalMeshComponent);
 
-		// 테스트용 스켈레탈 메시 로드
-		SkeletalMeshComponent->SetSkeletalMesh(GDataDir + "/Test.fbx");
+		// X Bot 스켈레탈 메시 로드
+		SkeletalMeshComponent->SetSkeletalMesh(GDataDir + "/X Bot.fbx");
 
 		UE_LOG("[Character] SkeletalMeshComponent created!");
 	}
@@ -65,22 +66,63 @@ void ACharacter::BeginPlay()
 	Super::BeginPlay();
 
 	// AnimationStateMachine 생성 및 초기화
-	if (SkeletalMeshComponent)
+	if (SkeletalMeshComponent && SkeletalMeshComponent->GetSkeletalMesh())
 	{
-		AnimStateMachine = NewObject<UAnimationStateMachine>();
+		AnimStateMachine = NewObject<UAnimStateMachine>();
 		if (AnimStateMachine)
 		{
 			// State Machine 초기화
 			AnimStateMachine->Initialize(this);
 
-			// TODO: 애니메이션 에셋 로드 및 등록
-			// UAnimSequence* IdleAnim = LoadAnimation(GDataDir + "/Idle.fbx");
-			// UAnimSequence* WalkAnim = LoadAnimation(GDataDir + "/Walk.fbx");
-			// UAnimSequence* RunAnim = LoadAnimation(GDataDir + "/Run.fbx");
-			//
-			// AnimStateMachine->RegisterStateAnimation(EAnimState::Idle, IdleAnim);
-			// AnimStateMachine->RegisterStateAnimation(EAnimState::Walk, WalkAnim);
-			// AnimStateMachine->RegisterStateAnimation(EAnimState::Run, RunAnim);
+			// 애니메이션 에셋 로드
+			USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMesh();
+			UE_LOG("[Character] SkeletalMesh: %p", SkeletalMesh);
+
+			if (SkeletalMesh)
+			{
+				const FSkeleton* Skeleton = SkeletalMesh->GetSkeleton();
+				UE_LOG("[Character] Skeleton: %p", Skeleton);
+
+				if (Skeleton)
+				{
+					UFbxLoader& FbxLoader = UFbxLoader::GetInstance();
+
+					UAnimSequence* IdleAnim = FbxLoader.LoadFbxAnimation(GDataDir + "/XBOT_Idle.fbx", *Skeleton);
+					UAnimSequence* WalkAnim = FbxLoader.LoadFbxAnimation(GDataDir + "/XBOT_Walking.fbx", *Skeleton);
+					UAnimSequence* RunAnim = FbxLoader.LoadFbxAnimation(GDataDir + "/XBOT_Slow Run.fbx", *Skeleton);
+
+				// 애니메이션 등록
+				if (IdleAnim)
+				{
+					AnimStateMachine->RegisterStateAnimation(EAnimState::Idle, IdleAnim);
+					UE_LOG("[Character] Idle animation loaded!");
+				}
+				if (WalkAnim)
+				{
+					AnimStateMachine->RegisterStateAnimation(EAnimState::Walk, WalkAnim);
+					UE_LOG("[Character] Walk animation loaded!");
+				}
+				if (RunAnim)
+				{
+					AnimStateMachine->RegisterStateAnimation(EAnimState::Run, RunAnim);
+					UE_LOG("[Character] Run animation loaded!");
+				}
+
+					// 전환 규칙 추가 (부드러운 전환)
+					AnimStateMachine->AddTransition(FAnimStateTransition(EAnimState::Idle, EAnimState::Walk, 0.2f));
+					AnimStateMachine->AddTransition(FAnimStateTransition(EAnimState::Walk, EAnimState::Idle, 0.2f));
+					AnimStateMachine->AddTransition(FAnimStateTransition(EAnimState::Walk, EAnimState::Run, 0.3f));
+					AnimStateMachine->AddTransition(FAnimStateTransition(EAnimState::Run, EAnimState::Walk, 0.3f));
+				}
+				else
+				{
+					UE_LOG("[Character] ERROR: Skeleton is null!");
+				}
+			}
+			else
+			{
+				UE_LOG("[Character] ERROR: SkeletalMesh is null!");
+			}
 
 			// SkeletalMeshComponent에 State Machine 설정
 			SkeletalMeshComponent->SetAnimationStateMachine(AnimStateMachine);
@@ -106,6 +148,52 @@ void ACharacter::Tick(float DeltaSeconds)
 
 	// 게임 시작됨 - 정상 Tick (Lua Tick 포함)
 	Super::Tick(DeltaSeconds);
+
+	// 캐릭터가 Y=0 아래로 떨어지지 않도록 제한
+	FVector CurrentLocation = GetActorLocation();
+	if (CurrentLocation.Z < 0.0f)
+	{
+		CurrentLocation.Z = 0.0f;
+		SetActorLocation(CurrentLocation);
+
+		// 낙하 속도도 제거
+		if (CharacterMovement)
+		{
+			FVector Velocity = CharacterMovement->GetVelocity();
+			if (Velocity.Z < 0.0f)
+			{
+				Velocity.Z = 0.0f;
+				CharacterMovement->SetVelocity(Velocity);
+			}
+		}
+	}
+}
+
+void ACharacter::DuplicateSubObjects()
+{
+	// IMPORTANT: 먼저 부모 클래스의 DuplicateSubObjects를 호출하여 컴포넌트들을 복제
+	Super::DuplicateSubObjects();
+
+	// 복제 후 OwnedComponents에서 새로운 컴포넌트를 찾아 멤버 변수 업데이트
+	for (UActorComponent* Component : OwnedComponents)
+	{
+		// CharacterMovement 업데이트
+		if (UCharacterMovementComponent* Movement = Cast<UCharacterMovementComponent>(Component))
+		{
+			CharacterMovement = Movement;
+		}
+		// SkeletalMeshComponent 업데이트
+		else if (USkeletalMeshComponent* Skeletal = Cast<USkeletalMeshComponent>(Component))
+		{
+			SkeletalMeshComponent = Skeletal;
+		}
+	}
+
+	// RootComponent도 업데이트 (SkeletalMeshComponent가 루트)
+	if (SkeletalMeshComponent)
+	{
+		SetRootComponent(SkeletalMeshComponent);
+	}
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -116,9 +204,28 @@ void ACharacter::SetupPlayerInputComponent(UInputComponent* InInputComponent)
 {
 	Super::SetupPlayerInputComponent(InInputComponent);
 
-	// 입력 바인딩은 파생 클래스(예: RunnerCharacter)의 Lua 스크립트에서 처리
-	// C++에서는 기본 바인딩을 하지 않음
-	UE_LOG("[Character] SetupPlayerInputComponent called - input bindings should be done in Lua");
+	if (!InInputComponent)
+	{
+		UE_LOG("[Character] ERROR: InputComponent is null!");
+		return;
+	}
+
+	// WASD 이동 바인딩
+	InInputComponent->BindAxis("MoveForward", 'W', 1.0f, this, &ACharacter::MoveForward);
+	InInputComponent->BindAxis("MoveForward", 'S', -1.0f, this, &ACharacter::MoveForward);
+	InInputComponent->BindAxis("MoveRight", 'D', 1.0f, this, &ACharacter::MoveRight);
+	InInputComponent->BindAxis("MoveRight", 'A', -1.0f, this, &ACharacter::MoveRight);
+
+	// 마우스 회전 바인딩
+	InInputComponent->BindAxis("Turn", VK_RIGHT, 1.0f, this, &ACharacter::Turn);
+	InInputComponent->BindAxis("Turn", VK_LEFT, -1.0f, this, &ACharacter::Turn);
+	InInputComponent->BindAxis("LookUp", VK_UP, 1.0f, this, &ACharacter::LookUp);
+	InInputComponent->BindAxis("LookUp", VK_DOWN, -1.0f, this, &ACharacter::LookUp);
+
+	// 점프 바인딩
+	InInputComponent->BindAction("Jump", VK_SPACE, this, &ACharacter::Jump, &ACharacter::StopJumping);
+
+	UE_LOG("[Character] Input bindings set up successfully");
 }
 
 // ────────────────────────────────────────────────────────────────────────────

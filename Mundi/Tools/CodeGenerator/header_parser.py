@@ -407,6 +407,9 @@ class HeaderParser:
         params_str: str, metadata: str, is_const: bool
     ) -> Function:
         """함수 메타데이터 파싱"""
+        # return_type에서 virtual, inline, static 등의 키워드 제거
+        return_type = return_type.replace('virtual', '').replace('inline', '').replace('static', '').strip()
+
         func = Function(
             name=name,
             display_name=name,
