@@ -346,6 +346,8 @@ void SSkeletalMeshViewerWindow::OnRender()
                                         ActiveState->CurrentAnimation = Animations[0];
                                         ActiveState->bIsPlaying = true;
                                         ActiveState->CurrentAnimationTime = 0.0f;
+                                        // 편집된 bone transform 캐시 클리어 (새로운 메시/애니메이션 로드)
+                                        ActiveState->EditedBoneTransforms.clear();
                                         UE_LOG("Auto-selected first animation (%d total animations)", Animations.Num());
                                     }
                                     else
@@ -353,6 +355,8 @@ void SSkeletalMeshViewerWindow::OnRender()
                                         ActiveState->SelectedAnimationIndex = -1;
                                         ActiveState->CurrentAnimation = nullptr;
                                         ActiveState->bIsPlaying = false;
+                                        // 편집된 bone transform 캐시 클리어
+                                        ActiveState->EditedBoneTransforms.clear();
                                     }
                                 }
                             }
@@ -646,8 +650,10 @@ void SSkeletalMeshViewerWindow::OnRender()
                                 if (ActiveState->PreviewActor && ActiveState->World)
                                 {
                                     ActiveState->PreviewActor->RepositionAnchorToBone(Index);
-                                    if (USceneComponent* Anchor = ActiveState->PreviewActor->GetBoneGizmoAnchor())
+                                    if (UBoneAnchorComponent* Anchor = ActiveState->PreviewActor->GetBoneGizmoAnchor())
                                     {
+                                        // BoneAnchor에 ViewerState 설정 (편집된 transform 캐시 접근용)
+                                        Anchor->SetViewerState(ActiveState);
                                         ActiveState->World->GetSelectionManager()->SelectActor(ActiveState->PreviewActor);
                                         ActiveState->World->GetSelectionManager()->SelectComponent(Anchor);
                                     }
@@ -690,11 +696,116 @@ void SSkeletalMeshViewerWindow::OnRender()
 
         // Center panel (viewport area) — draw with border to see the viewport area
         ImGui::BeginChild("SkeletalMeshViewport", ImVec2(centerWidth, totalHeight), true, ImGuiWindowFlags_NoScrollbar);
+
+        // Viewport 영역 계산 (타임라인 공간 확보)
+        float timelineHeight = (ActiveState && ActiveState->ViewMode == EViewerMode::Animation) ? 100.0f : 0.0f;
+        float viewportHeight = totalHeight - timelineHeight - 20.0f;
+
+        // Viewport rendering area
+        ImGui::BeginChild("ViewportRenderArea", ImVec2(0, viewportHeight), false, ImGuiWindowFlags_NoScrollbar);
         ImVec2 childPos = ImGui::GetWindowPos();
         ImVec2 childSize = ImGui::GetWindowSize();
         ImVec2 rectMin = childPos;
         ImVec2 rectMax(childPos.x + childSize.x, childPos.y + childSize.y);
         CenterRect.Left = rectMin.x; CenterRect.Top = rectMin.y; CenterRect.Right = rectMax.x; CenterRect.Bottom = rectMax.y; CenterRect.UpdateMinMax();
+        ImGui::EndChild();
+
+        // Timeline controls (하단, Animation 모드일 때만 표시)
+        if (ActiveState && ActiveState->ViewMode == EViewerMode::Animation)
+        {
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::BeginChild("TimelineArea", ImVec2(0, timelineHeight - 20), false);
+
+            // Playback Controls (좌측)
+            ImGui::BeginGroup();
+
+            // Play/Pause/Stop 버튼
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 4));
+
+            if (ImGui::Button(ActiveState->bIsPlaying ? "||" : "|>", ImVec2(40, 0)))
+            {
+                ActiveState->bIsPlaying = !ActiveState->bIsPlaying;
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip(ActiveState->bIsPlaying ? "Pause" : "Play");
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("[]", ImVec2(40, 0)))
+            {
+                ActiveState->bIsPlaying = false;
+                ActiveState->CurrentAnimationTime = 0.0f;
+                // 편집된 bone transform 캐시 클리어 (애니메이션 리셋)
+                ActiveState->EditedBoneTransforms.clear();
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Stop");
+            }
+
+            ImGui::SameLine();
+            ImGui::Checkbox("Loop", &ActiveState->bLoopAnimation);
+
+            ImGui::PopStyleVar();
+
+            // Time display
+            float animLength = ActiveState->CurrentAnimation ? ActiveState->CurrentAnimation->GetPlayLength() : 1.0f;
+            int32 currentFrame = static_cast<int32>(ActiveState->CurrentAnimationTime * 30.0f);  // 30 FPS 가정
+            int32 totalFrames = static_cast<int32>(animLength * 30.0f);
+
+            ImGui::SameLine();
+            ImGui::Text("Frame: %d / %d", currentFrame, totalFrames);
+
+            ImGui::SameLine();
+            ImGui::Text("Time: %.2f / %.2f", ActiveState->CurrentAnimationTime, animLength);
+
+            ImGui::EndGroup();
+
+            ImGui::Spacing();
+
+            // Timeline Scrubber
+            ImGui::PushItemWidth(-1);
+
+            float scrubberValue = ActiveState->CurrentAnimationTime;
+            if (ImGui::SliderFloat("##Timeline", &scrubberValue, 0.0f, animLength, ""))
+            {
+                ActiveState->CurrentAnimationTime = scrubberValue;
+                if (ActiveState->CurrentAnimationTime < 0.0f)
+                {
+                    ActiveState->CurrentAnimationTime = 0.0f;
+                }
+                if (ActiveState->CurrentAnimationTime > animLength)
+                {
+                    ActiveState->CurrentAnimationTime = animLength;
+                }
+            }
+
+            ImGui::PopItemWidth();
+
+            // Frame markers (간단한 눈금)
+            ImDrawList* drawList = ImGui::GetWindowDrawList();
+            ImVec2 sliderMin = ImGui::GetItemRectMin();
+            ImVec2 sliderMax = ImGui::GetItemRectMax();
+
+            int32 numTicks = 10;
+            for (int32 i = 0; i <= numTicks; ++i)
+            {
+                float t = static_cast<float>(i) / numTicks;
+                float x = sliderMin.x + (sliderMax.x - sliderMin.x) * t;
+                drawList->AddLine(
+                    ImVec2(x, sliderMax.y + 2),
+                    ImVec2(x, sliderMax.y + 6),
+                    IM_COL32(150, 150, 150, 255)
+                );
+            }
+
+            ImGui::EndChild();
+        }
+
         ImGui::EndChild();
 
         ImGui::SameLine(0, 0); // No spacing between panels
@@ -704,11 +815,62 @@ void SSkeletalMeshViewerWindow::OnRender()
         ImGui::BeginChild("RightPanel", ImVec2(rightWidth, totalHeight), true);
         ImGui::PopStyleVar();
 
+        // View Mode Toggle Buttons (상단)
+        if (ActiveState)
+        {
+            ImGui::Indent(8.0f);
+            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4);
+
+            bool bIsSkeletalMode = (ActiveState->ViewMode == EViewerMode::Skeletal);
+            bool bIsAnimationMode = (ActiveState->ViewMode == EViewerMode::Animation);
+
+            float buttonWidth = (rightWidth - 24.0f) * 0.5f;
+
+            if (bIsSkeletalMode)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.35f, 0.65f, 1.0f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.25f, 0.55f, 0.95f, 1.0f));
+            }
+
+            if (ImGui::Button("Skeletal", ImVec2(buttonWidth, 0)))
+            {
+                ActiveState->ViewMode = EViewerMode::Skeletal;
+            }
+
+            if (bIsSkeletalMode)
+            {
+                ImGui::PopStyleColor(3);
+            }
+
+            ImGui::SameLine();
+
+            if (bIsAnimationMode)
+            {
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.3f, 0.6f, 1.0f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.35f, 0.65f, 1.0f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.25f, 0.55f, 0.95f, 1.0f));
+            }
+
+            if (ImGui::Button("Animation", ImVec2(buttonWidth, 0)))
+            {
+                ActiveState->ViewMode = EViewerMode::Animation;
+            }
+
+            if (bIsAnimationMode)
+            {
+                ImGui::PopStyleColor(3);
+            }
+
+            ImGui::Unindent(8.0f);
+            ImGui::Spacing();
+        }
+
         // Panel header
         ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.25f, 0.35f, 0.50f, 0.8f));
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4);
         ImGui::Indent(8.0f);
-        ImGui::Text("Bone Properties");
+        ImGui::Text(ActiveState && ActiveState->ViewMode == EViewerMode::Animation ? "Animation Properties" : "Bone Properties");
         ImGui::Unindent(8.0f);
         ImGui::PopStyleColor();
 
@@ -878,6 +1040,8 @@ void SSkeletalMeshViewerWindow::OnRender()
                         ActiveState->SelectedAnimationIndex = i;
                         ActiveState->CurrentAnimation = Anim;
                         ActiveState->CurrentAnimationTime = 0.0f;
+                        // 편집된 bone transform 캐시 클리어 (새로운 애니메이션으로 변경)
+                        ActiveState->EditedBoneTransforms.clear();
                         // 자동 재생
                         ActiveState->bIsPlaying = true;
                     }
@@ -914,6 +1078,8 @@ void SSkeletalMeshViewerWindow::OnRender()
                     {
                         ActiveState->bIsPlaying = false;
                         ActiveState->CurrentAnimationTime = 0.0f;
+                        // 편집된 bone transform 캐시 클리어 (애니메이션 리셋)
+                        ActiveState->EditedBoneTransforms.clear();
                     }
 
                     // Timeline Slider
@@ -985,7 +1151,7 @@ void SSkeletalMeshViewerWindow::OnUpdate(float DeltaSeconds)
         UAnimDataModel* DataModel = ActiveState->CurrentAnimation->GetDataModel();
         if (DataModel)
         {
-            // 시간 업데이트
+            // 시간 업데이트 (기즈모 드래그 중에도 계속 진행)
             ActiveState->CurrentAnimationTime += DeltaSeconds * ActiveState->PlaybackSpeed;
 
             float PlayLength = DataModel->GetPlayLength();
@@ -1005,7 +1171,7 @@ void SSkeletalMeshViewerWindow::OnUpdate(float DeltaSeconds)
                 }
             }
 
-            // Bone Transform 업데이트
+            // Bone Transform 업데이트 (드래그 중인 bone 제외하고 모두 업데이트)
             UpdateBonesFromAnimation(ActiveState);
         }
     }
@@ -1082,8 +1248,10 @@ void SSkeletalMeshViewerWindow::OnMouseDown(FVector2D MousePos, uint32 Button)
 
                         // Move gizmo to the selected bone
                         ActiveState->PreviewActor->RepositionAnchorToBone(PickedBoneIndex);
-                        if (USceneComponent* Anchor = ActiveState->PreviewActor->GetBoneGizmoAnchor())
+                        if (UBoneAnchorComponent* Anchor = ActiveState->PreviewActor->GetBoneGizmoAnchor())
                         {
+                            // BoneAnchor에 ViewerState 설정 (편집된 transform 캐시 접근용)
+                            Anchor->SetViewerState(ActiveState);
                             ActiveState->World->GetSelectionManager()->SelectActor(ActiveState->PreviewActor);
                             ActiveState->World->GetSelectionManager()->SelectComponent(Anchor);
                         }
@@ -1129,19 +1297,34 @@ void SSkeletalMeshViewerWindow::OnRenderViewport()
         const uint32 NewHeight = static_cast<uint32>(CenterRect.Bottom - CenterRect.Top);
         ActiveState->Viewport->Resize(NewStartX, NewStartY, NewWidth, NewHeight);
 
-        // 본 오버레이 재구축
+        // 본 오버레이 재구축 및 기즈모 위치 업데이트
+        bool bNeedsRebuild = false;
+        bool bIsAnimationPlaying = ActiveState->bIsPlaying;
+
         if (ActiveState->bShowBones)
         {
-            ActiveState->bBoneLinesDirty = true;
+            // 애니메이션 재생 중이거나 Dirty 플래그가 설정되어 있으면 재구축
+            if (bIsAnimationPlaying || ActiveState->bBoneLinesDirty)
+            {
+                bNeedsRebuild = true;
+                ActiveState->bBoneLinesDirty = false;
+            }
         }
-        if (ActiveState->bShowBones && ActiveState->PreviewActor && ActiveState->CurrentMesh && ActiveState->bBoneLinesDirty)
+
+        if (bNeedsRebuild && ActiveState->PreviewActor && ActiveState->CurrentMesh)
         {
             if (ULineComponent* LineComp = ActiveState->PreviewActor->GetBoneLineComponent())
             {
                 LineComp->SetLineVisible(true);
             }
-            ActiveState->PreviewActor->RebuildBoneLines(ActiveState->SelectedBoneIndex);
-            ActiveState->bBoneLinesDirty = false;
+            // 애니메이션 재생 중이면 모든 본 업데이트
+            ActiveState->PreviewActor->RebuildBoneLines(ActiveState->SelectedBoneIndex, bIsAnimationPlaying);
+        }
+
+        // 애니메이션 재생 중이고 본이 선택되어 있으면 기즈모 위치도 실시간 업데이트
+        if (bIsAnimationPlaying && ActiveState->SelectedBoneIndex >= 0 && ActiveState->PreviewActor)
+        {
+            ActiveState->PreviewActor->RepositionAnchorToBone(ActiveState->SelectedBoneIndex);
         }
 
         // 뷰포트 렌더링 (ImGui보다 먼저)
@@ -1244,6 +1427,11 @@ void SSkeletalMeshViewerWindow::ApplyBoneTransform(ViewerState* State)
         return;
 
     FTransform NewTransform(State->EditBoneLocation, FQuat::MakeFromEulerZYX(State->EditBoneRotation), State->EditBoneScale);
+
+    // 캐시에 저장 (애니메이션 재생 중에도 유지되도록)
+    State->EditedBoneTransforms[State->SelectedBoneIndex] = NewTransform;
+
+    // SkeletalMeshComponent에 적용
     State->PreviewActor->GetSkeletalMeshComponent()->SetBoneLocalTransform(State->SelectedBoneIndex, NewTransform);
 }
 
@@ -1284,6 +1472,15 @@ void SSkeletalMeshViewerWindow::UpdateBonesFromAnimation(ViewerState* State)
     // 현재 시간에서 각 본의 Transform 샘플링
     for (int32 BoneIndex = 0; BoneIndex < Skeleton->Bones.Num(); ++BoneIndex)
     {
+        // 편집된 bone은 캐시에서 가져와서 오버라이드
+        if (State->EditedBoneTransforms.Contains(BoneIndex))
+        {
+            const FTransform& EditedTransform = State->EditedBoneTransforms[BoneIndex];
+            State->PreviewActor->GetSkeletalMeshComponent()->SetBoneLocalTransform(BoneIndex, EditedTransform);
+            ++UpdatedBones;
+            continue;
+        }
+
         const FBone& Bone = Skeleton->Bones[BoneIndex];
 
         FVector Position;
@@ -1306,7 +1503,7 @@ void SSkeletalMeshViewerWindow::UpdateBonesFromAnimation(ViewerState* State)
             // SkeletalMeshComponent에 적용
             FTransform BoneTransform(Position, Rotation, Scale);
             State->PreviewActor->GetSkeletalMeshComponent()->SetBoneLocalTransform(BoneIndex, BoneTransform);
-            UpdatedBones++;
+            ++UpdatedBones;
         }
     }
 

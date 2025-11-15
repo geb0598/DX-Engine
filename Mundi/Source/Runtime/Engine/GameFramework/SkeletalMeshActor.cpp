@@ -85,7 +85,7 @@ void ASkeletalMeshActor::EnsureViewerComponents()
     }
 }
 
-void ASkeletalMeshActor::RebuildBoneLines(int32 SelectedBoneIndex)
+void ASkeletalMeshActor::RebuildBoneLines(int32 SelectedBoneIndex, bool bUpdateAllBones)
 {
     // Ensure viewer components exist before using them
     EnsureViewerComponents();
@@ -130,9 +130,18 @@ void ASkeletalMeshActor::RebuildBoneLines(int32 SelectedBoneIndex)
         CachedSelected = SelectedBoneIndex;
     }
 
-    // Update transforms only for the selected bone subtree
-    if (SelectedBoneIndex >= 0 && SelectedBoneIndex < BoneCount)
+    // Update transforms
+    if (bUpdateAllBones)
     {
+        // 모든 본 업데이트 (애니메이션 재생 중)
+        for (int32 i = 0; i < BoneCount; ++i)
+        {
+            UpdateBoneSubtreeTransforms(i);
+        }
+    }
+    else if (SelectedBoneIndex >= 0 && SelectedBoneIndex < BoneCount)
+    {
+        // 선택된 본 서브트리만 업데이트 (편집 모드)
         UpdateBoneSubtreeTransforms(SelectedBoneIndex);
     }
 }

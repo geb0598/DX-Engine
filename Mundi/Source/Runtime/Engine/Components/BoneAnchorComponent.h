@@ -3,6 +3,8 @@
 #include "SceneComponent.h"
 #include "SkeletalMeshComponent.h"
 
+class ViewerState;  // Forward declaration
+
 // A single anchor component that represents the transform of a selected bone.
 // The viewer selects this component so the editor gizmo latches onto it.
 class UBoneAnchorComponent : public USceneComponent
@@ -15,6 +17,9 @@ public:
     int32 GetBoneIndex() const { return BoneIndex; }
     USkeletalMeshComponent* GetTarget() const { return Target; }
 
+    // ViewerState 설정 (편집된 bone transform 캐시 접근용)
+    void SetViewerState(ViewerState* InState) { State = InState; }
+
     // Updates this anchor's world transform from the target bone's current transform
     void UpdateAnchorFromBone();
 
@@ -24,4 +29,5 @@ public:
 private:
     USkeletalMeshComponent* Target = nullptr;
     int32 BoneIndex = -1;
+    ViewerState* State = nullptr;
 };
