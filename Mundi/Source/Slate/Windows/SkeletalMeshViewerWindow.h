@@ -95,6 +95,7 @@ private:
 
     // Timeline 컨트롤 UI 렌더링
     void RenderTimelineControls(ViewerState* State);
+    void RenderTimeline(ViewerState* State);
 
     // Timeline 컨트롤 기능
     void TimelineToFront(ViewerState* State);
@@ -107,4 +108,10 @@ private:
 
     // Timeline 헬퍼: 프레임 변경 시 공통 갱신 로직
     void RefreshAnimationFrame(ViewerState* State);
+
+    // Timeline 렌더링 헬퍼
+    void DrawTimelineRuler(ImDrawList* DrawList, const ImVec2& RulerMin, const ImVec2& RulerMax, float StartTime, float EndTime, ViewerState* State);
+    void DrawPlaybackRange(ImDrawList* DrawList, const ImVec2& TimelineMin, const ImVec2& TimelineMax, float StartTime, float EndTime, ViewerState* State);
+    void DrawTimelinePlayhead(ImDrawList* DrawList, const ImVec2& TimelineMin, const ImVec2& TimelineMax, float CurrentTime, float StartTime, float EndTime);
+    void DrawKeyframeMarkers(ImDrawList* DrawList, const ImVec2& TimelineMin, const ImVec2& TimelineMax, float StartTime, float EndTime, ViewerState* State);
 };
