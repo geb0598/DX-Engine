@@ -29,16 +29,16 @@ UCharacterMovementComponent::UCharacterMovementComponent()
 	, bIsJumping(false)
 	, bIsRotating(false)
 	// 이동 설정
-	, MaxWalkSpeed(30.0f)           // 0.3 m/s
-	, MaxAcceleration(2048.0f)       // 20.48 m/s²
+	, MaxWalkSpeed(60.0f)           // 2.0 m/s
+	, MaxAcceleration(15.0f)        // 4.0 m/s²
 	, GroundFriction(8.0f)
 	, AirControl(0.05f)
-	, BrakingDeceleration(2048.0f)
+	, BrakingDeceleration(20.48f)
 	// 중력 설정
 	, GravityScale(1.0f)
 	, GravityDirection(0.0f, 0.0f, -1.0f) // 기본값: 아래 방향
 	// 점프 설정
-	, JumpZVelocity(420.0f)          // 4.2 m/s
+	, JumpZVelocity(20.2f)          // 4.2 m/s
 	, MaxAirTime(2.0f)
 	, bCanJump(true)
 {
@@ -76,8 +76,7 @@ void UCharacterMovementComponent::TickComponent(float DeltaTime)
 	//	{
 	//		return;
 	//	}
-	//}
-	
+	//} 
 	if (!CharacterOwner)
 	{
 		return;
@@ -369,6 +368,20 @@ void UCharacterMovementComponent::SetOnWallCollisionCallback(sol::function Callb
 
 bool UCharacterMovementComponent::CheckGround()
 {
-	
+	if (!CharacterOwner)
+	{
+		return false;
+	}
+
+	// Z 위치가 0 이하이면 지면에 있는 것으로 간주
+	FVector CurrentLocation = CharacterOwner->GetActorLocation();
+	if (CurrentLocation.Z <= 0.0f)
+	{
+		// 위치를 0으로 고정
+		CurrentLocation.Z = 0.0f;
+		CharacterOwner->SetActorLocation(CurrentLocation);
+		return true;
+	}
+
 	return false;
 }

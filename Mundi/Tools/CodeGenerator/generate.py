@@ -153,7 +153,19 @@ const bool {class_name}::bPropertiesRegistered = []() {{
 """
 
 
-def extract_additional_includes(class_info, all_classes):
+def find_header_file(source_dir, header_name):
+    """소스 디렉토리에서 헤더 파일이 존재하는지 확인"""
+    if not source_dir:
+        return False
+
+    # 소스 디렉토리 전체에서 헤더 파일 검색
+    for header_path in Path(source_dir).rglob(header_name):
+        if header_path.is_file():
+            return True
+    return False
+
+
+def extract_additional_includes(class_info, all_classes, source_dir=None):
     """UFUNCTION에서 사용되는 타입의 헤더 파일을 자동으로 추출"""
     # 모든 클래스의 타입명 -> 헤더 파일명 매핑 생성
     type_to_header = {}
@@ -173,12 +185,24 @@ def extract_additional_includes(class_info, all_classes):
             return_type = func.return_type.replace('*', '').replace('const', '').strip()
             if return_type in type_to_header and return_type != class_info.name:
                 required_includes.add(type_to_header[return_type])
+            elif return_type.startswith('U') or return_type.startswith('A') or return_type.startswith('F'):
+                # U, A, F 접두사 제거하여 헤더 파일명 생성
+                header_name = return_type[1:] + '.h'
+                # 헤더 파일이 실제로 존재하는지 확인
+                if source_dir and find_header_file(source_dir, header_name):
+                    required_includes.add(header_name)
 
             # 파라미터 타입 체크
             for param in func.parameters:
                 param_type = param.type.replace('*', '').replace('const', '').replace('&', '').strip()
                 if param_type in type_to_header and param_type != class_info.name:
                     required_includes.add(type_to_header[param_type])
+                elif param_type.startswith('U') or param_type.startswith('A') or param_type.startswith('F'):
+                    # U, A, F 접두사 제거하여 헤더 파일명 생성
+                    header_name = param_type[1:] + '.h'
+                    # 헤더 파일이 실제로 존재하는지 확인
+                    if source_dir and find_header_file(source_dir, header_name):
+                        required_includes.add(header_name)
 
     # include 문자열 생성
     if required_includes:
@@ -187,7 +211,7 @@ def extract_additional_includes(class_info, all_classes):
     return ''
 
 
-def generate_cpp_file(class_info, prop_gen, lua_gen, all_classes):
+def generate_cpp_file(class_info, prop_gen, lua_gen, all_classes, source_dir=None):
     """.generated.cpp 파일 생성"""
     # 헤더 파일 상대 경로 계산
     header_include = class_info.header_file.name
@@ -201,8 +225,8 @@ def generate_cpp_file(class_info, prop_gen, lua_gen, all_classes):
     # Lua 바인딩 코드 생성
     lua_code = lua_gen.generate(class_info)
 
-    # 추가 include 생성 (all_classes 전달)
-    additional_includes = extract_additional_includes(class_info, all_classes)
+    # 추가 include 생성 (all_classes와 source_dir 전달)
+    additional_includes = extract_additional_includes(class_info, all_classes, source_dir)
 
     # 최종 파일 내용
     return GENERATED_CPP_TEMPLATE.format(
@@ -288,7 +312,7 @@ def main():
 
         # .generated.cpp 파일 생성
         cpp_output = args.output_dir / f"{class_info.name}.generated.cpp"
-        cpp_code = generate_cpp_file(class_info, prop_gen, lua_gen, classes)
+        cpp_code = generate_cpp_file(class_info, prop_gen, lua_gen, classes, args.source_dir)
         cpp_updated = write_file_if_different(cpp_output, cpp_code)
         if cpp_updated:
             updated_count += 1

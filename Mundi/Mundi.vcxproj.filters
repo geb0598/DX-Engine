@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -450,7 +450,6 @@
     <ClCompile Include="Source\Runtime\Engine\SkeletalViewer\SkeletalViewerBootstrap.cpp" />
     <ClCompile Include="Source\Runtime\Engine\SkeletalViewer\ViewerState.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\FSkeletalViewerViewportClient.cpp" />
-    <ClCompile Include="Source\Slate\Windows\SSkeletalMeshViewerWindow.cpp" />
     <ClCompile Include="Generated\AActor.generated.cpp">
       <Filter>Generated</Filter>
     </ClCompile>
@@ -653,6 +652,9 @@
     <ClCompile Include="Generated\UInputComponent.generated.cpp">
       <Filter>Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Runtime\Core\Misc\MiniDump.cpp" />
+    <ClCompile Include="Source\Slate\Windows\SkeletalMeshViewerWindow.cpp" />
+    <ClCompile Include="Source\Slate\Windows\SkeletalMeshViewerWindow_Timeline.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -1147,7 +1149,6 @@
     <ClInclude Include="Source\Runtime\Engine\SkeletalViewer\SkeletalViewerBootstrap.h" />
     <ClInclude Include="Source\Runtime\Engine\SkeletalViewer\ViewerState.h" />
     <ClInclude Include="Source\Runtime\Renderer\FSkeletalViewerViewportClient.h" />
-    <ClInclude Include="Source\Slate\Windows\SSkeletalMeshViewerWindow.h" />
     <ClInclude Include="Source\Runtime\Core\Misc\ResourceData.h" />
     <ClInclude Include="Generated\AActor.generated.h">
       <Filter>Generated</Filter>
@@ -1382,6 +1383,8 @@
     <ClInclude Include="Generated\UInputComponent.generated.h">
       <Filter>Generated</Filter>
     </ClInclude>
+    <ClInclude Include="Source\Runtime\Core\Misc\MiniDump.h" />
+    <ClInclude Include="Source\Slate\Windows\SkeletalMeshViewerWindow.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Shaders">

@@ -126,10 +126,31 @@ void UAnimStateMachine::RegisterStateAnimation(EAnimState State, UAnimSequence* 
 }
 
 /**
+ * @brief 상태별 애니메이션 등록 (Lua용)
+ */
+void UAnimStateMachine::RegisterStateAnimationLua(int State, UAnimSequence* Animation)
+{
+	RegisterStateAnimation(static_cast<EAnimState>(State), Animation);
+}
+
+/**
  * @brief 전환 규칙 추가
  */
 void UAnimStateMachine::AddTransition(const FAnimStateTransition& Transition)
 {
+	Transitions.Add(Transition);
+}
+
+/**
+ * @brief 전환 규칙 추가 (Lua용)
+ */
+void UAnimStateMachine::AddTransitionLua(int FromState, int ToState, float BlendTime)
+{
+	FAnimStateTransition Transition(
+		static_cast<EAnimState>(FromState),
+		static_cast<EAnimState>(ToState),
+		BlendTime
+	);
 	Transitions.Add(Transition);
 }
 

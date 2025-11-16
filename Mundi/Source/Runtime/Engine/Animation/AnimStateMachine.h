@@ -101,6 +101,7 @@ public:
 	 *
 	 * @param InPawn 소유 Pawn (Character)
 	 */
+	UFUNCTION(LuaBind, DisplayName = "Initialize")
 	void Initialize(APawn* InPawn);
 
 	/**
@@ -110,7 +111,17 @@ public:
 	 *
 	 * @param DeltaSeconds 델타 타임
 	 */
+	UFUNCTION(LuaBind, DisplayName = "UpdateState")
 	void UpdateState(float DeltaSeconds);
+
+	/**
+	 * @brief 상태별 애니메이션 등록 (Lua용)
+	 *
+	 * @param State 애니메이션 상태 (int)
+	 * @param Animation 재생할 애니메이션 시퀀스
+	 */
+	UFUNCTION(LuaBind, DisplayName = "RegisterStateAnimation")
+	void RegisterStateAnimationLua(int State, UAnimSequence* Animation);
 
 	/**
 	 * @brief 상태별 애니메이션 등록
@@ -119,6 +130,16 @@ public:
 	 * @param Animation 재생할 애니메이션 시퀀스
 	 */
 	void RegisterStateAnimation(EAnimState State, UAnimSequence* Animation);
+
+	/**
+	 * @brief 전환 규칙 추가 (Lua용 - 개별 파라미터)
+	 *
+	 * @param FromState 시작 상태
+	 * @param ToState 목표 상태
+	 * @param BlendTime 블렌드 시간 (초)
+	 */
+	UFUNCTION(LuaBind, DisplayName = "AddTransition")
+	void AddTransitionLua(int FromState, int ToState, float BlendTime);
 
 	/**
 	 * @brief 전환 규칙 추가
@@ -130,21 +151,30 @@ public:
 	/**
 	 * @brief 현재 상태 가져오기
 	 */
+	UFUNCTION(LuaBind, DisplayName = "GetCurrentState")
+	int GetCurrentStateInt() const { return static_cast<int>(CurrentState); }
+
+	/**
+	 * @brief 현재 상태 가져오기
+	 */
 	EAnimState GetCurrentState() const { return CurrentState; }
 
 	/**
 	 * @brief 현재 재생 중인 애니메이션 가져오기
 	 */
+	UFUNCTION(LuaBind, DisplayName = "GetCurrentAnimation")
 	UAnimSequence* GetCurrentAnimation() const;
 
 	/**
 	 * @brief 전환 중인지 확인
 	 */
+	UFUNCTION(LuaBind, DisplayName = "IsTransitioning")
 	bool IsTransitioning() const { return bIsTransitioning; }
 
 	/**
 	 * @brief 전환 진행도 가져오기 (0~1)
 	 */
+	UFUNCTION(LuaBind, DisplayName = "GetTransitionAlpha")
 	float GetTransitionAlpha() const;
 
 	/**
