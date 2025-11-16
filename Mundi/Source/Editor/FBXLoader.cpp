@@ -7,6 +7,9 @@
 #include "WindowsBinReader.h"
 #include "WindowsBinWriter.h"
 #include "PathUtils.h"
+#include "Source/Runtime/Engine/Animation/AnimSequence.h"
+#include "Source/Runtime/Engine/Animation/AnimDataModel.h"
+#include "Source/Runtime/Engine/Animation/AnimationTypes.h"
 #include <filesystem>
 #include <cmath>
 #include <cfloat>
@@ -55,8 +58,29 @@ void UFbxLoader::PreLoad()
           if (ProcessedFiles.find(WPathStr) == ProcessedFiles.end())
           {
              ProcessedFiles.insert(WPathStr);
-             FbxLoader.LoadFbxMesh(PathStr);
+
+             // FBX Mesh 로드
+             USkeletalMesh* LoadedMesh = FbxLoader.LoadFbxMesh(PathStr);
              ++LoadedCount;
+
+             // 애니메이션 로드 (AnimStack이 있는 경우에만)
+             if (LoadedMesh && LoadedMesh->GetSkeleton())
+             {
+                const FSkeleton* TargetSkeleton = LoadedMesh->GetSkeleton();
+                TArray<UAnimSequence*> AnimSequences = FbxLoader.LoadAllFbxAnimations(PathStr, *TargetSkeleton);
+
+                // 로드된 애니메이션을 메시에 추가
+                for (UAnimSequence* AnimSeq : AnimSequences)
+                {
+                   if (AnimSeq)
+                   {
+                      LoadedMesh->AddAnimation(AnimSeq);
+                      UE_LOG("  [+] Added animation '%s' to mesh '%s'",
+                         AnimSeq->GetName().c_str(),
+                         LoadedMesh->GetFilePath().c_str());
+                   }
+                }
+             }
           }
        }
        else if (Extension == L".dds" || Extension == L".jpg" || Extension == L".png")
@@ -1230,10 +1254,6 @@ void UFbxLoader::EnsureSingleRootBone(FSkeletalMeshData& MeshData)
 // 애니메이션 임포트
 // ========================================
 
-#include "Source/Runtime/Engine/Animation/AnimSequence.h"
-#include "Source/Runtime/Engine/Animation/AnimDataModel.h"
-#include "Source/Runtime/Engine/Animation/AnimationTypes.h"
-
 // UAnimSequence* UFbxLoader::LoadFbxAnimation(const FString& FilePath, const FSkeleton& TargetSkeleton, const FString& AnimStackName)
 // {
 // 	// 1. FBX 파일 로드
@@ -1518,10 +1538,14 @@ TArray<UAnimSequence*> UFbxLoader::LoadAllFbxAnimations(const FString& FilePath,
 {
 	TArray<UAnimSequence*> Results;
 
-	// 1. FBX 파일 로드
+	// 1. 경로 정규화
 	FString NormalizedPath = NormalizePath(FilePath);
 	FString FbxPathAcp = UTF8ToACP(NormalizedPath);
 
+	FWideString WNormalizedPath = UTF8ToWide(NormalizedPath);
+	std::filesystem::path FbxPath(WNormalizedPath);
+
+	// 2. FBX 파일 로드
 	FbxIOSettings* IOSettings = FbxIOSettings::Create(SdkManager, IOSROOT);
 	SdkManager->SetIOSettings(IOSettings);
 
@@ -1545,7 +1569,7 @@ TArray<UAnimSequence*> UFbxLoader::LoadAllFbxAnimations(const FString& FilePath,
 
 	Importer->Destroy();
 
-	// 좌표계 변환
+	// 3. 좌표계 변환
 	FbxAxisSystem UnrealImportAxis(FbxAxisSystem::eZAxis, FbxAxisSystem::eParityEven, FbxAxisSystem::eLeftHanded);
 	FbxAxisSystem SourceSetup = Scene->GetGlobalSettings().GetAxisSystem();
 
@@ -1553,16 +1577,14 @@ TArray<UAnimSequence*> UFbxLoader::LoadAllFbxAnimations(const FString& FilePath,
 	if (SceneSystemUnit != FbxSystemUnit::m)
 	{
 		FbxSystemUnit::m.ConvertScene(Scene);
-		UE_LOG("FBX 단위 변환: %s -> m", SceneSystemUnit.GetScaleFactorAsString().Buffer());
 	}
 
 	if (SourceSetup != UnrealImportAxis)
 	{
-		UE_LOG("Fbx 애니메이션 축 변환 완료!\n");
 		UnrealImportAxis.DeepConvertScene(Scene);
 	}
 
-	// 2. 모든 애니메이션 스택 가져오기
+	// 4. AnimStack 개수 확인
 	int32 AnimStackCount = Scene->GetSrcObjectCount<FbxAnimStack>();
 	if (AnimStackCount == 0)
 	{
@@ -1581,7 +1603,10 @@ TArray<UAnimSequence*> UFbxLoader::LoadAllFbxAnimations(const FString& FilePath,
 		return Results;
 	}
 
-	// 3. 각 AnimStack에 대해 애니메이션 추출
+	// 5. 베이스 캐시 경로 생성
+	FString BaseCachePath = ConvertDataPathToCachePath(NormalizedPath);
+
+	// 6. 각 AnimStack에 대해 처리
 	for (int32 StackIndex = 0; StackIndex < AnimStackCount; ++StackIndex)
 	{
 		FbxAnimStack* AnimStack = Scene->GetSrcObject<FbxAnimStack>(StackIndex);
@@ -1592,87 +1617,209 @@ TArray<UAnimSequence*> UFbxLoader::LoadAllFbxAnimations(const FString& FilePath,
 		UE_LOG("UFbxLoader::LoadAllFbxAnimations: Processing AnimStack %d/%d: '%s'",
 			StackIndex + 1, AnimStackCount, AnimStackName.c_str());
 
-		// AnimStack 활성화
-		Scene->SetCurrentAnimationStack(AnimStack);
+		UAnimSequence* AnimSequence = nullptr;
+		UAnimDataModel* DataModel = nullptr;
 
-		// 애니메이션 레이어 가져오기
-		int32 AnimLayerCount = AnimStack->GetMemberCount<FbxAnimLayer>();
-		UE_LOG("  AnimStack has %d animation layers", AnimLayerCount);
+#ifdef USE_OBJ_CACHE
+		// 캐시 파일 경로: [MeshName]_[AnimStackName].anim.bin
+		FString CachePath = BaseCachePath + "_" + AnimStackName + ".anim.bin";
+		FWideString WCachePath = UTF8ToWide(CachePath);
+		std::filesystem::path CacheFilePath(WCachePath);
 
-		FbxAnimLayer* AnimLayer = AnimStack->GetMember<FbxAnimLayer>(0);
-		if (!AnimLayer)
+		// 캐시 디렉토리 생성
+		if (CacheFilePath.has_parent_path())
 		{
-			UE_LOG("  No animation layer found, skipping");
-			continue;
+			std::filesystem::create_directories(CacheFilePath.parent_path());
 		}
 
-		// 시간 범위 설정 - 각 AnimStack의 LocalTimeSpan 사용
-		FbxTimeSpan TimeSpan = AnimStack->GetLocalTimeSpan();
-		FbxTime StartTime = TimeSpan.GetStart();
-		FbxTime StopTime = TimeSpan.GetStop();
+		bool bLoadedFromCache = false;
+		bool bShouldRegenerate = true;
 
-		double PlayLength = FMath::Max((StopTime - StartTime).GetSecondDouble(), 0.0);
-		UE_LOG("  Time range: %.3fs ~ %.3fs (duration: %.3fs)",
-			StartTime.GetSecondDouble(),
-			StopTime.GetSecondDouble(),
-			PlayLength);
-
-		// FPS 설정
-		FbxTime::EMode TimeMode = Scene->GetGlobalSettings().GetTimeMode();
-		double FrameRate = FbxTime::GetFrameRate(TimeMode);
-		if (FrameRate <= 0.0)
+		// 타임스탬프 검증
+		if (std::filesystem::exists(CacheFilePath))
 		{
-			FrameRate = 60.0;
-		}
-
-		const double SequenceLength = FMath::Max(PlayLength, 1.0 / FrameRate);
-		int32 NumFrames = static_cast<int32>(std::round(SequenceLength * FrameRate));
-		int32 BakeKeyCount = NumFrames + 1;
-
-		UE_LOG("  Creating AnimSequence: SequenceLength=%.3fs, NumFrames=%d, BakeKeyCount=%d, FPS=%.2f",
-			SequenceLength, NumFrames, BakeKeyCount, FrameRate);
-
-		// AnimSequence 생성
-		UAnimSequence* AnimSequence = NewObject<UAnimSequence>();
-		AnimSequence->SetName(AnimStackName);  // AnimStack 이름 설정
-
-		UAnimDataModel* DataModel = NewObject<UAnimDataModel>();
-		AnimSequence->SetDataModel(DataModel);
-
-		DataModel->BoneAnimationTracks.Reserve(TargetSkeleton.Bones.Num());
-
-		// 본 애니메이션 추출
-		for (const FBone& Bone : TargetSkeleton.Bones)
-		{
-			FbxNode* BoneNode = FindNodeByName(RootNode, Bone.Name.c_str());
-			if (!BoneNode)
+			try
 			{
+				auto cacheTime = std::filesystem::last_write_time(CacheFilePath);
+				auto fbxTime = std::filesystem::last_write_time(FbxPath);
+
+				if (fbxTime <= cacheTime)
+				{
+					bShouldRegenerate = false;
+				}
+			}
+			catch (const std::filesystem::filesystem_error& e)
+			{
+				UE_LOG("  Filesystem error during cache validation: %s", e.what());
+				bShouldRegenerate = true;
+			}
+		}
+
+		// 캐시에서 로드 시도
+		if (!bShouldRegenerate)
+		{
+			UE_LOG("  Attempting to load AnimStack '%s' from cache", AnimStackName.c_str());
+			try
+			{
+				FWindowsBinReader Reader(CachePath);
+				if (!Reader.IsOpen())
+				{
+					throw std::runtime_error("Failed to open cache file");
+				}
+
+				// AnimSequence와 DataModel 생성
+				AnimSequence = NewObject<UAnimSequence>();
+				DataModel = NewObject<UAnimDataModel>();
+
+				// Name 로드
+				FString AnimName;
+				Serialization::ReadString(Reader, AnimName);
+				AnimSequence->SetName(AnimName);
+
+				// DataModel 로드
+				Reader << *DataModel;
+
+				AnimSequence->SetDataModel(DataModel);
+				Reader.Close();
+
+				bLoadedFromCache = true;
+				UE_LOG("  Successfully loaded AnimStack '%s' from cache", AnimStackName.c_str());
+				UE_LOG("    Name: %s", AnimName.c_str());
+				UE_LOG("    Duration: %.3f seconds", DataModel->GetPlayLength());
+				UE_LOG("    Bone Tracks: %d", DataModel->GetBoneAnimationTracks().Num());
+			}
+			catch (const std::exception& e)
+			{
+				UE_LOG("  Error loading from cache: %s. Regenerating...", e.what());
+				std::filesystem::remove(CacheFilePath);
+				if (AnimSequence)
+				{
+					delete AnimSequence;
+					AnimSequence = nullptr;
+				}
+				if (DataModel)
+				{
+					delete DataModel;
+					DataModel = nullptr;
+				}
+				bLoadedFromCache = false;
+			}
+		}
+
+		// 캐시 로드 실패 시 FBX에서 추출
+		if (!bLoadedFromCache)
+#endif // USE_OBJ_CACHE
+		{
+			UE_LOG("  Extracting AnimStack '%s' from FBX", AnimStackName.c_str());
+
+			// AnimStack 활성화
+			Scene->SetCurrentAnimationStack(AnimStack);
+
+			// 애니메이션 레이어 가져오기
+			int32 AnimLayerCount = AnimStack->GetMemberCount<FbxAnimLayer>();
+			FbxAnimLayer* AnimLayer = AnimStack->GetMember<FbxAnimLayer>(0);
+			if (!AnimLayer)
+			{
+				UE_LOG("  No animation layer found, skipping");
 				continue;
 			}
 
-			FBoneAnimationTrack BoneTrack;
-			BoneTrack.BoneName = Bone.Name;
+			// 시간 범위 설정
+			FbxTimeSpan TimeSpan = AnimStack->GetLocalTimeSpan();
+			FbxTime StartTime = TimeSpan.GetStart();
+			FbxTime StopTime = TimeSpan.GetStop();
+			double PlayLength = FMath::Max((StopTime - StartTime).GetSecondDouble(), 0.0);
 
-			ExtractBoneAnimation(BoneNode, AnimLayer, TimeSpan, FrameRate, BoneTrack);
-
-			if (BoneTrack.InternalTrack.PosKeys.Num() > 0)
+			// FPS 설정
+			FbxTime::EMode TimeMode = Scene->GetGlobalSettings().GetTimeMode();
+			double FrameRate = FbxTime::GetFrameRate(TimeMode);
+			if (FrameRate <= 0.0)
 			{
-				DataModel->BoneAnimationTracks.Add(BoneTrack);
+				FrameRate = 60.0;
 			}
+
+			const double SequenceLength = FMath::Max(PlayLength, 1.0 / FrameRate);
+			int32 NumFrames = static_cast<int32>(std::round(SequenceLength * FrameRate));
+			int32 BakeKeyCount = NumFrames + 1;
+
+			// AnimSequence 생성
+			AnimSequence = NewObject<UAnimSequence>();
+			AnimSequence->SetName(AnimStackName);
+
+			DataModel = NewObject<UAnimDataModel>();
+			AnimSequence->SetDataModel(DataModel);
+			DataModel->BoneAnimationTracks.Reserve(TargetSkeleton.Bones.Num());
+
+			// 본 애니메이션 추출
+			for (const FBone& Bone : TargetSkeleton.Bones)
+			{
+				FbxNode* BoneNode = FindNodeByName(RootNode, Bone.Name.c_str());
+				if (!BoneNode)
+					continue;
+
+				FBoneAnimationTrack BoneTrack;
+				BoneTrack.BoneName = Bone.Name;
+				ExtractBoneAnimation(BoneNode, AnimLayer, TimeSpan, FrameRate, BoneTrack);
+
+				if (BoneTrack.InternalTrack.PosKeys.Num() > 0)
+				{
+					DataModel->BoneAnimationTracks.Add(BoneTrack);
+				}
+			}
+
+			// FFrameRate 설정
+			FFrameRate AnimFrameRate;
+			AnimFrameRate.Numerator = static_cast<int32>(FrameRate);
+			AnimFrameRate.Denominator = 1;
+			DataModel->FrameRate = AnimFrameRate;
+			DataModel->PlayLength = static_cast<float>(PlayLength);
+			DataModel->NumberOfFrames = NumFrames;
+			DataModel->NumberOfKeys = BakeKeyCount;
+
+			UE_LOG("  Successfully extracted animation: %d bone tracks", DataModel->BoneAnimationTracks.Num());
+
+#ifdef USE_OBJ_CACHE
+			// 캐시 저장 전 데이터 검증
+			UE_LOG("  Validating data before cache save:");
+			UE_LOG("    Total Tracks: %d", DataModel->BoneAnimationTracks.Num());
+			if (DataModel->BoneAnimationTracks.Num() > 0)
+			{
+				const FBoneAnimationTrack& FirstTrack = DataModel->BoneAnimationTracks[0];
+				UE_LOG("    First Track Name: %s", FirstTrack.BoneName.c_str());
+				UE_LOG("    First Track PosKeys: %d", FirstTrack.InternalTrack.PosKeys.Num());
+				UE_LOG("    First Track RotKeys: %d", FirstTrack.InternalTrack.RotKeys.Num());
+				UE_LOG("    First Track ScaleKeys: %d", FirstTrack.InternalTrack.ScaleKeys.Num());
+			}
+
+			// 캐시 저장
+			try
+			{
+				FWindowsBinWriter Writer(CachePath);
+
+				// Name 저장
+				Serialization::WriteString(Writer, AnimSequence->GetName());
+
+				// DataModel 저장
+				Writer << *DataModel;
+
+				Writer.Close();
+				UE_LOG("  Cache saved for AnimStack '%s'", AnimStackName.c_str());
+				UE_LOG("    Name: %s", AnimSequence->GetName().c_str());
+				UE_LOG("    Duration: %.3f seconds", DataModel->GetPlayLength());
+				UE_LOG("    Bone Tracks: %d", DataModel->GetBoneAnimationTracks().Num());
+				UE_LOG("    Cache Path: %s", CachePath.c_str());
+			}
+			catch (const std::exception& e)
+			{
+				UE_LOG("  Failed to save cache: %s", e.what());
+			}
+#endif // USE_OBJ_CACHE
 		}
 
-		// FFrameRate 설정
-		FFrameRate AnimFrameRate;
-		AnimFrameRate.Numerator = static_cast<int32>(FrameRate);
-		AnimFrameRate.Denominator = 1;
-		DataModel->FrameRate = AnimFrameRate;
-		DataModel->PlayLength = static_cast<float>(PlayLength);
-		DataModel->NumberOfFrames = NumFrames;
-		DataModel->NumberOfKeys = BakeKeyCount;
-
-		UE_LOG("  Successfully extracted animation: %d bone tracks", DataModel->BoneAnimationTracks.Num());
-
-		Results.Add(AnimSequence);
+		if (AnimSequence)
+		{
+			Results.Add(AnimSequence);
+		}
 	}
 
 	Scene->Destroy();

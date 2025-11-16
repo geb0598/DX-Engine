@@ -36,11 +36,12 @@ public:
 	void SetName(const FString& InName) { Name = InName; }
 	void SetLooping(bool bInLoop) { bLoop = bInLoop; }
 
+	FString Name;
+
 protected:
 	UAnimDataModel* DataModel;
 
 private:
-	FString Name;
 	TArray<FAnimNotifyEvent> Notifies;
 	float SequenceLength;
 	float RateScale;
