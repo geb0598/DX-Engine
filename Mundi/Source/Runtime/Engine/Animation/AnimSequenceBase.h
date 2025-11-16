@@ -29,12 +29,18 @@ public:
 
 	// Getters
 	virtual float GetPlayLength() const { return DataModel ? DataModel->GetPlayLength() : 0.0f; }
+	FString GetName() const { return Name; }
 	bool IsLooping() const { return bLoop; }
+
+	// Setters
+	void SetName(const FString& InName) { Name = InName; }
+	void SetLooping(bool bInLoop) { bLoop = bInLoop; }
 
 protected:
 	UAnimDataModel* DataModel;
 
 private:
+	FString Name;
 	TArray<FAnimNotifyEvent> Notifies;
 	float SequenceLength;
 	float RateScale;
