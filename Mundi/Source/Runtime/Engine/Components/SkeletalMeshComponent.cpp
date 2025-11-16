@@ -7,7 +7,6 @@
 
 USkeletalMeshComponent::USkeletalMeshComponent()
     : AnimInstance(nullptr)
-    , AnimStateMachine(nullptr)
     , TestTime(0.0f)
     , bIsInitialized(false)
 {
@@ -48,31 +47,38 @@ void USkeletalMeshComponent::TickComponent(float DeltaTime)
 {
     Super::TickComponent(DeltaTime);
 
-    // Phase 6: State Machine을 통한 애니메이션 재생
-    if (AnimStateMachine)
+    // Animation 인스턴스 업데이트
+    if (AnimInstance)
     {
-        AnimStateMachine->UpdateState(DeltaTime);
-
-        // State Machine에서 계산된 포즈를 가져와 적용
-        FPoseContext PoseContext;
-        AnimStateMachine->EvaluateCurrentPose(PoseContext);
-
-        // 계산된 포즈를 CurrentLocalSpacePose에 적용
-        if (PoseContext.GetNumBones() == CurrentLocalSpacePose.Num())
+        // AnimInstance 내부에서 State Machine 노드를 업데이트
+        FAnimNode_StateMachine* StateMachineNode = AnimInstance->GetStateMachineNode();
+        if (StateMachineNode && StateMachineNode->GetStateMachine())
         {
-            for (int32 BoneIdx = 0; BoneIdx < PoseContext.GetNumBones(); ++BoneIdx)
-            {
-                CurrentLocalSpacePose[BoneIdx] = PoseContext.LocalSpacePose[BoneIdx];
-            }
+            // State Machine 노드 업데이트
+            StateMachineNode->Update(DeltaTime);
 
-            // 포즈 재계산 강제
-            ForceRecomputePose();
+            // State Machine에서 계산된 포즈를 가져와 적용
+            FPoseContext PoseContext;
+            PoseContext.LocalSpacePose.SetNum(CurrentLocalSpacePose.Num());
+            StateMachineNode->Evaluate(PoseContext);
+
+            // 계산된 포즈를 CurrentLocalSpacePose에 적용
+            if (PoseContext.GetNumBones() == CurrentLocalSpacePose.Num())
+            {
+                for (int32 BoneIdx = 0; BoneIdx < PoseContext.GetNumBones(); ++BoneIdx)
+                {
+                    CurrentLocalSpacePose[BoneIdx] = PoseContext.LocalSpacePose[BoneIdx];
+                }
+
+                // 포즈 재계산 강제
+                ForceRecomputePose();
+            }
         }
-    }
-    // Animation 인스턴스 업데이트 (AnimStateMachine이 없을 때만)
-    else if (AnimInstance)
-    {
-        AnimInstance->UpdateAnimation(DeltaTime);
+        else
+        {
+            // State Machine이 없으면 기본 AnimInstance 업데이트
+            AnimInstance->UpdateAnimation(DeltaTime);
+        }
     }
 }
 
@@ -288,11 +294,22 @@ void USkeletalMeshComponent::StopAnimation()
 }
 
 /**
- * @brief State Machine 설정
+ * @brief State Machine 설정 (AnimInstance를 통해)
  */
 void USkeletalMeshComponent::SetAnimationStateMachine(UAnimStateMachine* InStateMachine)
 {
-    AnimStateMachine = InStateMachine;
+    // AnimInstance가 없으면 생성
+    if (!AnimInstance)
+    {
+        AnimInstance = NewObject<UAnimInstance>();
+        AnimInstance->Initialize(this);
+        UE_LOG("[SkeletalMeshComponent] AnimInstance created for StateMachine");
+    }
+
+    if (AnimInstance)
+    {
+        AnimInstance->SetStateMachine(InStateMachine);
+    }
 }
 
 /**

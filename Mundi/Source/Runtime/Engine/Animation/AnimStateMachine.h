@@ -96,32 +96,7 @@ public:
 
 	// ===== Phase 3: State Machine 메서드 =====
 
-	/**
-	 * @brief State Machine 초기화
-	 *
-	 * @param InPawn 소유 Pawn (Character)
-	 */
-	UFUNCTION(LuaBind, DisplayName = "Initialize")
-	void Initialize(APawn* InPawn);
-
-	/**
-	 * @brief 매 프레임 상태 업데이트
-	 *
-	 * Character의 Movement 상태를 체크하여 애니메이션 상태 전환.
-	 *
-	 * @param DeltaSeconds 델타 타임
-	 */
-	UFUNCTION(LuaBind, DisplayName = "UpdateState")
-	void UpdateState(float DeltaSeconds);
-
-	/**
-	 * @brief 상태별 애니메이션 등록 (Lua용)
-	 *
-	 * @param State 애니메이션 상태 (int)
-	 * @param Animation 재생할 애니메이션 시퀀스
-	 */
-	UFUNCTION(LuaBind, DisplayName = "RegisterStateAnimation")
-	void RegisterStateAnimationLua(int State, UAnimSequence* Animation);
+	// ===== 애셋 데이터 편집 (에디터/런타임 공통) =====
 
 	/**
 	 * @brief 상태별 애니메이션 등록
@@ -132,75 +107,38 @@ public:
 	void RegisterStateAnimation(EAnimState State, UAnimSequence* Animation);
 
 	/**
-	 * @brief 전환 규칙 추가 (Lua용 - 개별 파라미터)
-	 *
-	 * @param FromState 시작 상태
-	 * @param ToState 목표 상태
-	 * @param BlendTime 블렌드 시간 (초)
-	 */
-	UFUNCTION(LuaBind, DisplayName = "AddTransition")
-	void AddTransitionLua(int FromState, int ToState, float BlendTime);
-
-	/**
 	 * @brief 전환 규칙 추가
 	 *
 	 * @param Transition 전환 규칙 구조체
 	 */
 	void AddTransition(const FAnimStateTransition& Transition);
 
-	/**
-	 * @brief 현재 상태 가져오기
-	 */
-	UFUNCTION(LuaBind, DisplayName = "GetCurrentState")
-	int GetCurrentStateInt() const { return static_cast<int>(CurrentState); }
+	// ===== 애셋 데이터 조회 =====
 
 	/**
-	 * @brief 현재 상태 가져오기
-	 */
-	EAnimState GetCurrentState() const { return CurrentState; }
-
-	/**
-	 * @brief 현재 재생 중인 애니메이션 가져오기
-	 */
-	UFUNCTION(LuaBind, DisplayName = "GetCurrentAnimation")
-	UAnimSequence* GetCurrentAnimation() const;
-
-	/**
-	 * @brief 전환 중인지 확인
-	 */
-	UFUNCTION(LuaBind, DisplayName = "IsTransitioning")
-	bool IsTransitioning() const { return bIsTransitioning; }
-
-	/**
-	 * @brief 전환 진행도 가져오기 (0~1)
-	 */
-	UFUNCTION(LuaBind, DisplayName = "GetTransitionAlpha")
-	float GetTransitionAlpha() const;
-
-	/**
-	 * @brief 현재 포즈 평가 (블렌딩 적용)
+	 * @brief 특정 상태의 애니메이션 가져오기
 	 *
-	 * Phase 1의 블렌딩 시스템을 사용하여 전환 중 포즈 계산.
-	 *
-	 * @param OutPose 출력 포즈
+	 * @param State 상태
+	 * @return 해당 상태의 애니메이션 시퀀스
 	 */
-	void EvaluateCurrentPose(FPoseContext& OutPose);
+	UAnimSequence* GetStateAnimation(EAnimState State) const;
+
+	/**
+	 * @brief 모든 전환 규칙 가져오기
+	 */
+	const TArray<FAnimStateTransition>& GetTransitions() const { return Transitions; }
+
+	/**
+	 * @brief 특정 전환의 블렌드 시간 찾기
+	 *
+	 * @param FromState 시작 상태
+	 * @param ToState 목표 상태
+	 * @return 블렌드 시간 (전환 규칙이 없으면 기본값 0.2f)
+	 */
+	float FindTransitionBlendTime(EAnimState FromState, EAnimState ToState) const;
 
 protected:
-	/** 현재 상태 */
-	EAnimState CurrentState;
-
-	/** 이전 상태 (전환용) */
-	EAnimState PreviousState;
-
-	/** 전환 중인지 여부 */
-	bool bIsTransitioning;
-
-	/** 전환 경과 시간 */
-	float TransitionTime;
-
-	/** 전환 총 시간 */
-	float TransitionDuration;
+	// ===== 애셋 데이터 (공유 가능) =====
 
 	/** 상태 → 애니메이션 매핑 */
 	TArray<UAnimSequence*> StateAnimations;  // EAnimState를 인덱스로 사용
@@ -208,47 +146,7 @@ protected:
 	/** 전환 규칙들 */
 	TArray<FAnimStateTransition> Transitions;
 
-	/** 현재 상태 애니메이션 재생 시간 */
-	float CurrentAnimTime;
-
-	/** 이전 상태 애니메이션 재생 시간 (블렌딩용) */
-	float PreviousAnimTime;
-
-	/** 소유 Pawn */
-	APawn* OwnerPawn;
-
-	/** 소유 Character (캐싱) */
-	ACharacter* OwnerCharacter;
-
-	/** Character Movement Component (캐싱) */
-	UCharacterMovementComponent* MovementComponent;
-
-	// ===== 상태 판별 임계값 =====
-
-	/** 걷기 최대 속도 */
-	float WalkSpeed;
-
-	/** 달리기 최소 속도 */
-	float RunSpeed;
-
-	// ===== 내부 메서드 =====
-
-	/**
-	 * @brief 전환 가능한 상태 체크
-	 */
-	void CheckTransitions();
-
-	/**
-	 * @brief 특정 상태로 전환
-	 *
-	 * @param NewState 새로운 상태
-	 */
-	void TransitionToState(EAnimState NewState);
-
-	/**
-	 * @brief 현재 Movement 상태 기반으로 AnimState 결정
-	 */
-	EAnimState DetermineStateFromMovement();
+	// ===== 헬퍼 메서드 =====
 
 	/**
 	 * @brief 상태 이름 가져오기 (디버깅용)

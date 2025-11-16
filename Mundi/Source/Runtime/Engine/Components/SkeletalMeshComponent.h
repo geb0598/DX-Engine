@@ -66,16 +66,11 @@ public:
 	void StopAnimation();
 
 	/**
-	 * @brief State Machine 설정
+	 * @brief State Machine 설정 (AnimInstance를 통해)
 	 *
-	 * @param InStateMachine 설정할 State Machine
+	 * @param InStateMachine 설정할 State Machine 애셋
 	 */
 	void SetAnimationStateMachine(UAnimStateMachine* InStateMachine);
-
-	/**
-	 * @brief State Machine 가져오기
-	 */
-	UAnimStateMachine* GetAnimationStateMachine() const { return AnimStateMachine; }
 
 	// Batch Pose Update (AnimInstance에서 사용)
 	void SetBoneLocalTransformDirect(int32 BoneIndex, const FTransform& NewLocalTransform);
@@ -83,7 +78,6 @@ public:
 
 protected:
 	UAnimInstance* AnimInstance;
-	UAnimStateMachine* AnimStateMachine;  // Phase 4: State Machine
 	TArray<FTransform> CurrentLocalSpacePose;
 	TArray<FTransform> CurrentComponentSpacePose;
 	TArray<FMatrix> TempFinalSkinningMatrices;

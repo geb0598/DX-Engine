@@ -88,9 +88,6 @@ void ACharacter::BeginPlay()
 		AnimStateMachine = NewObject<UAnimStateMachine>();
 		if (AnimStateMachine)
 		{
-			// State Machine 초기화
-			AnimStateMachine->Initialize(this);
-
 			// 애니메이션 에셋 로드
 			USkeletalMesh* SkeletalMesh = SkeletalMeshComponent->GetSkeletalMesh();
 			UE_LOG("[Character] SkeletalMesh: %p", SkeletalMesh);

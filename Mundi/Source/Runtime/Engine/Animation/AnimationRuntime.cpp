@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "AnimationRuntime.h"
+#include "AnimSequence.h"
 #include "Source/Runtime/Core/Misc/VertexData.h"
 
 // ===== Phase 1.5: ComponentSpace 변환 함수 구현 =====
@@ -291,6 +292,57 @@ void FAnimationRuntime::ConvertComponentPoseToLocalSpace(
 			// LocalSpace = ComponentSpace * ParentComponentSpace^-1
 			const FTransform& ParentComponentTransform = ComponentPose[ParentIndex];
 			OutLocalPose[BoneIndex] = ParentComponentTransform.GetRelativeTransform(ComponentTransform);
+		}
+	}
+}
+
+// ===== 애니메이션 샘플링 =====
+
+/**
+ * @brief AnimSequence에서 특정 시간의 포즈를 샘플링합니다.
+ */
+void FAnimationRuntime::GetPoseFromAnimSequence(
+	class UAnimSequence* Animation,
+	float Time,
+	FPoseContext& OutPose)
+{
+	if (!Animation)
+	{
+		return;
+	}
+
+	// 애니메이션에서 스켈레톤 정보 가져오기
+	const FSkeleton* Skeleton = Animation->GetSkeleton();
+	if (!Skeleton)
+	{
+		return;
+	}
+
+	// 출력 포즈 초기화
+	OutPose.Initialize(Skeleton);
+
+	const int32 NumBones = Skeleton->Bones.Num();
+	OutPose.LocalSpacePose.SetNum(NumBones);
+
+	// 각 본의 Transform을 샘플링
+	for (int32 BoneIndex = 0; BoneIndex < NumBones; ++BoneIndex)
+	{
+		const FBone& Bone = Skeleton->Bones[BoneIndex];
+
+		FVector Position;
+		FQuat Rotation;
+		FVector Scale;
+
+		// AnimSequence에서 본 Transform 샘플링
+		if (Animation->GetBoneTransformAtTime(Bone.Name, Time, Position, Rotation, Scale))
+		{
+			// 샘플링된 Transform을 포즈에 저장
+			OutPose.LocalSpacePose[BoneIndex] = FTransform(Position, Rotation, Scale);
+		}
+		else
+		{
+			// 샘플링 실패 시 기본 Identity Transform 사용
+			OutPose.LocalSpacePose[BoneIndex] = FTransform();
 		}
 	}
 }

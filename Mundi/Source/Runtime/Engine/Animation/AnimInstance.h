@@ -1,8 +1,10 @@
 #pragma once
 #include "Object.h"
+#include "AnimNode_StateMachine.h"
 
 class UAnimSequenceBase;
 class USkeletalMeshComponent;
+class UAnimStateMachine;
 struct FAnimNotifyEvent;
 
 /**
@@ -44,6 +46,20 @@ public:
 	// Setters
 	void SetPlayRate(float InPlayRate) { PlayRate = InPlayRate; }
 
+	// ===== State Machine =====
+
+	/**
+	 * @brief State Machine 애셋 설정
+	 *
+	 * @param InStateMachine State Machine 애셋
+	 */
+	void SetStateMachine(UAnimStateMachine* InStateMachine);
+
+	/**
+	 * @brief State Machine 노드 가져오기
+	 */
+	FAnimNode_StateMachine* GetStateMachineNode() { return &StateMachineNode; }
+
 protected:
 	// Pose Evaluation
 	void EvaluateAnimation();
@@ -55,6 +71,9 @@ protected:
 	float PreviousTime;
 	float PlayRate;
 	bool bIsPlaying;
+
+	// ===== State Machine Node =====
+	FAnimNode_StateMachine StateMachineNode;
 
 	virtual void HandleNotify(const FAnimNotifyEvent& NotifyEvent);
 };

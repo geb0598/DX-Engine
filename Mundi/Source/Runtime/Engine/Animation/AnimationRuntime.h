@@ -89,4 +89,18 @@ public:
 		const FSkeleton* Skeleton,
 		const TArray<FTransform>& ComponentPose,
 		TArray<FTransform>& OutLocalPose);
+
+	// ===== 애니메이션 샘플링 =====
+
+	/**
+	 * @brief AnimSequence에서 특정 시간의 포즈를 샘플링합니다.
+	 *
+	 * @param Animation 샘플링할 애니메이션
+	 * @param Time 샘플링 시간 (초)
+	 * @param OutPose 출력 포즈
+	 */
+	static void GetPoseFromAnimSequence(
+		class UAnimSequence* Animation,
+		float Time,
+		FPoseContext& OutPose);
 };
