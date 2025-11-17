@@ -14,6 +14,9 @@ public:
 	UAnimSequence();
 	virtual ~UAnimSequence() override;
 
+	// ResourceBase 인터페이스 구현
+	void Load(const FString& InFilePath, ID3D11Device* InDevice);
+
 	// 특정 시간의 본 Transform 샘플링
 	bool GetBoneTransformAtTime(const FString& BoneName, float Time, FVector& OutPosition, FQuat& OutRotation, FVector& OutScale) const;
 

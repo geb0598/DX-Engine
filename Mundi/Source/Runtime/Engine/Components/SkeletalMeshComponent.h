@@ -50,6 +50,9 @@ public:
 	void SetBoneLocalTransformDirect(int32 BoneIndex, const FTransform& NewLocalTransform);
 	void RefreshBoneTransforms();
 
+	// Reset to Reference Pose (T-Pose)
+	void ResetToReferencePose();
+
 
 
 protected:

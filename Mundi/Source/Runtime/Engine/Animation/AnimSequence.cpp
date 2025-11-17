@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "AnimSequence.h"
 #include "AnimDataModel.h"
+#include "Source/Editor/FBXLoader.h"
 
 IMPLEMENT_CLASS(UAnimSequence)
 
@@ -16,6 +17,100 @@ UAnimSequence::~UAnimSequence()
 		ObjectFactory::DeleteObject(DataModel);
 		DataModel = nullptr;
 	}
+}
+
+void UAnimSequence::Load(const FString& InFilePath, ID3D11Device* InDevice)
+{
+	// 경로 형식: "FBX파일경로#AnimStackName"
+	// '#'를 기준으로 FBX 파일 경로와 AnimStack 이름 분리
+	size_t HashPos = InFilePath.find('#');
+	if (HashPos == FString::npos)
+	{
+		UE_LOG("ERROR: UAnimSequence::Load() - Invalid path format. Expected 'FbxPath#AnimStackName', got: %s", InFilePath.c_str());
+		return;
+	}
+
+	FString FbxFilePath = InFilePath.substr(0, HashPos);
+	FString AnimStackName = InFilePath.substr(HashPos + 1);
+
+	// FBX에서 Skeleton 추출
+	FSkeleton* FbxSkeleton = UFbxLoader::GetInstance().ExtractSkeletonFromFbx(FbxFilePath);
+	if (!FbxSkeleton)
+	{
+		UE_LOG("ERROR: UAnimSequence::Load() - Failed to extract skeleton from FBX: %s", FbxFilePath.c_str());
+		return;
+	}
+
+	// 모든 AnimStack 로드
+	TArray<UAnimSequence*> AllAnimSequences = UFbxLoader::GetInstance().LoadAllFbxAnimations(FbxFilePath, *FbxSkeleton);
+
+	// 이름이 일치하는 AnimSequence 찾기
+	UAnimSequence* FoundAnimSequence = nullptr;
+	for (UAnimSequence* AnimSeq : AllAnimSequences)
+	{
+		if (AnimSeq && AnimSeq->GetName() == AnimStackName)
+		{
+			FoundAnimSequence = AnimSeq;
+			break;
+		}
+	}
+
+	if (!FoundAnimSequence)
+	{
+		UE_LOG("ERROR: UAnimSequence::Load() - AnimStack '%s' not found in FBX: %s", AnimStackName.c_str(), FbxFilePath.c_str());
+
+		// 생성된 AnimSequence들 정리
+		for (UAnimSequence* AnimSeq : AllAnimSequences)
+		{
+			if (AnimSeq)
+			{
+				ObjectFactory::DeleteObject(AnimSeq);
+			}
+		}
+		delete FbxSkeleton;
+		return;
+	}
+
+	// DataModel 가져오기
+	UAnimDataModel* FoundDataModel = FoundAnimSequence->GetDataModel();
+
+	// 찾은 AnimSequence의 DataModel을 현재 객체로 이동
+	if (DataModel)
+	{
+		ObjectFactory::DeleteObject(DataModel);
+		DataModel = nullptr;
+	}
+
+	DataModel = FoundDataModel;
+	Name = FoundAnimSequence->GetName();
+
+	// FoundAnimSequence는 더 이상 DataModel을 소유하지 않도록 설정
+	// SetDataModel(nullptr)을 호출하면 DataModel이 삭제되므로 직접 nullptr 설정
+	FoundAnimSequence->DataModel = nullptr;
+
+	// 나머지 AnimSequence들 정리
+	for (UAnimSequence* AnimSeq : AllAnimSequences)
+	{
+		if (AnimSeq)
+		{
+			ObjectFactory::DeleteObject(AnimSeq);
+		}
+	}
+
+	delete FbxSkeleton;
+
+	// FilePath와 LastModifiedTime 설정
+	// FilePath는 ResourceManager가 이미 설정하지만, 확실하게 하기 위해 다시 설정
+	// (ResourceManager::Load()의 213줄에서 SetFilePath 호출)
+
+	// LastModifiedTime 설정 (Hot Reload 지원)
+	std::filesystem::path FbxPath(FbxFilePath);
+	if (std::filesystem::exists(FbxPath))
+	{
+		SetLastModifiedTime(std::filesystem::last_write_time(FbxPath));
+	}
+
+	UE_LOG("UAnimSequence::Load() - Successfully loaded AnimStack '%s' from %s", AnimStackName.c_str(), FbxFilePath.c_str());
 }
 
 bool UAnimSequence::GetBoneTransformAtTime(const FString& BoneName, float Time, FVector& OutPosition, FQuat& OutRotation, FVector& OutScale) const

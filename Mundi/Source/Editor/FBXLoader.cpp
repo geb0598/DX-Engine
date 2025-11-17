@@ -10,6 +10,7 @@
 #include "Source/Runtime/Engine/Animation/AnimSequence.h"
 #include "Source/Runtime/Engine/Animation/AnimDataModel.h"
 #include "Source/Runtime/Engine/Animation/AnimationTypes.h"
+#include "Source/Runtime/AssetManagement/ResourceManager.h"
 #include <filesystem>
 #include <cmath>
 #include <cfloat>
@@ -67,19 +68,10 @@ void UFbxLoader::PreLoad()
              if (LoadedMesh && LoadedMesh->GetSkeleton())
              {
                 const FSkeleton* TargetSkeleton = LoadedMesh->GetSkeleton();
-                TArray<UAnimSequence*> AnimSequences = FbxLoader.LoadAllFbxAnimations(PathStr, *TargetSkeleton);
 
-                // 로드된 애니메이션을 메시에 추가
-                for (UAnimSequence* AnimSeq : AnimSequences)
-                {
-                   if (AnimSeq)
-                   {
-                      LoadedMesh->AddAnimation(AnimSeq);
-                      UE_LOG("  [+] Added animation '%s' to mesh '%s'",
-                         AnimSeq->GetName().c_str(),
-                         LoadedMesh->GetFilePath().c_str());
-                   }
-                }
+                // LoadAllFbxAnimations가 내부에서 ResourceManager에 자동 등록
+                // 메시 추가는 나중에 일괄 처리 (95-115줄)
+                FbxLoader.LoadAllFbxAnimations(PathStr, *TargetSkeleton);
              }
           }
        }
@@ -88,7 +80,30 @@ void UFbxLoader::PreLoad()
           UResourceManager::GetInstance().Load<UTexture>(WideToUTF8(Path.wstring()));
        }
     }
-    RESOURCE.SetSkeletalMeshs();
+    RESOURCE.SetSkeletalMeshes();
+    RESOURCE.SetAnimSequences();
+
+    // 모든 Animation을 모든 SkeletalMesh에 추가 (호환성 체크 없음)
+    TArray<USkeletalMesh*> AllSkeletalMeshes = RESOURCE.GetAll<USkeletalMesh>();
+    TArray<UAnimSequence*> AllAnimSequences = RESOURCE.GetAll<UAnimSequence>();
+
+    UE_LOG("Adding %d animations to %d skeletal meshes...", AllAnimSequences.Num(), AllSkeletalMeshes.Num());
+
+    for (UAnimSequence* AnimSeq : AllAnimSequences)
+    {
+       if (!AnimSeq)
+          continue;
+
+       for (USkeletalMesh* Mesh : AllSkeletalMeshes)
+       {
+          if (Mesh)
+          {
+             Mesh->AddAnimation(AnimSeq);
+          }
+       }
+
+       UE_LOG("  [+] Added animation '%s' to all meshes", AnimSeq->GetName().c_str());
+    }
 
     UE_LOG("UFbxLoader::Preload: Loaded %zu .fbx files from %s", LoadedCount, GDataDir.c_str());
 }
@@ -1614,6 +1629,14 @@ TArray<UAnimSequence*> UFbxLoader::LoadAllFbxAnimations(const FString& FilePath,
 			continue;
 
 		FString AnimStackName = AnimStack->GetName();
+
+		// "Take 001" 애니메이션 필터링 (길이 무관)
+		if (AnimStackName == "Take 001")
+		{
+			UE_LOG("UFbxLoader::LoadAllFbxAnimations: Skipping default Take 001 animation");
+			continue;
+		}
+
 		UE_LOG("UFbxLoader::LoadAllFbxAnimations: Processing AnimStack %d/%d: '%s'",
 			StackIndex + 1, AnimStackCount, AnimStackName.c_str());
 
@@ -1823,6 +1846,30 @@ TArray<UAnimSequence*> UFbxLoader::LoadAllFbxAnimations(const FString& FilePath,
 	}
 
 	Scene->Destroy();
+
+	// FBX 파일의 LastModifiedTime 가져오기 (FbxPath는 이미 1570줄에서 선언됨)
+	std::filesystem::file_time_type FbxModifiedTime;
+	if (std::filesystem::exists(FbxPath))
+	{
+		FbxModifiedTime = std::filesystem::last_write_time(FbxPath);
+	}
+
+	// 각 AnimSequence에 FilePath와 LastModifiedTime 설정 후 ResourceManager에 등록
+	for (UAnimSequence* AnimSeq : Results)
+	{
+		if (AnimSeq)
+		{
+			FString AnimName = AnimSeq->GetName();
+			FString AnimResourcePath = NormalizedPath + "#" + AnimName;
+
+			// FilePath 및 LastModifiedTime 설정
+			AnimSeq->SetFilePath(AnimResourcePath);
+			AnimSeq->SetLastModifiedTime(FbxModifiedTime);
+
+			// ResourceManager에 등록
+			UResourceManager::GetInstance().Add<UAnimSequence>(AnimResourcePath, AnimSeq);
+		}
+	}
 
 	UE_LOG("UFbxLoader::LoadAllFbxAnimations: Successfully loaded %d animations from %s",
 		Results.Num(), FilePath.c_str());
