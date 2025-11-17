@@ -15,6 +15,7 @@
 #include "ObjectFactory.h"
 #include "Object.h"
 #include "SkeletalMesh.h"
+#include "Source/Runtime/Engine/Animation/AnimSequence.h"
 // ... 기타 include ...
 
 // --- 전방 선언 ---
@@ -90,9 +91,11 @@ public:
 	// --- 캐시 관리 ---
 	FMeshBVH* GetMeshBVH(const FString& ObjPath);
 	FMeshBVH* GetOrBuildMeshBVH(const FString& ObjPath, const struct FStaticMesh* StaticMeshAsset);
-	void SetStaticMeshs();
-	void SetSkeletalMeshs();
-	const TArray<UStaticMesh*>& GetStaticMeshs() { return StaticMeshs; }
+	void SetStaticMeshes();
+	void SetSkeletalMeshes();
+	void SetAnimSequences();
+	const TArray<UStaticMesh*>& GetStaticMeshes() { return StaticMeshes; }
+	const TArray<UAnimSequence*>& GetAnimSequences() {return AnimSequences; }
 
 	void SetAudioFiles();
 
@@ -118,8 +121,9 @@ protected:
 	TMap<FString, TArray<D3D11_INPUT_ELEMENT_DESC>> ShaderToInputLayoutMap;
 	TMap<FString, FString> TextureToShaderMap;
 
-	TArray<UStaticMesh*> StaticMeshs;
-	TArray<USkeletalMesh*> SkeletalMeshs;
+	TArray<UStaticMesh*> StaticMeshes;
+	TArray<USkeletalMesh*> SkeletalMeshes;
+	TArray<UAnimSequence*> AnimSequences;
 
 	TArray<USound*> Sounds;
 
@@ -273,6 +277,8 @@ EResourceType UResourceManager::GetResourceType()
         return EResourceType::Material;
     if (T::StaticClass() == USound::StaticClass())
         return EResourceType::Sound;
+	if (T::StaticClass() == UAnimSequence::StaticClass())
+		return EResourceType::Animation;
 
     return EResourceType::None;
 }

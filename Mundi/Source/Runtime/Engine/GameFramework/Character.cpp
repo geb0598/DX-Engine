@@ -107,15 +107,15 @@ void ACharacter::BeginPlay()
 			if (Skeleton)
 			{
 				UFbxLoader& FbxLoader = UFbxLoader::GetInstance();
-
+				SkeletalMesh->GetAnimations()[0];
 				// 애니메이션 로드
-				TArray<UAnimSequence*> IdleAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/XBOT_Idle.fbx", *Skeleton);
-				TArray<UAnimSequence*> WalkAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/XBOT_Walking.fbx", *Skeleton);
-				TArray<UAnimSequence*> RunAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/XBOT_Slow Run.fbx", *Skeleton);
+			/*	TArray<UAnimSequence*> IdleAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Idle.fbx", *Skeleton);
+				TArray<UAnimSequence*> WalkAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Walking.fbx", *Skeleton);
+				TArray<UAnimSequence*> RunAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Slow Run.fbx", *Skeleton);*/
 
-				UAnimSequence* IdleAnim = IdleAnims.Num() > 0 ? IdleAnims[1] : nullptr;
-				UAnimSequence* WalkAnim = WalkAnims.Num() > 0 ? WalkAnims[1] : nullptr;
-				UAnimSequence* RunAnim = RunAnims.Num() > 0 ? RunAnims[1] : nullptr;
+				UAnimSequence* IdleAnim = SkeletalMesh->GetAnimations()[0];
+				UAnimSequence* WalkAnim = SkeletalMesh->GetAnimations()[1];
+				UAnimSequence* RunAnim = SkeletalMesh->GetAnimations()[2];
 
 				// ===== StateMachine 사용 =====
 				AnimStateMachine = NewObject<UAnimStateMachine>();

@@ -144,14 +144,19 @@ FMeshBVH* UResourceManager::GetOrBuildMeshBVH(const FString& ObjPath, const FSta
     return NewBVH;
 }
 
-void UResourceManager::SetStaticMeshs()
+void UResourceManager::SetStaticMeshes()
 {
-    StaticMeshs = GetAll<UStaticMesh>();
+    StaticMeshes = GetAll<UStaticMesh>();
 }
 
-void UResourceManager::SetSkeletalMeshs()
+void UResourceManager::SetSkeletalMeshes()
 {
-    SkeletalMeshs = GetAll<USkeletalMesh>();
+    SkeletalMeshes = GetAll<USkeletalMesh>();
+}
+
+void UResourceManager::SetAnimSequences()
+{
+    AnimSequences = GetAll<UAnimSequence>();
 }
 
 void UResourceManager::SetAudioFiles()

@@ -281,7 +281,7 @@ struct FSkeleton
     TArray<FBone> Bones; // 본 배열
     TMap <FString, int32> BoneNameToIndex; // 이름으로 본 검색
 
-    // ===== Phase 1.5: 캐시 데이터 추가 =====
+    // Phase 1.5 최적화: 캐시된 데이터
     TArray<FTransform> RefLocalPose;      // 로컬 스페이스 RefPose 캐시 (성능 최적화)
     TArray<int32> ParentIndices;          // 부모 인덱스 배열 캐시 (캐시 친화적)
     bool bCacheInitialized;               // 캐시 초기화 여부
@@ -477,6 +477,9 @@ struct FSkeletalMeshData
 
             // 3. Skeleton 로드
             Ar << Data.Skeleton;
+
+            // 3-1. Skeleton 캐시 초기화 (CRITICAL FIX)
+            Data.Skeleton.InitializeCachedData();
 
             // 4. GroupInfos 로드
             uint32 gCount;

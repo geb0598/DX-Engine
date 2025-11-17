@@ -19,7 +19,15 @@ public:
     uint32 GetBoneCount() const { return Data ? Data->Skeleton.Bones.Num() : 0; }
 
     // Animation 관리
-    void AddAnimation(UAnimSequence* Animation) { Animations.push_back(Animation); }
+    void AddAnimation(UAnimSequence* Animation)
+    {
+        // 중복 체크: 이미 추가된 애니메이션이면 무시
+        auto It = std::find(Animations.begin(), Animations.end(), Animation);
+        if (It == Animations.end())
+        {
+            Animations.push_back(Animation);
+        }
+    }
     const TArray<UAnimSequence*>& GetAnimations() const { return Animations; }
     void RemoveAnimation(UAnimSequence* Animation)
     {
