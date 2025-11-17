@@ -1717,12 +1717,12 @@ TArray<UAnimSequence*> UFbxLoader::LoadAllFbxAnimations(const FString& FilePath,
 				std::filesystem::remove(CacheFilePath);
 				if (AnimSequence)
 				{
-					delete AnimSequence;
+					ObjectFactory::DeleteObject(AnimSequence);
 					AnimSequence = nullptr;
 				}
 				if (DataModel)
 				{
-					delete DataModel;
+					ObjectFactory::DeleteObject(DataModel);
 					DataModel = nullptr;
 				}
 				bLoadedFromCache = false;
