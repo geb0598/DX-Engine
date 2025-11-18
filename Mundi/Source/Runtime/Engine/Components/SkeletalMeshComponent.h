@@ -1,5 +1,5 @@
 #pragma once
-#include "SingleAnimationPlayData.h"
+#include "../Animation/SingleAnimationPlayData.h"
 #include "SkinnedMeshComponent.h"
 #include "Source/Runtime/Core/Misc/Delegates.h"
 #include "USkeletalMeshComponent.generated.h"
@@ -86,11 +86,13 @@ public:
 	// AnimNotify 델리게이트
 	FOnAnimNotify OnAnimNotify;
 
-	// Animation Properties
+	UPROPERTY(EditAnywhere, Category="Animation")
+	EAnimationMode AnimationMode = EAnimationMode::AnimationSingleNode;
+
+	UPROPERTY(EditAnywhere, Category="Animation")
 	FSingleAnimationPlayData AnimationData;
 
 protected:
-	EAnimationMode AnimationMode = EAnimationMode::AnimationSingleNode;
 	TArray<FTransform> CurrentLocalSpacePose;
 	TArray<FTransform> CurrentComponentSpacePose;
 	TArray<FMatrix> TempFinalSkinningMatrices;

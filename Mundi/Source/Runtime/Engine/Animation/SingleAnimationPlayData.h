@@ -14,21 +14,27 @@
  *
  * UE Reference: Engine/Source/Runtime/Engine/Public/SingleAnimationPlayData.h
  */
+USTRUCT()
 struct FSingleAnimationPlayData
 {
 	// The default sequence to play on this skeletal mesh
+	UPROPERTY(EditAnywhere, Category="Animation")
 	class UAnimSequence* AnimToPlay;
 
 	// Default setting for looping for SequenceToPlay. This is not current state of looping.
+	UPROPERTY(EditAnywhere, Category="Animation")
 	bool bSavedLooping;
 
 	// Default setting for playing for SequenceToPlay. This is not current state of playing.
+	UPROPERTY(EditAnywhere, Category="Animation")
 	bool bSavedPlaying;
 
 	// Default setting for position of SequenceToPlay to play.
+	UPROPERTY(EditAnywhere, Category="Animation")
 	float SavedPosition;
 
 	// Default setting for play rate of SequenceToPlay to play.
+	UPROPERTY(EditAnywhere, Category="Animation")
 	float SavedPlayRate;
 
 	FSingleAnimationPlayData()
