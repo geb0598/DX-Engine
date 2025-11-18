@@ -30,6 +30,7 @@ public:
 	~USkeletalMeshComponent() override;
 
 	// Functions
+	void BeginPlay() override;
 	void TickComponent(float DeltaTime) override;
 	void SetSkeletalMesh(const FString& PathFileName) override;
 	void HandleAnimNotify(const FAnimNotifyEvent& Notify);

@@ -2,6 +2,7 @@
 #include "Object.h"
 #include "AnimNode_StateMachine.h"
 #include "AnimNode_BlendSpace2D.h"
+#include "UAnimInstance.generated.h"
 
 class UAnimSequenceBase;
 class USkeletalMeshComponent;
@@ -20,17 +21,16 @@ struct FAnimNotifyEvent;
  * @param PlayRate 재생 속도
  * @param bIsPlaying 재생 중인지 여부
  */
-UCLASS()
 class UAnimInstance : public UObject
 {
-	DECLARE_CLASS(UAnimInstance, UObject)
-
 public:
+	GENERATED_REFLECTION_BODY()
 	UAnimInstance();
 	~UAnimInstance() override = default;
 
 	// Functions
 	void Initialize(USkeletalMeshComponent* InOwner);
+	void NativeBeginPlay();
 	virtual void UpdateAnimation(float DeltaSeconds);
 	void TriggerAnimNotifies(float DeltaSeconds);
 	void PlayAnimation(UAnimSequenceBase* AnimSequence, float InPlayRate = 1.0f);
@@ -97,8 +97,7 @@ protected:
 // ===== 파라미터(Blackboard) 시스템 =====
 public:
 	UFUNCTION(LuaBind, DisplayName = "SetFloat")
-	void SetFloat(FName Key, float Value) { Parameters.Add(Key, Value); }
-	UFUNCTION(LuaBind, DisplayName = "GetFloat")
+	void SetFloat(const FString& Key, float Value) { Parameters.Add(Key, Value); }
 	float GetFloat(FName Key) const
 	{
 		if (const float* Val = Parameters.Find(Key))
@@ -109,8 +108,7 @@ public:
 	}
 
 	UFUNCTION(LuaBind, DisplayName = "SetBool")
-	void SetBool(FName Key, bool bValue) { SetFloat(Key, bValue ? 1.0f : 0.0f); }
-	UFUNCTION(LuaBind, DisplayName = "GetBool")
+	void SetBool(const FString& Key, bool bValue) { SetFloat(Key, bValue ? 1.0f : 0.0f); }
 	bool GetBool(FName Key) const { return GetFloat(Key) > 0.5f; }
 
 protected:

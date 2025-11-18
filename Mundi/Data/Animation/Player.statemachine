@@ -1,7 +1,7 @@
 {
   "EntryState" : "Idle",
   "Nodes" : [{
-      "AnimAsset" : "Data/Animation/XBOT_Walking.fbx#mixamo.com",
+      "AnimAsset" : "Data/Animation/XBOT_Slow Run.fbx#mixamo.com",
       "Loop" : true,
       "Name" : "Run"
     }, {
@@ -9,16 +9,16 @@
       "Loop" : true,
       "Name" : "Idle"
     }, {
-      "AnimAsset" : "Data/Animation/XBOT_Slow Run.fbx#mixamo.com",
+      "AnimAsset" : "Data/Animation/XBOT_Walking.fbx#mixamo.com",
       "Loop" : true,
       "Name" : "Walk"
     }],
   "Transitions" : [{
-      "BlendTime" : 0.200000,
+      "BlendTime" : 0.100000,
       "Conditions" : [{
           "Op" : 3,
           "Param" : "Speed",
-          "Val" : 2.000000
+          "Val" : 10.000000
         }],
       "From" : "Run",
       "To" : "Walk"
@@ -36,7 +36,7 @@
       "Conditions" : [{
           "Op" : 2,
           "Param" : "Speed",
-          "Val" : 2.000000
+          "Val" : 10.000000
         }],
       "From" : "Walk",
       "To" : "Run"

@@ -341,8 +341,23 @@ UWorld* UWorld::DuplicateWorldForPIE(UWorld* InEditorWorld)
 	{
 		UE_LOG("[World] PlayerController created for PIE: %s", NewPlayerController->GetName().c_str());
 
-		// 첫 번째 Pawn 찾아서 자동으로 Possess
-		ACharacter* Character = PIEWorld->SpawnActor<ACharacter>();
+		// 첫 번째 Character 찾아서 자동으로 Possess
+		ACharacter* Character = nullptr;
+		for (AActor* Actor : PIEWorld->GetActors())
+		{
+			if (Actor->IsA(ACharacter::StaticClass()))
+			{
+				Character = Cast<ACharacter>(Actor);
+				break;
+			}
+		}
+
+		// 없을 시 생성
+		if (!Character)
+		{
+			Character = PIEWorld->SpawnActor<ACharacter>();
+		}
+
 		if (Character)
 		{
 			NewPlayerController->Possess(Character);

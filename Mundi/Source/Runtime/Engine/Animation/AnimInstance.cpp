@@ -9,8 +9,6 @@
 #include "Source/Runtime/Engine/GameFramework/Pawn.h"
 #include "Actor.h"
 
-IMPLEMENT_CLASS(UAnimInstance)
-
 UAnimInstance::UAnimInstance()
 	: OwnerComponent(nullptr)
 	, CurrentAnimation(nullptr)
@@ -31,6 +29,19 @@ void UAnimInstance::Initialize(USkeletalMeshComponent* InOwner)
 	CurrentTime = 0.0f;
 	PreviousTime = 0.0f;
 	bIsPlaying = false;
+}
+
+void UAnimInstance::NativeBeginPlay()
+{
+	if (OwnerComponent)
+	{
+		AActor* Owner = OwnerComponent->GetOwner();
+		APawn* OwnerPawn = Cast<APawn>(Owner);
+		if (OwnerPawn)
+		{
+			StateMachineNode.Initialize(OwnerPawn);
+		}
+	}
 }
 
 /**
@@ -247,17 +258,6 @@ void UAnimInstance::EvaluateAnimation()
 void UAnimInstance::SetStateMachine(UAnimStateMachine* InStateMachine)
 {
 	StateMachineNode.SetStateMachine(InStateMachine);
-
-	// Owner Pawn 설정 (SkeletalMeshComponent의 Owner를 사용)
-	if (OwnerComponent)
-	{
-		AActor* Owner = OwnerComponent->GetOwner();
-		APawn* OwnerPawn = Cast<APawn>(Owner);
-		if (OwnerPawn)
-		{
-			StateMachineNode.Initialize(OwnerPawn);
-		}
-	}
 }
 
 /**
