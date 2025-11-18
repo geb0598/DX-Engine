@@ -274,9 +274,42 @@ void SBlendSpace2DEditorWindow::RenderSamplePoints()
 		// 샘플 이름 (애니메이션 이름)
 		if (Sample.Animation)
 		{
-			FString AnimName = Sample.Animation->GetName();
+			// FilePath에서 파일명만 추출
+			FString FilePath = Sample.Animation->GetFilePath();
+			FString DisplayName;
+
+			// #이 있으면 # 앞부분만 사용
+			size_t HashPos = FilePath.find('#');
+			if (HashPos != FString::npos)
+			{
+				FilePath = FilePath.substr(0, HashPos); // "path/to/file.fbx"
+			}
+
+			// 파일명만 추출 (경로 제거)
+			size_t LastSlash = FilePath.find_last_of("/\\");
+			if (LastSlash != FString::npos)
+			{
+				DisplayName = FilePath.substr(LastSlash + 1);
+			}
+			else
+			{
+				DisplayName = FilePath;
+			}
+
+			// 확장자 제거
+			size_t DotPos = DisplayName.find_last_of('.');
+			if (DotPos != FString::npos)
+			{
+				DisplayName = DisplayName.substr(0, DotPos);
+			}
+
+			if (DisplayName.empty())
+			{
+				DisplayName = "Unknown";
+			}
+
 			ImVec2 TextPos(ScreenPos.x + SamplePointRadius + 5, ScreenPos.y - 8);
-			DrawList->AddText(TextPos, IM_COL32(255, 255, 255, 255), AnimName.c_str());
+			DrawList->AddText(TextPos, IM_COL32(255, 255, 255, 255), DisplayName.c_str());
 		}
 	}
 }
@@ -487,8 +520,44 @@ void SBlendSpace2DEditorWindow::RenderSampleList()
 	{
 		const FBlendSample& Sample = EditingBlendSpace->Samples[i];
 
+		// 애니메이션 이름 파싱 (파일명만 표시)
+		FString AnimName = "None";
+		if (Sample.Animation)
+		{
+			FString FilePath = Sample.Animation->GetFilePath();
+
+			// #이 있으면 # 앞부분만 사용
+			size_t HashPos = FilePath.find('#');
+			if (HashPos != FString::npos)
+			{
+				FilePath = FilePath.substr(0, HashPos);
+			}
+
+			// 파일명만 추출 (경로 제거)
+			size_t LastSlash = FilePath.find_last_of("/\\");
+			if (LastSlash != FString::npos)
+			{
+				AnimName = FilePath.substr(LastSlash + 1);
+			}
+			else
+			{
+				AnimName = FilePath;
+			}
+
+			// 확장자 제거
+			size_t DotPos = AnimName.find_last_of('.');
+			if (DotPos != FString::npos)
+			{
+				AnimName = AnimName.substr(0, DotPos);
+			}
+
+			if (AnimName.empty())
+			{
+				AnimName = "Unknown";
+			}
+		}
+
 		char Label[256];
-		FString AnimName = Sample.Animation ? Sample.Animation->GetName() : "None";
 		sprintf_s(Label, "[%d] %.1f, %.1f - %s",
 			i,
 			Sample.Position.X,

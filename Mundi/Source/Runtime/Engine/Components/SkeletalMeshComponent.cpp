@@ -27,6 +27,15 @@ USkeletalMeshComponent::~USkeletalMeshComponent()
     }
 }
 
+void USkeletalMeshComponent::BeginPlay()
+{
+	Super::BeginPlay();
+	if (AnimInstance)
+	{
+		AnimInstance->NativeBeginPlay();
+	}
+}
+
 /**
  * @brief Animation 인스턴스 설정
  */
@@ -58,6 +67,15 @@ void USkeletalMeshComponent::HandleAnimNotify(const FAnimNotifyEvent& Notify)
     {
         OwnerActor->HandleAnimNotify(Notify);
     }
+}
+
+void USkeletalMeshComponent::TriggerAnimNotify(const FString& NotifyName, float TriggerTime, float Duration)
+{
+    FAnimNotifyEvent Event;
+    Event.NotifyName = FName(NotifyName);
+    Event.TriggerTime = TriggerTime;
+    Event.Duration = Duration;
+    OnAnimNotify.Broadcast(Event);
 }
 
 void USkeletalMeshComponent::TickComponent(float DeltaTime)
@@ -485,14 +503,17 @@ void USkeletalMeshComponent::Serialize(const bool bInIsLoading, JSON& InOutHandl
         bool bHasAnimInstance = (AnimInstance != nullptr);
         InOutHandle["HasAnimInstance"] = bHasAnimInstance;
 
-        if (bHasAnimInstance && AnimInstance->GetCurrentAnimation())
+        if (bHasAnimInstance)
         {
-            // 애니메이션 상태 저장
-            // TODO: CurrentAnimation의 경로를 저장 (현재는 Asset 경로 시스템 미완성)
-            InOutHandle["AnimationPath"] = FString("");
-            InOutHandle["CurrentTime"] = AnimInstance->GetCurrentTime();
-            InOutHandle["PlayRate"] = AnimInstance->GetPlayRate();
-            InOutHandle["IsPlaying"] = AnimInstance->IsPlaying();
+        	if (AnimInstance->GetCurrentAnimation())
+        	{
+        		// 애니메이션 상태 저장
+        		// TODO: CurrentAnimation의 경로를 저장 (현재는 Asset 경로 시스템 미완성)
+        		InOutHandle["AnimationPath"] = FString("");
+        		InOutHandle["CurrentTime"] = AnimInstance->GetCurrentTime();
+        		InOutHandle["PlayRate"] = AnimInstance->GetPlayRate();
+        		InOutHandle["IsPlaying"] = AnimInstance->IsPlaying();
+        	}
             InOutHandle["AnimStateMachine"] = AnimInstance->GetStateMachineNode()->GetStateMachine()->GetFilePath();
         }
     }

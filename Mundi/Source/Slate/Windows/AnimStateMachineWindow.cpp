@@ -11,14 +11,6 @@ namespace ed = ax::NodeEditor;
 SAnimStateMachineWindow::SAnimStateMachineWindow()
 {
     Rect = { 0, 0, 0, 0 };
-
-	// TEST
-	UFbxLoader& FbxLoader = UFbxLoader::GetInstance();
-	USkeletalMesh* SkeletalMesh = FbxLoader.LoadFbxMesh(GDataDir + "/X Bot.fbx");
-	TArray<UAnimSequence*> IdleAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Idle.fbx", *SkeletalMesh->GetSkeleton());
-	TArray<UAnimSequence*> WalkAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Walking.fbx", *SkeletalMesh->GetSkeleton());
-	TArray<UAnimSequence*> RunAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Slow Run.fbx", *SkeletalMesh->GetSkeleton());
-	// TEST
 }
 
 SAnimStateMachineWindow::~SAnimStateMachineWindow()
@@ -110,7 +102,7 @@ void SAnimStateMachineWindow::OnRender()
         return;
     }
 
-    ImGuiWindowFlags flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_MenuBar;
+    ImGuiWindowFlags flags = ImGuiWindowFlags_NoSavedSettings;
 
     if (!bInitialPlacementDone)
     {
@@ -121,90 +113,95 @@ void SAnimStateMachineWindow::OnRender()
 
     if (ImGui::Begin("Animation State Machine Editor", &bIsOpen, flags))
     {
-        // === Menu Bar ===
-        if (ImGui::BeginMenuBar())
+        // === Toolbar (File 메뉴 없이 버튼으로 직접 노출) ===
+        const FWideString BaseDir = UTF8ToWide(GDataDir) + L"/Animation";
+        const FWideString Extension = L".statemachine";
+        const FWideString Description = L"State Machines";
+        FWideString DefaultFileName = L"NewStateMachine";
+
+        // New 버튼
+        if (ImGui::Button("New", ImVec2(60, 0)))
         {
-            if (ImGui::BeginMenu("File"))
-            {
-            	const FWideString BaseDir = UTF8ToWide(GDataDir) + L"/Animation";
-            	const FWideString Extension = L".statemachine";
-            	const FWideString Description = L"State Machines";
-            	FWideString DefaultFileName = L"NewStateMachine";
-
-                if (ImGui::MenuItem("New State Machine"))
-                {
-                    char label[64];
-                    sprintf_s(label, "State Machine %d", static_cast<int32>(Tabs.size()) + 1);
-					CreateNewGraphTab(label, nullptr);
-                }
-            	// [Save]
-            	if (ImGui::MenuItem("Save", "Ctrl+S"))
-            	{
-            		if (ActiveState && ActiveState->StateMachine)
-            		{
-            			FWideString SavePath = ActiveState->AssetPath;
-
-            			// 경로가 없으면(새로 만든 경우) 다이얼로그 띄움
-            			if (SavePath.empty())
-            			{
-            				std::filesystem::path SelectedPath = FPlatformProcess::OpenSaveFileDialog(BaseDir, Extension, Description, DefaultFileName);
-            				if (!SelectedPath.empty())
-            				{
-            					SavePath = SelectedPath.wstring();
-            					ActiveState->AssetPath = SavePath; // 경로 저장
-
-            					// 탭 이름도 파일명으로 변경해주면 좋음
-            					ActiveState->Name = SelectedPath.stem().string();
-            				}
-            			}
-
-            			if (!SavePath.empty())
-            			{
-            				try
-            				{
-            					if (ActiveState->StateMachine->SaveToFile(SavePath))
-            					{
-            						UE_LOG("StateMachine saved: %S", SavePath.c_str());
-            					}
-            					else
-            					{
-            						UE_LOG("[error] StateMachine save failed.");
-            					}
-            				}
-            				catch (const std::exception& Exception)
-            				{
-            					UE_LOG("[error] StateMachine Save Error: %s", Exception.what());
-            				}
-            			}
-            		}
-            	}
-            	// [Load] - 변경된 핵심 부분
-            	if (ImGui::MenuItem("Load", "Ctrl+O"))
-            	{
-            		std::filesystem::path SelectedPath = FPlatformProcess::OpenLoadFileDialog(BaseDir, Extension, Description);
-
-            		if (!SelectedPath.empty())
-            		{
-            			FWideString FilePath = SelectedPath.wstring();
-            			UAnimStateMachine* LoadedAsset = RESOURCE.Load<UAnimStateMachine>(FilePath);
-
-            			if (LoadedAsset)
-            			{
-            				// @TODO - 이미 열려있는지 확인
-            				// 로드된 에셋으로 새 탭 생성
-            				std::string FileName = SelectedPath.stem().string();
-            				CreateNewGraphTab(FileName.c_str(), LoadedAsset, FilePath);
-            			}
-            			else
-            			{
-            				UE_LOG("[Error] Failed to load AnimStateMachine: %S", FilePath.c_str());
-            			}
-            		}
-            	}
-                ImGui::EndMenu();
-            }
-            ImGui::EndMenuBar();
+            char label[64];
+            sprintf_s(label, "State Machine %d", static_cast<int32>(Tabs.size()) + 1);
+            CreateNewGraphTab(label, nullptr);
         }
+
+        ImGui::SameLine();
+
+        // Save 버튼
+        if (ImGui::Button("Save", ImVec2(60, 0)))
+        {
+            if (ActiveState && ActiveState->StateMachine)
+            {
+                FWideString SavePath = ActiveState->AssetPath;
+
+                // 경로가 없으면(새로 만든 경우) 다이얼로그 띄움
+                if (SavePath.empty())
+                {
+                    std::filesystem::path SelectedPath = FPlatformProcess::OpenSaveFileDialog(BaseDir, Extension, Description, DefaultFileName);
+                    if (!SelectedPath.empty())
+                    {
+                        SavePath = SelectedPath.wstring();
+                        ActiveState->AssetPath = SavePath; // 경로 저장
+
+                        // 탭 이름도 파일명으로 변경해주면 좋음
+                        ActiveState->Name = SelectedPath.stem().string();
+                    }
+                }
+
+                if (!SavePath.empty())
+                {
+                    try
+                    {
+                        // 노드 위치 저장
+                        SaveNodePositions(ActiveState);
+
+                        if (ActiveState->StateMachine->SaveToFile(SavePath))
+                        {
+                        	RESOURCE.Reload<UAnimStateMachine>(SavePath);
+                            UE_LOG("StateMachine saved: %S", SavePath.c_str());
+                        }
+                        else
+                        {
+                            UE_LOG("[error] StateMachine save failed.");
+                        }
+                    }
+                    catch (const std::exception& Exception)
+                    {
+                        UE_LOG("[error] StateMachine Save Error: %s", Exception.what());
+                    }
+                }
+            }
+        }
+
+        ImGui::SameLine();
+
+        // Load 버튼
+        if (ImGui::Button("Load", ImVec2(60, 0)))
+        {
+            std::filesystem::path SelectedPath = FPlatformProcess::OpenLoadFileDialog(BaseDir, Extension, Description);
+
+            if (!SelectedPath.empty())
+            {
+            	FString FinalPathStr = ResolveAssetRelativePath(WideToUTF8(SelectedPath.wstring()), "");
+            	UAnimStateMachine* LoadedAsset = RESOURCE.Load<UAnimStateMachine>(FinalPathStr);
+
+                if (LoadedAsset)
+                {
+                    // @TODO - 이미 열려있는지 확인
+                    // 로드된 에셋으로 새 탭 생성
+                    std::string FileName = SelectedPath.stem().string();
+                    CreateNewGraphTab(FileName.c_str(), LoadedAsset, UTF8ToWide(FinalPathStr));
+                }
+                else
+                {
+                    UE_LOG("[Error] Failed to load AnimStateMachine: %S", FinalPathStr.c_str());
+                }
+            }
+        }
+
+        ImGui::Separator();
 
         // === Tab Bar ===
         bool bTabClosed = false;
@@ -346,6 +343,36 @@ void SAnimStateMachineWindow::RenderLeftPanel(float width, float height)
 	ImGui::PopStyleVar();
 }
 
+// 아이콘 그리기 헬퍼 함수
+void DrawPinIcon(const ImVec2& size, bool filled, ImU32 color)
+{
+    ImDrawList* drawList = ImGui::GetWindowDrawList();
+    ImVec2 cursorPos = ImGui::GetCursorScreenPos();
+
+    ImRect rect(cursorPos, cursorPos + size);
+    float centerX = (rect.Min.x + rect.Max.x) * 0.5f;
+    float centerY = (rect.Min.y + rect.Max.y) * 0.5f;
+
+    // 삼각형 그리기 (Flow 타입)
+    const float triangleSize = size.x * 0.6f;
+    const float halfSize = triangleSize * 0.5f;
+
+    ImVec2 p1(centerX - halfSize, centerY - halfSize * 0.866f);
+    ImVec2 p2(centerX + halfSize, centerY);
+    ImVec2 p3(centerX - halfSize, centerY + halfSize * 0.866f);
+
+    if (filled)
+    {
+        drawList->AddTriangleFilled(p1, p2, p3, color);
+    }
+    else
+    {
+        drawList->AddTriangle(p1, p2, p3, color, 2.0f);
+    }
+
+    ImGui::Dummy(size);
+}
+
 void SAnimStateMachineWindow::RenderCenterPanel(float width, float height)
 {
     ImGui::BeginChild("GraphArea", ImVec2(width, height), true);
@@ -355,210 +382,347 @@ void SAnimStateMachineWindow::RenderCenterPanel(float width, float height)
         ed::SetCurrentEditor(ActiveState->Context);
         ed::Begin("StateGraph", ImVec2(0.0, 0.0f));
 
+        // 스타일 설정: 둥근 모서리, 패딩 제거 (직접 그리기 위해)
+        ed::PushStyleVar(ed::StyleVar_NodeRounding, 12.0f);
+        ed::PushStyleVar(ed::StyleVar_NodePadding, ImVec4(0, 0, 0, 0));
+
         // 1. Draw State Nodes
         for (auto& Node : ActiveState->Nodes)
         {
-            // Entry State는 초록색으로 표시
+            // -------------------------------------------------------
+            // [Step 1] 색상 결정 (Entry는 초록색, 일반은 짙은 회색/파란색)
+            // -------------------------------------------------------
             bool bIsEntry = false;
             if (ActiveState->StateMachine)
             {
                 bIsEntry = (ActiveState->StateMachine->GetEntryStateName().ToString() == Node.Name);
             }
 
-            ed::PushStyleColor(ed::StyleColor_NodeBg, bIsEntry ?
-                ImVec4(0.2f, 0.6f, 0.3f, 1.0f) : ImVec4(0.3f, 0.3f, 0.4f, 1.0f));
+            // 언리얼 스타일 헤더 색상
+            ImU32 HeaderColor = bIsEntry ?
+                IM_COL32(80, 120, 80, 255) : IM_COL32(45, 50, 60, 255);
+
+            // 선택되었을 때 약간 밝게
+            if (ed::IsNodeSelected(Node.ID))
+            {
+                HeaderColor = bIsEntry ?
+                    IM_COL32(100, 150, 100, 255) : IM_COL32(60, 70, 80, 255);
+            }
 
             ed::BeginNode(Node.ID);
 
-            ImGui::PushItemWidth(150.0f);
-            ImGui::Text(Node.Name.c_str());
-            ImGui::PopItemWidth();
+            // -------------------------------------------------------
+            // [Step 2] 헤더 영역 그리기 (제목)
+            // -------------------------------------------------------
+            ImGui::PushID(Node.ID.Get());
 
-            // State 정보 표시
-            ImGui::Spacing();
-            if (Node.AnimSequence)
+            ImGui::BeginGroup(); // Header Group
             {
-                ImGui::TextColored(ImVec4(0.7f, 0.9f, 1.0f, 1.0f), "Anim: %s",
-                    Node.AnimSequence->GetFilePath().c_str());
-            }
-            else
-            {
-                ImGui::TextColored(ImVec4(0.8f, 0.4f, 0.4f, 1.0f), "No Animation");
-            }
+                ImGui::Dummy(ImVec2(0, 4)); // 상단 여백
 
-            if (Node.bLoop)
-            {
-                ImGui::TextColored(ImVec4(0.5f, 1.0f, 0.5f, 1.0f), "[LOOP]");
-            }
+                // 제목 중앙 정렬 느낌을 위해 약간 들여쓰기 또는 중앙 계산
+                ImGui::Indent(10.0f);
+                ImGui::TextColored(ImVec4(1, 1, 1, 1), "%s", Node.Name.c_str());
 
-            // Input/Output Pins (상태 간 연결용)
-            ImGui::BeginGroup();
-            for (auto& Pin : Node.Inputs)
-            {
-                ed::BeginPin(Pin.ID, Pin.Kind);
-                ImGui::Text("-> In  ");
-                ed::EndPin();
-            }
-            ImGui::EndGroup();
+                // 서브 타이틀 (예: 애니메이션 이름)
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+                if (Node.AnimSequence)
+                {
+                    // 파일명만 추출해서 보여주기
+                    std::string AnimName = std::filesystem::path(Node.AnimSequence->GetFilePath()).stem().string();
+                    ImGui::Text("(%s)", AnimName.c_str());
+                }
+                else
+                {
+                    ImGui::Text("(None)");
+                }
+                ImGui::PopStyleColor();
+                ImGui::Unindent(10.0f);
 
-            ImGui::SameLine();
-
-            ImGui::BeginGroup();
-            for (auto& Pin : Node.Outputs)
-            {
-                ed::BeginPin(Pin.ID, Pin.Kind);
-                ImGui::Text("  Out ->");
-                ed::EndPin();
+                ImGui::Dummy(ImVec2(0, 4)); // 헤더 하단 여백
             }
             ImGui::EndGroup();
+
+            // 헤더 영역의 크기를 가져옴 (나중에 배경 그릴 때 사용)
+            ImRect HeaderRect;
+            HeaderRect.Min = ImGui::GetItemRectMin();
+            HeaderRect.Max = ImGui::GetItemRectMax();
+
+            // 헤더가 너무 좁으면 최소 너비 보장
+            float minWidth = 150.0f;
+            if (HeaderRect.GetWidth() < minWidth)
+            {
+                HeaderRect.Max.x = HeaderRect.Min.x + minWidth;
+                // 더미로 공간 확보
+                ImGui::SameLine();
+                ImGui::Dummy(ImVec2(minWidth - ImGui::GetItemRectSize().x, 0));
+            }
+
+			// -------------------------------------------------------
+            // [Step 3] 바디 영역 (핀 레이아웃 개선)
+            // -------------------------------------------------------
+            ImGui::Dummy(ImVec2(0, 8)); // 헤더와 바디 사이 넉넉한 간격
+
+            ImGui::BeginGroup(); // Body Group Start
+            {
+                // 노드의 최소 너비를 보장하여 핀 사이 간격을 벌림
+                float minNodeWidth = 180.0f;
+                float currentHeaderWidth = HeaderRect.GetWidth();
+                float bodyWidth = std::max(minNodeWidth, currentHeaderWidth);
+
+                // =================================================
+                // 1. 왼쪽: Input Pin (Entry)
+                // =================================================
+                ImGui::BeginGroup();
+                for (auto& Pin : Node.Inputs)
+                {
+                    ed::BeginPin(Pin.ID, Pin.Kind);
+
+                    // [아이콘]
+                    bool connected = false;
+                    for (const auto& Link : ActiveState->Links)
+                        if (Link.EndPinID == Pin.ID) { connected = true; break; }
+
+                    DrawPinIcon(ImVec2(16, 16), connected, IM_COL32(100, 255, 100, 255)); // 입력은 초록색 느낌
+
+                    // [텍스트] 아이콘 바로 옆에 라벨 표시
+                    ImGui::SameLine();
+                    ImGui::TextDisabled("In");
+
+                    ed::EndPin();
+                }
+                ImGui::EndGroup();
+
+                // =================================================
+                // 2. 중간: 스프링 (Spring) 공간
+                // 왼쪽 그룹과 오른쪽 그룹 사이를 강제로 벌림
+                // =================================================
+                ImGui::SameLine();
+
+                float leftSize = ImGui::GetItemRectSize().x;
+                float rightSize = 60.0f; // 오른쪽 핀 그룹 대략적인 크기 예상치
+
+                // 남은 공간 계산 (최소 너비 보장)
+                float spacerSize = bodyWidth - leftSize - rightSize;
+                if (spacerSize < 20.0f) spacerSize = 20.0f; // 최소 간격
+
+                ImGui::Dummy(ImVec2(spacerSize, 0));
+
+                ImGui::SameLine();
+
+                // =================================================
+                // 3. 오른쪽: Output Pin (Transition)
+                // =================================================
+                ImGui::BeginGroup();
+                for (auto& Pin : Node.Outputs)
+                {
+                    ed::BeginPin(Pin.ID, Pin.Kind);
+
+                    // [텍스트] 출력은 텍스트가 먼저 나오고
+                    ImGui::TextDisabled("Out");
+                    ImGui::SameLine();
+
+                    // [아이콘] 그 뒤에 아이콘이 나옴 (오른쪽 정렬 효과)
+                    bool connected = false;
+                    for (const auto& Link : ActiveState->Links)
+                        if (Link.StartPinID == Pin.ID) { connected = true; break; }
+
+                    DrawPinIcon(ImVec2(16, 16), connected, IM_COL32(255, 200, 100, 255)); // 출력은 주황색
+
+                    ed::EndPin();
+                }
+                ImGui::EndGroup();
+            }
+            ImGui::EndGroup(); // Body Group End
+
+            ImGui::Dummy(ImVec2(0, 8)); // 하단 여백
+            ImGui::PopID();
 
             ed::EndNode();
-            ed::PopStyleColor();
-        }
 
-        // 2. Draw Transitions (Links)
-        for (auto& Link : ActiveState->Links)
-        {
-            // Transition 정보에 따라 색상 다르게 표시
-            ImColor linkColor = Link.Conditions.empty() ?
-                ImColor(150, 150, 150) : ImColor(100, 200, 255);
-
-            ed::Link(Link.ID, Link.StartPinID, Link.EndPinID, linkColor, 2.0f);
-        }
-
-        // 3. Handle Creation (State 간 Transition 연결)
-        if (ed::BeginCreate())
-        {
-            ed::PinId startPinId, endPinId;
-            if (ed::QueryNewLink(&startPinId, &endPinId))
+            // -------------------------------------------------------
+            // [Step 4] 배경 그리기 (Node Editor의 DrawList 사용)
+            // 노드가 그려진 위치(Content) 뒤에 배경을 덧그림
+            // -------------------------------------------------------
+            if (ImGui::IsItemVisible())
             {
-                // 출력 핀에서 입력 핀으로만 연결 가능
-                FGraphPin* StartPin = FindPin(ActiveState, startPinId);
-                FGraphPin* EndPin = FindPin(ActiveState, endPinId);
+                ImDrawList* drawList = ed::GetNodeBackgroundDrawList(Node.ID);
 
-                if (StartPin && EndPin &&
-                    StartPin->Kind == ed::PinKind::Output &&
-                    EndPin->Kind == ed::PinKind::Input)
+                // 노드 전체 영역
+                ImVec2 nodeMin = ed::GetNodePosition(Node.ID);
+                ImVec2 nodeSize = ed::GetNodeSize(Node.ID);
+                ImVec2 nodeMax = ImVec2(nodeMin.x + nodeSize.x, nodeMin.y + nodeSize.y);
+
+                // 헤더 영역 계산 (노드 상단부터 헤더 텍스트 그룹 높이까지)
+                // ImGui 아이템 좌표는 스크린 좌표이므로 Editor 좌표계 고려 필요 없지만
+                // NodeBackgroundDrawList는 노드 로컬 좌표계가 아님.
+
+                // 헤더 사각형 (위쪽 둥근 모서리)
+                float headerHeight = HeaderRect.GetHeight();
+                ImVec2 headerMax = ImVec2(nodeMax.x, nodeMin.y + headerHeight);
+
+                // 1. 헤더 배경 (색상 띠)
+                // 상단 좌우만 둥글게 (ImDrawFlags_RoundCornersTop)
+                drawList->AddRectFilled(
+                    nodeMin,
+                    headerMax,
+                    HeaderColor,
+                    ed::GetStyle().NodeRounding,
+                    ImDrawFlags_RoundCornersTop
+                );
+
+                // 2. 바디 배경 (반투명 검정)
+                // 헤더 바로 아래부터 끝까지, 하단 좌우만 둥글게
+                drawList->AddRectFilled(
+                    ImVec2(nodeMin.x, headerMax.y),
+                    nodeMax,
+                    IM_COL32(20, 20, 20, 200), // 약간 투명한 검정
+                    ed::GetStyle().NodeRounding,
+                    ImDrawFlags_RoundCornersBottom
+                );
+
+                // 3. 구분선 (헤더와 바디 사이)
+                drawList->AddLine(
+                    ImVec2(nodeMin.x, headerMax.y),
+                    ImVec2(nodeMax.x, headerMax.y),
+                    IM_COL32(255, 255, 255, 30), // 희미한 선
+                    1.0f
+                );
+
+                // 4. 테두리 (선택되었을 때)
+                if (ed::IsNodeSelected(Node.ID))
                 {
-                    if (ed::AcceptNewItem())
-                    {
-                        // GraphLink 생성
-                        FGraphLink NewLink;
-                        NewLink.ID = ActiveState->GetNextLinkId();
-                        NewLink.StartPinID = startPinId;
-                        NewLink.EndPinID = endPinId;
-                        NewLink.BlendTime = 0.2f;
-
-                        // 실제 State Machine에 Transition 추가
-                        FGraphNode* FromNode = FindNodeByPin(ActiveState, startPinId);
-                        FGraphNode* ToNode = FindNodeByPin(ActiveState, endPinId);
-
-                        if (FromNode && ToNode && ActiveState->StateMachine)
-                        {
-                            FName fromName(FromNode->Name);
-                            FName toName(ToNode->Name);
-                            ActiveState->StateMachine->AddTransition(fromName, toName, NewLink.BlendTime);
-                        }
-
-                        ActiveState->Links.push_back(NewLink);
-                    }
+                    drawList->AddRect(
+                        nodeMin,
+                        nodeMax,
+                        IM_COL32(255, 176, 50, 255), // 언리얼 오렌지색 선택 테두리
+                        ed::GetStyle().NodeRounding,
+                        0,
+                        2.0f
+                    );
+                }
+                else
+                {
+                     // 평소 테두리 (검정)
+                    drawList->AddRect(
+                        nodeMin,
+                        nodeMax,
+                        IM_COL32(10, 10, 10, 255),
+                        ed::GetStyle().NodeRounding,
+                        0,
+                        1.0f
+                    );
                 }
             }
         }
+
+        ed::PopStyleVar(2); // Rounding, Padding 복구
+
+        // 2. Draw Transitions (Links) - 곡선 스타일 개선
+        for (auto& Link : ActiveState->Links)
+        {
+            ImColor linkColor = Link.Conditions.empty() ?
+                ImColor(200, 200, 200, 255) : ImColor(100, 200, 255, 255); // 조건 있으면 파란색
+
+            // 두께를 약간 두껍게
+            ed::Link(Link.ID, Link.StartPinID, Link.EndPinID, linkColor, 3.0f);
+        }
+
+        // Handle Creation 부분 예시 (기존 코드 유지)
+        if (ed::BeginCreate())
+        {
+             ed::PinId startPinId, endPinId;
+             if (ed::QueryNewLink(&startPinId, &endPinId))
+             {
+                 FGraphPin* StartPin = FindPin(ActiveState, startPinId);
+                 FGraphPin* EndPin = FindPin(ActiveState, endPinId);
+                 if (StartPin && EndPin && StartPin->Kind == ed::PinKind::Output && EndPin->Kind == ed::PinKind::Input)
+                 {
+                     if (ed::AcceptNewItem())
+                     {
+                         // ... 링크 생성 로직 (기존 동일) ...
+                         FGraphLink NewLink;
+                         NewLink.ID = ActiveState->GetNextLinkId();
+                         NewLink.StartPinID = startPinId;
+                         NewLink.EndPinID = endPinId;
+                         NewLink.BlendTime = 0.2f;
+
+                         FGraphNode* FromNode = FindNodeByPin(ActiveState, startPinId);
+                         FGraphNode* ToNode = FindNodeByPin(ActiveState, endPinId);
+                         if (FromNode && ToNode && ActiveState->StateMachine)
+                         {
+                             ActiveState->StateMachine->AddTransition(FName(FromNode->Name), FName(ToNode->Name), NewLink.BlendTime);
+                         }
+                         ActiveState->Links.push_back(NewLink);
+                     }
+                 }
+             }
+        }
         ed::EndCreate();
 
-        // 4. Handle Deletion
-		if (ed::BeginDelete())
-		{
-		    // ==============================================================
-		    // 1. 링크(Transition) 삭제 처리
-		    // ==============================================================
-		    ed::LinkId deletedLinkId;
-		    while (ed::QueryDeletedLink(&deletedLinkId))
-		    {
-		        if (ed::AcceptDeletedItem())
-		        {
-		            // UI에서 링크 객체 찾기
-		            FGraphLink* Link = FindLink(ActiveState, deletedLinkId);
-		            if (Link)
-		            {
-		                FGraphNode* FromNode = FindNodeByPin(ActiveState, Link->StartPinID);
-		                FGraphNode* ToNode = FindNodeByPin(ActiveState, Link->EndPinID);
+        if (ed::BeginDelete())
+        {
+             // ... 삭제 로직 (기존 동일) ...
+             ed::LinkId deletedLinkId;
+             while (ed::QueryDeletedLink(&deletedLinkId))
+             {
+                 if (ed::AcceptDeletedItem())
+                 {
+                     // ... 링크 삭제 ...
+                     auto& Links = ActiveState->Links;
+                     FGraphLink* Link = FindLink(ActiveState, deletedLinkId);
+                     if (Link && ActiveState->StateMachine)
+                     {
+                         FGraphNode* FromNode = FindNodeByPin(ActiveState, Link->StartPinID);
+                         FGraphNode* ToNode = FindNodeByPin(ActiveState, Link->EndPinID);
+                         if(FromNode && ToNode) ActiveState->StateMachine->RemoveTransition(FName(FromNode->Name), FName(ToNode->Name));
+                     }
+                     std::erase_if(Links, [deletedLinkId](const FGraphLink& L) { return L.ID == deletedLinkId; });
+                 }
+             }
+             ed::NodeId deletedNodeId;
+             while (ed::QueryDeletedNode(&deletedNodeId))
+             {
+                 if (ed::AcceptDeletedItem())
+                 {
+                     // ... 노드 삭제 ...
+                     FGraphNode* Node = FindNode(ActiveState, deletedNodeId);
+                     if (Node && ActiveState->StateMachine) ActiveState->StateMachine->RemoveNode(FName(Node->Name));
 
-		                if (FromNode && ToNode && ActiveState->StateMachine)
-		                {
-		                    FName FromName(FromNode->Name);
-		                    FName ToName(ToNode->Name);
-		                	ActiveState->StateMachine->RemoveTransition(FromName, ToName);
-		                }
-		            }
+                     // 관련 링크 삭제
+                     std::erase_if(ActiveState->Links, [&](const FGraphLink& L) {
+                        FGraphNode* S = FindNodeByPin(ActiveState, L.StartPinID);
+                        FGraphNode* E = FindNodeByPin(ActiveState, L.EndPinID);
+                        return (S && S->ID == deletedNodeId) || (E && E->ID == deletedNodeId);
+                     });
 
-		            // UI 데이터 업데이트: 링크 목록에서 제거
-		            auto& Links = ActiveState->Links;
-		            std::erase_if(Links,
-		                          [deletedLinkId](const FGraphLink& L) { return L.ID == deletedLinkId; });
-		        }
-		    }
+                     auto& Nodes = ActiveState->Nodes;
+                     std::erase_if(Nodes, [deletedNodeId](const FGraphNode& N) { return N.ID == deletedNodeId; });
+                 }
+             }
+        }
+        ed::EndDelete();
 
-		    // ==============================================================
-		    // 2. 노드(State) 삭제 처리
-		    // ==============================================================
-		    ed::NodeId deletedNodeId;
-		    while (ed::QueryDeletedNode(&deletedNodeId))
-		    {
-		        if (ed::AcceptDeletedItem())
-		        {
-		            FGraphNode* Node = FindNode(ActiveState, deletedNodeId);
-
-		            if (Node && ActiveState->StateMachine)
-		            {
-		                ActiveState->StateMachine->RemoveNode(FName(Node->Name));
-		            }
-
-		            auto& Links = ActiveState->Links;
-		            std::erase_if(Links,
-		                          [&](const FGraphLink& L) {
-			                          FGraphNode* StartNode = FindNodeByPin(ActiveState, L.StartPinID);
-			                          FGraphNode* EndNode = FindNodeByPin(ActiveState, L.EndPinID);
-			                          // 링크의 시작이나 끝이 삭제된 노드라면 UI에서 제거
-			                          return (StartNode && StartNode->ID == deletedNodeId) ||
-				                          (EndNode && EndNode->ID == deletedNodeId);
-						}
-		            );
-
-		            // UI 데이터 업데이트: 노드 목록에서 제거
-		            auto& Nodes = ActiveState->Nodes;
-		            std::erase_if(Nodes,
-		                          [deletedNodeId](const FGraphNode& N) { return N.ID == deletedNodeId; });
-		        }
-		    }
-		}
-		ed::EndDelete();
-
-        // 5. Selection 처리
+        // Selection Logic (기존 동일)
         if (ed::GetSelectedObjectCount() > 0)
         {
             ed::NodeId selectedNodeId;
-            if (ed::GetSelectedNodes(&selectedNodeId, 1) > 0)
-            {
+            if (ed::GetSelectedNodes(&selectedNodeId, 1) > 0) {
                 ActiveState->SelectedNodeID = selectedNodeId;
                 ActiveState->SelectedLinkID = ed::LinkId::Invalid;
-            }
-            else
-            {
+            } else {
                 ed::LinkId selectedLinkId;
-                if (ed::GetSelectedLinks(&selectedLinkId, 1) > 0)
-                {
+                if (ed::GetSelectedLinks(&selectedLinkId, 1) > 0) {
                     ActiveState->SelectedLinkID = selectedLinkId;
                     ActiveState->SelectedNodeID = ed::NodeId::Invalid;
                 }
             }
         }
-        else
-        {
+        else {
             ActiveState->SelectedNodeID = ed::NodeId::Invalid;
             ActiveState->SelectedLinkID = ed::LinkId::Invalid;
         }
+
 
         ed::End();
         ed::SetCurrentEditor(nullptr);
@@ -798,15 +962,13 @@ void SAnimStateMachineWindow::RenderRightPanel(float width, float height)
                 ImGui::Separator();
                 ImGui::Spacing();
 
-// ==========================================================
+                // ==========================================================
                 // Conditions (수정된 로직)
                 // ==========================================================
                 ImGui::TextDisabled("Transition Conditions");
                 ImGui::Spacing();
 
                 // StateMachine에 즉시 반영하기 위해 From/To 노드 정보 미리 찾기
-                FGraphNode* FromNode = FindNodeByPin(ActiveState, SelectedLink->StartPinID);
-                FGraphNode* ToNode = FindNodeByPin(ActiveState, SelectedLink->EndPinID);
                 bool bCanEditData = (FromNode && ToNode && ActiveState->StateMachine);
 
                 // Condition 리스트 표시 및 편집
@@ -952,9 +1114,9 @@ void SAnimStateMachineWindow::CreateNode_State(FGraphState* State)
 
     State->Nodes.push_back(Node);
 
-    // 위치 설정
+    // 위치 설정 (약간씩 떨어뜨려서 생성)
     ed::SetCurrentEditor(State->Context);
-    ed::SetNodePosition(Node.ID, ImVec2(100 + State->StateCounter * 50, 100));
+    ed::SetNodePosition(Node.ID, ImVec2(100 + State->StateCounter * 50, 100 + State->StateCounter * 50));
     ed::SetCurrentEditor(nullptr);
 }
 
@@ -1023,6 +1185,22 @@ const char* SAnimStateMachineWindow::GetConditionOpString(EAnimConditionOp Op)
     }
 }
 
+void SAnimStateMachineWindow::SaveNodePositions(FGraphState* State)
+{
+    if (!State || !State->StateMachine) return;
+
+    ed::SetCurrentEditor(State->Context);
+
+    for (auto& Node : State->Nodes)
+    {
+        ImVec2 pos = ed::GetNodePosition(Node.ID);
+        FName nodeName(Node.Name);
+        State->StateMachine->NodePositions[nodeName] = FVector2D(pos.x, pos.y);
+    }
+
+    ed::SetCurrentEditor(nullptr);
+}
+
 void SAnimStateMachineWindow::SyncGraphFromStateMachine(FGraphState* State)
 {
     if (!State || !State->StateMachine) return;
@@ -1049,11 +1227,19 @@ void SAnimStateMachineWindow::SyncGraphFromStateMachine(FGraphState* State)
 
         State->Nodes.push_back(Node);
 
-        // 위치 복원
+        // 위치 복원 - 저장된 위치가 있으면 사용, 없으면 기본 위치
         if (State->StateMachine->NodePositions.Contains(StateNode.StateName))
         {
             const FVector2D& Pos = State->StateMachine->NodePositions[StateNode.StateName];
             ed::SetNodePosition(Node.ID, ImVec2(Pos.X, Pos.Y));
+        }
+        else
+        {
+            // 저장된 위치가 없으면 그리드 형태로 배치
+            int nodeIndex = State->Nodes.size() - 1;
+            int row = nodeIndex / 3;
+            int col = nodeIndex % 3;
+            ed::SetNodePosition(Node.ID, ImVec2(100 + col * 300, 100 + row * 250));
         }
     }
 

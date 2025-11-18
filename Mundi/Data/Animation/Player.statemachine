@@ -1,29 +1,35 @@
 {
   "EntryState" : "Idle",
   "Nodes" : [{
-      "AnimAsset" : "Data/Animation/XBOT_Walking.fbx#mixamo.com",
+      "AnimAsset" : "Data/Animation/XBOT_Slow Run.fbx#mixamo.com",
+      "EditorPosX" : 184.000000,
+      "EditorPosY" : 249.000000,
       "Loop" : true,
       "Name" : "Run"
     }, {
       "AnimAsset" : "Data/Animation/XBOT_Idle.fbx#mixamo.com",
+      "EditorPosX" : 199.000000,
+      "EditorPosY" : -71.000000,
       "Loop" : true,
       "Name" : "Idle"
     }, {
-      "AnimAsset" : "Data/Animation/XBOT_Slow Run.fbx#mixamo.com",
+      "AnimAsset" : "Data/Animation/XBOT_Walking.fbx#mixamo.com",
+      "EditorPosX" : 206.000000,
+      "EditorPosY" : 83.000000,
       "Loop" : true,
       "Name" : "Walk"
     }],
   "Transitions" : [{
-      "BlendTime" : 0.200000,
+      "BlendTime" : 0.500000,
       "Conditions" : [{
           "Op" : 3,
           "Param" : "Speed",
-          "Val" : 2.000000
+          "Val" : 10.000000
         }],
       "From" : "Run",
       "To" : "Walk"
     }, {
-      "BlendTime" : 0.100000,
+      "BlendTime" : 0.500000,
       "Conditions" : [{
           "Op" : 2,
           "Param" : "Speed",
@@ -32,16 +38,16 @@
       "From" : "Idle",
       "To" : "Walk"
     }, {
-      "BlendTime" : 0.100000,
+      "BlendTime" : 0.500000,
       "Conditions" : [{
           "Op" : 2,
           "Param" : "Speed",
-          "Val" : 2.000000
+          "Val" : 10.000000
         }],
       "From" : "Walk",
       "To" : "Run"
     }, {
-      "BlendTime" : 0.200000,
+      "BlendTime" : 0.500000,
       "Conditions" : [{
           "Op" : 3,
           "Param" : "Speed",

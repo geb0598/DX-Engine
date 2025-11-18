@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -532,14 +532,14 @@
     <ClCompile Include="Source\Slate\Windows\SWindow.cpp" />
     <ClCompile Include="Source\Slate\Windows\UIWindow.cpp" />
     <ClCompile Include="ThirdParty\Include\ImGui\crude_json.cpp">
-    <PrecompiledHeader>NotUsing</PrecompiledHeader>
-  </ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="ThirdParty\Include\ImGui\imgui.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ThirdParty\Include\ImGui\imgui_canvas.cpp">
-    <PrecompiledHeader>NotUsing</PrecompiledHeader>
-  </ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="ThirdParty\Include\ImGui\imgui_draw.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -550,11 +550,11 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="ThirdParty\Include\ImGui\imgui_node_editor.cpp">
-    <PrecompiledHeader>NotUsing</PrecompiledHeader>
-  </ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="ThirdParty\Include\ImGui\imgui_node_editor_api.cpp">
-    <PrecompiledHeader>NotUsing</PrecompiledHeader>
-  </ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="ThirdParty\Include\ImGui\imgui_tables.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -614,6 +614,7 @@
     <ClCompile Include="Generated\UAnimStateMachine.generated.cpp" />
     <ClCompile Include="Generated\USkeletalMesh.generated.cpp" />
     <ClCompile Include="Generated\UInputComponent.generated.cpp" />
+    <ClCompile Include="Generated\UAnimInstance.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -904,6 +905,7 @@
     <ClInclude Include="Generated\UAnimStateMachine.generated.h" />
     <ClInclude Include="Generated\USkeletalMesh.generated.h" />
     <ClInclude Include="Generated\UInputComponent.generated.h" />
+    <ClInclude Include="Generated\UAnimInstance.generated.h" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Shaders\Common\LightingBuffers.hlsl" />

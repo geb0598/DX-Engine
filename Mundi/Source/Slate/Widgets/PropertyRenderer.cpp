@@ -1164,6 +1164,10 @@ bool UPropertyRenderer::RenderSkeletalMeshProperty(const FProperty& Prop, void* 
 	ImGui::Spacing();
 
 	static UAnimStateMachine* SelectedStateMachine = nullptr;
+	if (UAnimStateMachine* StateMachine = SkeletalMeshComponent->GetAnimInstance()->GetStateMachineNode()->GetStateMachine())
+	{
+		SelectedStateMachine = StateMachine;
+	}
 
 	ImGui::Text("State Machine ");
 	ImGui::SameLine();
@@ -1192,7 +1196,7 @@ bool UPropertyRenderer::RenderSkeletalMeshProperty(const FProperty& Prop, void* 
 				SelectedStateMachine = SM;
 				if (SkeletalMeshComponent)
 				{
-				SkeletalMeshComponent->GetAnimInstance()->SetStateMachine(SM);
+					SkeletalMeshComponent->GetAnimInstance()->SetStateMachine(SM);
 				}
 			}
 
