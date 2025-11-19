@@ -14,6 +14,7 @@
 #include "Source/Editor/FBXLoader.h"
 #include "Source/Runtime/Engine/Animation/AnimSequence.h"
 #include "Source/Runtime/Engine/Animation/AnimInstance.h"
+#include "Source/Runtime/Engine/Animation/AnimSingleNodeInstance.h"
 #include "Source/Runtime/Engine/Components/SkeletalMeshComponent.h"
 #include "Source/Runtime/AssetManagement/ResourceManager.h"
 #include "Source/Runtime/Engine/Animation/AnimDataModel.h"
@@ -440,7 +441,8 @@ void SPreviewWindow::OnRender()
                                         if (!AnimInst)
                                         {
                                             UE_LOG("[Animation] Creating new AnimInstance for auto-play");
-                                            AnimInst = NewObject<UAnimInstance>();
+                                            UAnimSingleNodeInstance* SingleNodeInst = NewObject<UAnimSingleNodeInstance>();
+                                            AnimInst = SingleNodeInst;
                                             if (AnimInst)
                                             {
                                                 Component->SetAnimInstance(AnimInst);
@@ -759,6 +761,24 @@ void SPreviewWindow::OnRender()
         ImVec2 rectMin = childPos;
         ImVec2 rectMax(childPos.x + childSize.x, childPos.y + childSize.y);
         CenterRect.Left = rectMin.x; CenterRect.Top = rectMin.y; CenterRect.Right = rectMax.x; CenterRect.Bottom = rectMax.y; CenterRect.UpdateMinMax();
+
+        // Recording 상태 오버레이 (우하단)
+        if (ActiveState && ActiveState->bIsRecording)
+        {
+            ImGui::SetCursorPos(ImVec2(childSize.x - 180, childSize.y - 40));
+            ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.15f, 0.05f, 0.05f, 0.85f));
+            ImGui::BeginChild("RecordingOverlay", ImVec2(170, 30), true, ImGuiWindowFlags_NoScrollbar);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.2f, 0.2f, 1.0f));
+            ImGui::Text("REC");
+            ImGui::PopStyleColor();
+            ImGui::SameLine();
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.9f, 0.9f, 1.0f));
+            ImGui::Text("%d frames", ActiveState->RecordedFrames.Num());
+            ImGui::PopStyleColor();
+            ImGui::EndChild();
+            ImGui::PopStyleColor();
+        }
+
         ImGui::EndChild();
 
         ImGui::EndChild();
@@ -1549,7 +1569,8 @@ void SPreviewWindow::OnRender()
                                 if (!AnimInst)
                                 {
                                     UE_LOG("[Animation] Creating new AnimInstance for first animation");
-                                    AnimInst = NewObject<UAnimInstance>();
+                                    UAnimSingleNodeInstance* SingleNodeInst = NewObject<UAnimSingleNodeInstance>();
+                                    AnimInst = SingleNodeInst;
                                     if (AnimInst)
                                     {
                                         SkelComp->SetAnimInstance(AnimInst);
@@ -1627,6 +1648,51 @@ void SPreviewWindow::OnRender()
 
             ImGui::EndChild();
         }
+    }
+
+    // Record 파일명 입력 모달 (Timeline 바깥에서 렌더링)
+    if (ActiveState && ActiveState->bShowRecordDialog)
+    {
+        ImGui::OpenPopup("Record Animation##RecordDialog");
+        ActiveState->bShowRecordDialog = false;
+    }
+
+    if (ImGui::BeginPopupModal("Record Animation##RecordDialog", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Enter animation file name:");
+        ImGui::Spacing();
+
+        ImGui::SetNextItemWidth(300.0f);
+        bool bEnterPressed = ImGui::InputTextWithHint("##RecordFileName", "e.g., MyAnimation",
+            ActiveState->RecordFileNameBuffer, sizeof(ActiveState->RecordFileNameBuffer),
+            ImGuiInputTextFlags_EnterReturnsTrue);
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        if (ImGui::Button("Start Recording", ImVec2(145, 0)) || bEnterPressed)
+        {
+            FString FileName(ActiveState->RecordFileNameBuffer);
+            if (!FileName.empty())
+            {
+                ActiveState->bIsRecording = true;
+                ActiveState->RecordedFileName = FileName;
+                ActiveState->RecordedFrames.clear();
+                ActiveState->RecordStartTime = ActiveState->CurrentAnimationTime;
+            }
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::SameLine();
+
+        if (ImGui::Button("Cancel", ImVec2(145, 0)))
+        {
+            memset(ActiveState->RecordFileNameBuffer, 0, sizeof(ActiveState->RecordFileNameBuffer));
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
     }
 
     ImGui::End();
@@ -1759,6 +1825,22 @@ void SPreviewWindow::OnUpdate(float DeltaSeconds)
                 int32 BoneIndex = Pair.first;
                 const FTransform& EditedTransform = Pair.second;
                 SkelComp->SetBoneLocalTransform(BoneIndex, EditedTransform);
+            }
+        }
+
+        // Recording: 본 트랜스폼 데이터 수집
+        if (ActiveState->bIsRecording && ActiveState->ViewMode == EViewerMode::Animation)
+        {
+            const FSkeleton* Skeleton = ActiveState->CurrentMesh->GetSkeleton();
+            if (Skeleton)
+            {
+                TMap<int32, FTransform> FrameData;
+                for (int32 BoneIdx = 0; BoneIdx < Skeleton->Bones.size(); ++BoneIdx)
+                {
+                    FTransform BoneTransform = SkelComp->GetBoneLocalTransform(BoneIdx);
+                    FrameData[BoneIdx] = BoneTransform;
+                }
+                ActiveState->RecordedFrames.Add(FrameData);
             }
         }
     }

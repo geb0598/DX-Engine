@@ -33,7 +33,7 @@ public:
 	void NativeBeginPlay();
 	virtual void UpdateAnimation(float DeltaSeconds);
 	void TriggerAnimNotifies(float DeltaSeconds);
-	void PlayAnimation(UAnimSequenceBase* AnimSequence, float InPlayRate = 1.0f);
+	virtual void PlayAnimation(UAnimSequenceBase* AnimSequence, float InPlayRate = 1.0f);
 	void StopAnimation();
 	void ResumeAnimation();  // Resume from current position
 	void SetPosition(float NewTime);
@@ -78,6 +78,8 @@ public:
 
 	// Pose Evaluation
 	void EvaluateAnimation();
+
+	void TriggerNotify(const FAnimNotifyEvent& NotifyEvent, USkeletalMeshComponent* MeshComp);
 
 protected:
 	USkeletalMeshComponent* OwnerComponent;

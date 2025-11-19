@@ -38,6 +38,7 @@ local tickCounter = 0
 function Tick(dt)
     -- AnimInstance가 유효할 때만 로직 수행
     if AnimInstance then
+        local bIsJumping = CharacterMoveComp:IsJumping()
         local velocity = CharacterMoveComp:GetVelocity()
 
         -- V = sqrt(x^2 + y^2 + z^2)
@@ -74,6 +75,7 @@ function Tick(dt)
         -- AnimInstance에 값 설정
         AnimInstance:SetFloat("Speed", signedSpeed)
         AnimInstance:SetFloat("AbsSpeed", speed)  -- 절대값 (항상 양수)
+        AnimInstance:SetBool("bIsJumping", bIsJumping)
         AnimInstance:SetFloat("Direction", direction)
 
         -- 디버깅용 (60프레임마다 출력)
