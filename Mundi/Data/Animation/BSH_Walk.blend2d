@@ -1,8 +1,8 @@
 {
-  "EditorPreviewParameterX" : -16.482162,
-  "EditorPreviewParameterY" : 71.214951,
+  "EditorPreviewParameterX" : 87.822876,
+  "EditorPreviewParameterY" : 68.971954,
   "EditorSkeletalMeshPath" : "Data/Animation/BSH_Walk Forward.fbx",
-  "SampleCount" : 8,
+  "SampleCount" : 9,
   "Sample_0" : {
     "AnimationPath" : "Data/Animation/BSH_Walk Forward Left.fbx#mixamo.com",
     "PositionX" : 30.000000,
@@ -12,22 +12,22 @@
   },
   "Sample_1" : {
     "AnimationPath" : "Data/Animation/BSH_Walk Backward.fbx#mixamo.com",
-    "PositionX" : -30.258301,
-    "PositionY" : 3.925232,
+    "PositionX" : -28.782288,
+    "PositionY" : 180.000000,
     "RateScale" : 1.000000,
     "SyncMarkerCount" : 0
   },
   "Sample_2" : {
     "AnimationPath" : "Data/Animation/BSH_Walk Backward Right.fbx#mixamo.com",
-    "PositionX" : -30.258301,
-    "PositionY" : -98.130844,
+    "PositionX" : -30.000000,
+    "PositionY" : -90.000000,
     "RateScale" : 1.000000,
     "SyncMarkerCount" : 0
   },
   "Sample_3" : {
     "AnimationPath" : "Data/Animation/BSH_Walk Backward Left.fbx#mixamo.com",
-    "PositionX" : -29.274292,
-    "PositionY" : 89.158875,
+    "PositionX" : -30.000000,
+    "PositionY" : 90.000000,
     "RateScale" : 1.000000,
     "SyncMarkerCount" : 0
   },
@@ -59,22 +59,29 @@
     "RateScale" : 1.000000,
     "SyncMarkerCount" : 0
   },
+  "Sample_8" : {
+    "AnimationPath" : "Data/Animation/BSH_Walk Backward.fbx#mixamo.com",
+    "PositionX" : -30.000000,
+    "PositionY" : -180.000000,
+    "RateScale" : 1.000000,
+    "SyncMarkerCount" : 0
+  },
   "SyncGroupName" : "Default",
-  "TriangleCount" : 7,
+  "TriangleCount" : 8,
   "Triangle_0" : {
-    "Index0" : 0,
-    "Index1" : 1,
-    "Index2" : 2
+    "Index0" : 1,
+    "Index1" : 3,
+    "Index2" : 4
   },
   "Triangle_1" : {
-    "Index0" : 1,
+    "Index0" : 2,
     "Index1" : 0,
     "Index2" : 5
   },
   "Triangle_2" : {
     "Index0" : 3,
-    "Index1" : 1,
-    "Index2" : 6
+    "Index1" : 2,
+    "Index2" : 5
   },
   "Triangle_3" : {
     "Index0" : 4,
@@ -82,7 +89,7 @@
     "Index2" : 6
   },
   "Triangle_4" : {
-    "Index0" : 1,
+    "Index0" : 3,
     "Index1" : 5,
     "Index2" : 6
   },
@@ -95,6 +102,11 @@
     "Index0" : 0,
     "Index1" : 2,
     "Index2" : 7
+  },
+  "Triangle_7" : {
+    "Index0" : 7,
+    "Index1" : 2,
+    "Index2" : 8
   },
   "XAxisBlendWeight" : 1.000000,
   "XAxisMax" : 200.000000,

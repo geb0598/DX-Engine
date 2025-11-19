@@ -345,6 +345,23 @@ void UBlendSpace2D::GetBlendWeights(
 
 	FindClosestTriangle(NormParam, Index0, Index1, Index2, Weight0, Weight1, Weight2);
 
+	// 디버그: 선택된 삼각형 정보
+	static int32 TriDebugCounter = 0;
+	if (TriDebugCounter++ % 60 == 0)
+	{
+		UE_LOG("[FindTriangle] NormParam=(%.3f, %.3f) -> Triangle[%d,%d,%d]",
+			NormParam.X, NormParam.Y, Index0, Index1, Index2);
+		if (Index0 >= 0 && Index0 < Samples.Num() &&
+			Index1 >= 0 && Index1 < Samples.Num() &&
+			Index2 >= 0 && Index2 < Samples.Num())
+		{
+			UE_LOG("  Sample[%d]=(%.1f, %.1f), Sample[%d]=(%.1f, %.1f), Sample[%d]=(%.1f, %.1f)",
+				Index0, Samples[Index0].Position.X, Samples[Index0].Position.Y,
+				Index1, Samples[Index1].Position.X, Samples[Index1].Position.Y,
+				Index2, Samples[Index2].Position.X, Samples[Index2].Position.Y);
+		}
+	}
+
 	// 가중치가 유효한 샘플만 추가
 	if (Weight0 > 0.001f)
 	{
@@ -385,6 +402,24 @@ void UBlendSpace2D::GetBlendWeights(
 			}
 		}
 	}
+
+	// 디버그: 블렌드 가중치 로그 (60프레임마다)
+	static int32 BlendLogCounter = 0;
+	if (BlendLogCounter++ % 60 == 0 && OutWeights.Num() > 0)
+	{
+		UE_LOG("[BlendSpace2D] Param=(%.1f, %.1f) -> %d samples blending:",
+			BlendParameter.X, BlendParameter.Y, OutWeights.Num());
+		for (int32 i = 0; i < OutSampleIndices.Num(); ++i)
+		{
+			int32 Idx = OutSampleIndices[i];
+			float Weight = OutWeights[i];
+			if (Idx >= 0 && Idx < Samples.Num())
+			{
+				UE_LOG("  Sample[%d] at (%.1f, %.1f): Weight=%.3f",
+					Idx, Samples[Idx].Position.X, Samples[Idx].Position.Y, Weight);
+			}
+		}
+	}
 }
 
 /**
@@ -408,13 +443,12 @@ void UBlendSpace2D::FindClosestTriangle(
 		bool bFound = FindContainingTriangle(Point, OutIndex0, OutIndex1, OutIndex2,
 			OutWeight0, OutWeight1, OutWeight2);
 
-		if (bFound)
-		{
-			return;
-		}
+		// 삼각형을 찾았으면 그대로 사용
+		// 못 찾았으면 (경계 밖) FindContainingTriangle 내부에서 이미 가장 가까운 삼각형을 찾음
+		return;
 	}
 
-	// Fallback: 거리 기반으로 가장 가까운 3개 찾기
+	// Fallback: 삼각분할이 없을 때만 거리 기반으로 가장 가까운 3개 찾기
 	const int32 NumSamples = Samples.Num();
 
 	// 거리 순으로 정렬된 샘플 인덱스
@@ -483,8 +517,18 @@ bool UBlendSpace2D::FindContainingTriangle(
 	float& OutWeight1,
 	float& OutWeight2) const
 {
-	for (const FBlendTriangle& Tri : Triangles)
+	static int32 FindDebugCounter = 0;
+	bool bShouldLog = (FindDebugCounter++ % 60 == 0);
+
+	if (bShouldLog)
 	{
+		UE_LOG("[FindContainingTriangle] Searching for Point=(%.3f, %.3f) in %d triangles",
+			Point.X, Point.Y, Triangles.Num());
+	}
+
+	for (int32 TriIdx = 0; TriIdx < Triangles.Num(); ++TriIdx)
+	{
+		const FBlendTriangle& Tri = Triangles[TriIdx];
 		if (!Tri.IsValid())
 		{
 			continue;
@@ -495,18 +539,55 @@ bool UBlendSpace2D::FindContainingTriangle(
 		FVector2D B = NormalizeParameter(Samples[Tri.Index1].Position);
 		FVector2D C = NormalizeParameter(Samples[Tri.Index2].Position);
 
-		// 무게중심 좌표 계산
-		float WeightA, WeightB, WeightC;
-		CalculateBarycentricWeights(Point, A, B, C, WeightA, WeightB, WeightC);
+		// 무게중심 좌표 계산 (클램핑 전의 원본 값)
+		float WeightA_Raw, WeightB_Raw, WeightC_Raw;
+
+		// 직접 계산 (CalculateBarycentricWeights는 클램핑을 하므로 여기서 직접 계산)
+		FVector2D v0 = B - A;
+		FVector2D v1 = C - A;
+		FVector2D v2 = Point - A;
+
+		float d00 = v0.X * v0.X + v0.Y * v0.Y;
+		float d01 = v0.X * v1.X + v0.Y * v1.Y;
+		float d11 = v1.X * v1.X + v1.Y * v1.Y;
+		float d20 = v2.X * v0.X + v2.Y * v0.Y;
+		float d21 = v2.X * v1.X + v2.Y * v1.Y;
+
+		float denom = d00 * d11 - d01 * d01;
+
+		// 퇴화된 삼각형 체크
+		if (FMath::Abs(denom) < 0.0001f)
+		{
+			continue; // 다음 삼각형으로
+		}
+
+		WeightB_Raw = (d11 * d20 - d01 * d21) / denom;
+		WeightC_Raw = (d00 * d21 - d01 * d20) / denom;
+		WeightA_Raw = 1.0f - WeightB_Raw - WeightC_Raw;
+
+		if (bShouldLog)
+		{
+			UE_LOG("  Triangle[%d] (%d,%d,%d): Raw Weights=(%.3f, %.3f, %.3f)",
+				TriIdx, Tri.Index0, Tri.Index1, Tri.Index2, WeightA_Raw, WeightB_Raw, WeightC_Raw);
+		}
 
 		// 모든 가중치가 0 이상이면 점이 삼각형 내부에 있음
 		// 약간의 허용 오차를 두어 경계선 케이스 처리
-		const float Epsilon = -0.001f;
-		if (WeightA >= Epsilon && WeightB >= Epsilon && WeightC >= Epsilon)
+		const float Epsilon = -0.01f;
+		if (WeightA_Raw >= Epsilon && WeightB_Raw >= Epsilon && WeightC_Raw >= Epsilon)
 		{
+			if (bShouldLog)
+			{
+				UE_LOG("  -> Found! Triangle[%d] contains the point", TriIdx);
+			}
+
 			OutIndex0 = Tri.Index0;
 			OutIndex1 = Tri.Index1;
 			OutIndex2 = Tri.Index2;
+
+			// 가중치를 클램핑하고 정규화해서 반환
+			float WeightA, WeightB, WeightC;
+			CalculateBarycentricWeights(Point, A, B, C, WeightA, WeightB, WeightC);
 			OutWeight0 = WeightA;
 			OutWeight1 = WeightB;
 			OutWeight2 = WeightC;
@@ -617,15 +698,64 @@ void UBlendSpace2D::CalculateBarycentricWeights(
 		return;
 	}
 
-	// 무게중심 좌표 계산
+	// 무게중심 좌표 계산 (Barycentric Coordinates)
+	// 언리얼 엔진과 동일한 방식
 	OutWeightB = (d11 * d20 - d01 * d21) / denom;
 	OutWeightC = (d00 * d21 - d01 * d20) / denom;
 	OutWeightA = 1.0f - OutWeightB - OutWeightC;
 
-	// 음수 가중치를 0으로 클램핑 (삼각형 외부의 점)
+	// 디버그: 클램핑 전 가중치 확인
+	static int32 BaryDebugCounter = 0;
+	if (BaryDebugCounter++ % 60 == 0)
+	{
+		UE_LOG("[Barycentric] Before clamp: A=%.3f, B=%.3f, C=%.3f (sum=%.3f)",
+			OutWeightA, OutWeightB, OutWeightC, OutWeightA + OutWeightB + OutWeightC);
+		UE_LOG("  Point=(%.3f, %.3f), A=(%.3f, %.3f), B=(%.3f, %.3f), C=(%.3f, %.3f)",
+			Point.X, Point.Y, A.X, A.Y, B.X, B.Y, C.X, C.Y);
+		UE_LOG("  DistToA=%.4f, DistToB=%.4f, DistToC=%.4f",
+			(Point - A).Length(), (Point - B).Length(), (Point - C).Length());
+	}
+
+	// 삼각형 외부의 점인 경우 가중치를 클램핑
+	// 언리얼은 음수 가중치를 허용하지 않음
 	OutWeightA = FMath::Max(0.0f, OutWeightA);
 	OutWeightB = FMath::Max(0.0f, OutWeightB);
 	OutWeightC = FMath::Max(0.0f, OutWeightC);
+
+	// 클램핑 후 정규화 (합 = 1.0)
+	float Sum = OutWeightA + OutWeightB + OutWeightC;
+	if (Sum > 0.001f)
+	{
+		OutWeightA /= Sum;
+		OutWeightB /= Sum;
+		OutWeightC /= Sum;
+	}
+	else
+	{
+		// 모든 가중치가 0이면 가장 가까운 점에 1.0 할당
+		float DistA = (Point - A).Length();
+		float DistB = (Point - B).Length();
+		float DistC = (Point - C).Length();
+
+		if (DistA <= DistB && DistA <= DistC)
+		{
+			OutWeightA = 1.0f;
+			OutWeightB = 0.0f;
+			OutWeightC = 0.0f;
+		}
+		else if (DistB <= DistC)
+		{
+			OutWeightA = 0.0f;
+			OutWeightB = 1.0f;
+			OutWeightC = 0.0f;
+		}
+		else
+		{
+			OutWeightA = 0.0f;
+			OutWeightB = 0.0f;
+			OutWeightC = 1.0f;
+		}
+	}
 }
 
 /**
@@ -670,6 +800,12 @@ UBlendSpace2D* UBlendSpace2D::LoadFromFile(const FString& FilePath)
 	BlendSpace->SetFilePath(FilePath);
 	BlendSpace->Serialize(true, JsonData);
 
+	// 로드 후 삼각분할 재생성 (저장된 삼각분할이 없거나 잘못된 경우 대비)
+	if (BlendSpace->GetNumSamples() >= 3)
+	{
+		BlendSpace->GenerateTriangulation();
+	}
+
 	UE_LOG("BlendSpace2D loaded from: %s", FilePath.c_str());
 	return BlendSpace;
 }
@@ -691,8 +827,11 @@ void UBlendSpace2D::GenerateTriangulation()
 	// 샘플이 3개 미만이면 삼각분할 불가능
 	if (Samples.Num() < 3)
 	{
+		UE_LOG("[Triangulation] Not enough samples (%d < 3)", Samples.Num());
 		return;
 	}
+
+	UE_LOG("[Triangulation] Starting with %d samples...", Samples.Num());
 
 	// 정규화된 좌표로 변환된 샘플 포인트 배열
 	TArray<FVector2D> Points;
@@ -831,7 +970,23 @@ void UBlendSpace2D::GenerateTriangulation()
 		}
 	}
 
-	UE_LOG("Delaunay Triangulation: %d samples -> %d triangles", Samples.Num(), Triangles.Num());
+	UE_LOG("[Triangulation] Complete: %d samples -> %d triangles", Samples.Num(), Triangles.Num());
+
+	// 디버그: 생성된 모든 삼각형 출력
+	for (int32 i = 0; i < Triangles.Num(); ++i)
+	{
+		const FBlendTriangle& Tri = Triangles[i];
+		UE_LOG("  Triangle[%d]: Indices[%d,%d,%d]", i, Tri.Index0, Tri.Index1, Tri.Index2);
+		if (Tri.Index0 >= 0 && Tri.Index0 < Samples.Num() &&
+			Tri.Index1 >= 0 && Tri.Index1 < Samples.Num() &&
+			Tri.Index2 >= 0 && Tri.Index2 < Samples.Num())
+		{
+			UE_LOG("    Positions: [%.1f,%.1f], [%.1f,%.1f], [%.1f,%.1f]",
+				Samples[Tri.Index0].Position.X, Samples[Tri.Index0].Position.Y,
+				Samples[Tri.Index1].Position.X, Samples[Tri.Index1].Position.Y,
+				Samples[Tri.Index2].Position.X, Samples[Tri.Index2].Position.Y);
+		}
+	}
 }
 
 /**

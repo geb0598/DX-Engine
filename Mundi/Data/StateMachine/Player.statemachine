@@ -1,13 +1,39 @@
 {
   "EntryState" : "Idle",
   "Nodes" : [{
-      "AnimAsset" : "Data/Animation/BSH_Walk Left.fbx#mixamo.com",
+      "AnimAsset" : "Data/Animation/XBOT_Idle.fbx#mixamo.com",
       "AnimAssetType" : 1,
       "BlendSpaceAsset" : "",
       "EditorPosX" : 199.000000,
       "EditorPosY" : -71.000000,
       "Loop" : true,
       "Name" : "Idle"
+    }, {
+      "AnimAsset" : "",
+      "AnimAssetType" : 2,
+      "BlendSpaceAsset" : "Data/Animation/BSH_Walk.blend2d",
+      "EditorPosX" : 324.000000,
+      "EditorPosY" : 67.000000,
+      "Loop" : true,
+      "Name" : "State_0"
     }],
-  "Transitions" : []
+  "Transitions" : [{
+      "BlendTime" : 0.200000,
+      "Conditions" : [{
+          "Op" : 2,
+          "Param" : "Speed",
+          "Val" : 1.000000
+        }],
+      "From" : "Idle",
+      "To" : "State_0"
+    }, {
+      "BlendTime" : 0.200000,
+      "Conditions" : [{
+          "Op" : 3,
+          "Param" : "Speed",
+          "Val" : 1.000000
+        }],
+      "From" : "State_0",
+      "To" : "Idle"
+    }]
 }
