@@ -19,6 +19,53 @@
 
 #include "PlatformProcess.h"
 
+// Helper function to get a clean display name from an animation sequence
+static FString GetDisplayNameForAnimation(UAnimSequence* InAnimation)
+{
+	if (!InAnimation)
+	{
+		return "None";
+	}
+
+	FString FilePath = InAnimation->GetFilePath();
+	FString DisplayName;
+
+	// FBX 파일에 여러 애니메이션 스택이 있는 경우 "FileName#StackName" 형식
+	size_t HashPos = FilePath.find('#');
+	if (HashPos != FString::npos)
+	{
+		FString FullPath = FilePath.substr(0, HashPos);
+		FString AnimStackName = FilePath.substr(HashPos + 1);
+
+		size_t LastSlash = FullPath.find_last_of("/\\");
+		FString FileName = (LastSlash != FString::npos) ? FullPath.substr(LastSlash + 1) : FullPath;
+
+		size_t DotPos = FileName.find_last_of('.');
+		if (DotPos != FString::npos)
+		{
+			FileName = FileName.substr(0, DotPos);
+		}
+
+		DisplayName = FileName + "#" + AnimStackName;
+	}
+	else
+	{
+		// 일반 파일 경로
+		size_t LastSlash = FilePath.find_last_of("/\\");
+		FString FileName = (LastSlash != FString::npos) ? FilePath.substr(LastSlash + 1) : FilePath;
+
+		size_t DotPos = FileName.find_last_of('.');
+		if (DotPos != FString::npos)
+		{
+			FileName = FileName.substr(0, DotPos);
+		}
+
+		DisplayName = FileName;
+	}
+
+	return DisplayName;
+}
+
 SBlendSpace2DEditorWindow::SBlendSpace2DEditorWindow()
 	: CanvasPos(ImVec2(0, 0))
 	, CanvasSize(ImVec2(600, 600))
@@ -274,47 +321,13 @@ void SBlendSpace2DEditorWindow::RenderSamplePoints()
 		DrawList->AddCircle(ScreenPos, SamplePointRadius, IM_COL32(255, 255, 255, 255), 0, 2.0f);
 
 		// 샘플 이름 (애니메이션 이름)
-		if (Sample.Animation)
-		{
-			// FilePath에서 파일명만 추출
-			FString FilePath = Sample.Animation->GetFilePath();
-			FString DisplayName;
+		FString DisplayName = GetDisplayNameForAnimation(Sample.Animation);
 
-			// #이 있으면 # 앞부분만 사용
-			size_t HashPos = FilePath.find('#');
-			if (HashPos != FString::npos)
-			{
-				FilePath = FilePath.substr(0, HashPos); // "path/to/file.fbx"
-			}
-
-			// 파일명만 추출 (경로 제거)
-			size_t LastSlash = FilePath.find_last_of("/\\");
-			if (LastSlash != FString::npos)
-			{
-				DisplayName = FilePath.substr(LastSlash + 1);
-			}
-			else
-			{
-				DisplayName = FilePath;
-			}
-
-			// 확장자 제거
-			size_t DotPos = DisplayName.find_last_of('.');
-			if (DotPos != FString::npos)
-			{
-				DisplayName = DisplayName.substr(0, DotPos);
-			}
-
-			if (DisplayName.empty())
-			{
-				DisplayName = "Unknown";
-			}
-
-			ImVec2 TextPos(ScreenPos.x + SamplePointRadius + 5, ScreenPos.y - 8);
-			DrawList->AddText(TextPos, IM_COL32(255, 255, 255, 255), DisplayName.c_str());
-		}
+		ImVec2 TextPos(ScreenPos.x + SamplePointRadius + 5, ScreenPos.y - 8);
+		DrawList->AddText(TextPos, IM_COL32(255, 255, 255, 255), DisplayName.c_str());
 	}
 }
+
 
 void SBlendSpace2DEditorWindow::RenderPreviewMarker()
 {
@@ -402,6 +415,101 @@ void SBlendSpace2DEditorWindow::RenderTriangulation()
 
 		// 삼각형 내부 (매우 투명한 채우기 - 선택적)
 		// DrawList->AddTriangleFilled(P0, P1, P2, IM_COL32(255, 255, 0, 20));
+	}
+}
+
+void SBlendSpace2DEditorWindow::RenderSamplePoints_Enhanced(const TArray<int32>& InSampleIndices, const TArray<float>& InWeights)
+{
+	if (!EditingBlendSpace)
+		return;
+
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	// 가중치 정보를 빠른 조회를 위해 맵으로 변환
+	TMap<int32, float> WeightMap;
+	for (int32 i = 0; i < InSampleIndices.Num(); ++i)
+	{
+		WeightMap.Add(InSampleIndices[i], InWeights[i]);
+	}
+
+	for (int32 i = 0; i < EditingBlendSpace->GetNumSamples(); ++i)
+	{
+		const FBlendSample& Sample = EditingBlendSpace->Samples[i];
+		ImVec2 ScreenPos = ParamToScreen(Sample.Position);
+
+		ImU32 Color = (i == SelectedSampleIndex) ? SelectedSampleColor : SampleColor;
+
+		// 샘플 포인트 (원)
+		DrawList->AddCircleFilled(ScreenPos, SamplePointRadius, Color);
+		DrawList->AddCircle(ScreenPos, SamplePointRadius, IM_COL32(255, 255, 255, 255), 0, 2.0f);
+
+		// 샘플 이름 (애니메이션 이름)
+		FString DisplayName = GetDisplayNameForAnimation(Sample.Animation);
+		ImVec2 TextPos(ScreenPos.x + SamplePointRadius + 5, ScreenPos.y - 8);
+		DrawList->AddText(TextPos, IM_COL32(255, 255, 255, 255), DisplayName.c_str());
+
+		// 블렌드 가중치 표시
+		if (WeightMap.Contains(i) && WeightMap[i] > 0.001f)
+		{
+			float Weight = WeightMap[i];
+			char WeightText[32];
+			sprintf_s(WeightText, "%.1f%%", Weight * 100.0f);
+
+			ImVec2 WeightTextSize = ImGui::CalcTextSize(WeightText);
+			ImVec2 WeightTextPos(ScreenPos.x - WeightTextSize.x * 0.5f, ScreenPos.y - SamplePointRadius - WeightTextSize.y - 2);
+
+			// 가중치가 클수록 텍스트를 더 밝게 표시
+			ImVec4 TextColor = ImVec4(0.8f, 1.0f, 0.8f, FMath::Lerp(0.5f, 1.0f, Weight));
+
+			DrawList->AddText(WeightTextPos, ImGui::ColorConvertFloat4ToU32(TextColor), WeightText);
+		}
+	}
+}
+
+void SBlendSpace2DEditorWindow::RenderTriangulation_Enhanced(int32 InActiveTriangle)
+{
+	if (!EditingBlendSpace)
+		return;
+
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+	// 삼각형 렌더링
+	for (int32 i = 0; i < EditingBlendSpace->Triangles.Num(); ++i)
+	{
+		const FBlendTriangle& Tri = EditingBlendSpace->Triangles[i];
+
+		if (!Tri.IsValid())
+			continue;
+
+		// 인덱스 유효성 검사
+		if (Tri.Index0 < 0 || Tri.Index0 >= EditingBlendSpace->GetNumSamples() ||
+			Tri.Index1 < 0 || Tri.Index1 >= EditingBlendSpace->GetNumSamples() ||
+			Tri.Index2 < 0 || Tri.Index2 >= EditingBlendSpace->GetNumSamples())
+		{
+			continue;
+		}
+
+		// 3개 정점의 화면 좌표
+		ImVec2 P0 = ParamToScreen(EditingBlendSpace->Samples[Tri.Index0].Position);
+		ImVec2 P1 = ParamToScreen(EditingBlendSpace->Samples[Tri.Index1].Position);
+		ImVec2 P2 = ParamToScreen(EditingBlendSpace->Samples[Tri.Index2].Position);
+
+		// 활성 삼각형인 경우 채우기 및 강조
+		if (i == InActiveTriangle)
+		{
+			DrawList->AddTriangleFilled(P0, P1, P2, IM_COL32(0, 255, 100, 40));
+			DrawList->AddLine(P0, P1, IM_COL32(150, 255, 150, 200), 2.0f);
+			DrawList->AddLine(P1, P2, IM_COL32(150, 255, 150, 200), 2.0f);
+			DrawList->AddLine(P2, P0, IM_COL32(150, 255, 150, 200), 2.0f);
+		}
+		else
+		{
+			// 삼각형 경계선 (기본 색상)
+			ImU32 TriColor = IM_COL32(255, 255, 0, 80);  // 반투명 노란색
+			DrawList->AddLine(P0, P1, TriColor, 1.0f);
+			DrawList->AddLine(P1, P2, TriColor, 1.0f);
+			DrawList->AddLine(P2, P0, TriColor, 1.0f);
+		}
 	}
 }
 
@@ -520,42 +628,8 @@ void SBlendSpace2DEditorWindow::RenderSampleList()
 	{
 		const FBlendSample& Sample = EditingBlendSpace->Samples[i];
 
-		// 애니메이션 이름 파싱 (파일명만 표시)
-		FString AnimName = "None";
-		if (Sample.Animation)
-		{
-			FString FilePath = Sample.Animation->GetFilePath();
-
-			// #이 있으면 # 앞부분만 사용
-			size_t HashPos = FilePath.find('#');
-			if (HashPos != FString::npos)
-			{
-				FilePath = FilePath.substr(0, HashPos);
-			}
-
-			// 파일명만 추출 (경로 제거)
-			size_t LastSlash = FilePath.find_last_of("/\\");
-			if (LastSlash != FString::npos)
-			{
-				AnimName = FilePath.substr(LastSlash + 1);
-			}
-			else
-			{
-				AnimName = FilePath;
-			}
-
-			// 확장자 제거
-			size_t DotPos = AnimName.find_last_of('.');
-			if (DotPos != FString::npos)
-			{
-				AnimName = AnimName.substr(0, DotPos);
-			}
-
-			if (AnimName.empty())
-			{
-				AnimName = "Unknown";
-			}
-		}
+		// 헬퍼 함수를 사용하여 애니메이션 이름 가져오기
+		FString AnimName = GetDisplayNameForAnimation(Sample.Animation);
 
 		char Label[256];
 		sprintf_s(Label, "[%d] %.1f, %.1f - %s",
@@ -977,6 +1051,41 @@ void SBlendSpace2DEditorWindow::RenderGridEditor()
 	// 가용 영역 전체 사용 (정사각형 비율 유지 안 함)
 	CanvasSize = ImVec2(AvailableSize.x - 10, AvailableSize.y - 10);
 
+	// 현재 프리뷰 파라미터로 블렌딩 정보 가져오기
+	TArray<int32> CurrentSampleIndices;
+	TArray<float> CurrentWeights;
+	int32 ActiveTriangle = -1;
+
+	if (EditingBlendSpace && EditingBlendSpace->GetNumSamples() >= 3)
+	{
+		// 1. 블렌딩에 사용할 샘플과 가중치를 가져옵니다.
+		EditingBlendSpace->GetBlendWeights(PreviewParameter, CurrentSampleIndices, CurrentWeights);
+
+		// 2. 반환된 샘플 인덱스들을 사용하여 현재 활성 삼각형을 찾습니다.
+		if (CurrentSampleIndices.Num() > 0)
+		{
+			for (int32 i = 0; i < EditingBlendSpace->Triangles.Num(); ++i)
+			{
+				const FBlendTriangle& Tri = EditingBlendSpace->Triangles[i];
+
+				// GetBlendWeights는 3개의 샘플을 반환하는 것을 가정
+				if (CurrentSampleIndices.Num() == 3)
+				{
+					// 3개의 인덱스가 모두 삼각형의 정점과 일치하는지 확인
+					bool bHasV0 = (CurrentSampleIndices.Contains(Tri.Index0));
+					bool bHasV1 = (CurrentSampleIndices.Contains(Tri.Index1));
+					bool bHasV2 = (CurrentSampleIndices.Contains(Tri.Index2));
+
+					if (bHasV0 && bHasV1 && bHasV2)
+					{
+						ActiveTriangle = i;
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
 	// 캔버스 배경
@@ -990,11 +1099,11 @@ void SBlendSpace2DEditorWindow::RenderGridEditor()
 	// 축 라벨 렌더링
 	RenderAxisLabels();
 
-	// Delaunay 삼각분할 렌더링
-	RenderTriangulation();
+	// Delaunay 삼각분할 렌더링 (활성 삼각형 전달)
+	RenderTriangulation_Enhanced(ActiveTriangle);
 
-	// 샘플 포인트 렌더링
-	RenderSamplePoints();
+	// 샘플 포인트 렌더링 (가중치 정보 전달)
+	RenderSamplePoints_Enhanced(CurrentSampleIndices, CurrentWeights);
 
 	// 프리뷰 마커 렌더링
 	RenderPreviewMarker();
@@ -1196,46 +1305,8 @@ void SBlendSpace2DEditorWindow::RenderAnimationList()
 
 			bool bIsSelected = (i == SelectedAnimationIndex);
 
-			// FilePath에서 "파일명#애니메이션이름" 형식으로 표시
-			FString FilePath = Anim->GetFilePath();
-			FString DisplayName;
-
-			size_t HashPos = FilePath.find('#');
-			if (HashPos != FString::npos)
-			{
-				FString FullPath = FilePath.substr(0, HashPos); // "path/to/file.fbx"
-				FString AnimStackName = FilePath.substr(HashPos + 1); // "AnimStackName"
-
-				// 파일명만 추출 (경로 제거)
-				size_t LastSlash = FullPath.find_last_of("/\\");
-				FString FileName;
-				if (LastSlash != FString::npos)
-				{
-					FileName = FullPath.substr(LastSlash + 1);
-				}
-				else
-				{
-					FileName = FullPath;
-				}
-
-				// 확장자 제거
-				size_t DotPos = FileName.find_last_of('.');
-				if (DotPos != FString::npos)
-				{
-					FileName = FileName.substr(0, DotPos);
-				}
-
-				DisplayName = FileName + "#" + AnimStackName;
-			}
-			else
-			{
-				// FilePath에 #이 없으면 GetName() 사용
-				DisplayName = Anim->GetName();
-				if (DisplayName.empty())
-				{
-					DisplayName = "Anim " + std::to_string(i);
-				}
-			}
+			// 헬퍼 함수를 사용하여 애니메이션 이름 가져오기
+			FString DisplayName = GetDisplayNameForAnimation(Anim);
 
 			// "애니메이션이름 (재생시간)" 형식으로 표시
 			char LabelBuffer[256];

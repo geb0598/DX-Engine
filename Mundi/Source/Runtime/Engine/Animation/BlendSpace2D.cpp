@@ -880,7 +880,7 @@ void UBlendSpace2D::GenerateTriangulation()
 
 		for (const FBlendTriangle& BadTri : BadTriangles)
 		{
-			// 3개의 변
+			// 3개의 변 
 			FEdge Edge0(BadTri.Index0, BadTri.Index1);
 			FEdge Edge1(BadTri.Index1, BadTri.Index2);
 			FEdge Edge2(BadTri.Index2, BadTri.Index0);
