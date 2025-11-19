@@ -141,6 +141,18 @@ public:
 	FVector GetVelocity() const { return Velocity; }
 
 	/**
+	 * Owner Character의 Forward 벡터를 반환합니다.
+	 */
+	UFUNCTION(LuaBind, DisplayName = "GetActorForwardVector")
+	FVector GetActorForwardVector() const;
+
+	/**
+	 * Owner Character의 Right 벡터를 반환합니다.
+	 */
+	UFUNCTION(LuaBind, DisplayName = "GetActorRightVector")
+	FVector GetActorRightVector() const;
+
+	/**
 	 * 점프를 시도합니다.
 	 *
 	 * @return 점프에 성공하면 true

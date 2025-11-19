@@ -118,6 +118,13 @@ bool SBlendSpace2DEditorWindow::Initialize(float StartX, float StartY, float Wid
 
 void SBlendSpace2DEditorWindow::SetBlendSpace(UBlendSpace2D* InBlendSpace)
 {
+	// 이전 BlendSpace 정리 (필요한 경우)
+	// 주의: 다른 곳에서 참조하고 있을 수 있으므로 일반적으로는 삭제하지 않음
+	// if (EditingBlendSpace && EditingBlendSpace != InBlendSpace)
+	// {
+	//     delete EditingBlendSpace;
+	// }
+
 	EditingBlendSpace = InBlendSpace;
 	SelectedSampleIndex = -1;
 	bDraggingSample = false;
@@ -356,26 +363,99 @@ void SBlendSpace2DEditorWindow::RenderAxisLabels()
 
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 
-	// X축 레이블
-	char LabelMin[64], LabelMax[64];
-	sprintf_s(LabelMin, "%.0f", EditingBlendSpace->XAxisMin);
-	sprintf_s(LabelMax, "%.0f", EditingBlendSpace->XAxisMax);
+	// 축 이름 표시
+	ImU32 AxisNameColor = IM_COL32(150, 200, 255, 255);
+	float AxisNameFontSize = ImGui::GetFontSize() * 1.1f;
 
-	ImVec2 XMinPos(CanvasPos.x - 20, CanvasPos.y + CanvasSize.y + 10);
-	ImVec2 XMaxPos(CanvasPos.x + CanvasSize.x - 20, CanvasPos.y + CanvasSize.y + 10);
+	// X축 이름 (하단 중앙)
+	if (!EditingBlendSpace->XAxisName.empty())
+	{
+		ImVec2 TextSize = ImGui::CalcTextSize(EditingBlendSpace->XAxisName.c_str());
+		ImVec2 XAxisNamePos(
+			CanvasPos.x + CanvasSize.x * 0.5f - TextSize.x * 0.5f,
+			CanvasPos.y + CanvasSize.y + 35
+		);
+		DrawList->AddText(XAxisNamePos, AxisNameColor, EditingBlendSpace->XAxisName.c_str());
+	}
 
-	DrawList->AddText(XMinPos, IM_COL32(200, 200, 200, 255), LabelMin);
-	DrawList->AddText(XMaxPos, IM_COL32(200, 200, 200, 255), LabelMax);
+	// Y축 이름 (왼쪽 중앙, 회전)
+	if (!EditingBlendSpace->YAxisName.empty())
+	{
+		// 텍스트 회전은 복잡하므로 일단 세로로 표시
+		ImVec2 YAxisNamePos(CanvasPos.x - 65, CanvasPos.y + CanvasSize.y * 0.5f - 30);
+		DrawList->AddText(YAxisNamePos, AxisNameColor, EditingBlendSpace->YAxisName.c_str());
+	}
 
-	// Y축 레이블
-	sprintf_s(LabelMin, "%.0f", EditingBlendSpace->YAxisMin);
-	sprintf_s(LabelMax, "%.0f", EditingBlendSpace->YAxisMax);
+	// 눈금 개수 (그리드 크기에 따라 적절히 조정)
+	const int NumXTicks = 8;  // X축 눈금 개수
+	const int NumYTicks = 8;  // Y축 눈금 개수
 
-	ImVec2 YMinPos(CanvasPos.x - 40, CanvasPos.y + CanvasSize.y - 10);
-	ImVec2 YMaxPos(CanvasPos.x - 40, CanvasPos.y);
+	ImU32 TickColor = IM_COL32(180, 180, 180, 255);
+	ImU32 MajorTickColor = IM_COL32(220, 220, 220, 255);
 
-	DrawList->AddText(YMinPos, IM_COL32(200, 200, 200, 255), LabelMin);
-	DrawList->AddText(YMaxPos, IM_COL32(200, 200, 200, 255), LabelMax);
+	// ===== X축 눈금 (하단) =====
+	float XRange = EditingBlendSpace->XAxisMax - EditingBlendSpace->XAxisMin;
+	float XStep = XRange / NumXTicks;
+
+	for (int i = 0; i <= NumXTicks; ++i)
+	{
+		float ParamValue = EditingBlendSpace->XAxisMin + XStep * i;
+		ImVec2 ScreenPos = ParamToScreen(FVector2D(ParamValue, EditingBlendSpace->YAxisMin));
+
+		// 눈금 선 (아래로)
+		bool bIsMajor = (i % 2 == 0);  // 짝수 인덱스는 주요 눈금
+		ImU32 CurrentTickColor = bIsMajor ? MajorTickColor : TickColor;
+		float TickLength = bIsMajor ? 8.0f : 5.0f;
+
+		DrawList->AddLine(
+			ImVec2(ScreenPos.x, CanvasPos.y + CanvasSize.y),
+			ImVec2(ScreenPos.x, CanvasPos.y + CanvasSize.y + TickLength),
+			CurrentTickColor,
+			bIsMajor ? 2.0f : 1.0f
+		);
+
+		// 숫자 레이블 (주요 눈금에만)
+		if (bIsMajor)
+		{
+			char Label[32];
+			sprintf_s(Label, "%.0f", ParamValue);
+			ImVec2 TextSize = ImGui::CalcTextSize(Label);
+			ImVec2 TextPos(ScreenPos.x - TextSize.x * 0.5f, CanvasPos.y + CanvasSize.y + 12);
+			DrawList->AddText(TextPos, MajorTickColor, Label);
+		}
+	}
+
+	// ===== Y축 눈금 (왼쪽) =====
+	float YRange = EditingBlendSpace->YAxisMax - EditingBlendSpace->YAxisMin;
+	float YStep = YRange / NumYTicks;
+
+	for (int i = 0; i <= NumYTicks; ++i)
+	{
+		float ParamValue = EditingBlendSpace->YAxisMin + YStep * i;
+		ImVec2 ScreenPos = ParamToScreen(FVector2D(EditingBlendSpace->XAxisMin, ParamValue));
+
+		// 눈금 선 (왼쪽으로)
+		bool bIsMajor = (i % 2 == 0);
+		ImU32 CurrentTickColor = bIsMajor ? MajorTickColor : TickColor;
+		float TickLength = bIsMajor ? 8.0f : 5.0f;
+
+		DrawList->AddLine(
+			ImVec2(CanvasPos.x, ScreenPos.y),
+			ImVec2(CanvasPos.x - TickLength, ScreenPos.y),
+			CurrentTickColor,
+			bIsMajor ? 2.0f : 1.0f
+		);
+
+		// 숫자 레이블 (주요 눈금에만)
+		if (bIsMajor)
+		{
+			char Label[32];
+			sprintf_s(Label, "%.0f", ParamValue);
+			ImVec2 TextSize = ImGui::CalcTextSize(Label);
+			ImVec2 TextPos(CanvasPos.x - TickLength - TextSize.x - 4, ScreenPos.y - TextSize.y * 0.5f);
+			DrawList->AddText(TextPos, MajorTickColor, Label);
+		}
+	}
 }
 
 /**
@@ -437,31 +517,84 @@ void SBlendSpace2DEditorWindow::RenderSamplePoints_Enhanced(const TArray<int32>&
 		const FBlendSample& Sample = EditingBlendSpace->Samples[i];
 		ImVec2 ScreenPos = ParamToScreen(Sample.Position);
 
-		ImU32 Color = (i == SelectedSampleIndex) ? SelectedSampleColor : SampleColor;
+		// 활성 샘플인지 확인 (가중치가 있는 샘플)
+		bool bIsActive = WeightMap.Contains(i) && WeightMap[i] > 0.001f;
+		float Weight = bIsActive ? WeightMap[i] : 0.0f;
+
+		// 색상 및 크기 결정
+		ImU32 Color;
+		float Radius = SamplePointRadius;
+
+		if (i == SelectedSampleIndex)
+		{
+			// 선택된 샘플
+			Color = SelectedSampleColor;
+			Radius = SamplePointRadius * 1.2f;
+		}
+		else if (bIsActive)
+		{
+			// 활성 샘플 (가중치에 따라 색상 변경)
+			// 가중치가 높을수록 밝은 녹색
+			float Intensity = FMath::Lerp(0.5f, 1.0f, Weight);
+			Color = IM_COL32(
+				static_cast<uint8_t>(100 * Intensity),
+				static_cast<uint8_t>(255 * Intensity),
+				static_cast<uint8_t>(100 * Intensity),
+				255
+			);
+			Radius = SamplePointRadius * (1.0f + Weight * 0.5f);  // 가중치에 따라 크기 증가
+		}
+		else
+		{
+			// 일반 샘플
+			Color = SampleColor;
+		}
+
+		// RateScale이 1.0이 아닌 샘플 표시 (테두리 색상 변경)
+		ImU32 OutlineColor = IM_COL32(255, 255, 255, 255);
+		if (Sample.RateScale != 1.0f)
+		{
+			OutlineColor = IM_COL32(255, 150, 0, 255);  // 주황색 테두리
+		}
 
 		// 샘플 포인트 (원)
-		DrawList->AddCircleFilled(ScreenPos, SamplePointRadius, Color);
-		DrawList->AddCircle(ScreenPos, SamplePointRadius, IM_COL32(255, 255, 255, 255), 0, 2.0f);
+		DrawList->AddCircleFilled(ScreenPos, Radius, Color);
+		DrawList->AddCircle(ScreenPos, Radius, OutlineColor, 0, 2.0f);
 
 		// 샘플 이름 (애니메이션 이름)
 		FString DisplayName = GetDisplayNameForAnimation(Sample.Animation);
-		ImVec2 TextPos(ScreenPos.x + SamplePointRadius + 5, ScreenPos.y - 8);
-		DrawList->AddText(TextPos, IM_COL32(255, 255, 255, 255), DisplayName.c_str());
+		ImVec2 TextPos(ScreenPos.x + Radius + 5, ScreenPos.y - 8);
+
+		// 활성 샘플은 더 밝게 표시
+		ImU32 TextColor = bIsActive ? IM_COL32(150, 255, 150, 255) : IM_COL32(255, 255, 255, 200);
+		DrawList->AddText(TextPos, TextColor, DisplayName.c_str());
 
 		// 블렌드 가중치 표시
-		if (WeightMap.Contains(i) && WeightMap[i] > 0.001f)
+		if (bIsActive)
 		{
-			float Weight = WeightMap[i];
 			char WeightText[32];
 			sprintf_s(WeightText, "%.1f%%", Weight * 100.0f);
 
 			ImVec2 WeightTextSize = ImGui::CalcTextSize(WeightText);
-			ImVec2 WeightTextPos(ScreenPos.x - WeightTextSize.x * 0.5f, ScreenPos.y - SamplePointRadius - WeightTextSize.y - 2);
+			ImVec2 WeightTextPos(ScreenPos.x - WeightTextSize.x * 0.5f, ScreenPos.y - Radius - WeightTextSize.y - 2);
+
+			// 가중치 텍스트 배경
+			ImVec2 BgMin(WeightTextPos.x - 2, WeightTextPos.y - 2);
+			ImVec2 BgMax(WeightTextPos.x + WeightTextSize.x + 2, WeightTextPos.y + WeightTextSize.y + 2);
+			DrawList->AddRectFilled(BgMin, BgMax, IM_COL32(0, 0, 0, 180));
 
 			// 가중치가 클수록 텍스트를 더 밝게 표시
-			ImVec4 TextColor = ImVec4(0.8f, 1.0f, 0.8f, FMath::Lerp(0.5f, 1.0f, Weight));
+			ImVec4 WeightTextColor = ImVec4(0.9f, 1.0f, 0.9f, 1.0f);
+			DrawList->AddText(WeightTextPos, ImGui::ColorConvertFloat4ToU32(WeightTextColor), WeightText);
+		}
 
-			DrawList->AddText(WeightTextPos, ImGui::ColorConvertFloat4ToU32(TextColor), WeightText);
+		// RateScale 표시 (1.0이 아닌 경우)
+		if (Sample.RateScale != 1.0f)
+		{
+			char RateText[32];
+			sprintf_s(RateText, "x%.2f", Sample.RateScale);
+			ImVec2 RateTextPos(ScreenPos.x + Radius + 5, ScreenPos.y + 8);
+			DrawList->AddText(RateTextPos, IM_COL32(255, 200, 100, 255), RateText);
 		}
 	}
 }
@@ -520,23 +653,14 @@ void SBlendSpace2DEditorWindow::RenderToolbar()
 	{
 		if (EditingBlendSpace)
 		{
-			// Windows 파일 저장 다이얼로그
-			OPENFILENAMEA ofn;
-			char szFile[260] = { 0 };
-			ZeroMemory(&ofn, sizeof(ofn));
-			ofn.lStructSize = sizeof(ofn);
-			ofn.hwndOwner = NULL;
-			ofn.lpstrFile = szFile;
-			ofn.nMaxFile = sizeof(szFile);
-			ofn.lpstrFilter = "BlendSpace2D Files (*.blend2d)\0*.blend2d\0All Files (*.*)\0*.*\0";
-			ofn.nFilterIndex = 1;
-			ofn.lpstrFileTitle = NULL;
-			ofn.nMaxFileTitle = 0;
-			ofn.lpstrInitialDir = "Data\\Animation";
-			ofn.Flags = OFN_PATHMUSTEXIST | OFN_OVERWRITEPROMPT;
-			ofn.lpstrDefExt = "blend2d";
+			const FWideString BaseDir = UTF8ToWide(GDataDir) + L"/Animation";
+			const FWideString Extension = L".blend2d";
+			const FWideString Description = L"BlendSpace2D Files";
 
-			if (GetSaveFileNameA(&ofn) == TRUE)
+			// 플랫폼 공용 다이얼로그 호출 (SelectedPath는 ABSOLUTE PATH)
+			std::filesystem::path SelectedPath = FPlatformProcess::OpenSaveFileDialog(BaseDir, Extension, Description);
+
+			if (!SelectedPath.empty())
 			{
 				// 현재 프리뷰 상태 저장
 				EditingBlendSpace->EditorPreviewParameter = PreviewParameter;
@@ -547,7 +671,13 @@ void SBlendSpace2DEditorWindow::RenderToolbar()
 					EditingBlendSpace->EditorSkeletalMeshPath = PreviewState->CurrentMesh->GetFilePath();
 				}
 
-				EditingBlendSpace->SaveToFile(ofn.lpstrFile);
+				// 절대 경로를 상대 경로로 변환
+				FWideString AbsolutePath = SelectedPath.wstring();
+				FString FinalPathStr = ResolveAssetRelativePath(WideToUTF8(AbsolutePath), "");
+
+				// 저장
+				EditingBlendSpace->SaveToFile(FinalPathStr);
+				UE_LOG("[BlendSpace2D] Saved to: %s", FinalPathStr.c_str());
 			}
 		}
 	}
@@ -613,6 +743,39 @@ void SBlendSpace2DEditorWindow::RenderToolbar()
 			EditingBlendSpace->ClearSamples();
 			SelectedSampleIndex = -1;
 		}
+	}
+
+	// ===== Grid Snapping =====
+	ImGui::SameLine();
+	ImGui::Separator();
+	ImGui::SameLine();
+
+	ImGui::Checkbox("Grid Snap", &bEnableGridSnapping);
+	if (bEnableGridSnapping)
+	{
+		ImGui::SameLine();
+		ImGui::SetNextItemWidth(80.0f);
+		ImGui::DragFloat("##SnapSize", &GridSnapSize, 1.0f, 1.0f, 50.0f, "%.1f");
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Grid snap interval");
+		}
+	}
+
+	// ===== Zoom Control =====
+	ImGui::SameLine();
+	ImGui::Text("Zoom:");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(100.0f);
+	if (ImGui::SliderFloat("##Zoom", &ZoomLevel, 0.5f, 3.0f, "%.1fx"))
+	{
+		// Zoom 변경 시
+	}
+	ImGui::SameLine();
+	if (ImGui::SmallButton("Reset"))
+	{
+		ZoomLevel = 1.0f;
+		PanOffset = FVector2D(0.0f, 0.0f);
 	}
 }
 
@@ -739,6 +902,31 @@ void SBlendSpace2DEditorWindow::RenderProperties()
 		ImGui::Text("Blend Space Properties");
 		ImGui::Separator();
 
+		// 축 이름 편집
+		ImGui::Text("Axis Names");
+		static char XAxisNameBuffer[128];
+		static char YAxisNameBuffer[128];
+
+		if (EditingBlendSpace->XAxisName.length() < 128)
+		{
+			strcpy_s(XAxisNameBuffer, EditingBlendSpace->XAxisName.c_str());
+		}
+		if (EditingBlendSpace->YAxisName.length() < 128)
+		{
+			strcpy_s(YAxisNameBuffer, EditingBlendSpace->YAxisName.c_str());
+		}
+
+		if (ImGui::InputText("X Axis Name", XAxisNameBuffer, 128))
+		{
+			EditingBlendSpace->XAxisName = XAxisNameBuffer;
+		}
+		if (ImGui::InputText("Y Axis Name", YAxisNameBuffer, 128))
+		{
+			EditingBlendSpace->YAxisName = YAxisNameBuffer;
+		}
+
+		ImGui::Separator();
+
 		// 축 범위
 		ImGui::Text("Axis Ranges");
 		ImGui::InputFloat("X Min", &EditingBlendSpace->XAxisMin);
@@ -810,9 +998,13 @@ ImVec2 SBlendSpace2DEditorWindow::ParamToScreen(FVector2D Param) const
 	float NormY = (Param.Y - EditingBlendSpace->YAxisMin) /
 		(EditingBlendSpace->YAxisMax - EditingBlendSpace->YAxisMin);
 
-	// 0~1을 스크린 좌표로 변환 (Y축은 반전)
-	float ScreenX = CanvasPos.x + NormX * CanvasSize.x;
-	float ScreenY = CanvasPos.y + (1.0f - NormY) * CanvasSize.y;
+	// Pan 오프셋 적용
+	NormX += PanOffset.X;
+	NormY += PanOffset.Y;
+
+	// 0~1을 스크린 좌표로 변환 (Y축은 반전) + Zoom 적용
+	float ScreenX = CanvasPos.x + NormX * CanvasSize.x * ZoomLevel;
+	float ScreenY = CanvasPos.y + (1.0f - NormY) * CanvasSize.y * ZoomLevel;
 
 	return ImVec2(ScreenX, ScreenY);
 }
@@ -822,11 +1014,15 @@ FVector2D SBlendSpace2DEditorWindow::ScreenToParam(ImVec2 ScreenPos) const
 	if (!EditingBlendSpace)
 		return FVector2D::Zero();
 
-	// 스크린 좌표를 0~1 범위로 정규화
-	float NormX = (ScreenPos.x - CanvasPos.x) / CanvasSize.x;
-	float NormY = (CanvasPos.y + CanvasSize.y - ScreenPos.y) / CanvasSize.y;
+	// 스크린 좌표를 0~1 범위로 정규화 (Zoom 적용)
+	float NormX = (ScreenPos.x - CanvasPos.x) / (CanvasSize.x * ZoomLevel);
+	float NormY = (CanvasPos.y + CanvasSize.y * ZoomLevel - ScreenPos.y) / (CanvasSize.y * ZoomLevel);
 
-	// 범위 클램핑
+	// Pan 오프셋 제거
+	NormX -= PanOffset.X;
+	NormY -= PanOffset.Y;
+
+	// 범위 클램핑 (Pan/Zoom으로 범위 밖으로 갈 수 있음)
 	NormX = FMath::Clamp(NormX, 0.0f, 1.0f);
 	NormY = FMath::Clamp(NormY, 0.0f, 1.0f);
 
@@ -852,6 +1048,34 @@ void SBlendSpace2DEditorWindow::HandleMouseInput()
 
 	if (!bMouseInCanvas)
 		return;
+
+	// ===== Zoom (마우스 휠) =====
+	ImGuiIO& io = ImGui::GetIO();
+	if (io.MouseWheel != 0.0f)
+	{
+		float ZoomDelta = io.MouseWheel * 0.1f;  // 10% per wheel tick
+		ZoomLevel = FMath::Clamp(ZoomLevel + ZoomDelta, 0.5f, 3.0f);  // 50% ~ 300%
+	}
+
+	// ===== Pan (마우스 중간 버튼 드래그) =====
+	if (ImGui::IsMouseClicked(2))  // Middle button
+	{
+		bPanning = true;
+		PanStartMousePos = MousePos;
+	}
+
+	if (bPanning && ImGui::IsMouseDragging(2))
+	{
+		ImVec2 Delta = ImVec2(MousePos.x - PanStartMousePos.x, MousePos.y - PanStartMousePos.y);
+		PanOffset.X += Delta.x / (CanvasSize.x * ZoomLevel);
+		PanOffset.Y -= Delta.y / (CanvasSize.y * ZoomLevel);  // Y축 반전
+		PanStartMousePos = MousePos;
+	}
+
+	if (ImGui::IsMouseReleased(2))
+	{
+		bPanning = false;
+	}
 
 	// 왼쪽 클릭: PreviewMarker, 샘플 선택 또는 드래그 시작
 	if (ImGui::IsMouseClicked(0))
@@ -884,6 +1108,22 @@ void SBlendSpace2DEditorWindow::HandleMouseInput()
 				if (Dist <= SamplePointRadius + 5.0f)
 				{
 					SelectSample(i);
+
+					// Ctrl 키를 누른 상태면 복제 모드
+					if (io.KeyCtrl)
+					{
+						bDuplicatingMode = true;
+						// 샘플 복제
+						FBlendSample OriginalSample = EditingBlendSpace->Samples[i];
+						EditingBlendSpace->AddSample(OriginalSample.Position, OriginalSample.Animation);
+						// RateScale 복사
+						if (EditingBlendSpace->GetNumSamples() > 0)
+						{
+							EditingBlendSpace->Samples[EditingBlendSpace->GetNumSamples() - 1].RateScale = OriginalSample.RateScale;
+						}
+						SelectedSampleIndex = EditingBlendSpace->GetNumSamples() - 1;
+					}
+
 					bDraggingSample = true;
 					bFoundSample = true;
 					break;
@@ -895,6 +1135,31 @@ void SBlendSpace2DEditorWindow::HandleMouseInput()
 				SelectedSampleIndex = -1;
 			}
 		}
+	}
+
+	// 우클릭: 컨텍스트 메뉴
+	if (ImGui::IsMouseClicked(1))
+	{
+		ContextMenuPos = MousePos;
+		ContextMenuSampleIndex = -1;
+
+		// 샘플 위에서 우클릭했는지 확인
+		for (int32 i = 0; i < EditingBlendSpace->GetNumSamples(); ++i)
+		{
+			ImVec2 SampleScreenPos = ParamToScreen(EditingBlendSpace->Samples[i].Position);
+			float Dist = sqrtf(
+				(MousePos.x - SampleScreenPos.x) * (MousePos.x - SampleScreenPos.x) +
+				(MousePos.y - SampleScreenPos.y) * (MousePos.y - SampleScreenPos.y)
+			);
+
+			if (Dist <= SamplePointRadius + 5.0f)
+			{
+				ContextMenuSampleIndex = i;
+				break;
+			}
+		}
+
+		bShowContextMenu = true;
 	}
 
 	// PreviewMarker 드래그 중
@@ -915,6 +1180,14 @@ void SBlendSpace2DEditorWindow::HandleMouseInput()
 		if (SelectedSampleIndex >= 0 && SelectedSampleIndex < EditingBlendSpace->GetNumSamples())
 		{
 			FVector2D NewPos = ScreenToParam(MousePos);
+
+			// Grid Snapping 적용
+			if (bEnableGridSnapping)
+			{
+				NewPos.X = floorf(NewPos.X / GridSnapSize + 0.5f) * GridSnapSize;
+				NewPos.Y = floorf(NewPos.Y / GridSnapSize + 0.5f) * GridSnapSize;
+			}
+
 			EditingBlendSpace->Samples[SelectedSampleIndex].Position = NewPos;
 		}
 	}
@@ -930,6 +1203,7 @@ void SBlendSpace2DEditorWindow::HandleMouseInput()
 
 		bDraggingSample = false;
 		bDraggingPreviewMarker = false;
+		bDuplicatingMode = false;
 	}
 
 	// 더블 클릭: 새 샘플 추가
@@ -942,10 +1216,37 @@ void SBlendSpace2DEditorWindow::HandleMouseInput()
 
 void SBlendSpace2DEditorWindow::HandleKeyboardInput()
 {
+	ImGuiIO& io = ImGui::GetIO();
+
 	// Delete 키: 선택된 샘플 삭제
-	if (INPUT.IsKeyPressed(VK_DELETE))
+	if (ImGui::IsKeyPressed(ImGuiKey_Delete))
 	{
 		RemoveSelectedSample();
+	}
+
+	// Space 키: 애니메이션 재생/일시정지
+	if (ImGui::IsKeyPressed(ImGuiKey_Space))
+	{
+		bIsPlaying = !bIsPlaying;
+	}
+
+	// Ctrl+S: 저장
+	if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S))
+	{
+		if (EditingBlendSpace)
+		{
+			// 마지막 저장 경로가 있으면 그대로 저장
+			if (!EditingBlendSpace->GetFilePath().empty())
+			{
+				EditingBlendSpace->EditorPreviewParameter = PreviewParameter;
+				if (PreviewState && PreviewState->CurrentMesh)
+				{
+					EditingBlendSpace->EditorSkeletalMeshPath = PreviewState->CurrentMesh->GetFilePath();
+				}
+				EditingBlendSpace->SaveToFile(EditingBlendSpace->GetFilePath());
+				UE_LOG("[BlendSpace2D] Saved to: %s", EditingBlendSpace->GetFilePath().c_str());
+			}
+		}
 	}
 }
 
@@ -960,6 +1261,12 @@ void SBlendSpace2DEditorWindow::AddSampleAtPosition(FVector2D Position)
 
 	// 새로 추가된 샘플 선택
 	SelectedSampleIndex = EditingBlendSpace->GetNumSamples() - 1;
+
+	// 삼각분할 자동 재생성
+	if (EditingBlendSpace->GetNumSamples() >= 3)
+	{
+		EditingBlendSpace->GenerateTriangulation();
+	}
 }
 
 void SBlendSpace2DEditorWindow::RemoveSelectedSample()
@@ -971,6 +1278,12 @@ void SBlendSpace2DEditorWindow::RemoveSelectedSample()
 	{
 		EditingBlendSpace->RemoveSample(SelectedSampleIndex);
 		SelectedSampleIndex = -1;
+
+		// 삼각분할 자동 재생성
+		if (EditingBlendSpace->GetNumSamples() >= 3)
+		{
+			EditingBlendSpace->GenerateTriangulation();
+		}
 	}
 }
 
@@ -1042,14 +1355,66 @@ void SBlendSpace2DEditorWindow::RenderGridEditor()
 		EditingBlendSpace->YAxisMin,
 		EditingBlendSpace->YAxisMax);
 
+	// ===== Validation Warnings =====
+	bool bHasWarnings = false;
+	TArray<FString> Warnings;
+
+	// 1. 샘플이 너무 가까운지 체크
+	for (int32 i = 0; i < EditingBlendSpace->GetNumSamples(); ++i)
+	{
+		for (int32 j = i + 1; j < EditingBlendSpace->GetNumSamples(); ++j)
+		{
+			FVector2D Pos1 = EditingBlendSpace->Samples[i].Position;
+			FVector2D Pos2 = EditingBlendSpace->Samples[j].Position;
+			float Distance = sqrtf((Pos2.X - Pos1.X) * (Pos2.X - Pos1.X) + (Pos2.Y - Pos1.Y) * (Pos2.Y - Pos1.Y));
+
+			if (Distance < 5.0f)
+			{
+				char WarningMsg[256];
+				sprintf_s(WarningMsg, "Samples %d and %d are too close (%.1f)", i, j, Distance);
+				Warnings.Add(WarningMsg);
+				bHasWarnings = true;
+			}
+		}
+	}
+
+	// 2. 삼각분할 실패 체크
+	if (EditingBlendSpace->GetNumSamples() >= 3 && EditingBlendSpace->Triangles.Num() == 0)
+	{
+		Warnings.Add("Triangulation failed! Check sample positions.");
+		bHasWarnings = true;
+	}
+
+	// 경고 표시
+	if (bHasWarnings)
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.7f, 0.0f, 1.0f));
+		for (const FString& Warning : Warnings)
+		{
+			ImGui::TextWrapped("%s", Warning.c_str());
+		}
+		ImGui::PopStyleColor();
+	}
+
 	ImGui::Separator();
 
 	// 그리드 캔버스 (전체 영역 사용 - 직사각형)
-	CanvasPos = ImGui::GetCursorScreenPos();
 	ImVec2 AvailableSize = ImGui::GetContentRegionAvail();
 
-	// 가용 영역 전체 사용 (정사각형 비율 유지 안 함)
-	CanvasSize = ImVec2(AvailableSize.x - 10, AvailableSize.y - 10);
+	// 축 레이블을 위한 여백 (왼쪽 70px, 하단 50px)
+	const float LeftMargin = 70.0f;
+	const float BottomMargin = 50.0f;
+	const float RightMargin = 10.0f;
+	const float TopMargin = 10.0f;
+
+	// 캔버스 위치와 크기 설정 (여백 고려)
+	CanvasPos = ImGui::GetCursorScreenPos();
+	CanvasPos.x += LeftMargin;
+	CanvasPos.y += TopMargin;
+	CanvasSize = ImVec2(
+		AvailableSize.x - LeftMargin - RightMargin,
+		AvailableSize.y - TopMargin - BottomMargin
+	);
 
 	// 현재 프리뷰 파라미터로 블렌딩 정보 가져오기
 	TArray<int32> CurrentSampleIndices;
@@ -1111,8 +1476,81 @@ void SBlendSpace2DEditorWindow::RenderGridEditor()
 	// 입력 처리
 	HandleMouseInput();
 
-	// 캔버스 영역 확보 (클릭 감지를 위해)
-	ImGui::Dummy(CanvasSize);
+	// 캔버스 영역 확보 (클릭 감지를 위해) - 여백 포함한 전체 크기
+	ImGui::Dummy(ImVec2(
+		CanvasSize.x + LeftMargin + RightMargin,
+		CanvasSize.y + TopMargin + BottomMargin
+	));
+
+	// ===== 컨텍스트 메뉴 =====
+	if (bShowContextMenu)
+	{
+		ImGui::OpenPopup("SampleContextMenu");
+		bShowContextMenu = false;
+	}
+
+	if (ImGui::BeginPopup("SampleContextMenu"))
+	{
+		if (ContextMenuSampleIndex >= 0)
+		{
+			// 샘플 위에서 우클릭
+			ImGui::Text("Sample %d", ContextMenuSampleIndex);
+			ImGui::Separator();
+
+			if (ImGui::MenuItem("Delete"))
+			{
+				if (ContextMenuSampleIndex < EditingBlendSpace->GetNumSamples())
+				{
+					EditingBlendSpace->RemoveSample(ContextMenuSampleIndex);
+					SelectedSampleIndex = -1;
+
+					// 삼각분할 재생성
+					if (EditingBlendSpace->GetNumSamples() >= 3)
+					{
+						EditingBlendSpace->GenerateTriangulation();
+					}
+				}
+			}
+
+			if (ImGui::MenuItem("Duplicate"))
+			{
+				if (ContextMenuSampleIndex < EditingBlendSpace->GetNumSamples())
+				{
+					FBlendSample OriginalSample = EditingBlendSpace->Samples[ContextMenuSampleIndex];
+					// 약간 오프셋 추가
+					FVector2D NewPos = OriginalSample.Position;
+					NewPos.X += 10.0f;
+					NewPos.Y += 10.0f;
+					EditingBlendSpace->AddSample(NewPos, OriginalSample.Animation);
+
+					// RateScale 복사
+					if (EditingBlendSpace->GetNumSamples() > 0)
+					{
+						EditingBlendSpace->Samples[EditingBlendSpace->GetNumSamples() - 1].RateScale = OriginalSample.RateScale;
+					}
+
+					SelectedSampleIndex = EditingBlendSpace->GetNumSamples() - 1;
+
+					// 삼각분할 재생성
+					if (EditingBlendSpace->GetNumSamples() >= 3)
+					{
+						EditingBlendSpace->GenerateTriangulation();
+					}
+				}
+			}
+		}
+		else
+		{
+			// 빈 공간에서 우클릭
+			if (ImGui::MenuItem("Add Sample Here"))
+			{
+				FVector2D ClickPos = ScreenToParam(ContextMenuPos);
+				AddSampleAtPosition(ClickPos);
+			}
+		}
+
+		ImGui::EndPopup();
+	}
 }
 
 /**

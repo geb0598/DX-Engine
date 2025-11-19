@@ -21,7 +21,7 @@
       "BlendTime" : 0.200000,
       "Conditions" : [{
           "Op" : 2,
-          "Param" : "Speed",
+          "Param" : "AbsSpeed",
           "Val" : 0.100000
         }],
       "From" : "Idle",
@@ -30,7 +30,7 @@
       "BlendTime" : 0.200000,
       "Conditions" : [{
           "Op" : 3,
-          "Param" : "Speed",
+          "Param" : "AbsSpeed",
           "Val" : 0.100000
         }],
       "From" : "State_0",

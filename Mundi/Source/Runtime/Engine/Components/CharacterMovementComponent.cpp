@@ -392,3 +392,25 @@ bool UCharacterMovementComponent::CheckGround()
 
 	return false;
 }
+
+// ────────────────────────────────────────────────────────────────────────────
+// Lua Binding Helper Functions
+// ────────────────────────────────────────────────────────────────────────────
+
+FVector UCharacterMovementComponent::GetActorForwardVector() const
+{
+	if (CharacterOwner)
+	{
+		return CharacterOwner->GetActorForward();
+	}
+	return FVector(1.0f, 0.0f, 0.0f); // 기본값: X축 방향
+}
+
+FVector UCharacterMovementComponent::GetActorRightVector() const
+{
+	if (CharacterOwner)
+	{
+		return CharacterOwner->GetActorRight();
+	}
+	return FVector(0.0f, 1.0f, 0.0f); // 기본값: Y축 방향
+}

@@ -133,6 +133,24 @@ private:
 	FVector2D PreviewParameter = FVector2D(0.0f, 0.0f);
 	FRect PreviewViewportRect = FRect(0, 0, 0, 0);  // 프리뷰 뷰포트 영역
 
+	// ===== Grid Snapping =====
+	bool bEnableGridSnapping = true;
+	float GridSnapSize = 10.0f;  // 스냅 간격 (파라미터 단위)
+
+	// ===== Zoom & Pan =====
+	float ZoomLevel = 1.0f;       // 줌 레벨 (1.0 = 100%)
+	FVector2D PanOffset = FVector2D(0.0f, 0.0f);  // 팬 오프셋
+	bool bPanning = false;        // 팬 드래그 중
+	ImVec2 PanStartMousePos;      // 팬 시작 마우스 위치
+
+	// ===== Sample Duplication =====
+	bool bDuplicatingMode = false;  // Ctrl 키 누른 상태로 드래그 중
+
+	// ===== Context Menu =====
+	bool bShowContextMenu = false;
+	ImVec2 ContextMenuPos;
+	int32 ContextMenuSampleIndex = -1;
+
 	// ===== 애니메이션 재생 상태 =====
 	bool bIsPlaying = true;           // 재생 중인지 여부
 	float PlaybackSpeed = 1.0f;       // 재생 속도 배율

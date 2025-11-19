@@ -76,6 +76,14 @@ void FAnimNode_BlendSpace2D::SetBlendParameter(FVector2D InParameter)
 {
 	BlendParameter = InParameter;
 	bAutoCalculateParameter = false;
+
+	// 디버그: 설정된 파라미터 확인
+	static int32 SetParamCounter = 0;
+	if (SetParamCounter++ % 30 == 0)
+	{
+		UE_LOG("[BlendSpace2D] SetBlendParameter: (%.2f, %.2f)",
+			InParameter.X, InParameter.Y);
+	}
 }
 
 /**
@@ -99,7 +107,15 @@ void FAnimNode_BlendSpace2D::Update(float DeltaSeconds)
 	// 자동 파라미터 계산
 	if (bAutoCalculateParameter)
 	{
-		CalculateBlendParameterFromMovement();
+		//CalculateBlendParameterFromMovement();
+	}
+
+	// 디버그: BlendParameter 확인
+	static int32 ParamLogCounter = 0;
+	if (ParamLogCounter++ % 30 == 0)
+	{
+		UE_LOG("[BlendSpace2D] Update: BlendParameter=(%.2f, %.2f)",
+			BlendParameter.X, BlendParameter.Y);
 	}
 
 	// 샘플 개수 확인 및 배열 크기 조정

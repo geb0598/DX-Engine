@@ -267,9 +267,9 @@ FVector2D UBlendSpace2D::NormalizeParameter(FVector2D Param) const
 	float NormX = (Param.X - XAxisMin) / (XAxisMax - XAxisMin);
 	float NormY = (Param.Y - YAxisMin) / (YAxisMax - YAxisMin);
 
-	// 0~1 범위로 클램핑
-	NormX = FMath::Clamp(NormX, 0.0f, 1.0f);
-	NormY = FMath::Clamp(NormY, 0.0f, 1.0f);
+	// 클램핑 제거 - 음수 Speed도 사용 가능하도록
+	// NormX = FMath::Clamp(NormX, 0.0f, 1.0f);
+	// NormY = FMath::Clamp(NormY, 0.0f, 1.0f);
 
 	return FVector2D(NormX, NormY);
 }

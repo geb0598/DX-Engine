@@ -33,6 +33,8 @@ function BeginPlay()
     end
 end
 
+local tickCounter = 0
+
 function Tick(dt)
     -- AnimInstance가 유효할 때만 로직 수행
     if AnimInstance then
@@ -41,19 +43,47 @@ function Tick(dt)
         -- V = sqrt(x^2 + y^2 + z^2)
         local speed = math.sqrt(velocity.X * velocity.X + velocity.Y * velocity.Y + velocity.Z * velocity.Z)
 
-        -- Direction 계산 (atan을 사용하여 각도 계산, -180 ~ 180도)
-        local direction = 0
-        if speed > 0.01 then  -- 속도가 거의 0이 아닐 때만 방향 계산
-            -- atan2 대신 atan 사용, degree로 변환 (radian * 180 / pi)
-            local radians = math.atan(velocity.Y, velocity.X)
-            direction = radians * 180.0 / math.pi
+        -- 캐릭터의 Forward, Right 벡터 가져오기 (CharacterMoveComp에서 직접 호출)
+        local forward = CharacterMoveComp:GetActorForwardVector()
+        local right = CharacterMoveComp:GetActorRightVector()
+
+        -- 속도 벡터 정규화 (C++의 LocalVelocity.Normalize()와 동일)
+        local normalizedVelX = 0
+        local normalizedVelY = 0
+        local normalizedVelZ = 0
+
+        if speed > 0.01 then
+            normalizedVelX = velocity.X / speed
+            normalizedVelY = velocity.Y / speed
+            normalizedVelZ = velocity.Z / speed
         end
 
-        -- 디버깅용 (필요시 주석 해제)
-        -- print(string.format("Speed: %.2f, Direction: %.2f", speed, direction))
+        -- 내적 계산 (C++의 Dot Product와 동일)
+        local forwardDot = normalizedVelX * forward.X + normalizedVelY * forward.Y + normalizedVelZ * forward.Z
+        local rightDot = normalizedVelX * right.X + normalizedVelY * right.Y + normalizedVelZ * right.Z
 
-        AnimInstance:SetFloat("Speed", speed)
+        -- Signed Speed 계산 (후진 시 음수)
+        local signedSpeed = speed
+        if forwardDot < 0 then
+            signedSpeed = -speed
+        end
+
+        -- Direction 계산 (C++과 동일: atan2(RightDot, ForwardDot))
+        local direction = math.atan(rightDot, forwardDot) * (180.0 / math.pi)
+
+        -- AnimInstance에 값 설정
+        AnimInstance:SetFloat("Speed", signedSpeed)
+        AnimInstance:SetFloat("AbsSpeed", speed)  -- 절대값 (항상 양수)
         AnimInstance:SetFloat("Direction", direction)
+
+        -- 디버깅용 (60프레임마다 출력)
+        if tickCounter % 60 == 0 then
+            print(string.format("[AnimBinding] Tick %d: Speed=%.1f (Raw=%.1f), Direction=%.1f",
+                tickCounter, signedSpeed, speed, direction))
+            print(string.format("  ForwardDot=%.3f, RightDot=%.3f", forwardDot, rightDot))
+        end
+
+        tickCounter = tickCounter + 1
     end
 end
 

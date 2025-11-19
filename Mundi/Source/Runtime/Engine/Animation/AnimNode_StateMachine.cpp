@@ -53,7 +53,22 @@ void FAnimNode_StateMachine::Update(float DeltaSeconds)
 			float X = OwnerAnimInstance->GetFloat(FName(BS->XAxisName));
 			float Y = OwnerAnimInstance->GetFloat(FName(BS->YAxisName));
 
+			static int32 LogCounter = 0;
+			if (LogCounter++ % 30 == 0)
+			{
+				UE_LOG("[StateMachine] BlendSpace2D Parameters: %s=%.2f, %s=%.2f",
+					BS->XAxisName.c_str(), X, BS->YAxisName.c_str(), Y);
+			}
+
 			CurrentBlendSpaceNode.SetBlendParameter(FVector2D(X, Y));
+		}
+		else
+		{
+			static int32 WarnCounter = 0;
+			if (WarnCounter++ % 60 == 0)
+			{
+				UE_LOG("[StateMachine] Warning: OwnerAnimInstance is nullptr!");
+			}
 		}
 
 		CurrentBlendSpaceNode.Update(DeltaSeconds);
