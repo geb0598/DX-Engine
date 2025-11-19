@@ -120,7 +120,7 @@ void InitializeMiniDump()
     // 3. SEH 핸들러 등록
     SetUnhandledExceptionFilter(UnhandledExceptionHandler);
 
-    // 4. ★ VEH 핸들러 등록 (가장 강력함)
+    // 4. VEH 핸들러 등록
     // 첫 번째 인자 1: 제일 먼저 호출해달라
     AddVectoredExceptionHandler(1, VectoredExceptionHandler);
 }
