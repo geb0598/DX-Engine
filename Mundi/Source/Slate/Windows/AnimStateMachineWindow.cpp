@@ -875,7 +875,7 @@ void SAnimStateMachineWindow::RenderRightPanel(float width, float height)
                     if (ImGui::Button("Blend2D", ImVec2(ButtonWidth, 0)))
                     {
                         // BlendSpace2D 선택 다이얼로그
-                        const FWideString BaseDir = UTF8ToWide(GDataDir) + L"/Animation";
+                        const FWideString BaseDir = UTF8ToWide(GDataDir) + L"/Blend";
                         const FWideString Extension = L".blend2d";
                         const FWideString Description = L"BlendSpace2D Files";
 

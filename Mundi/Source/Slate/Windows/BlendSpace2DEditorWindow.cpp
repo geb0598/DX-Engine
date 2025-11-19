@@ -653,7 +653,7 @@ void SBlendSpace2DEditorWindow::RenderToolbar()
 	{
 		if (EditingBlendSpace)
 		{
-			const FWideString BaseDir = UTF8ToWide(GDataDir) + L"/Animation";
+			const FWideString BaseDir = UTF8ToWide(GDataDir) + L"/Blend";
 			const FWideString Extension = L".blend2d";
 			const FWideString Description = L"BlendSpace2D Files";
 
@@ -686,7 +686,7 @@ void SBlendSpace2DEditorWindow::RenderToolbar()
 	// 로드 버튼
 	if (ImGui::Button("Load"))
 	{
-		const FWideString BaseDir = UTF8ToWide(GDataDir) + L"/Animation";
+		const FWideString BaseDir = UTF8ToWide(GDataDir) + L"/Blend";
 		const FWideString Extension = L".blend2d";
 		const FWideString Description = L"BlendSpace2D Files";
 
