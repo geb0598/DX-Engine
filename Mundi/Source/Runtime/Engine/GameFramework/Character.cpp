@@ -53,15 +53,6 @@ ACharacter::ACharacter()
 		// X Bot 스켈레탈 메시 로드
 		SkeletalMeshComponent->SetSkeletalMesh(GDataDir + "/X Bot.fbx");
 
-		// AnimInstance 생성 및 초기화
-		UAnimInstance* AnimInstance = NewObject<UAnimInstance>();
-		if (AnimInstance)
-		{
-			AnimInstance->Initialize(SkeletalMeshComponent);
-			SkeletalMeshComponent->SetAnimInstance(AnimInstance);
-			UE_LOG("[Character] AnimInstance created in constructor!");
-		}
-
 		UE_LOG("[Character] SkeletalMeshComponent created!");
 	}
 
@@ -91,6 +82,8 @@ ACharacter::~ACharacter()
 
 void ACharacter::BeginPlay()
 {
+	UE_LOG("[Character] BeginPlay called!");
+
 	Super::BeginPlay();
 
 	// AnimationStateMachine 생성 및 초기화
@@ -110,13 +103,13 @@ void ACharacter::BeginPlay()
 				UFbxLoader& FbxLoader = UFbxLoader::GetInstance();
 				// SkeletalMesh->GetAnimations()[0];
 				// 애니메이션 로드
-				TArray<UAnimSequence*> IdleAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Idle.fbx", *Skeleton);
-				TArray<UAnimSequence*> WalkAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Walking.fbx", *Skeleton);
-				TArray<UAnimSequence*> RunAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Slow Run.fbx", *Skeleton);
-
-				UAnimSequence* IdleAnim = SkeletalMesh->GetAnimations()[0];
-				UAnimSequence* WalkAnim = SkeletalMesh->GetAnimations()[1];
-				UAnimSequence* RunAnim = SkeletalMesh->GetAnimations()[2];
+				// TArray<UAnimSequence*> IdleAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Idle.fbx", *Skeleton);
+				// TArray<UAnimSequence*> WalkAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Walking.fbx", *Skeleton);
+				// TArray<UAnimSequence*> RunAnims = FbxLoader.LoadAllFbxAnimations(GDataDir + "/Animation/XBOT_Slow Run.fbx", *Skeleton);
+				//
+				// UAnimSequence* IdleAnim = SkeletalMesh->GetAnimations()[0];
+				// UAnimSequence* WalkAnim = SkeletalMesh->GetAnimations()[1];
+				// UAnimSequence* RunAnim = SkeletalMesh->GetAnimations()[2];
 
 				// ===== BlendSpace2D 예제 (주석 처리 - 나중에 8방향 이동용) =====
 				/*
