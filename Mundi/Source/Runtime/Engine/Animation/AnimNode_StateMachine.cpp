@@ -126,7 +126,7 @@ static void GetPoseFromNode(const FAnimStateNode* Node, float Time, FPoseContext
 		UAnimSequence* Anim = Node->AnimationAsset;
 		if (Anim->GetDataModel())
 		{
-			//Anim->GetDataModel()->SetSkeleton(*OutPose.Skeleton);
+			Anim->GetDataModel()->SetSkeleton(*OutPose.Skeleton);
 			FAnimationRuntime::GetPoseFromAnimSequence(Anim, Time, OutPose);
 		}
 	}

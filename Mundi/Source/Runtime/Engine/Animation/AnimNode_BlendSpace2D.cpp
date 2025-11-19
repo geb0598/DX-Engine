@@ -270,7 +270,7 @@ void FAnimNode_BlendSpace2D::Evaluate(FPoseContext& OutPose)
 		// Skeleton 설정 (OutPose에서 가져옴)
 		if (OutPose.Skeleton)
 		{
-			Sample.Animation->GetDataModel()->Skeleton = const_cast<FSkeleton*>(OutPose.Skeleton);
+			Sample.Animation->GetDataModel()->SetSkeleton(*OutPose.Skeleton);
 		}
 
 		// 애니메이션 시간 가져오기
