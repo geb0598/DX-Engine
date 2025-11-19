@@ -50,7 +50,7 @@ function Tick(dt)
         end
 
         -- 디버깅용 (필요시 주석 해제)
-        print(string.format("Speed: %.2f, Direction: %.2f", speed, direction))
+        -- print(string.format("Speed: %.2f, Direction: %.2f", speed, direction))
 
         AnimInstance:SetFloat("Speed", speed)
         AnimInstance:SetFloat("Direction", direction)
