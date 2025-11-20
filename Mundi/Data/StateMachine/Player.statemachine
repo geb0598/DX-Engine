@@ -8,13 +8,7 @@
       "EditorPosY" : -301.000000,
       "Loop" : false,
       "Name" : "Jump",
-      "StateEntryNotifies" : [{
-          "Duration" : 0.000000,
-          "Name" : "AN_PlaySound",
-          "PropertyData" : "{}",
-          "Time" : 0.000000,
-          "TrackIndex" : 0
-        }],
+      "StateEntryNotifies" : [],
       "StateExitNotifies" : [],
       "StateFullyBlendedNotifies" : []
     }, {
@@ -43,7 +37,7 @@
       "AnimAsset" : "",
       "AnimAssetType" : 1,
       "BlendSpaceAsset" : "",
-      "EditorPosX" : 212.000000,
+      "EditorPosX" : 210.000000,
       "EditorPosY" : -397.000000,
       "Loop" : false,
       "Name" : "Falling",
@@ -54,12 +48,18 @@
       "AnimAsset" : "Data/Animation/XBOT_JumpingEnd.fbx#mixamo.com",
       "AnimAssetType" : 1,
       "BlendSpaceAsset" : "",
-      "EditorPosX" : 402.000000,
-      "EditorPosY" : -285.000000,
+      "EditorPosX" : 373.000000,
+      "EditorPosY" : -301.000000,
       "Loop" : false,
       "Name" : "JumpEnd",
       "StateEntryNotifies" : [],
-      "StateExitNotifies" : [],
+      "StateExitNotifies" : [{
+          "Duration" : 0.000000,
+          "Name" : "AN_CameraShake",
+          "PropertyData" : "{}",
+          "Time" : 0.000000,
+          "TrackIndex" : 0
+        }],
       "StateFullyBlendedNotifies" : []
     }],
   "Transitions" : [{
