@@ -3,9 +3,11 @@
 #include "BlendSpace2D.h"
 #include "AnimSequence.h"
 #include "AnimationRuntime.h"
+#include "AnimInstance.h"
 #include "Source/Runtime/Engine/GameFramework/Pawn.h"
 #include "Source/Runtime/Engine/GameFramework/Character.h"
 #include "Source/Runtime/Engine/Components/CharacterMovementComponent.h"
+#include "Source/Runtime/Engine/Components/SkeletalMeshComponent.h"
 
 FAnimNode_BlendSpace2D::FAnimNode_BlendSpace2D()
 	: BlendSpace(nullptr)
@@ -15,6 +17,9 @@ FAnimNode_BlendSpace2D::FAnimNode_BlendSpace2D()
 	, OwnerPawn(nullptr)
 	, OwnerCharacter(nullptr)
 	, MovementComponent(nullptr)
+	, OwnerAnimInstance(nullptr)
+	, OwnerMeshComp(nullptr)
+	, PreviousLeaderIndex(-1)
 {
 }
 
@@ -25,9 +30,11 @@ FAnimNode_BlendSpace2D::~FAnimNode_BlendSpace2D()
 /**
  * @brief 노드 초기화
  */
-void FAnimNode_BlendSpace2D::Initialize(APawn* InPawn)
+void FAnimNode_BlendSpace2D::Initialize(APawn* InPawn, UAnimInstance* InAnimInstance, USkeletalMeshComponent* InMeshComp)
 {
 	OwnerPawn = InPawn;
+	OwnerAnimInstance = InAnimInstance;
+	OwnerMeshComp = InMeshComp;
 
 	if (OwnerPawn)
 	{
@@ -43,12 +50,19 @@ void FAnimNode_BlendSpace2D::Initialize(APawn* InPawn)
 	// 샘플 애니메이션 시간 초기화
 	if (BlendSpace)
 	{
-		SampleAnimTimes.SetNum(BlendSpace->GetNumSamples());
-		for (int32 i = 0; i < SampleAnimTimes.Num(); ++i)
+		int32 NumSamples = BlendSpace->GetNumSamples();
+		SampleAnimTimes.SetNum(NumSamples);
+		PreviousSampleAnimTimes.SetNum(NumSamples);
+		for (int32 i = 0; i < NumSamples; ++i)
 		{
 			SampleAnimTimes[i] = 0.0f;
+			PreviousSampleAnimTimes[i] = 0.0f;
 		}
 	}
+
+	// Notify 상태 초기화
+	ActiveAnimNotifyState.Empty();
+	PreviousLeaderIndex = -1;
 }
 
 /**
@@ -61,12 +75,19 @@ void FAnimNode_BlendSpace2D::SetBlendSpace(UBlendSpace2D* InBlendSpace)
 	// 샘플 애니메이션 시간 초기화
 	if (BlendSpace)
 	{
-		SampleAnimTimes.SetNum(BlendSpace->GetNumSamples());
-		for (int32 i = 0; i < SampleAnimTimes.Num(); ++i)
+		int32 NumSamples = BlendSpace->GetNumSamples();
+		SampleAnimTimes.SetNum(NumSamples);
+		PreviousSampleAnimTimes.SetNum(NumSamples);
+		for (int32 i = 0; i < NumSamples; ++i)
 		{
 			SampleAnimTimes[i] = 0.0f;
+			PreviousSampleAnimTimes[i] = 0.0f;
 		}
 	}
+
+	// Notify 상태 초기화
+	ActiveAnimNotifyState.Empty();
+	PreviousLeaderIndex = -1;
 }
 
 /**
@@ -123,10 +144,18 @@ void FAnimNode_BlendSpace2D::Update(float DeltaSeconds)
 	if (SampleAnimTimes.Num() != NumSamples)
 	{
 		SampleAnimTimes.SetNum(NumSamples);
-		for (int32 i = 0; i < SampleAnimTimes.Num(); ++i)
+		PreviousSampleAnimTimes.SetNum(NumSamples);
+		for (int32 i = 0; i < NumSamples; ++i)
 		{
 			SampleAnimTimes[i] = 0.0f;
+			PreviousSampleAnimTimes[i] = 0.0f;
 		}
+	}
+
+	// 이전 시간 저장 (Notify 트리거용)
+	for (int32 i = 0; i < NumSamples; ++i)
+	{
+		PreviousSampleAnimTimes[i] = SampleAnimTimes[i];
 	}
 
 	// Step 1: 블렌드 가중치 계산하여 Leader(가장 높은 가중치) 찾기
@@ -200,6 +229,154 @@ void FAnimNode_BlendSpace2D::Update(float DeltaSeconds)
 			}
 		}
 	}
+
+	// ========================================
+	// Notify 트리거링 (Leader 애니메이션에서만)
+	// ========================================
+	if (!OwnerAnimInstance || !OwnerMeshComp)
+	{
+		// 디버그: AnimInstance/MeshComp가 설정되지 않은 경우
+		static int32 WarnCounter = 0;
+		if (WarnCounter++ % 300 == 0)
+		{
+			UE_LOG("BlendSpace2D: Update: OwnerAnimInstance=%p, OwnerMeshComp=%p (Notify disabled)",
+				OwnerAnimInstance, OwnerMeshComp);
+		}
+	}
+
+	if (OwnerAnimInstance && OwnerMeshComp && ReferenceSampleIndex >= 0)
+	{
+		const FBlendSample& LeaderSample = BlendSpace->Samples[ReferenceSampleIndex];
+		if (LeaderSample.Animation)
+		{
+			float PreviousAnimTime = PreviousSampleAnimTimes[ReferenceSampleIndex];
+			float CurrentAnimTime = SampleAnimTimes[ReferenceSampleIndex];
+			float AnimLength = ReferenceDuration;
+
+			// 루프 체크
+			bool bLooped = (CurrentAnimTime < PreviousAnimTime) && (AnimLength > 0.0f);
+
+			// 현재 프레임에서 활성화되어야 할 Notify 수집
+			TArray<const FAnimNotifyEvent*> CurrentFrameNotifies;
+
+			if (bLooped)
+			{
+				// 루프 시: 이전 시간 ~ 끝 + 0 ~ 현재 시간
+				LeaderSample.Animation->GetAnimNotifiesFromDeltaPositions(PreviousAnimTime, AnimLength, CurrentFrameNotifies);
+				LeaderSample.Animation->GetAnimNotifiesFromDeltaPositions(0.0f, CurrentAnimTime, CurrentFrameNotifies);
+			}
+			else
+			{
+				LeaderSample.Animation->GetAnimNotifiesFromDeltaPositions(PreviousAnimTime, CurrentAnimTime, CurrentFrameNotifies);
+			}
+
+			// 디버그: Notify 수집 결과
+			if (CurrentFrameNotifies.Num() > 0)
+			{
+				UE_LOG("BlendSpace2D: Update: Found %d notifies (PrevTime=%.3f, CurrTime=%.3f, Leader=%d)",
+					CurrentFrameNotifies.Num(), PreviousAnimTime, CurrentAnimTime, ReferenceSampleIndex);
+			}
+
+			// NewActiveAnimNotifyState 구축 (이번 프레임에 활성화될 NotifyState 목록)
+			TArray<FAnimNotifyEvent> NewActiveAnimNotifyState;
+			TArray<const FAnimNotifyEvent*> NotifyStateBeginEvents;
+			TArray<const FAnimNotifyEvent*> NotifyStateEndEvents;
+
+			for (const FAnimNotifyEvent* NotifyEvent : CurrentFrameNotifies)
+			{
+				if (!NotifyEvent)
+				{
+					continue;
+				}
+
+				if (NotifyEvent->Duration > 0.0f)
+				{
+					// NotifyState인 경우
+					float EndTime = NotifyEvent->TriggerTime + NotifyEvent->Duration;
+
+					// 현재 시간이 NotifyState 범위 내인지 확인
+					bool bIsActive = false;
+					if (bLooped)
+					{
+						bIsActive = (CurrentAnimTime >= NotifyEvent->TriggerTime && CurrentAnimTime <= EndTime) ||
+							(EndTime > AnimLength && CurrentAnimTime <= (EndTime - AnimLength));
+					}
+					else
+					{
+						bIsActive = (CurrentAnimTime >= NotifyEvent->TriggerTime && CurrentAnimTime <= EndTime);
+					}
+
+					if (bIsActive)
+					{
+						NewActiveAnimNotifyState.Add(*NotifyEvent);
+
+						// 이전 프레임에 활성 상태가 아니었으면 Begin
+						bool bWasActive = false;
+						for (const FAnimNotifyEvent& PrevNotify : ActiveAnimNotifyState)
+						{
+							if (PrevNotify.NotifyName == NotifyEvent->NotifyName &&
+								FMath::Abs(PrevNotify.TriggerTime - NotifyEvent->TriggerTime) < 0.001f)
+							{
+								bWasActive = true;
+								break;
+							}
+						}
+
+						if (!bWasActive)
+						{
+							NotifyStateBeginEvents.Add(NotifyEvent);
+						}
+					}
+				}
+				else
+				{
+					// 일반 Notify (Duration == 0) → 즉시 실행
+					UE_LOG("BlendSpace2D: Update: Triggering notify '%s' at time %.3f",
+						NotifyEvent->NotifyName.ToString().c_str(), NotifyEvent->TriggerTime);
+					OwnerAnimInstance->TriggerNotify(*NotifyEvent, OwnerMeshComp);
+				}
+			}
+
+			// NotifyState End 이벤트 감지
+			for (const FAnimNotifyEvent& PrevNotify : ActiveAnimNotifyState)
+			{
+				bool bStillActive = false;
+				for (const FAnimNotifyEvent& NewNotify : NewActiveAnimNotifyState)
+				{
+					if (NewNotify.NotifyName == PrevNotify.NotifyName &&
+						FMath::Abs(NewNotify.TriggerTime - PrevNotify.TriggerTime) < 0.001f)
+					{
+						bStillActive = true;
+						break;
+					}
+				}
+
+				if (!bStillActive)
+				{
+					NotifyStateEndEvents.Add(&PrevNotify);
+				}
+			}
+
+			// NotifyState Begin/Tick/End 트리거
+			for (const FAnimNotifyEvent* BeginNotify : NotifyStateBeginEvents)
+			{
+				OwnerAnimInstance->TriggerNotify(*BeginNotify, OwnerMeshComp);
+			}
+
+			// Tick은 현재 활성 상태인 모든 NotifyState에 대해 (필요시 구현)
+
+			for (const FAnimNotifyEvent* EndNotify : NotifyStateEndEvents)
+			{
+				// End 이벤트 트리거 (필요시 구현)
+			}
+
+			// 5. ActiveAnimNotifyState 업데이트
+			ActiveAnimNotifyState = NewActiveAnimNotifyState;
+		}
+	}
+
+	// 이전 Leader 인덱스 업데이트
+	PreviousLeaderIndex = ReferenceSampleIndex;
 
 	// 디버그: 시간 동기화 및 Leader 정보 확인
 	static int32 TimeLogCounter = 0;

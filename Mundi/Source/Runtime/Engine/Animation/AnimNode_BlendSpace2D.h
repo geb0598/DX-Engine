@@ -1,10 +1,13 @@
 #pragma once
 #include "PoseContext.h"
+#include "AnimationTypes.h"
 
 class UBlendSpace2D;
 class APawn;
 class ACharacter;
 class UCharacterMovementComponent;
+class UAnimInstance;
+class USkeletalMeshComponent;
 
 /**
  * @brief Blend Space 2D 실행 노드
@@ -23,8 +26,10 @@ public:
 	/**
 	 * @brief 노드 초기화
 	 * @param InPawn 소유 Pawn (Movement 정보 접근용)
+	 * @param InAnimInstance 소유 AnimInstance (Notify 트리거용)
+	 * @param InMeshComp 소유 SkeletalMeshComponent
 	 */
-	void Initialize(APawn* InPawn);
+	void Initialize(APawn* InPawn, UAnimInstance* InAnimInstance = nullptr, USkeletalMeshComponent* InMeshComp = nullptr);
 
 	/**
 	 * @brief BlendSpace 애셋 설정
@@ -85,6 +90,16 @@ private:
 	APawn* OwnerPawn;
 	ACharacter* OwnerCharacter;
 	UCharacterMovementComponent* MovementComponent;
+	UAnimInstance* OwnerAnimInstance;
+	USkeletalMeshComponent* OwnerMeshComp;
+
+	// ===== Notify 상태 =====
+	// 각 샘플의 이전 프레임 시간 (Notify 트리거용)
+	TArray<float> PreviousSampleAnimTimes;
+	// 현재 활성 NotifyState 목록
+	TArray<FAnimNotifyEvent> ActiveAnimNotifyState;
+	// 이전 Leader 인덱스 (Leader 변경 감지용)
+	int32 PreviousLeaderIndex;
 
 	// ===== 내부 헬퍼 =====
 

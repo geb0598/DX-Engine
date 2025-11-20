@@ -14,7 +14,7 @@
 
 FAnimNode_StateMachine::FAnimNode_StateMachine()
 	: StateMachineAsset(nullptr), OwnerPawn(nullptr)
-	  , OwnerAnimInstance(nullptr), ActiveNode(nullptr), PreviousNode(nullptr)
+	  , OwnerAnimInstance(nullptr), OwnerMeshComp(nullptr), ActiveNode(nullptr), PreviousNode(nullptr)
 	  , bIsInterruptedBlend(false), bIsTransitioning(false), TransitionAlpha(0)
 	  , CurrentTransitionDuration(0), CurrentAnimTime(0.0f), PreviousAnimTime(0.0f), PreviousFrameAnimTime(0.0f)
 	  , PreviousFrameTransitionAlpha(0.0f), bHasTriggeredFullyBlended(false)
@@ -29,7 +29,11 @@ void FAnimNode_StateMachine::Initialize(APawn* InPawn)
 	OwnerPawn = InPawn;
 	if (ACharacter* Character = Cast<ACharacter>(InPawn))
 	{
-		OwnerAnimInstance = Character->GetMesh()->GetAnimInstance();
+		OwnerMeshComp = Character->GetMesh();
+		if (OwnerMeshComp)
+		{
+			OwnerAnimInstance = OwnerMeshComp->GetAnimInstance();
+		}
 	}
 
 	if (StateMachineAsset)
@@ -424,7 +428,7 @@ void FAnimNode_StateMachine::TransitionTo(FName NewStateName, float BlendTime)
 	if (NextNode->AnimAssetType == EAnimAssetType::BlendSpace2D && NextNode->BlendSpaceAsset)
 	{
 		CurrentBlendSpaceNode.SetBlendSpace(NextNode->BlendSpaceAsset);
-		CurrentBlendSpaceNode.Initialize(OwnerPawn);
+		CurrentBlendSpaceNode.Initialize(OwnerPawn, OwnerAnimInstance, OwnerMeshComp);
 	}
 
 	// [Case 1: 인터럽트 발생] (이미 전환 중일 때)

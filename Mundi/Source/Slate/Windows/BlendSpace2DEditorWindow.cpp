@@ -1850,15 +1850,8 @@ void SBlendSpace2DEditorWindow::OnUpdate(float DeltaSeconds)
 						BlendNode->SetBlendSpace(EditingBlendSpace);
 						BlendNode->SetAutoCalculateParameter(false);  // 수동으로 파라미터 설정
 
-						// 첫 번째 유효한 샘플 애니메이션을 재생 (타임라인 표시용)
-						/*for (int32 i = 0; i < EditingBlendSpace->GetNumSamples(); ++i)
-						{
-							if (EditingBlendSpace->Samples[i].Animation)
-							{
-								AnimInst->PlayAnimation(EditingBlendSpace->Samples[i].Animation, PlaybackSpeed);
-								break;
-							}
-						}*/
+						// Initialize 호출하여 AnimInstance와 MeshComp 설정 (Notify 트리거링용)
+						BlendNode->Initialize(nullptr, AnimInst, SkelComp);
 					}
 
 					// 현재 PreviewParameter 설정

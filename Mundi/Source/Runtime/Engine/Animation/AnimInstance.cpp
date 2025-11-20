@@ -437,7 +437,8 @@ void UAnimInstance::SetBlendSpace2D(UBlendSpace2D* InBlendSpace)
 		APawn* OwnerPawn = Cast<APawn>(Owner);
 		if (OwnerPawn)
 		{
-			BlendSpace2DNode.Initialize(OwnerPawn);
+			// AnimInstance와 MeshComp 전달하여 Notify 트리거링 활성화
+			BlendSpace2DNode.Initialize(OwnerPawn, this, OwnerComponent);
 		}
 	}
 }

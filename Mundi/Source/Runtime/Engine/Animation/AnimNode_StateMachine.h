@@ -98,6 +98,9 @@ protected:
 	/** AnimInstance (데이터 접근용) */
 	UAnimInstance* OwnerAnimInstance;
 
+	/** SkeletalMeshComponent (Notify 트리거용) */
+	USkeletalMeshComponent* OwnerMeshComp;
+
 	// ===== 런타임 상태 =====
 
 	/** 현재 상태 이름 */
