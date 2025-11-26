@@ -33,7 +33,7 @@
             }, {
               "Lifetime" : {
                 "DistributionType" : "Uniform",
-                "Max" : 1.500000,
+                "Max" : 1.100000,
                 "Min" : 1.000000
               },
               "Type" : "UParticleModuleLifetime"
@@ -43,15 +43,15 @@
                 "DistributionType" : "Constant"
               },
               "StartColor" : {
-                "Constant" : [0.700000, 3.100000, 4.100000],
+                "Constant" : [1.000000, 1.000000, 1.000000],
                 "DistributionType" : "Constant"
               },
               "Type" : "UParticleModuleColor"
             }, {
               "StartVelocity" : {
                 "DistributionType" : "Uniform",
-                "Max" : [1.000000, 1.000000, 10.000000],
-                "Min" : [-1.000000, -1.000000, 10.000000]
+                "Max" : [1.000000, 1.000000, 7.000000],
+                "Min" : [-1.000000, -1.000000, 5.000000]
               },
               "StartVelocityRadial" : {
                 "Constant" : 0.000000,
