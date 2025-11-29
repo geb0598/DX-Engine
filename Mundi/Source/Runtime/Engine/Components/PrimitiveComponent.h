@@ -43,6 +43,7 @@ public:
     UPrimitiveComponent();
     virtual ~UPrimitiveComponent();
 
+    void OnPropertyChanged(const FProperty& Prop) override;
     void OnRegister(UWorld* InWorld) override;
     void OnUnregister() override;
     void OnTransformUpdated() override;

@@ -16,6 +16,20 @@ UPrimitiveComponent::~UPrimitiveComponent()
     //       OnUnregister가 항상 PrimitiveComponent에 소멸 이전의 호출되는지 확인 필요함
 }
 
+void UPrimitiveComponent::OnPropertyChanged(const FProperty& Prop)
+{
+    USceneComponent::OnPropertyChanged(Prop);
+
+    if (Prop.Name == "bSimulatePhysics")
+    {
+        if (BodyInstance.IsValidBodyInstance())
+        {
+            OnDestroyPhysicsState();
+            OnCreatePhysicsState();
+        }
+    }
+}
+
 void UPrimitiveComponent::OnRegister(UWorld* InWorld)
 {
     Super::OnRegister(InWorld);
