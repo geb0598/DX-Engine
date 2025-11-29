@@ -197,6 +197,7 @@ struct UStruct
 	void (*ArrayDuplicateAt)(void* ArrayPtr, int32 Index) = nullptr;  // 특정 인덱스 요소 복제
 	int32 (*ArrayNum)(void* ArrayPtr) = nullptr;          // 배열 크기 반환
 	void* (*ArrayGetData)(void* ArrayPtr) = nullptr;      // 데이터 포인터 반환
+	void (*ArrayClear)(void* ArrayPtr) = nullptr;         // 배열 전체 비우기 (O(1) or O(n))
 
 	constexpr UStruct() = default;
 	constexpr UStruct(const char* n, SIZE_T z) : Name(n), Size(z) {}
@@ -294,6 +295,9 @@ public:
 
     // 리플렉션 기반 자동 직렬화 (현재 클래스의 프로퍼티만 처리)
     virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle);
+
+    // 에디터에의해 프로퍼티가 변경되었을 때 수행해야 할 동작 정의
+    virtual void OnPropertyChanged(const FProperty& Prop);
 public:
     // GenerateUUID()에 의해 자동 발급
     uint32_t UUID;
