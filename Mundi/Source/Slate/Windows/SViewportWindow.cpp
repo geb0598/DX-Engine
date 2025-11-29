@@ -172,7 +172,7 @@ void SViewportWindow::OnUpdate(float DeltaSeconds)
 		SGameHUD::Get().Update(LastMousePos.X, LastMousePos.Y, bIsMouseDown);
 	}
 
-	ViewportClient->Tick(DeltaSeconds);
+	ViewportClient->Tick(Viewport, DeltaSeconds);
 }
 
 void SViewportWindow::OnMouseMove(FVector2D MousePos)
