@@ -8,6 +8,7 @@
  * 마찰/반발력 계산 시 두 물체의 값을 어떻게 섞을지 지정
  * PhysX의 PxCombineMode와 1:1 대응함
  */
+UENUM()
 enum class EFrictionCombineMode : uint8
 {
     Average  = 0, // (A + B) / 2

@@ -12,6 +12,7 @@ PxFoundation*            GPhysXFoundation = nullptr;
 PxPhysics*               GPhysXSDK = nullptr;
 PxCooking*               GPhysXCooking = nullptr;
 PxDefaultCpuDispatcher*  GPhysXDispatcher = nullptr;
+UPhysicalMaterial*       GPhysicalMaterial = nullptr;
 PxPvd*                   GPhysXVisualDebugger = nullptr;
 PxPvdTransport*          GPhysXPvdTransport = nullptr;
 FPhysXAllocator*         GPhysXAllocator= nullptr;
