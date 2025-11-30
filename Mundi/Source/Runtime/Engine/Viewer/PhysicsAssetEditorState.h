@@ -99,6 +99,9 @@ struct PhysicsAssetEditorState : public ViewerState
 	/** 제약 조건 삼각형 배치 (면 기반 시각화) */
 	FTrianglesBatch ConstraintTrianglesBatch;
 
+	/** 바디 삼각형 배치 (면 기반 시각화 - 충돌 형상) */
+	FTrianglesBatch BodyTrianglesBatch;
+
 	// ────────────────────────────────────────────────
 	// 헬퍼 메서드
 	// ────────────────────────────────────────────────

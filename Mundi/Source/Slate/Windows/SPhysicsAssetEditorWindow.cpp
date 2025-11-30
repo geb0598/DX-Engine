@@ -171,6 +171,296 @@ static void GenerateCapsuleLineCoordinates(
 }
 
 // ────────────────────────────────────────────────────────────────
+// Body Shape 면(삼각형) 기반 시각화 헬퍼 함수들
+// ────────────────────────────────────────────────────────────────
+
+/**
+ * Sphere Shape 면 기반 시각화 생성
+ * UV Sphere 방식으로 위도/경도 라인을 따라 삼각형 생성
+ */
+static void GenerateSphereMesh(
+	const FKSphereElem& Sphere,
+	const FTransform& BoneTransform,
+	const FVector4& Color,
+	TArray<FVector>& OutVertices,
+	TArray<uint32>& OutIndices,
+	TArray<FVector4>& OutColors)
+{
+	FVector Center = BoneTransform.Translation + BoneTransform.Rotation.RotateVector(Sphere.Center);
+	float Radius = Sphere.Radius;
+
+	constexpr int32 NumLatitude = 12;   // 위도 분할 수
+	constexpr int32 NumLongitude = 16;  // 경도 분할 수
+
+	uint32 BaseVertexIndex = static_cast<uint32>(OutVertices.size());
+
+	// 정점 생성 (북극 ~ 남극)
+	for (int32 lat = 0; lat <= NumLatitude; ++lat)
+	{
+		float theta = lat * M_PI / NumLatitude;  // 0 ~ PI
+		float sinTheta = sin(theta);
+		float cosTheta = cos(theta);
+
+		for (int32 lon = 0; lon <= NumLongitude; ++lon)
+		{
+			float phi = lon * 2.0f * M_PI / NumLongitude;  // 0 ~ 2*PI
+			float sinPhi = sin(phi);
+			float cosPhi = cos(phi);
+
+			FVector LocalPoint(
+				Radius * sinTheta * cosPhi,
+				Radius * sinTheta * sinPhi,
+				Radius * cosTheta
+			);
+
+			OutVertices.push_back(Center + LocalPoint);
+			OutColors.push_back(Color);
+		}
+	}
+
+	// 인덱스 생성 (삼각형 스트립)
+	for (int32 lat = 0; lat < NumLatitude; ++lat)
+	{
+		for (int32 lon = 0; lon < NumLongitude; ++lon)
+		{
+			uint32 Current = BaseVertexIndex + lat * (NumLongitude + 1) + lon;
+			uint32 Next = Current + NumLongitude + 1;
+
+			// 첫 번째 삼각형
+			OutIndices.push_back(Current);
+			OutIndices.push_back(Next);
+			OutIndices.push_back(Current + 1);
+
+			// 두 번째 삼각형
+			OutIndices.push_back(Current + 1);
+			OutIndices.push_back(Next);
+			OutIndices.push_back(Next + 1);
+		}
+	}
+}
+
+/**
+ * Box Shape 면 기반 시각화 생성
+ * 6개 면에 대해 각각 2개의 삼각형 생성
+ */
+static void GenerateBoxMesh(
+	const FKBoxElem& Box,
+	const FTransform& BoneTransform,
+	const FVector4& Color,
+	TArray<FVector>& OutVertices,
+	TArray<uint32>& OutIndices,
+	TArray<FVector4>& OutColors)
+{
+	FVector Center = BoneTransform.Translation + BoneTransform.Rotation.RotateVector(Box.Center);
+	FQuat Rotation = BoneTransform.Rotation * Box.Rotation;
+
+	// Box.X, Box.Y, Box.Z는 지름이므로 반으로 나눔
+	FVector HalfExtent(Box.X * 0.5f, Box.Y * 0.5f, Box.Z * 0.5f);
+
+	// 8개 코너 생성 (dx/dy/dz 패턴)
+	constexpr int dx[] = {-1, 1, 1, -1, -1, 1, 1, -1};
+	constexpr int dy[] = {-1, -1, 1, 1, -1, -1, 1, 1};
+	constexpr int dz[] = {-1, -1, -1, -1, 1, 1, 1, 1};
+
+	uint32 BaseVertexIndex = static_cast<uint32>(OutVertices.size());
+
+	// 8개 코너 정점 추가
+	for (int i = 0; i < 8; ++i)
+	{
+		FVector Corner = Center + Rotation.RotateVector(
+			FVector(HalfExtent.X * dx[i], HalfExtent.Y * dy[i], HalfExtent.Z * dz[i]));
+		OutVertices.push_back(Corner);
+		OutColors.push_back(Color);
+	}
+
+	// 6개 면에 대한 인덱스 (각 면 = 2개 삼각형)
+	// 면 순서: -Z, +Z, -Y, +Y, -X, +X
+	constexpr int Faces[6][4] = {
+		{0, 1, 2, 3},  // 하단 (-Z)
+		{4, 7, 6, 5},  // 상단 (+Z)
+		{0, 4, 5, 1},  // 전면 (-Y)
+		{2, 6, 7, 3},  // 후면 (+Y)
+		{0, 3, 7, 4},  // 좌측 (-X)
+		{1, 5, 6, 2}   // 우측 (+X)
+	};
+
+	for (const auto& Face : Faces)
+	{
+		// 삼각형 1
+		OutIndices.push_back(BaseVertexIndex + Face[0]);
+		OutIndices.push_back(BaseVertexIndex + Face[1]);
+		OutIndices.push_back(BaseVertexIndex + Face[2]);
+
+		// 삼각형 2
+		OutIndices.push_back(BaseVertexIndex + Face[0]);
+		OutIndices.push_back(BaseVertexIndex + Face[2]);
+		OutIndices.push_back(BaseVertexIndex + Face[3]);
+	}
+}
+
+/**
+ * Capsule(Sphyl) Shape 면 기반 시각화 생성
+ * 실린더 몸통 + 상단/하단 반구
+ */
+static void GenerateCapsuleMesh(
+	const FKSphylElem& Capsule,
+	const FTransform& BoneTransform,
+	const FVector4& Color,
+	TArray<FVector>& OutVertices,
+	TArray<uint32>& OutIndices,
+	TArray<FVector4>& OutColors)
+{
+	FVector Center = BoneTransform.Translation + BoneTransform.Rotation.RotateVector(Capsule.Center);
+	FQuat Rotation = BoneTransform.Rotation * Capsule.Rotation;
+
+	float HalfLength = Capsule.Length * 0.5f;
+	float Radius = Capsule.Radius;
+
+	constexpr int32 NumSegments = 16;  // 원주 분할 수
+	constexpr int32 NumRings = 6;      // 반구 링 수
+
+	uint32 BaseVertexIndex = static_cast<uint32>(OutVertices.size());
+
+	// 캡슐은 Z축 방향 (기존 엔진 규약)
+	// 상단 반구 (Z+ 방향)
+	for (int32 ring = 0; ring <= NumRings; ++ring)
+	{
+		float theta = (ring / static_cast<float>(NumRings)) * (M_PI * 0.5f);  // 0 ~ PI/2
+		float sinTheta = sin(theta);
+		float cosTheta = cos(theta);
+		float ringRadius = Radius * sinTheta;
+		float z = HalfLength + Radius * cosTheta;
+
+		for (int32 seg = 0; seg <= NumSegments; ++seg)
+		{
+			float phi = (seg / static_cast<float>(NumSegments)) * 2.0f * M_PI;
+			FVector LocalPoint(ringRadius * cos(phi), ringRadius * sin(phi), z);
+			FVector WorldPoint = Center + Rotation.RotateVector(LocalPoint);
+			OutVertices.push_back(WorldPoint);
+			OutColors.push_back(Color);
+		}
+	}
+
+	// 실린더 몸통 (상단 링 + 하단 링)
+	uint32 CylinderBaseIndex = static_cast<uint32>(OutVertices.size());
+	for (int32 i = 0; i <= 1; ++i)  // 상단, 하단
+	{
+		float z = (i == 0) ? HalfLength : -HalfLength;
+		for (int32 seg = 0; seg <= NumSegments; ++seg)
+		{
+			float phi = (seg / static_cast<float>(NumSegments)) * 2.0f * M_PI;
+			FVector LocalPoint(Radius * cos(phi), Radius * sin(phi), z);
+			FVector WorldPoint = Center + Rotation.RotateVector(LocalPoint);
+			OutVertices.push_back(WorldPoint);
+			OutColors.push_back(Color);
+		}
+	}
+
+	// 하단 반구 (Z- 방향)
+	uint32 BottomHemiBaseIndex = static_cast<uint32>(OutVertices.size());
+	for (int32 ring = 0; ring <= NumRings; ++ring)
+	{
+		float theta = (M_PI * 0.5f) + (ring / static_cast<float>(NumRings)) * (M_PI * 0.5f);  // PI/2 ~ PI
+		float sinTheta = sin(theta);
+		float cosTheta = cos(theta);
+		float ringRadius = Radius * sinTheta;
+		float z = -HalfLength + Radius * cosTheta;
+
+		for (int32 seg = 0; seg <= NumSegments; ++seg)
+		{
+			float phi = (seg / static_cast<float>(NumSegments)) * 2.0f * M_PI;
+			FVector LocalPoint(ringRadius * cos(phi), ringRadius * sin(phi), z);
+			FVector WorldPoint = Center + Rotation.RotateVector(LocalPoint);
+			OutVertices.push_back(WorldPoint);
+			OutColors.push_back(Color);
+		}
+	}
+
+	// 인덱스 생성 - 상단 반구
+	for (int32 ring = 0; ring < NumRings; ++ring)
+	{
+		for (int32 seg = 0; seg < NumSegments; ++seg)
+		{
+			uint32 Current = BaseVertexIndex + ring * (NumSegments + 1) + seg;
+			uint32 Next = Current + NumSegments + 1;
+
+			OutIndices.push_back(Current);
+			OutIndices.push_back(Next);
+			OutIndices.push_back(Current + 1);
+
+			OutIndices.push_back(Current + 1);
+			OutIndices.push_back(Next);
+			OutIndices.push_back(Next + 1);
+		}
+	}
+
+	// 인덱스 생성 - 실린더 몸통
+	for (int32 seg = 0; seg < NumSegments; ++seg)
+	{
+		uint32 TopCurrent = CylinderBaseIndex + seg;
+		uint32 BottomCurrent = CylinderBaseIndex + (NumSegments + 1) + seg;
+
+		OutIndices.push_back(TopCurrent);
+		OutIndices.push_back(BottomCurrent);
+		OutIndices.push_back(TopCurrent + 1);
+
+		OutIndices.push_back(TopCurrent + 1);
+		OutIndices.push_back(BottomCurrent);
+		OutIndices.push_back(BottomCurrent + 1);
+	}
+
+	// 인덱스 생성 - 하단 반구
+	for (int32 ring = 0; ring < NumRings; ++ring)
+	{
+		for (int32 seg = 0; seg < NumSegments; ++seg)
+		{
+			uint32 Current = BottomHemiBaseIndex + ring * (NumSegments + 1) + seg;
+			uint32 Next = Current + NumSegments + 1;
+
+			OutIndices.push_back(Current);
+			OutIndices.push_back(Next);
+			OutIndices.push_back(Current + 1);
+
+			OutIndices.push_back(Current + 1);
+			OutIndices.push_back(Next);
+			OutIndices.push_back(Next + 1);
+		}
+	}
+}
+
+/**
+ * UBodySetup의 모든 Shape에 대해 면 기반 메쉬 좌표 생성
+ */
+static void GenerateBodyShapeMeshCoordinates(
+	const UBodySetup* BodySetup,
+	const FTransform& BoneTransform,
+	const FVector4& Color,
+	TArray<FVector>& OutVertices,
+	TArray<uint32>& OutIndices,
+	TArray<FVector4>& OutColors)
+{
+	if (!BodySetup) return;
+
+	// Sphere shapes
+	for (const FKSphereElem& Sphere : BodySetup->AggGeom.SphereElems)
+	{
+		GenerateSphereMesh(Sphere, BoneTransform, Color, OutVertices, OutIndices, OutColors);
+	}
+
+	// Box shapes
+	for (const FKBoxElem& Box : BodySetup->AggGeom.BoxElems)
+	{
+		GenerateBoxMesh(Box, BoneTransform, Color, OutVertices, OutIndices, OutColors);
+	}
+
+	// Capsule shapes
+	for (const FKSphylElem& Capsule : BodySetup->AggGeom.SphylElems)
+	{
+		GenerateCapsuleMesh(Capsule, BoneTransform, Color, OutVertices, OutIndices, OutColors);
+	}
+}
+
+// ────────────────────────────────────────────────────────────────
 // Constraint 시각화 헬퍼 함수들
 // ────────────────────────────────────────────────────────────────
 
@@ -1436,18 +1726,21 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 	ULineComponent* ConstraintLineComp = State->ConstraintPreviewLineComponent;
 
 	// ─────────────────────────────────────────────────
-	// 바디 라인 재구성 (FLinesBatch 기반 - DOD)
+	// 바디 라인 + 메쉬 재구성 (FLinesBatch + FTrianglesBatch 기반 - DOD)
 	// ─────────────────────────────────────────────────
 	State->BodyLinesBatch.Clear();
+	State->BodyTrianglesBatch.Clear();
 	State->BodyLineRanges.Empty();
 	State->BodyLineRanges.SetNum(static_cast<int32>(State->EditingAsset->BodySetups.size()));
 
-	// 예상 라인 수 예약 (대략 바디당 40개 라인)
-	State->BodyLinesBatch.Reserve(static_cast<int32>(State->EditingAsset->BodySetups.size()) * 40);
+	// 예상 크기 예약
+	int32 NumBodies = static_cast<int32>(State->EditingAsset->BodySetups.size());
+	State->BodyLinesBatch.Reserve(NumBodies * 40);
+	State->BodyTrianglesBatch.Reserve(NumBodies * 200, NumBodies * 400);  // 메쉬용
 
 	USkeletalMeshComponent* MeshComp = State->GetPreviewMeshComponent();
 
-	for (int32 i = 0; i < static_cast<int32>(State->EditingAsset->BodySetups.size()); ++i)
+	for (int32 i = 0; i < NumBodies; ++i)
 	{
 		UBodySetup* Body = State->EditingAsset->BodySetups[i];
 		if (!Body) continue;
@@ -1457,9 +1750,13 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 		Range.StartIndex = State->BodyLinesBatch.Num();
 
 		// 선택된 바디는 다른 색상
-		FVector4 Color = (State->bBodySelectionMode && State->SelectedBodyIndex == i)
+		bool bSelected = (State->bBodySelectionMode && State->SelectedBodyIndex == i);
+		FVector4 LineColor = bSelected
 			? FVector4(0.0f, 1.0f, 0.0f, 1.0f)  // 선택: 녹색
 			: FVector4(0.0f, 0.5f, 1.0f, 1.0f); // 기본: 파랑
+		FVector4 MeshColor = bSelected
+			? FVector4(0.0f, 1.0f, 0.0f, 0.3f)  // 선택: 반투명 녹색
+			: FVector4(0.0f, 0.5f, 1.0f, 0.2f); // 기본: 반투명 파랑
 
 		// 본 트랜스폼 가져오기
 		FTransform BoneTransform;
@@ -1468,18 +1765,24 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 			BoneTransform = MeshComp->GetBoneWorldTransform(Body->BoneIndex);
 		}
 
-		// 헬퍼 함수로 좌표 생성 (AggGeom의 모든 Shape 처리)
+		// 헬퍼 함수로 라인 좌표 생성 (AggGeom의 모든 Shape 처리)
 		TArray<FVector> StartPoints, EndPoints;
 		GenerateBodyShapeLineCoordinates(Body, BoneTransform, StartPoints, EndPoints);
 
 		// FLinesBatch에 직접 추가 (NewObject 없음!)
 		for (int32 j = 0; j < StartPoints.Num(); ++j)
 		{
-			State->BodyLinesBatch.Add(StartPoints[j], EndPoints[j], Color);
+			State->BodyLinesBatch.Add(StartPoints[j], EndPoints[j], LineColor);
 		}
 
 		// 바디 라인 범위 종료
 		Range.Count = State->BodyLinesBatch.Num() - Range.StartIndex;
+
+		// 헬퍼 함수로 메쉬 좌표 생성 (AggGeom의 모든 Shape 처리)
+		GenerateBodyShapeMeshCoordinates(Body, BoneTransform, MeshColor,
+			State->BodyTrianglesBatch.Vertices,
+			State->BodyTrianglesBatch.Indices,
+			State->BodyTrianglesBatch.Colors);
 	}
 
 	// ULineComponent에 배치 데이터 설정
@@ -1487,6 +1790,7 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 	{
 		BodyLineComp->ClearLines();  // 기존 ULine 정리
 		BodyLineComp->SetDirectBatch(State->BodyLinesBatch);
+		BodyLineComp->SetTriangleBatch(State->BodyTrianglesBatch);  // 삼각형 배치 설정
 		BodyLineComp->SetLineVisible(State->bShowBodies);
 	}
 

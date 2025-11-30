@@ -1446,15 +1446,23 @@ void FSceneRenderer::RenderDebugPass()
 	}
 	OwnerRenderer->EndLineBatch(FMatrix::Identity());
 
-	// ULineComponent에서 삼각형 배치 수집 (constraint visualization 등)
+	// ULineComponent에서 삼각형 배치 수집 (일반 - 깊이 테스트 O)
 	for (ULineComponent* LineComponent : Proxies.EditorLines)
 	{
-		if (!LineComponent)
+		if (!LineComponent || LineComponent->IsAlwaysOnTop())
 			continue;
 
 		LineComponent->CollectTriangleBatches(OwnerRenderer);
 	}
 
+	// Always-on-top 삼각형 배치 수집 (깊이 테스트 X - 항상 앞에 표시)
+	for (ULineComponent* LineComponent : Proxies.EditorLines)
+	{
+		if (!LineComponent || !LineComponent->IsAlwaysOnTop())
+			continue;
+
+		LineComponent->CollectTriangleBatches(OwnerRenderer);
+	}
 
 	// Always-on-top lines (e.g., skeleton bones), regardless of grid flag
 	OwnerRenderer->BeginLineBatch();
