@@ -18,6 +18,7 @@
 #include "SkeletalMesh.h"
 #include "SkeletalMeshComponent.h"
 #include "Source/Runtime/Engine/Components/LineComponent.h"
+#include "Source/Runtime/Engine/Components/TriangleMeshComponent.h"
 #include "Source/Runtime/AssetManagement/Line.h"
 #include "Source/Runtime/AssetManagement/LinesBatch.h"
 #include "Source/Editor/PlatformProcess.h"
@@ -504,13 +505,13 @@ static void GenerateConstraintMeshVisualization(
 	TArray<FVector4>& OutColors,
 	FLinesBatch& OutLineBatch)
 {
-	// 색상 설정 (반투명)
+	// 색상 설정 (반투명) - Unreal Engine 스타일
 	FVector4 SwingColor = bSelected
-		? FVector4(0.0f, 1.0f, 0.5f, 0.4f)   // 선택: 밝은 초록
-		: FVector4(0.0f, 0.8f, 0.4f, 0.25f);  // 기본: 초록 (25% 투명)
+		? FVector4(0.0f, 1.0f, 0.0f, 0.5f)   // 선택: 밝은 초록
+		: FVector4(0.0f, 0.8f, 0.0f, 0.3f);  // 기본: 초록 (30% 투명)
 	FVector4 TwistColor = bSelected
-		? FVector4(0.5f, 0.5f, 1.0f, 0.4f)   // 선택: 밝은 파랑
-		: FVector4(0.3f, 0.3f, 0.8f, 0.25f);  // 기본: 파랑 (25% 투명)
+		? FVector4(1.0f, 0.3f, 0.3f, 0.5f)   // 선택: 밝은 빨강
+		: FVector4(1.0f, 0.0f, 0.0f, 0.3f);  // 기본: 빨강 (30% 투명)
 	FVector4 LineColor = bSelected
 		? FVector4(1.0f, 1.0f, 0.0f, 1.0f)   // 선택: 노랑
 		: FVector4(1.0f, 0.5f, 0.0f, 1.0f);  // 기본: 주황
@@ -1580,17 +1581,50 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 	ULineComponent* ConstraintLineComp = State->ConstraintPreviewLineComponent;
 
 	// ─────────────────────────────────────────────────
-	// 바디 라인 + 메쉬 재구성 (FLinesBatch + FTrianglesBatch 기반 - DOD)
+	// 바디 라인 + 메쉬 재구성
 	// ─────────────────────────────────────────────────
 	State->BodyLinesBatch.Clear();
-	State->BodyTrianglesBatch.Clear();
 	State->BodyLineRanges.Empty();
 	State->BodyLineRanges.SetNum(static_cast<int32>(State->EditingAsset->BodySetups.size()));
 
 	// 예상 크기 예약
 	int32 NumBodies = static_cast<int32>(State->EditingAsset->BodySetups.size());
 	State->BodyLinesBatch.Reserve(NumBodies * 40);
-	State->BodyTrianglesBatch.Reserve(NumBodies * 200, NumBodies * 400);  // 메쉬용
+
+	// 바디 메시 컴포넌트 배열 크기 조정
+	int32 CurrentSize = State->BodyMeshComponents.Num();
+
+	// 필요한 것보다 많으면 제거
+	while (State->BodyMeshComponents.Num() > NumBodies)
+	{
+		int32 LastIndex = State->BodyMeshComponents.Num() - 1;
+		UTriangleMeshComponent* MeshComp = State->BodyMeshComponents[LastIndex];
+		if (MeshComp)
+		{
+			MeshComp->UnregisterComponent();
+			if (State->PreviewActor)
+			{
+				State->PreviewActor->RemoveOwnedComponent(MeshComp);
+			}
+		}
+		State->BodyMeshComponents.RemoveAt(LastIndex);
+	}
+
+	// 부족하면 추가
+	while (State->BodyMeshComponents.Num() < NumBodies)
+	{
+		UTriangleMeshComponent* NewMeshComp = NewObject<UTriangleMeshComponent>();
+		NewMeshComp->SetMeshVisible(State->bShowBodies);
+		NewMeshComp->SetAlwaysOnTop(true);  // 편집을 위해 항상 위에 표시
+
+		if (State->PreviewActor)
+		{
+			State->PreviewActor->AddOwnedComponent(NewMeshComp);
+			NewMeshComp->RegisterComponent(State->World);
+		}
+
+		State->BodyMeshComponents.Add(NewMeshComp);
+	}
 
 	USkeletalMeshComponent* MeshComp = State->GetPreviewMeshComponent();
 
@@ -1609,8 +1643,8 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 			? FVector4(0.0f, 1.0f, 0.0f, 1.0f)  // 선택: 녹색
 			: FVector4(0.0f, 0.5f, 1.0f, 1.0f); // 기본: 파랑
 		FVector4 MeshColor = bSelected
-			? FVector4(0.0f, 1.0f, 0.0f, 0.3f)  // 선택: 반투명 녹색
-			: FVector4(0.0f, 0.5f, 1.0f, 0.2f); // 기본: 반투명 파랑
+			? FVector4(1.0f, 1.0f, 0.8f, 0.25f)  // 선택: 옅은 노란색 (25% 투명)
+			: FVector4(0.9f, 0.9f, 0.9f, 0.15f); // 기본: 옅은 흰색 (15% 투명)
 
 		// 본 트랜스폼 가져오기
 		FTransform BoneTransform;
@@ -1632,19 +1666,22 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 		// 바디 라인 범위 종료
 		Range.Count = State->BodyLinesBatch.Num() - Range.StartIndex;
 
-		// 헬퍼 함수로 메쉬 좌표 생성 (AggGeom의 모든 Shape 처리)
-		FPhysicsDebugUtils::GenerateBodyShapeMesh(Body, BoneTransform, MeshColor,
-			State->BodyTrianglesBatch.Vertices,
-			State->BodyTrianglesBatch.Indices,
-			State->BodyTrianglesBatch.Colors);
+		// 바디 메시 생성 (개별 TriangleMeshComponent에 설정)
+		if (State->BodyMeshComponents[i])
+		{
+			FTrianglesBatch MeshBatch;
+			FPhysicsDebugUtils::GenerateBodyShapeMesh(Body, BoneTransform, MeshColor,
+				MeshBatch.Vertices, MeshBatch.Indices, MeshBatch.Colors);
+
+			State->BodyMeshComponents[i]->SetMesh(MeshBatch);
+		}
 	}
 
-	// ULineComponent에 배치 데이터 설정
+	// ULineComponent에 배치 데이터 설정 (wireframe만)
 	if (BodyLineComp)
 	{
 		BodyLineComp->ClearLines();  // 기존 ULine 정리
 		BodyLineComp->SetDirectBatch(State->BodyLinesBatch);
-		BodyLineComp->SetTriangleBatch(State->BodyTrianglesBatch);  // 삼각형 배치 설정
 		BodyLineComp->SetLineVisible(State->bShowBodies);
 	}
 
@@ -1652,12 +1689,28 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 	// 제약 조건 시각화 재구성 (면 기반 + 라인)
 	// ─────────────────────────────────────────────────
 	State->ConstraintLinesBatch.Clear();
-	State->ConstraintTrianglesBatch.Clear();
+
+	// 제약조건 메시 컴포넌트 생성/초기화
+	if (!State->ConstraintMeshComponent)
+	{
+		State->ConstraintMeshComponent = NewObject<UTriangleMeshComponent>();
+		State->ConstraintMeshComponent->SetMeshVisible(State->bShowConstraints);
+		State->ConstraintMeshComponent->SetAlwaysOnTop(true);  // 편집을 위해 항상 위에 표시
+
+		if (State->PreviewActor)
+		{
+			State->PreviewActor->AddOwnedComponent(State->ConstraintMeshComponent);
+			State->ConstraintMeshComponent->RegisterComponent(State->World);
+		}
+	}
+
+	// 제약조건 메시 데이터 (모든 제약조건을 하나의 배치로)
+	FTrianglesBatch ConstraintMeshBatch;
 
 	// 예상 크기 예약
 	int32 NumConstraints = static_cast<int32>(State->EditingAsset->ConstraintSetups.size());
 	State->ConstraintLinesBatch.Reserve(NumConstraints * 10);  // 연결선 + 축 마커
-	State->ConstraintTrianglesBatch.Reserve(NumConstraints * 50, NumConstraints * 100);  // 원뿔 + 부채꼴
+	ConstraintMeshBatch.Reserve(NumConstraints * 50, NumConstraints * 100);  // 원뿔 + 부채꼴
 
 	for (int32 i = 0; i < NumConstraints; ++i)
 	{
@@ -1715,18 +1768,23 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 		// 면 기반 시각화 사용
 		GenerateConstraintMeshVisualization(
 			Constraint, ParentPos, ChildPos, JointRotation, bSelected,
-			State->ConstraintTrianglesBatch.Vertices,
-			State->ConstraintTrianglesBatch.Indices,
-			State->ConstraintTrianglesBatch.Colors,
+			ConstraintMeshBatch.Vertices,
+			ConstraintMeshBatch.Indices,
+			ConstraintMeshBatch.Colors,
 			State->ConstraintLinesBatch);
 	}
 
-	// ULineComponent에 라인 배치 데이터 설정 (연결선 + 축 마커)
+	// 제약조건 메시 컴포넌트에 데이터 설정
+	if (State->ConstraintMeshComponent)
+	{
+		State->ConstraintMeshComponent->SetMesh(ConstraintMeshBatch);
+	}
+
+	// ULineComponent에 라인 배치 데이터 설정 (연결선 + 축 마커만)
 	if (ConstraintLineComp)
 	{
 		ConstraintLineComp->ClearLines();  // 기존 ULine 정리
 		ConstraintLineComp->SetDirectBatch(State->ConstraintLinesBatch);
-		ConstraintLineComp->SetTriangleBatch(State->ConstraintTrianglesBatch);  // 삼각형 배치도 설정
 		ConstraintLineComp->SetLineVisible(State->bShowConstraints);
 	}
 }
@@ -1761,10 +1819,27 @@ void SPhysicsAssetEditorWindow::UpdateSelectedBodyLines()
 		State->BodyLinesBatch.SetLine(Range.StartIndex + i, StartPoints[i], EndPoints[i]);
 	}
 
-	// ULineComponent에 갱신된 배치 데이터 재설정
+	// ULineComponent에 갱신된 배치 데이터 재설정 (wireframe)
 	if (ULineComponent* BodyLineComp = State->BodyPreviewLineComponent)
 	{
 		BodyLineComp->SetDirectBatch(State->BodyLinesBatch);
+	}
+
+	// 선택된 바디의 메시 컴포넌트 업데이트 (solid mesh)
+	if (State->SelectedBodyIndex < State->BodyMeshComponents.Num())
+	{
+		UTriangleMeshComponent* MeshComp = State->BodyMeshComponents[State->SelectedBodyIndex];
+		if (MeshComp)
+		{
+			// 선택된 바디는 옅은 노란색
+			FVector4 MeshColor(1.0f, 1.0f, 0.8f, 0.25f);
+
+			FTrianglesBatch MeshBatch;
+			FPhysicsDebugUtils::GenerateBodyShapeMesh(Body, BoneTransform, MeshColor,
+				MeshBatch.Vertices, MeshBatch.Indices, MeshBatch.Colors);
+
+			MeshComp->SetMesh(MeshBatch);
+		}
 	}
 }
 
@@ -1781,14 +1856,38 @@ void SPhysicsAssetEditorWindow::UpdateSelectionColors()
 	bool bBodyBatchDirty = false;
 	bool bConstraintBatchDirty = false;
 
-	// 헬퍼 람다: 특정 바디의 라인 색상 업데이트 (FLinesBatch 기반)
-	auto UpdateBodyColor = [&](int32 BodyIndex, const FVector4& Color)
+	// 헬퍼 람다: 특정 바디의 라인 및 메시 색상 업데이트
+	auto UpdateBodyColor = [&](int32 BodyIndex, const FVector4& LineColor, const FVector4& MeshColor)
 	{
+		// 라인 색상 업데이트
 		if (BodyIndex >= 0 && BodyIndex < State->BodyLineRanges.Num())
 		{
 			const PhysicsAssetEditorState::FBodyLineRange& Range = State->BodyLineRanges[BodyIndex];
-			State->BodyLinesBatch.SetColorRange(Range.StartIndex, Range.Count, Color);
+			State->BodyLinesBatch.SetColorRange(Range.StartIndex, Range.Count, LineColor);
 			bBodyBatchDirty = true;
+		}
+
+		// 메시 색상 업데이트 (메시 재생성 필요)
+		if (BodyIndex >= 0 && BodyIndex < State->BodyMeshComponents.Num() &&
+			BodyIndex < static_cast<int32>(State->EditingAsset->BodySetups.size()))
+		{
+			UTriangleMeshComponent* MeshComp = State->BodyMeshComponents[BodyIndex];
+			UBodySetup* Body = State->EditingAsset->BodySetups[BodyIndex];
+			if (MeshComp && Body)
+			{
+				FTransform BoneTransform;
+				USkeletalMeshComponent* SkeletalMeshComp = State->GetPreviewMeshComponent();
+				if (SkeletalMeshComp && Body->BoneIndex >= 0)
+				{
+					BoneTransform = SkeletalMeshComp->GetBoneWorldTransform(Body->BoneIndex);
+				}
+
+				FTrianglesBatch MeshBatch;
+				FPhysicsDebugUtils::GenerateBodyShapeMesh(Body, BoneTransform, MeshColor,
+					MeshBatch.Vertices, MeshBatch.Indices, MeshBatch.Colors);
+
+				MeshComp->SetMesh(MeshBatch);
+			}
 		}
 	};
 
@@ -1806,12 +1905,14 @@ void SPhysicsAssetEditorWindow::UpdateSelectionColors()
 	if (State->CachedSelectedBodyIndex != State->SelectedBodyIndex)
 	{
 		// 이전에 선택된 바디를 일반 색상으로
-		UpdateBodyColor(State->CachedSelectedBodyIndex, NormalColor);
+		FVector4 NormalMeshColor(0.9f, 0.9f, 0.9f, 0.15f);  // 옅은 흰색
+		UpdateBodyColor(State->CachedSelectedBodyIndex, NormalColor, NormalMeshColor);
 
 		// 새로 선택된 바디를 선택 색상으로 (바디 선택 모드일 때만)
 		if (State->bBodySelectionMode)
 		{
-			UpdateBodyColor(State->SelectedBodyIndex, SelectedColor);
+			FVector4 SelectedMeshColor(1.0f, 1.0f, 0.8f, 0.25f);  // 옅은 노란색
+			UpdateBodyColor(State->SelectedBodyIndex, SelectedColor, SelectedMeshColor);
 		}
 	}
 
