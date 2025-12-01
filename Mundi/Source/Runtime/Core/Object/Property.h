@@ -18,6 +18,7 @@ enum class EPropertyType : uint8
 	SkeletalMesh,
 	StaticMesh,     // UStaticMesh* 타입 (리소스 선택 UI)
 	Material,		// UMaterial* 타입 (리소스 선택 UI)
+	PhysicalMaterial,
 	Array,			// TArray<T> - InnerType으로 T 지정
 	Map,			// TMap<K, V> - KeyType으로 K, InnerType으로 V 지정
 	SRV,
@@ -27,6 +28,7 @@ enum class EPropertyType : uint8
 	UClass,         // UClass* 타입 (클래스 선택 UI)
 	Enum,           // enum class 타입 (콤보박스 UI)
 	ParticleSystem, // UParticleSystem* 타입 (파티클 시스템 선택 UI)
+	PhysicsAsset,   // UPhysicsAsset* 타입 (물리 에셋 선택 UI)
 	DistributionFloat,   // FDistributionFloat 타입 (파티클 Distribution)
 	DistributionVector,  // FDistributionVector 타입 (파티클 Distribution)
 	DistributionColor,   // FDistributionColor 타입 (파티클 Distribution)

@@ -43,6 +43,7 @@
 #include <chrono>
 #include "TileLightCuller.h"
 #include "LineComponent.h"
+#include "TriangleMeshComponent.h"
 #include "LightStats.h"
 #include "ShadowStats.h"
 #include "PlatformTime.h"
@@ -750,7 +751,7 @@ void FSceneRenderer::GatherVisibleProxies()
 					{
 						Proxies.OverlayPrimitives.Add(GizmoComponent);
 					}
-					else if (ULineComponent* LineComponent = Cast<ULineComponent>(Component))
+							else if (ULineComponent* LineComponent = Cast<ULineComponent>(Component))
 					{
 						Proxies.EditorLines.Add(LineComponent);
 					}
@@ -802,9 +803,13 @@ void FSceneRenderer::GatherVisibleProxies()
 					{
 						Proxies.ParticleSystems.Add(ParticleSystemComponent);
 					}
-					else if (ULineComponent* LineComponent = Cast<ULineComponent>(PrimitiveComponent))
+						else if (ULineComponent* LineComponent = Cast<ULineComponent>(PrimitiveComponent))
 					{
 						Proxies.EditorLines.Add(LineComponent);
+					}
+					else if (UTriangleMeshComponent* MeshComp = Cast<UTriangleMeshComponent>(PrimitiveComponent))
+					{
+						Proxies.EditorMeshes.Add(MeshComp);
 					}
 				}
 				else
@@ -1469,15 +1474,23 @@ void FSceneRenderer::RenderDebugPass()
 	}
 	OwnerRenderer->EndLineBatch(FMatrix::Identity());
 
-	// ULineComponent에서 삼각형 배치 수집 (constraint visualization 등)
-	for (ULineComponent* LineComponent : Proxies.EditorLines)
+	// UTriangleMeshComponent에서 삼각형 배치 수집 (일반 - 깊이 테스트 O)
+	for (UTriangleMeshComponent* MeshComp : Proxies.EditorMeshes)
 	{
-		if (!LineComponent)
+		if (!MeshComp || MeshComp->IsAlwaysOnTop())
 			continue;
 
-		LineComponent->CollectTriangleBatches(OwnerRenderer);
+		MeshComp->CollectBatches(OwnerRenderer);
 	}
 
+	// Always-on-top 삼각형 배치 수집 (깊이 테스트 X - 항상 앞에 표시)
+	for (UTriangleMeshComponent* MeshComp : Proxies.EditorMeshes)
+	{
+		if (!MeshComp || !MeshComp->IsAlwaysOnTop())
+			continue;
+
+		MeshComp->CollectBatches(OwnerRenderer);
+	}
 
 	// Always-on-top lines (e.g., skeleton bones), regardless of grid flag
 	OwnerRenderer->BeginLineBatch();

@@ -12,6 +12,8 @@ struct FBodyInstance;
 struct FConstraintInstance;
 class FPhysScene;
 
+namespace physx { class PxAggregate; }
+
 UCLASS(DisplayName="스켈레탈 메시 컴포넌트", Description="스켈레탈 메시를 렌더링하는 컴포넌트입니다")
 class USkeletalMeshComponent : public USkinnedMeshComponent
 {
@@ -23,7 +25,20 @@ public:
 
     void TickComponent(float DeltaTime) override;
     void SetSkeletalMesh(const FString& PathFileName) override;
+    void DuplicateSubObjects() override;
 
+    // PhysicsAsset 디버그 시각화
+    void RenderDebugVolume(URenderer* Renderer) const override;
+
+    // 물리 상태 관리 (UPrimitiveComponent 오버라이드)
+    void OnCreatePhysicsState() override;
+    void OnDestroyPhysicsState() override;
+
+    // 프로퍼티 변경 시 물리 상태 재생성
+    void OnPropertyChanged(const FProperty& Prop) override;
+
+    // 트랜스폼 변경 시 물리 바디 동기화
+    void OnUpdateTransform(EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport = ETeleportType::None) override;
     // Animation Integration
 public:
     void SetAnimInstance(class UAnimInstance* InInstance);
@@ -225,10 +240,6 @@ public:
     UPROPERTY(EditAnywhere, Category="[피직스 에셋]")
     UPhysicsAsset* PhysicsAsset = nullptr;
 
-    /** 물리 시뮬레이션 활성화 여부 */
-    UPROPERTY(EditAnywhere, Category="[피직스]")
-    bool bSimulatePhysics = false;
-
     /** 본별 바디 인스턴스 (BoneIndex -> FBodyInstance) */
     TArray<FBodyInstance*> Bodies;
 
@@ -240,4 +251,7 @@ public:
 
     /** 물리 씬 참조 */
     FPhysScene* PhysScene = nullptr;
+
+    /** PhysX Aggregate (랙돌 내 자체 충돌 비활성화용) */
+    physx::PxAggregate* Aggregate = nullptr;
 };

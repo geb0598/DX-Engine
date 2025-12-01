@@ -51,9 +51,11 @@ enum class EResourceType : uint8
     Shader,
     Texture,
     Material,
+    PhysicalMaterial,
     Sound,
     Animation,
     ParticleSystem,
+    PhysicsAsset,
 
     End
 };
@@ -270,6 +272,7 @@ enum class EViewerType : uint8
     BlendSpace,
     Particle,
     PhysicsAsset,
+    PhysicalMaterial,
 
     End,
 };

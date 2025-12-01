@@ -4,6 +4,29 @@
 #include "BodyInstance.h"
 #include "PrimitiveComponent.h"
 
+// 커스텀 Simulation Filter Shader
+// 랙돌 내 자체 충돌은 PxAggregate(selfCollision=false)로 처리
+PxFilterFlags CustomFilterShader(
+    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
+{
+    // 트리거 처리
+    if (PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1))
+    {
+        pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
+        return PxFilterFlag::eDEFAULT;
+    }
+
+    // 기본 충돌 처리
+    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+
+    // CCD 활성화
+    pairFlags |= PxPairFlag::eDETECT_CCD_CONTACT;
+
+    return PxFilterFlag::eDEFAULT;
+}
+
 FPhysScene::FPhysScene(UWorld* InOwningWorld)
     : PhysXScene(nullptr)
     , OwningWorld(InOwningWorld)
@@ -53,7 +76,7 @@ void FPhysScene::InitPhysScene()
         UE_LOG("[PhysX Error] PhysX Dispatcher가 초기화되지 않았습니다.");
     }
     SceneDesc.cpuDispatcher = GPhysXDispatcher;
-    SceneDesc.filterShader = PxDefaultSimulationFilterShader;
+    SceneDesc.filterShader = CustomFilterShader;
 
     SceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
     SceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
@@ -145,6 +168,12 @@ void FPhysScene::SyncComponentsToBodies()
         // BodyInstance 유효성 검사: RigidActor가 일치하는지 확인
         // (정리 중인 바디이거나 잘못된 포인터인 경우 방지)
         if (!BodyInstance->IsValidBodyInstance() || BodyInstance->RigidActor != RigidActor)
+        {
+            continue;
+        }
+
+        // 랙돌 바디는 SyncBonesFromPhysics()에서 별도 처리됨
+        if (BodyInstance->bIsRagdollBody)
         {
             continue;
         }

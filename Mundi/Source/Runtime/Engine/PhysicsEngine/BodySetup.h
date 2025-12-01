@@ -1,8 +1,9 @@
-#pragma once
+﻿#pragma once
 
 #include "AggregateGeom.h"
 #include "UBodySetup.generated.h"
 
+class UPhysicalMaterial;
 struct FBodyInstance;
 
 UCLASS()
@@ -30,17 +31,19 @@ public:
 	// 충돌 형상
 	// ====================================================================
 
-	/** 단순화된 충돌 표현 */
+	/** 단순화된 충돌 표현 (Shape 편집은 별도 UI에서 처리) */
 	UPROPERTY()
 	FKAggregateGeom AggGeom;
 
     /** 밀도, 마찰 등과 관련된 정보를 포함하는 물리 재질 */
-    PxMaterial* PhysMaterial;
+	UPROPERTY(EditAnywhere, Category="Physics")
+	UPhysicalMaterial* PhysicalMaterial;
 
     void AddShapesToRigidActor_AssumesLocked(
         FBodyInstance* OwningInstance,
         const FVector& Scale3D,
-        PxRigidActor* PDestActor);
+        PxRigidActor* PDestActor,
+        UPhysicalMaterial* InPhysicalMaterial);
 
     /** 테스트용 함수 (박스 추가) */
     void AddBoxTest(const FVector& Extent);
@@ -50,4 +53,14 @@ public:
 
 	/** 테스트용 함수 (캡슐 추가) */
 	void AddCapsuleTest(float Radius, float Length);
+
+	// ====================================================================
+	// 직렬화
+	// ====================================================================
+
+	/** 직렬화 - UPROPERTY는 자동, AggGeom은 수동 처리 */
+	virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
+
+	/** 서브 객체 복제 */
+	virtual void DuplicateSubObjects() override;
 };

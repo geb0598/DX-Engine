@@ -21,14 +21,18 @@ struct FBodyInstance
      * @param Transform     월드 트랜스폼
      * @param Component     바디를 소유한 컴포넌트
      * @param InRBScene     바디가 속할 물리 씬
+     * @param InAggregate   Aggregate (nullptr이면 Scene에 직접 추가, 아니면 Aggregate에 추가)
      */
-    void InitBody(UBodySetup* Setup, const FTransform& Transform, UPrimitiveComponent* Component, FPhysScene* InRBScene);
+    void InitBody(UBodySetup* Setup, const FTransform& Transform, UPrimitiveComponent* Component, FPhysScene* InRBScene, physx::PxAggregate* InAggregate = nullptr);
 
     /** 바디를 씬에서 제거하고 자원을 해제한다. */
     void TermBody();
 
     /** 물리 바디로부터 현재 월드 공간 트랜스폼을 가져온다. */
     FTransform GetUnrealWorldTransform() const;
+
+    /** 바디 인스턴스에서 사용되는 물리 머티리얼을 가져온다. */
+    UPhysicalMaterial* GetSimplePhysicalMaterial() const;
 
     /**
      * 물리 바디의 위치를 강제로 설정 (텔레포트)
@@ -71,6 +75,9 @@ public:
     /** 충돌체 정보를 가지고있는 바디 설정 */
     UBodySetup* BodySetup;
 
+    /** 바디의 물리 머티리얼 대신에 사용할 머티리얼 */
+    UPhysicalMaterial* PhysicalMaterialOverride;
+
     /** 바디를 소유하고 있는 물리 씬 */
     FPhysScene* PhysScene;
 
@@ -94,4 +101,10 @@ public:
 
     /** True일 경우, MassInKgOverride를 사용 */
     bool bOverrideMass;
+
+    /** 이 바디가 속한 Aggregate (nullptr이면 Scene에 직접 추가됨) */
+    physx::PxAggregate* OwningAggregate = nullptr;
+
+    /** True일 경우, 랙돌 바디 (SyncComponentsToBodies에서 제외됨) */
+    bool bIsRagdollBody = false;
 };
