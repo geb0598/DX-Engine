@@ -10,6 +10,7 @@
 #include "JsonSerializer.h"
 #include "World.h"
 #include "PrimitiveComponent.h"
+#include"SkeletalMeshComponent.h"
 #include "GameObject.h"
 
 	/*BEGIN_PROPERTIES(AActor)
@@ -64,6 +65,11 @@ void AActor::Tick(float DeltaSeconds)
 	{
 		if (Comp && Comp->IsComponentTickEnabled())
 		{
+			USkeletalMeshComponent* SkekeletalComponent = Cast<USkeletalMeshComponent>(Comp);
+			if (SkekeletalComponent) {
+				SkekeletalComponent->TickComponent(DeltaSeconds);
+				continue;
+			}
 			// 에디터 모드일 때 컴포넌트별 bTickInEditor 체크 (Preview World 포함)
 			bool bShouldTick = World->bPie || Comp->CanTickInEditor() || World->IsPreviewWorld();
 

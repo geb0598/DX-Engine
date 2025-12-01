@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "BodyInstance.h"
 #include "BodySetup.h"
 #include "PhysScene.h"
@@ -160,7 +160,9 @@ FTransform FBodyInstance::GetUnrealWorldTransform() const
     if (IsValidBodyInstance())
     {
         PxTransform PhysicsTransform = RigidActor->getGlobalPose();
-        return P2UTransform(PhysicsTransform);
+        FTransform Result = P2UTransform(PhysicsTransform);
+        Result.Scale3D = Scale3D;  // 저장된 스케일 복원
+        return Result;
     }
     return FTransform();
 }

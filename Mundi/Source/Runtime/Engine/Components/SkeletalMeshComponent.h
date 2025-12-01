@@ -33,6 +33,9 @@ public:
 
     // 프로퍼티 변경 시 물리 상태 재생성
     void OnPropertyChanged(const FProperty& Prop) override;
+
+    // 트랜스폼 변경 시 물리 바디 동기화
+    void OnUpdateTransform(EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport = ETeleportType::None) override;
     // Animation Integration
 public:
     void SetAnimInstance(class UAnimInstance* InInstance);
@@ -245,4 +248,7 @@ public:
 
     /** 물리 씬 참조 */
     FPhysScene* PhysScene = nullptr;
+
+    /** PhysX Aggregate (랙돌 내 자체 충돌 비활성화용) */
+    physx::PxAggregate* Aggregate = nullptr;
 };

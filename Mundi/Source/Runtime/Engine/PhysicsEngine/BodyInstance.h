@@ -94,4 +94,7 @@ public:
 
     /** True일 경우, MassInKgOverride를 사용 */
     bool bOverrideMass;
+
+    /** 랙돌 ID (같은 랙돌 내 바디끼리 충돌 방지용, 0이면 일반 오브젝트) */
+    uint32 RagdollId = 0;
 };

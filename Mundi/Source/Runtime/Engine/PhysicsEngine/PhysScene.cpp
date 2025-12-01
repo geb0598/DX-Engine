@@ -4,6 +4,44 @@
 #include "BodyInstance.h"
 #include "PrimitiveComponent.h"
 
+// 커스텀 Simulation Filter Shader
+// FilterData.word0: 충돌 그룹 (같은 랙돌은 같은 값)
+// FilterData.word1: 충돌 마스크
+// FilterData.word2: 랙돌 ID (0이면 일반 오브젝트, 0이 아니면 랙돌)
+PxFilterFlags RagdollFilterShader(
+    PxFilterObjectAttributes attributes0, PxFilterData filterData0,
+    PxFilterObjectAttributes attributes1, PxFilterData filterData1,
+    PxPairFlags& pairFlags, const void* constantBlock, PxU32 constantBlockSize)
+{
+    // 트리거 처리
+    if (PxFilterObjectIsTrigger(attributes0) || PxFilterObjectIsTrigger(attributes1))
+    {
+        pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
+        return PxFilterFlag::eDEFAULT;
+    }
+
+    // 둘 다 랙돌이고 같은 랙돌 ID를 가지면 충돌 무시
+    if (filterData0.word2 != 0 && filterData0.word2 == filterData1.word2)
+    {
+        UE_LOG("[Filter] SUPPRESS: word2=%u == %u", filterData0.word2, filterData1.word2);
+        return PxFilterFlag::eSUPPRESS;
+    }
+
+    // 디버그: 충돌 발생 시 로그
+    if (filterData0.word2 != 0 || filterData1.word2 != 0)
+    {
+        UE_LOG("[Filter] COLLIDE: word2=%u vs %u", filterData0.word2, filterData1.word2);
+    }
+
+    // 기본 충돌 처리
+    pairFlags = PxPairFlag::eCONTACT_DEFAULT;
+
+    // CCD 활성화
+    pairFlags |= PxPairFlag::eDETECT_CCD_CONTACT;
+
+    return PxFilterFlag::eDEFAULT;
+}
+
 FPhysScene::FPhysScene(UWorld* InOwningWorld)
     : PhysXScene(nullptr)
     , OwningWorld(InOwningWorld)
@@ -53,7 +91,7 @@ void FPhysScene::InitPhysScene()
         UE_LOG("[PhysX Error] PhysX Dispatcher가 초기화되지 않았습니다.");
     }
     SceneDesc.cpuDispatcher = GPhysXDispatcher;
-    SceneDesc.filterShader = PxDefaultSimulationFilterShader;
+    SceneDesc.filterShader = RagdollFilterShader;
 
     SceneDesc.flags |= PxSceneFlag::eENABLE_PCM;
     SceneDesc.flags |= PxSceneFlag::eENABLE_STABILIZATION;
