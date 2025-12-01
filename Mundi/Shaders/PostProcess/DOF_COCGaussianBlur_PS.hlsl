@@ -55,33 +55,100 @@ float GetGaussian(float dis)
     return exp(-dis * dis / (2 * Weight * Weight));
 }
 
+//float4 mainPS(PS_INPUT input) : SV_Target
+//{
+//    uint TexWidth, TexHeight;
+//    g_COCTex.GetDimensions(TexWidth, TexHeight);
+//    float2 uv = float2(input.position.x / TexWidth, input.position.y / TexHeight);
+//    float2 InvTexSize = float2(1.0f / TexWidth, 1.0f / TexHeight);
+//    float2 TotalCOCR = float2(0, 0);
+//    float TotalGaussian = 0;
+    
+//    float2 UVDir = float2(InvTexSize.x, 0);
+//    if (bHorizontal == 0)
+//    {
+//        UVDir = float2(0, InvTexSize.y);
+//    }
+    
+//    int halfRange = Range / 2;
+
+//    //앞에있는건 뒤로만 퍼질 수 있다.
+//    //r은 클수록 앞에있음
+//    //g는 작을수록 앞에있음
+    
+//    //2가지 방법
+//    //1. 가우시안 각 샘플마다 r은 클경우만 블러에 추가
+//    //2. 가우시안 최종 결과가 r이 클 경우만 교체
+    
+//    float3 FinalColor = float3(0, 0, 0);
+//    for (int i = -halfRange; i <= halfRange; ++i)
+//    {
+//        float CurGaussian = GetGaussian(i);
+//        float2 CurUV = uv + UVDir * i;
+//        float3 CurCOC = g_COCTex.Sample(g_PointClampSample, CurUV).rgb;
+//        TotalGaussian += CurGaussian;
+//        TotalCOCR += CurCOC.rg * CurGaussian;
+//    }
+    
+//    FinalColor.rg = TotalCOCR / TotalGaussian;
+//    return float4(FinalColor.rgb, 1);
+//}
+
+
 float4 mainPS(PS_INPUT input) : SV_Target
 {
     uint TexWidth, TexHeight;
     g_COCTex.GetDimensions(TexWidth, TexHeight);
     float2 uv = float2(input.position.x / TexWidth, input.position.y / TexHeight);
     float2 InvTexSize = float2(1.0f / TexWidth, 1.0f / TexHeight);
-    float2 TotalCOCR = float2(0, 0);
-    float TotalGaussian = 0;
+   
+    float TotalCOC_R = 0;
+    float TotalGaussian_R = 0;
+    float TotalCOC_G = 0;
+    float TotalGaussian_G = 0;
     
     float2 UVDir = float2(InvTexSize.x, 0);
-    if(bHorizontal == 0)
+    if (bHorizontal == 0)
     {
         UVDir = float2(0, InvTexSize.y);
     }
     
     int halfRange = Range / 2;
 
-    float3 FinalColor = float3(0, 0, 0);
+    //앞에있는건 뒤로만 퍼질 수 있다.
+    //r은 클수록 앞에있음
+    //g는 작을수록 앞에있음
+    
+    //2가지 방법
+    //1. 가우시안 각 샘플마다 r은 클경우만 블러에 추가
+    //2. 가우시안 최종 결과가 r이 클경우만 교체
+    float3 COC = g_COCTex.Sample(g_LinearClampSample, uv).rgb;
+
     for (int i = -halfRange; i <= halfRange; ++i)
     {
         float CurGaussian = GetGaussian(i);
-        float2 CurUV = uv + UVDir * i;
-        float3 CurCOC = g_COCTex.Sample(g_PointClampSample, CurUV).rgb;
-        TotalGaussian += CurGaussian;
-        TotalCOCR += CurCOC.rg * CurGaussian;
+        float2 CurUV = uv + UVDir * i * COCSize;
+        float3 CurCOC = g_COCTex.Sample(g_LinearClampSample, CurUV).rgb;
+        //if (COC.r <= CurCOC.r)
+        //{
+        //    TotalCOC_R += CurCOC.r * CurGaussian;
+        //    TotalGaussian_R += CurGaussian;
+        //}
+        //if (COC.g >= CurCOC.g)
+        //{
+        //    TotalCOC_G += CurCOC.g * CurGaussian;
+        //    TotalGaussian_G += CurGaussian;
+        //}
+        TotalCOC_R += CurCOC.r * CurGaussian;
+        TotalGaussian_R += CurGaussian;
+        TotalCOC_G += CurCOC.g * CurGaussian;
+        TotalGaussian_G += CurGaussian;
     }
-    
-    FinalColor.rg = TotalCOCR / TotalGaussian;
+    float3 FinalColor = float3(0, 0, 0);
+    FinalColor.g = TotalCOC_G / TotalGaussian_G;
+    FinalColor.r =  TotalCOC_R / TotalGaussian_R;
+    return float4(FinalColor.r, COC.gb, 1);
+    //return float4(COC, 1);
     return float4(FinalColor.rgb, 1);
 }
+

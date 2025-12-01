@@ -82,7 +82,7 @@ float4 mainPS(PS_INPUT input) : SV_Target
         for (int i = -halfRange; i <= halfRange; ++i)
         {
             float CurGaussian = GetGaussian(i * COC.r);
-            float2 CurUV = uv + UVDir * i * COC.r;
+            float2 CurUV = uv + UVDir * i * COC.r * COCSize;
             float2 CurCOC = g_COCTex.Sample(g_LinearClampSample, CurUV).rg;
             if (CurCOC.r > 0)
             {
@@ -97,7 +97,7 @@ float4 mainPS(PS_INPUT input) : SV_Target
         for (int i = -halfRange; i <= halfRange; ++i)
         {
             float CurGaussian = GetGaussian(i * COC.g);
-            float2 CurUV = uv + UVDir * i * COC.g;
+            float2 CurUV = uv + UVDir * i * COC.g * COCSize;
             float2 CurCOC = g_COCTex.Sample(g_LinearClampSample, CurUV).rg;
             if (CurCOC.g > 0)
             {
