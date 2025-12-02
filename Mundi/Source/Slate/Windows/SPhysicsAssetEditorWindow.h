@@ -104,6 +104,12 @@ public:
 	void RegenerateSelectedBody();
 	void AddPrimitiveToBody(int32 BodyIndex, int32 PrimitiveType);  // 0=Box, 1=Sphere, 2=Capsule
 
+	// ────────────────────────────────────────────────
+	// 시뮬레이션
+	// ────────────────────────────────────────────────
+	void StartSimulation();
+	void StopSimulation();
+
 private:
 	// ────────────────────────────────────────────────
 	// 레이아웃

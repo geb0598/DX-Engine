@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "ViewerState.h"
 #include "LinesBatch.h"
@@ -58,6 +58,16 @@ struct PhysicsAssetEditorState : public ViewerState
 	bool bShowConstraints = true;
 	bool bShowBoneNames = false;
 	bool bShowMassProperties = false;
+
+	// ────────────────────────────────────────────────
+	// 시뮬레이션 상태
+	// ────────────────────────────────────────────────
+
+	/** 시뮬레이션 실행 중 여부 */
+	bool bSimulating = false;
+
+	/** 바닥 액터 (시뮬레이션용) */
+	class ABoxActor* FloorActor = nullptr;
 
 	// ────────────────────────────────────────────────
 	// Shape 프리뷰 컴포넌트 (에디터용 시각화)

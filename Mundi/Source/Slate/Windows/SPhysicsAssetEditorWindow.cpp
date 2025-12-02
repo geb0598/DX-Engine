@@ -41,6 +41,11 @@
 #include "CameraActor.h"
 #include <chrono>
 
+// Simulation
+#include "BoxActor.h"
+#include "BoxComponent.h"
+#include "PhysScene.h"
+
 // ────────────────────────────────────────────────────────────────
 // Shape 라인 좌표 생성 헬퍼
 // ────────────────────────────────────────────────────────────────
@@ -595,11 +600,35 @@ SPhysicsAssetEditorWindow::~SPhysicsAssetEditorWindow()
 	DestroySubWidgets();
 
 	// Clean up tabs (ViewerState 정리)
-	for (int i = 0; i < Tabs.Num(); ++i)
-	{
-		ViewerState* State = Tabs[i];
-		PhysicsAssetEditorBootstrap::DestroyViewerState(State);
-	}
+	//for (int i = 0; i < Tabs.Num(); ++i)
+	//{
+	//	ViewerState* State = Tabs[i];
+
+	//	// 시뮬레이션 중이면 먼저 정리 (PhysScene 해제 전에)
+	//	PhysicsAssetEditorState* PhysState = static_cast<PhysicsAssetEditorState*>(State);
+	//	if (PhysState && PhysState->bSimulating)
+	//	{
+	//		// 랙돌 먼저 종료 (PhysScene 사용)
+	//		USkeletalMeshComponent* MeshComp = PhysState->GetPreviewMeshComponent();
+	//		/*if (MeshComp)
+	//		{
+	//			MeshComp->SetSimulatePhysics(false);
+	//			MeshComp->TermRagdoll();
+	//		}*/
+	//		// 바닥 액터 제거
+	//		if (PhysState->FloorActor)
+	//		{
+	//			UBoxComponent* BoxComp = PhysState->FloorActor->GetBoxComponent();
+	//			BoxComp->SetSimulatePhysics(false);  // 바닥은 Static
+	//			PhysState->FloorActor->Destroy();
+	//			PhysState->FloorActor = nullptr;
+	//		}
+
+	//		PhysState->bSimulating = false;
+	//	}
+
+	//	PhysicsAssetEditorBootstrap::DestroyViewerState(State);
+	//}
 	Tabs.Empty();
 	ActiveState = nullptr;
 }
@@ -611,6 +640,28 @@ ViewerState* SPhysicsAssetEditorWindow::CreateViewerState(const char* Name, UEdi
 
 void SPhysicsAssetEditorWindow::DestroyViewerState(ViewerState*& State)
 {
+	// 시뮬레이션 중이면 먼저 정리
+	PhysicsAssetEditorState* PhysState = static_cast<PhysicsAssetEditorState*>(State);
+	if (PhysState && PhysState->bSimulating)
+	{
+		// 바닥 액터 제거
+		if (PhysState->FloorActor)
+		{
+			PhysState->FloorActor->Destroy();
+			PhysState->FloorActor = nullptr;
+		}
+
+		// 랙돌 종료
+		USkeletalMeshComponent* MeshComp = PhysState->GetPreviewMeshComponent();
+		if (MeshComp)
+		{
+			MeshComp->SetSimulatePhysics(false);
+			MeshComp->TermRagdoll();
+		}
+
+		PhysState->bSimulating = false;
+	}
+
 	PhysicsAssetEditorBootstrap::DestroyViewerState(State);
 }
 
@@ -1534,10 +1585,20 @@ void SPhysicsAssetEditorWindow::RenderToolbar()
 	ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 	ImGui::SameLine();
 
-	// Simulate 버튼 (placeholder)
-	if (ImGui::Button("Simulate"))
+	// Simulate 버튼 (토글)
+	if (State->bSimulating)
 	{
-		// TODO: 시뮬레이션 기능 구현
+		if (ImGui::Button("Stop"))
+		{
+			StopSimulation();
+		}
+	}
+	else
+	{
+		if (ImGui::Button("Simulate"))
+		{
+			StartSimulation();
+		}
 	}
 	ImGui::SameLine();
 
@@ -2977,5 +3038,127 @@ void SPhysicsAssetEditorWindow::UpdateBodyTransformFromGizmo()
 		State->bIsDirty = true;
 		State->RequestSelectedBodyLinesUpdate();  // 라인 좌표 업데이트 (색상/개수 유지)
 	}
+}
+
+// ────────────────────────────────────────────────────────────────
+// 시뮬레이션
+// ────────────────────────────────────────────────────────────────
+
+void SPhysicsAssetEditorWindow::StartSimulation()
+{
+	PhysicsAssetEditorState* State = GetActivePhysicsState();
+	if (!State || !State->EditingAsset || State->bSimulating) return;
+
+	UWorld* World = State->World;
+	if (!World) return;
+
+	// PhysScene 초기화 (아직 없으면)
+	FPhysScene* PhysScene = GWorld->GetPhysicsScene();
+	if (!PhysScene)
+	{
+		UE_LOG("[PhysicsAssetEditor] PhysScene이 없습니다.");
+		return;
+	}
+
+	// 1. 바닥 박스 액터 생성 (10000 x 10000)
+	if (!State->FloorActor)
+	{
+		State->FloorActor = GWorld->SpawnActor<ABoxActor>();
+		if (State->FloorActor)
+		{
+			// BoxComponent 설정
+			UBoxComponent* BoxComp = State->FloorActor->GetBoxComponent();
+			if (BoxComp)
+			{
+				// BoxExtent는 반 크기이므로 5000으로 설정 (실제 크기 10000)
+				BoxComp->SetBoxExtent(FVector(5000.0f, 5000.0f, 1.0f));
+				BoxComp->SetSimulatePhysics(false);  // 바닥은 Static
+			}
+
+			// 위치: 캐릭터 아래 (Z = -100 정도)
+			FTransform FloorTransform;
+			FloorTransform.Translation = FVector(0.0f, 0.0f, -1.0f);
+			FloorTransform.Rotation = FQuat::Identity();
+			FloorTransform.Scale3D = FVector(1.0f, 1.0f, 1.0f);
+			State->FloorActor->SetActorTransform(FloorTransform);
+
+//			State->FloorActor = FloorBox;
+
+			UE_LOG("[PhysicsAssetEditor] 시뮬레이션 바닥 생성 완료 (10000 x 10000)");
+		}
+	}
+
+	// 2. SkeletalMeshComponent에 랙돌 초기화
+	USkeletalMeshComponent* MeshComp = State->GetPreviewMeshComponent();
+	if (MeshComp && State->EditingAsset)
+	{
+		// PhysicsAsset 연결
+		MeshComp->SetPhysicsAsset(State->EditingAsset);
+
+		// 랙돌 초기화
+		MeshComp->InitRagdoll(PhysScene);
+
+		// 시뮬레이션 시작
+		MeshComp->SetSimulatePhysics(true);
+
+		UE_LOG("[PhysicsAssetEditor] 랙돌 시뮬레이션 시작");
+	}
+
+	// 3. 기즈모 숨기기
+	State->HideGizmo();
+
+	// 4. 시각 디버그 끄기 (바디/제약조건 라인 숨기기)
+	State->bShowBodies = false;
+	State->bShowConstraints = false;
+	if (State->BodyPreviewLineComponent)
+		State->BodyPreviewLineComponent->SetLineVisible(false);
+	if (State->ConstraintPreviewLineComponent)
+		State->ConstraintPreviewLineComponent->SetLineVisible(false);
+
+	State->bSimulating = true;
+}
+
+void SPhysicsAssetEditorWindow::StopSimulation()
+{
+	PhysicsAssetEditorState* State = GetActivePhysicsState();
+	if (!State || !State->bSimulating) return;
+
+	UWorld* World = State->World;
+	if (!World) return;
+
+	// 1. 랙돌 종료
+	USkeletalMeshComponent* MeshComp = State->GetPreviewMeshComponent();
+	if (MeshComp)
+	{
+		MeshComp->SetSimulatePhysics(false);
+		MeshComp->TermRagdoll();
+
+		// RefPose로 리셋
+		MeshComp->ResetToRefPose();
+
+		UE_LOG("[PhysicsAssetEditor] 랙돌 시뮬레이션 종료");
+	}
+
+	// 2. 바닥 액터 제거
+	if (State->FloorActor)
+	{
+		State->FloorActor->Destroy();
+		State->FloorActor = nullptr;
+
+		UE_LOG("[PhysicsAssetEditor] 시뮬레이션 바닥 제거");
+	}
+
+	// 3. Shape 라인 재구성 (포즈가 리셋되었으므로)
+	State->RequestLinesRebuild();
+
+	// 4. 시각 디버그 다시 켜기
+	State->bShowBodies = true;
+	State->bShowConstraints = true;
+	if (State->BodyPreviewLineComponent)
+		State->BodyPreviewLineComponent->SetLineVisible(true);
+	if (State->ConstraintPreviewLineComponent)
+		State->ConstraintPreviewLineComponent->SetLineVisible(true);
+
+	State->bSimulating = false;
 }
 
