@@ -31,6 +31,7 @@ ACharacter::ACharacter()
 	if (CapsuleComponent)
 	{
 		SetRootComponent(CapsuleComponent);
+		CapsuleComponent->SetCapsuleSize(0.25f, 1.0f);
 	}
 
 	// SkeletalMeshComponent 생성 (애니메이션)
@@ -38,6 +39,7 @@ ACharacter::ACharacter()
 	if (MeshComponent && CapsuleComponent)
 	{
 		MeshComponent->SetupAttachment(CapsuleComponent);
+		MeshComponent->SetRelativeLocation(FVector(0.0f, 0.0f, -1.0f));
 	}
 
 	// CharacterMovementComponent 생성

@@ -7,8 +7,8 @@
 
 // 커스텀 Simulation Filter Shader
 // FilterData 구조:
-// word0: 충돌 그룹 ID
-// word1: 충돌 마스크 (어떤 그룹과 충돌할지)
+// word0: 충돌 채널 비트 (이 바디의 타입)
+// word1: 충돌 마스크 (어떤 채널과 충돌할지)
 // word2: 초기 겹침으로 인한 충돌 무시 마스크 (비트 플래그)
 // word3: 바디 인덱스 (word2 비트 체크용)
 PxFilterFlags CustomFilterShader(
@@ -21,6 +21,21 @@ PxFilterFlags CustomFilterShader(
     {
         pairFlags = PxPairFlag::eTRIGGER_DEFAULT;
         return PxFilterFlag::eDEFAULT;
+    }
+
+    // 충돌 채널/마스크 기반 필터링
+    // word0: 자신의 채널 비트, word1: 충돌할 채널 마스크
+    // 양쪽 모두 상대방의 채널이 자신의 마스크에 포함되어야 충돌
+    PxU32 channel0 = filterData0.word0;
+    PxU32 mask0 = filterData0.word1;
+    PxU32 channel1 = filterData1.word0;
+    PxU32 mask1 = filterData1.word1;
+
+    // 양방향 체크: 0이 1과 충돌하려면 mask0에 channel1이 포함되어야 하고,
+    //              1이 0과 충돌하려면 mask1에 channel0이 포함되어야 함
+    if (!(mask0 & channel1) || !(mask1 & channel0))
+    {
+        return PxFilterFlag::eSUPPRESS;  // 충돌 채널이 맞지 않음
     }
 
     // 초기 겹침으로 인한 충돌 무시 체크

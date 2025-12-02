@@ -3,6 +3,7 @@
 #include "SceneComponent.h"
 #include "Material.h"
 #include "Source/Runtime/Engine/PhysicsEngine/BodyInstance.h"
+#include "Source/Runtime/Engine/PhysicsEngine/ECollisionChannel.h"
 #include "UPrimitiveComponent.generated.h"
 
 // 전방 선언
@@ -45,6 +46,14 @@ public:
 
     UPROPERTY(EditAnywhere, Category="Physics")
     UPhysicalMaterial* PhysicalMaterial;
+
+    /** 이 컴포넌트의 충돌 채널 (오브젝트 타입) */
+    UPROPERTY(EditAnywhere, Category="Collision")
+    ECollisionChannel CollisionChannel = ECollisionChannel::WorldDynamic;
+
+    /** 충돌할 채널들 (비트 마스크) */
+    UPROPERTY(EditAnywhere, Category="Collision")
+    uint32 CollisionMask = CollisionMasks::All;
 
     FComponentHitSignature OnComponentHit;
     FComponentBeginOverlapSignature OnComponentBeginOverlap;

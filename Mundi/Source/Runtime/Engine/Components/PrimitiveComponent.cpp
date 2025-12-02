@@ -29,6 +29,12 @@ void UPrimitiveComponent::OnPropertyChanged(const FProperty& Prop)
             OnCreatePhysicsState();
         }
     }
+
+    // 충돌 채널 변경 시 BodyInstance에 동기화
+    if (Prop.Name == "CollisionChannel" || Prop.Name == "CollisionMask")
+    {
+        BodyInstance.SetCollisionChannel(CollisionChannel, CollisionMask);
+    }
 }
 
 void UPrimitiveComponent::OnRegister(UWorld* InWorld)
@@ -110,6 +116,10 @@ void UPrimitiveComponent::OnCreatePhysicsState()
     BodyInstance.PhysicalMaterialOverride = PhysicalMaterial;
     BodyInstance.bSimulatePhysics = bSimulatePhysics;
     BodyInstance.Scale3D = GetRelativeScale();
+
+    // 충돌 채널 설정 (InitBody 전에 설정해야 FilterData가 적용됨)
+    BodyInstance.ObjectType = CollisionChannel;
+    BodyInstance.CollisionMask = CollisionMask;
 
     BodyInstance.InitBody(Setup, GetWorldTransform(), this, PhysScene);
 }
