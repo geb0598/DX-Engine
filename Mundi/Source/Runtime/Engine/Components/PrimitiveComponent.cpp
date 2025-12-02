@@ -21,13 +21,10 @@ void UPrimitiveComponent::OnPropertyChanged(const FProperty& Prop)
 {
     USceneComponent::OnPropertyChanged(Prop);
 
-    if (Prop.Name == "bSimulatePhysics" || Prop.Name == "PhysicalMaterial")
+    if (Prop.Name == "bSimulatePhysics" || Prop.Name == "PhysicalMaterial" || Prop.Name == "CollisionEnabled" || Prop.Name == "BodySetup")
     {
-        if (BodyInstance.IsValidBodyInstance())
-        {
-            OnDestroyPhysicsState();
-            OnCreatePhysicsState();
-        }
+        OnDestroyPhysicsState();
+        OnCreatePhysicsState();
     }
 }
 
@@ -84,6 +81,12 @@ void UPrimitiveComponent::SetMaterialByName(uint32 InElementIndex, const FString
 
 void UPrimitiveComponent::OnCreatePhysicsState()
 {
+    // NoCollision이면 물리 상태 생성하지 않음
+    if (CollisionEnabled == ECollisionEnabled::NoCollision)
+    {
+        return;
+    }
+
     if (BodyInstance.IsValidBodyInstance())
     {
         return;
@@ -138,11 +141,19 @@ void UPrimitiveComponent::SetSimulatePhysics(bool bInSimulatePhysics)
     {
         bSimulatePhysics = bInSimulatePhysics;
 
-        if (BodyInstance.IsValidBodyInstance())
-        {
-            OnDestroyPhysicsState();
-            OnCreatePhysicsState();
-        }
+        OnDestroyPhysicsState();
+        OnCreatePhysicsState();
+    }
+}
+
+void UPrimitiveComponent::SetCollisionEnabled(ECollisionEnabled InCollisionEnabled)
+{
+    if (CollisionEnabled != InCollisionEnabled)
+    {
+        CollisionEnabled = InCollisionEnabled;
+
+        OnDestroyPhysicsState();
+        OnCreatePhysicsState();
     }
 }
 

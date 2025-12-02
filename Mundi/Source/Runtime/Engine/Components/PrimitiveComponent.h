@@ -3,6 +3,7 @@
 #include "SceneComponent.h"
 #include "Material.h"
 #include "Source/Runtime/Engine/PhysicsEngine/BodyInstance.h"
+#include "Source/Runtime/Engine/PhysicsEngine/ECollisionEnabled.h"
 #include "UPrimitiveComponent.generated.h"
 
 // 전방 선언
@@ -42,6 +43,9 @@ public:
 
     UPROPERTY(EditAnywhere, Category="Physics")
     bool bSimulatePhysics;
+
+    UPROPERTY(EditAnywhere, Category="Collision")
+    ECollisionEnabled CollisionEnabled = ECollisionEnabled::QueryAndPhysics;
 
     UPROPERTY(EditAnywhere, Category="Physics")
     UPhysicalMaterial* PhysicalMaterial;
@@ -117,6 +121,10 @@ public:
     // Overlap event generation toggle API
     void SetGenerateOverlapEvents(bool bEnable) { bGenerateOverlapEvents = bEnable; }
     bool GetGenerateOverlapEvents() const { return bGenerateOverlapEvents; }
+
+    // Collision enabled API
+    void SetCollisionEnabled(ECollisionEnabled InCollisionEnabled);
+    ECollisionEnabled GetCollisionEnabled() const { return CollisionEnabled; }
 
     // ───── 직렬화 ────────────────────────────
     void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;

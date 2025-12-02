@@ -457,6 +457,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\BodyShapeCalculator.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\BoxElem.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\ConstraintInstance.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\ConvexElem.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysicalMaterial.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysicsAsset.cpp" />
     <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysicsDebugUtils.cpp" />
@@ -764,6 +765,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClCompile Include="Generated\FKSphereElem.generated.cpp" />
     <ClCompile Include="Generated\FKSphylElem.generated.cpp" />
     <ClCompile Include="Generated\UPhysicalMaterial.generated.cpp" />
+    <ClCompile Include="Generated\FKConvexElem.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
@@ -1016,6 +1018,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\BodyShapeCalculator.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\BoxElem.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\ConstraintInstance.h" />
+    <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\ConvexElem.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\EAggCollisionShape.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\ECollisionEnabled.h" />
     <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\EConstraintType.h" />
@@ -1357,6 +1360,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <ClInclude Include="Generated\FKSphereElem.generated.h" />
     <ClInclude Include="Generated\FKSphylElem.generated.h" />
     <ClInclude Include="Generated\UPhysicalMaterial.generated.h" />
+    <ClInclude Include="Generated\FKConvexElem.generated.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTools\CodeGenerator\generate.py" />
