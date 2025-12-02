@@ -3129,6 +3129,9 @@ void SPhysicsAssetEditorWindow::StopSimulation()
 		MeshComp->SetSimulatePhysics(false);
 		MeshComp->TermRagdoll();
 
+		// PhysicsAsset 연결 해제 (RenderDebugVolume에서 그리지 않도록)
+		MeshComp->SetPhysicsAsset(nullptr);
+
 		// RefPose로 리셋
 		MeshComp->ResetToRefPose();
 
