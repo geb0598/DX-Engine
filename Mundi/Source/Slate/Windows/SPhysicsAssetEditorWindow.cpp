@@ -6,6 +6,8 @@
 #include "FViewport.h"
 #include "FViewportClient.h"
 #include <filesystem>
+#include "PathUtils.h"
+#include "Widgets/PropertyRenderer.h"
 #include "Source/Runtime/Engine/Viewer/PhysicsAssetEditorBootstrap.h"
 #include "Source/Runtime/Engine/Viewer/EditorAssetPreviewContext.h"
 #include "Source/Runtime/Engine/PhysicsEngine/PhysicsAsset.h"
@@ -2063,6 +2065,11 @@ void SPhysicsAssetEditorWindow::SavePhysicsAsset()
 	if (PhysicsAssetEditorBootstrap::SavePhysicsAsset(State->EditingAsset, State->CurrentFilePath))
 	{
 		State->bIsDirty = false;
+
+		// ResourceManager에 등록/갱신 (캐시와 동기화)
+		UResourceManager::GetInstance().AddOrReplace<UPhysicsAsset>(State->CurrentFilePath, State->EditingAsset);
+
+		UE_LOG("[SPhysicsAssetEditorWindow] Physics Asset saved: %s", State->CurrentFilePath.c_str());
 	}
 }
 
@@ -2080,13 +2087,37 @@ void SPhysicsAssetEditorWindow::SavePhysicsAssetAs()
 
 	if (widePath.empty()) return;
 
-	FString FilePath = WideToUTF8(widePath.wstring());
+	// 경로 정규화
+	FString FilePath = ResolveAssetRelativePath(NormalizePath(WideToUTF8(widePath.wstring())), "");
+
+	// 원본 파일 경로와 dirty 상태 저장 (복구용)
+	FString OriginalFilePath = State->CurrentFilePath;
+	bool bWasDirty = State->bIsDirty;
 
 	if (PhysicsAssetEditorBootstrap::SavePhysicsAsset(State->EditingAsset, FilePath))
 	{
+		// 원본 파일이 있고 변경이 있었다면, 원본 캐시 복구
+		if (!OriginalFilePath.empty() && bWasDirty)
+		{
+			UResourceManager::GetInstance().ForceLoad<UPhysicsAsset>(OriginalFilePath);
+		}
+
+		// SaveAs는 새로운 인스턴스를 생성해야 함 (기존 파일과 분리)
+		UPhysicsAsset* NewAsset = static_cast<UPhysicsAsset*>(State->EditingAsset->Duplicate());
+		NewAsset->SetFilePath(FilePath);
+
+		// ResourceManager에 새 인스턴스 등록
+		UResourceManager::GetInstance().AddOrReplace<UPhysicsAsset>(FilePath, NewAsset);
+
+		// 에디터 상태를 새 인스턴스로 교체
+		State->EditingAsset = NewAsset;
 		State->CurrentFilePath = FilePath;
 		State->bIsDirty = false;
-		UE_LOG("[SPhysicsAssetEditorWindow] Physics Asset saved: %s", FilePath.c_str());
+
+		// 리소스 캐시 갱신 (새 파일이 선택 목록에 반영되도록)
+		UPropertyRenderer::ClearResourcesCache();
+
+		UE_LOG("[SPhysicsAssetEditorWindow] Physics Asset saved as: %s", FilePath.c_str());
 	}
 }
 
