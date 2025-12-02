@@ -1206,6 +1206,25 @@
     <ClCompile Include="Source\Slate\Windows\PhysicalMaterialEditorWindow.cpp" />
     <ClCompile Include="ThirdParty\include\ImGui\imnodes.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Viewer\PhysicsPickingHelper.cpp" />
+    <ClCompile Include="Generated\UVehicleMovementComponent.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\AVehicle.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UVehicleWheel.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\FVehicleEngineData.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Runtime\Core\Memory\WeakObjectPtr.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\Components\VehicleMovementComponent.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\Vehicle.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysXPublic.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\PhysXSimEventCallback.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\Vehicle\VehicleEngineData.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\PhysicsEngine\Vehicle\VehicleWheel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Generated\UParticleModuleSizeScaleBySpeed.generated.h">
@@ -2554,6 +2573,33 @@
       <Filter>Generated</Filter>
     </ClInclude>
     <ClInclude Include="Source\Runtime\Engine\Viewer\PhysicsPickingHelper.h" />
+    <ClInclude Include="Generated\UVehicleMovementComponent.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\AVehicle.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UVehicleWheel.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\FVehicleEngineData.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Core\Memory\WeakObjectPtr.h" />
+    <ClInclude Include="Source\Runtime\Engine\Components\VehicleMovementComponent.h" />
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\Vehicle.h" />
+    <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\PhysXSimEventCallback.h" />
+    <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\Vehicle\VehicleEngineData.h" />
+    <ClInclude Include="Source\Runtime\Engine\PhysicsEngine\Vehicle\VehicleWheel.h" />
+    <ClInclude Include="Generated\ABoxActor.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\ACapsuleActor.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\ASphereActor.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTools\CodeGenerator\generate.py">
