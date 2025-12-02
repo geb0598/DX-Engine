@@ -117,7 +117,8 @@
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)ThirdParty\lib\FBXSDK\$(Configuration)\libfbxsdk.dll" "$(OutDir)"
 xcopy /y /d "$(ProjectDir)ThirdParty\lib\Lua\lua54.dll" "$(OutDir)"
-xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir)"</Command>
+xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir)"
+xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Debug\NvClothDEBUG_x64.dll" "$(OutDir)"</Command>
       <Message>
       </Message>
     </PostBuildEvent>
@@ -149,7 +150,8 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)ThirdParty\lib\FBXSDK\$(Configuration)\libfbxsdk.dll" "$(OutDir)"
 xcopy /y /d "$(ProjectDir)ThirdParty\lib\Lua\lua54.dll" "$(OutDir)"
-xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir)"</Command>
+xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir)"
+xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Debug\NvClothDEBUG_x64.dll" "$(OutDir)"</Command>
       <Message>
       </Message>
     </PostBuildEvent>
@@ -175,7 +177,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);ThirdParty\lib\Lua\;ThirdParty\lib\DirectXTex\$(Configuration)\;ThirdParty\lib\FBXSDK\$(Configuration)\;ThirdParty\lib\DirectXTK\$(Configuration)\;ThirdParty\lib\physx\release;ThirdParty\lib\Cloth\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>DirectXTK.lib;DirectXTex.lib;%(AdditionalDependencies);lua54.lib;libfbxsdk-md.lib;alembic-md.lib;libxml2-md.lib;zlib-md.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;PhysXCooking_64.lib;PhysXCharacterKinematic_static_64.lib;NvCloth_x64.lib</AdditionalDependencies>
+      <AdditionalDependencies>DirectXTK.lib;DirectXTex.lib;%(AdditionalDependencies);lua54.lib;libfbxsdk-md.lib;alembic-md.lib;libxml2-md.lib;zlib-md.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;PhysXCooking_64.lib;PhysXCharacterKinematic_static_64.lib;NvClothDEBUG_x64.lib</AdditionalDependencies>
       <AdditionalOptions>/IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PreBuildEvent>
@@ -185,7 +187,8 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)ThirdParty\lib\FBXSDK\$(Configuration)\libfbxsdk.dll" "$(OutDir)"
 xcopy /y /d "$(ProjectDir)ThirdParty\lib\Lua\lua54.dll" "$(OutDir)"
-xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir)"</Command>
+xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir)"
+xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\NvCloth_x64.dll" "$(OutDir)"</Command>
       <Message>
       </Message>
     </PostBuildEvent>
@@ -211,7 +214,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);ThirdParty\lib\Lua\;ThirdParty\lib\DirectXTex\Release\;ThirdParty\lib\FBXSDK\Release\;ThirdParty\lib\DirectXTK\Release\;ThirdParty\lib\physx\release;ThirdParty\lib\Cloth\Release\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>DirectXTK.lib;DirectXTex.lib;%(AdditionalDependencies);lua54.lib;libfbxsdk-md.lib;alembic-md.lib;libxml2-md.lib;zlib-md.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;PhysXCooking_64.lib;PhysXCharacterKinematic_static_64.lib;NvCloth_x64.lib</AdditionalDependencies>
+      <AdditionalDependencies>DirectXTK.lib;DirectXTex.lib;%(AdditionalDependencies);lua54.lib;libfbxsdk-md.lib;alembic-md.lib;libxml2-md.lib;zlib-md.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXExtensions_static_64.lib;PhysXPvdSDK_static_64.lib;PhysXCooking_64.lib;PhysXCharacterKinematic_static_64.lib;NvClothDEBUG_x64.lib</AdditionalDependencies>
       <AdditionalOptions>/IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PreBuildEvent>
@@ -221,7 +224,8 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir
     <PostBuildEvent>
       <Command>xcopy /y /d "$(ProjectDir)ThirdParty\lib\FBXSDK\$(Configuration)\libfbxsdk.dll" "$(OutDir)"
 xcopy /y /d "$(ProjectDir)ThirdParty\lib\Lua\lua54.dll" "$(OutDir)"
-xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir)"</Command>
+xcopy /y /d "$(ProjectDir)ThirdParty\lib\physx\$(Configuration)\*.dll" "$(OutDir)"
+xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\NvCloth_x64.dll" "$(OutDir)"</Command>
       <Message>[PostBuild] Copying dependencies and publishing symbols...</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
