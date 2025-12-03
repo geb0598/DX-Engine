@@ -26,13 +26,13 @@ public:
 	bool bCascaded = true;
 
 	UPROPERTY(EditAnywhere, Category="ShadowMap", Range="1, 8")
-	int CascadedCount = 4;
+	int CascadedCount = 6;
 
 	UPROPERTY(EditAnywhere, Category="ShadowMap", Range="0, 1")
-	float CascadedLinearBlendingValue = 0.5f;
+	float CascadedLinearBlendingValue = 0.15f;
 
 	UPROPERTY(EditAnywhere, Category="ShadowMap", Range="0, 0.5")
-	float CascadedOverlapValue = 0.2f;
+	float CascadedOverlapValue = 0.5f;
 
 	UPROPERTY(EditAnywhere, Category="ShadowMap", Range="0, 1.0")
 	float CascadedAreaColorDebugValue = 0;

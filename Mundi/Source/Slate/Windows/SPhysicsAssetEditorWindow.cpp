@@ -549,6 +549,42 @@ void SPhysicsAssetEditorWindow::OnRender()
 				ImGui::Dummy(ImVec2(remainingWidth, remainingHeight));
 			}
 
+			// === 좌상단: Physics Asset 통계 오버레이 ===
+			PhysicsAssetEditorState* PhysState = GetActivePhysicsState();
+			if (PhysState && PhysState->EditingAsset && PhysState->bShowStats)
+			{
+				ImDrawList* DrawList = ImGui::GetWindowDrawList();
+
+				// 통계 수집
+				int32 NumBodies = static_cast<int32>(PhysState->EditingAsset->BodySetups.size());
+				int32 NumConstraints = static_cast<int32>(PhysState->EditingAsset->ConstraintSetups.size());
+
+				int32 NumSpheres = 0, NumBoxes = 0, NumCapsules = 0, NumConvex = 0;
+				for (UBodySetup* Body : PhysState->EditingAsset->BodySetups)
+				{
+					if (Body)
+					{
+						NumSpheres += Body->AggGeom.SphereElems.Num();
+						NumBoxes += Body->AggGeom.BoxElems.Num();
+						NumCapsules += Body->AggGeom.SphylElems.Num();
+						NumConvex += Body->AggGeom.ConvexElems.Num();
+					}
+				}
+				int32 TotalPrimitives = NumSpheres + NumBoxes + NumCapsules + NumConvex;
+
+				// 텍스트 생성
+				char StatsText[256];
+				sprintf_s(StatsText, "%d Bodies\n%d Primitives (%d Spheres, %d Boxes, %d Capsules, %d Convex)\n%d Constraints",
+					NumBodies, TotalPrimitives, NumSpheres, NumBoxes, NumCapsules, NumConvex, NumConstraints);
+
+				// 좌상단 위치 (여백 10px)
+				ImVec2 TextPos(viewportPos.x + 10.0f, viewportPos.y + 10.0f);
+
+				// 그림자 + 본문 텍스트
+				DrawList->AddText(ImVec2(TextPos.x + 1, TextPos.y + 1), IM_COL32(0, 0, 0, 180), StatsText);
+				DrawList->AddText(TextPos, IM_COL32(220, 220, 220, 255), StatsText);
+			}
+
 			ImGui::EndChild(); // CenterPanel
 
 			ImGui::SameLine(0, 0);
@@ -1374,6 +1410,8 @@ void SPhysicsAssetEditorWindow::RenderToolbar()
 		if (State->ConstraintMeshComponent)
 			State->ConstraintMeshComponent->SetMeshVisible(State->bShowConstraints);
 	}
+	ImGui::SameLine();
+	ImGui::Checkbox("Stats", &State->bShowStats);
 }
 
 // ────────────────────────────────────────────────────────────────

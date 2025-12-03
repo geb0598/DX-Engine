@@ -101,6 +101,7 @@ struct PhysicsAssetEditorState : public ViewerState
 	bool bShowConstraints = true;
 	bool bShowBoneNames = false;
 	bool bShowMassProperties = false;
+	bool bShowStats = true;
 
 	// ────────────────────────────────────────────────
 	// 시뮬레이션 상태
