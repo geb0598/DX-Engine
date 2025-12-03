@@ -111,6 +111,11 @@ public:
     // Notify
     void TriggerAnimNotify(const FAnimNotifyEvent& NotifyEvent);
 
+    /**
+     * @brief CurrentComponentSpacePose getter (에디터 시각화용)
+     */
+    const TArray<FTransform>& GetCurrentComponentSpacePose() const { return CurrentComponentSpacePose; }
+
 protected:
     /**
      * @brief CurrentLocalSpacePose의 변경사항을 ComponentSpace -> FinalMatrices 계산까지 모두 수행
@@ -261,6 +266,9 @@ public:
     UPROPERTY(EditAnywhere, Category="[피직스 에셋]")
     UPhysicsAsset* PhysicsAsset = nullptr;
 
+    /** 디버그 시각화용 선택된 Constraint 인덱스 (-1 = 선택 없음) */
+    int32 DebugSelectedConstraintIndex = -1;
+
     /** 본별 바디 인스턴스 (BoneIndex -> FBodyInstance) */
     TArray<FBodyInstance*> Bodies;
 
@@ -279,4 +287,7 @@ public:
 
     /** PhysX Aggregate (랙돌 내 자체 충돌 비활성화용) */
     physx::PxAggregate* Aggregate = nullptr;
+
+    /** 선택 여부와 관계없이 항상 Physics Debug 렌더링 (에디터용) */
+    bool bAlwaysRenderPhysicsDebug = false;
 };

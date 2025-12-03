@@ -6,7 +6,7 @@
 
 #include "GameModeBase.h"
 #include "Source/Runtime/Core/Memory/PointerTypes.h"
-#include "AHudExampleGameMode.generated.h"
+#include "APlayerGameMode.generated.h"
 
 class SButton;
 class STextBlock;
@@ -17,15 +17,15 @@ class STextBlock;
  * SGameHUD를 사용하여 게임 UI를 구성하는 예제 게임 모드입니다.
  */
 UCLASS(DisplayName="HUD 예제 게임 모드", Description="SGameHUD 사용 예제 게임 모드입니다.")
-class AHudExampleGameMode : public AGameModeBase
+class APlayerGameMode : public AGameModeBase
 {
 public:
 	GENERATED_REFLECTION_BODY()
 
-	AHudExampleGameMode();
+	APlayerGameMode();
 
 protected:
-	~AHudExampleGameMode() override = default;
+	~APlayerGameMode() override = default;
 
 public:
 	// ────────────────────────────────────────────────
@@ -33,7 +33,6 @@ public:
 	// ────────────────────────────────────────────────
 
 	void BeginPlay() override;
-	void EndPlay() override;
 	void Tick(float DeltaSeconds) override;
 
 	// ────────────────────────────────────────────────
@@ -56,7 +55,4 @@ protected:
 
 	TSharedPtr<SButton> StartButton;
 	TSharedPtr<STextBlock> ScoreText;
-	TSharedPtr<STextBlock> SpeedText;
-	TSharedPtr<STextBlock> RpmText;
-	TSharedPtr<STextBlock> GearText;
 };

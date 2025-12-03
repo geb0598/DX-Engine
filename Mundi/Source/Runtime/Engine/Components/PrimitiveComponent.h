@@ -148,6 +148,6 @@ private:
     // ───── 디버그용 ────────────────────────────
     void OnHitDebug(UPrimitiveComponent* Comp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
     {
-        UE_LOG("Hit!");        
+        //UE_LOG("Hit!");        
     }
 };

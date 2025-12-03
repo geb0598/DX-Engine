@@ -107,6 +107,44 @@ bool ULineDynamicMesh::UpdateData(FMeshData* InData, ID3D11DeviceContext* InCont
     return true;
 }
 
+bool ULineDynamicMesh::UpdateDataInterleaved(const TArray<FVertexSimple>& Vertices, const TArray<uint32>& Indices, ID3D11DeviceContext* InContext)
+{
+    if (!bIsInitialized || !InContext)
+        return false;
+
+    uint32 vertexCount = static_cast<uint32>(Vertices.size());
+    uint32 indexCount = static_cast<uint32>(Indices.size());
+
+    if (vertexCount > MaxVertices || indexCount > MaxIndices)
+        return false;
+
+    CurrentVertexCount = vertexCount;
+    CurrentIndexCount = indexCount;
+
+    if (vertexCount == 0 || indexCount == 0)
+        return true;
+
+    // 버텍스 버퍼 업데이트 (memcpy 사용 - 고속)
+    D3D11_MAPPED_SUBRESOURCE mappedVertex;
+    HRESULT hr = InContext->Map(VertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedVertex);
+    if (FAILED(hr))
+        return false;
+
+    memcpy(mappedVertex.pData, Vertices.data(), vertexCount * sizeof(FVertexSimple));
+    InContext->Unmap(VertexBuffer, 0);
+
+    // 인덱스 버퍼 업데이트 (memcpy 사용)
+    D3D11_MAPPED_SUBRESOURCE mappedIndex;
+    hr = InContext->Map(IndexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedIndex);
+    if (FAILED(hr))
+        return false;
+
+    memcpy(mappedIndex.pData, Indices.data(), indexCount * sizeof(uint32));
+    InContext->Unmap(IndexBuffer, 0);
+
+    return true;
+}
+
 void ULineDynamicMesh::ReleaseResources()
 {
     if (VertexBuffer)

@@ -94,6 +94,7 @@ private:
 	// Triangle batch data
 	ULineDynamicMesh* DynamicTriangleMesh = nullptr;
 	FMeshData* TriangleBatchData = nullptr;
+	TArray<FVertexSimple> TriangleInterleavedVertices;  // GPU 업로드용 인터리브 캐시
 	bool bTriangleBatchActive = false;
 	static const uint32 MAX_TRIANGLES = 100000;  // Maximum triangles per batch
 
