@@ -184,6 +184,8 @@ bool UEditorEngine::Startup(HINSTANCE hInstance)
 
     if (!CreateMainWindow(hInstance))
         return false;
+    // PhysX 초기화 (StaticMesh Convex 생성에 필요하므로 Preload 전에 초기화)
+    InitGamePhys();
 
     //디바이스 리소스 및 렌더러 생성
     RHIDevice.Initialize(HWnd);
@@ -196,8 +198,6 @@ bool UEditorEngine::Startup(HINSTANCE hInstance)
     UI.Initialize(HWnd, RHIDevice.GetDevice(), RHIDevice.GetDeviceContext());
     INPUT.Initialize(HWnd);
 
-    // PhysX 초기화 (StaticMesh Convex 생성에 필요하므로 Preload 전에 초기화)
-    InitGamePhys();
 
     FObjManager::Preload();
     UFbxLoader::PreLoad();

@@ -1,46 +1,52 @@
 ﻿#pragma once
 #include "Object.h"
-#include "ClothUtil.h"
+#include "d3d11.h"
+#include <NvCloth/Factory.h>
+#include <NvCloth/Solver.h>
+#include <NvCloth/Cloth.h>
+#include <NvCloth/Fabric.h>
+#include <foundation/PxVec3.h>
+#include <foundation/PxVec4.h>
+#include <NvCloth/extensions/ClothFabricCooker.h> 
+#include <NvCloth/DxContextManagerCallback.h>
+#include "DxContextManagerCallbackImpl.h"
+#include "NvClothEnvironment.h"
 
-class UClothManager : public UObject
+using namespace nv::cloth;
+using namespace physx;
+
+class UClothManager
 {
-    DECLARE_CLASS(UClothManager, UObject)
 public:
-	UClothManager() = default;
-	~UClothManager() override = default;
-
-	void Init(ID3D11Device* InDevice);
+    UClothManager();
+    ~UClothManager();
+    static UClothManager* Instance;
+	void InitClothManager(ID3D11Device* InDevice, ID3D11DeviceContext* InContext);
 	void Tick(float deltaTime);
+    void Release();
+    
+    Factory* GetFactory() { return Factory; }
+    Solver* GetSolver() { return Solver; }
 
-public:
-    DxContextManagerCallback* GraphicsContextManager;
-	Factory* Factory;
-	Solver* Solver;
+    //임시
+    ID3D11Device* GetDevice() { return GraphicsContextManager->getDevice(); }
+    ID3D11DeviceContext* GetContext() { return GraphicsContextManager->getContext(); }
 
-	//test
-	Cloth* Cloth;
-	Fabric* Fabric;
-	PhaseConfig* Phases;
 
-    // 메쉬 데이터
-    TArray<physx::PxVec4> Particles;  // 로컬에서 멤버 변수로 변경 필요!
-    TArray<uint32_t> Indices;
-    TArray<FNormalVertex> RenderVertices;
+private:
+    DxContextManagerCallback* GraphicsContextManager = nullptr;
+    Factory* Factory = nullptr;
+    Solver* Solver = nullptr;
 
-    int ClothWidth;
-    int ClothHeight;
+    // NvCloth 초기화에 필요한 콜백들
+    NvClothAllocator* Allocator = nullptr;
+    NvClothErrorCallback* ErrorCallback = nullptr;
+    NvClothAssertHandler* AssertHandler = nullptr;
 
-    ID3D11Buffer* VertexBuffer;
-    ID3D11Buffer* IndexBuffer;
-
-    // 셰이더 관련
-    ID3D11VertexShader* VertexShader;
-    ID3D11PixelShader* PixelShader;
-    ID3D11InputLayout* InputLayout;
-
-    // 렌더 스테이트
-    ID3D11RasterizerState* RasterizerState;
-    ID3D11DepthStencilState* DepthStencilState;
-    ID3D11BlendState* BlendState;
-    ID3D11SamplerState* SamplerState;
-};
+}; 
+inline Range<physx::PxVec4> GetRange(TArray<PxVec4>& Arr)
+{
+    return Range<physx::PxVec4>(
+        Arr.data(),
+        Arr.data() + Arr.size());
+}
