@@ -40,17 +40,8 @@ void UTriangleMeshComponent::CollectBatches(URenderer* Renderer)
     if (!HasVisibleMesh() || !Renderer)
         return;
 
-    Renderer->BeginTriangleBatch();
+    // SceneRenderer에서 Begin/End를 관리하므로 AddTriangles만 호출
     Renderer->AddTriangles(Vertices, Indices, Colors);
-
-    if (bAlwaysOnTop)
-    {
-        Renderer->EndTriangleBatchAlwaysOnTop(FMatrix::Identity());
-    }
-    else
-    {
-        Renderer->EndTriangleBatch(FMatrix::Identity());
-    }
 }
 
 void UTriangleMeshComponent::DuplicateSubObjects()

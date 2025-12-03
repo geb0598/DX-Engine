@@ -17,6 +17,9 @@ public:
 
     bool UpdateData(FMeshData* InData, ID3D11DeviceContext* InContext);
 
+    // 인터리브된 버텍스 배열로 업데이트 (memcpy 사용 - 고속)
+    bool UpdateDataInterleaved(const TArray<FVertexSimple>& Vertices, const TArray<uint32>& Indices, ID3D11DeviceContext* InContext);
+
     ID3D11Buffer* GetVertexBuffer() const { return VertexBuffer; }
     ID3D11Buffer* GetIndexBuffer() const { return IndexBuffer; }
     uint32 GetCurrentVertexCount() const { return CurrentVertexCount; }

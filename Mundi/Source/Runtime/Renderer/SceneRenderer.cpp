@@ -1482,22 +1482,32 @@ void FSceneRenderer::RenderDebugPass()
 	OwnerRenderer->EndLineBatch(FMatrix::Identity());
 
 	// UTriangleMeshComponent에서 삼각형 배치 수집 (일반 - 깊이 테스트 O)
+	// 라인과 같은 구조: Begin → 여러 컴포넌트 Add → End (GPU 업로드 1회)
+	OwnerRenderer->BeginTriangleBatch();
 	for (UTriangleMeshComponent* MeshComp : Proxies.EditorMeshes)
 	{
 		if (!MeshComp || MeshComp->IsAlwaysOnTop())
 			continue;
-
-		MeshComp->CollectBatches(OwnerRenderer);
-	}
-
-	// Always-on-top 삼각형 배치 수집 (깊이 테스트 X - 항상 앞에 표시)
-	for (UTriangleMeshComponent* MeshComp : Proxies.EditorMeshes)
-	{
-		if (!MeshComp || !MeshComp->IsAlwaysOnTop())
+		if (!MeshComp->HasVisibleMesh())
 			continue;
 
 		MeshComp->CollectBatches(OwnerRenderer);
 	}
+	OwnerRenderer->EndTriangleBatch(FMatrix::Identity());
+
+	// Always-on-top 삼각형 배치 수집 (깊이 테스트 X - 항상 앞에 표시)
+	// 라인과 같은 구조: Begin → 여러 컴포넌트 Add → End (GPU 업로드 1회)
+	OwnerRenderer->BeginTriangleBatch();
+	for (UTriangleMeshComponent* MeshComp : Proxies.EditorMeshes)
+	{
+		if (!MeshComp || !MeshComp->IsAlwaysOnTop())
+			continue;
+		if (!MeshComp->HasVisibleMesh())
+			continue;
+
+		MeshComp->CollectBatches(OwnerRenderer);
+	}
+	OwnerRenderer->EndTriangleBatchAlwaysOnTop(FMatrix::Identity());
 
 	// Always-on-top lines (e.g., skeleton bones), regardless of grid flag
 	OwnerRenderer->BeginLineBatch();

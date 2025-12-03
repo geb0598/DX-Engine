@@ -1359,6 +1359,12 @@ void SPhysicsAssetEditorWindow::RenderToolbar()
 	{
 		if (State->BodyPreviewLineComponent)
 			State->BodyPreviewLineComponent->SetLineVisible(State->bShowBodies);
+		// BodyMeshComponents (triangle mesh) visibility도 업데이트
+		for (UTriangleMeshComponent* MeshComp : State->BodyMeshComponents)
+		{
+			if (MeshComp)
+				MeshComp->SetMeshVisible(State->bShowBodies);
+		}
 	}
 	ImGui::SameLine();
 	if (ImGui::Checkbox("Constraints", &State->bShowConstraints))
@@ -1390,6 +1396,8 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 	// 예상 크기 예약
 	int32 NumBodies = static_cast<int32>(State->EditingAsset->BodySetups.size());
 	State->BodyLinesBatch.Reserve(NumBodies * 40);
+
+	UE_LOG("[RebuildShapeLines] NumBodies=%d, CurrentMeshComponents=%d", NumBodies, State->BodyMeshComponents.Num());
 
 	// 바디 메시 컴포넌트 배열 크기 조정
 	int32 CurrentSize = State->BodyMeshComponents.Num();
@@ -1443,14 +1451,17 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 			? FVector4(0.0f, 1.0f, 0.0f, 1.0f)  // 선택: 녹색
 			: FVector4(0.0f, 0.5f, 1.0f, 1.0f); // 기본: 파랑
 		FVector4 MeshColor = bSelected
-			? FVector4(1.0f, 1.0f, 0.8f, 0.25f)  // 선택: 옅은 노란색 (25% 투명)
-			: FVector4(0.9f, 0.9f, 0.9f, 0.15f); // 기본: 옅은 흰색 (15% 투명)
+			? FVector4(1.0f, 1.0f, 0.8f, 0.4f)  // 선택: 옅은 노란색 (40% 투명)
+			: FVector4(0.9f, 0.9f, 0.9f, 0.25f); // 기본: 옅은 흰색 (25% 투명)
 
 		// 본 트랜스폼 가져오기
 		FTransform BoneTransform;
 		if (MeshComp && Body->BoneIndex >= 0)
 		{
 			BoneTransform = MeshComp->GetBoneWorldTransform(Body->BoneIndex);
+			// m → cm 변환 (PhysX에서 0.01 스케일이 적용된 경우 복원)
+			constexpr float MToCm = 100.0f;
+			BoneTransform.Scale3D = BoneTransform.Scale3D * MToCm;
 		}
 
 		// 헬퍼 함수로 라인 좌표 생성 (AggGeom의 모든 Shape 처리)
@@ -1473,6 +1484,9 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 			FPhysicsDebugUtils::GenerateBodyShapeMesh(Body, BoneTransform, MeshColor,
 				MeshBatch.Vertices, MeshBatch.Indices, MeshBatch.Colors);
 
+			UE_LOG("[RebuildShapeLines] Body[%d] SetMesh: Vertices=%zu, Indices=%zu, Colors=%zu",
+				i, MeshBatch.Vertices.size(), MeshBatch.Indices.size(), MeshBatch.Colors.size());
+
 			State->BodyMeshComponents[i]->SetMesh(MeshBatch);
 		}
 	}
@@ -1486,20 +1500,102 @@ void SPhysicsAssetEditorWindow::RebuildShapeLines()
 	}
 
 	// ─────────────────────────────────────────────────
-	// 제약 조건 시각화는 SkeletalMeshComponent::RenderDebugVolume에서 처리
-	// 여기서는 PhysicsAsset과 선택 인덱스만 설정
+	// 제약 조건 시각화 (캐싱된 ConstraintMeshComponent 사용)
 	// ─────────────────────────────────────────────────
-	if (MeshComp)
+	if (MeshComp && State->bShowConstraints)
 	{
-		// PhysicsAsset 연결 (RenderDebugVolume에서 시각화)
+		// PhysicsAsset 연결
 		if (MeshComp->GetPhysicsAsset() != State->EditingAsset)
 		{
 			MeshComp->SetPhysicsAsset(State->EditingAsset);
 		}
 
-		// 선택된 Constraint 인덱스 설정 (선택 하이라이팅용)
-		int32 SelectedIdx = (!State->bBodySelectionMode) ? State->SelectedConstraintIndex : -1;
-		MeshComp->DebugSelectedConstraintIndex = SelectedIdx;
+		// BoneTransforms 수집 (RenderDebugVolume과 동일한 방식)
+		USkeletalMesh* SkelMesh = MeshComp->GetSkeletalMesh();
+		if (SkelMesh)
+		{
+			const FSkeletalMeshData* MeshData = SkelMesh->GetSkeletalMeshData();
+			if (MeshData)
+			{
+				int32 BoneCount = static_cast<int32>(MeshData->Skeleton.Bones.size());
+				TArray<FTransform> BoneTransforms;
+				BoneTransforms.SetNum(BoneCount);
+
+				FMatrix ComponentToWorld = MeshComp->GetWorldMatrix();
+
+				const TArray<FTransform>& CurrentPose = MeshComp->GetCurrentComponentSpacePose();
+
+				for (int32 i = 0; i < BoneCount; ++i)
+				{
+					FTransform ComponentSpaceTransform;
+					if (i < CurrentPose.Num())
+					{
+						ComponentSpaceTransform = CurrentPose[i];
+					}
+					else
+					{
+						ComponentSpaceTransform = MeshData->Skeleton.Bones[i].BindPose;
+					}
+
+					FMatrix BoneWorldMatrix = ComponentSpaceTransform.ToMatrix() * ComponentToWorld;
+					BoneTransforms[i] = FTransform(BoneWorldMatrix);
+				}
+
+				// 선택된 Constraint 인덱스
+				int32 SelectedIdx = (!State->bBodySelectionMode) ? State->SelectedConstraintIndex : -1;
+
+				// Constraint 메시/라인 생성
+				FTrianglesBatch ConstraintTriBatch;
+				FLinesBatch ConstraintLineBatch;
+				FPhysicsDebugUtils::GenerateConstraintsDebugMesh(
+					State->EditingAsset, BoneTransforms, SelectedIdx,
+					ConstraintTriBatch, ConstraintLineBatch);
+
+				// ConstraintMeshComponent 생성 (없으면)
+				if (!State->ConstraintMeshComponent)
+				{
+					State->ConstraintMeshComponent = NewObject<UTriangleMeshComponent>();
+					State->ConstraintMeshComponent->SetAlwaysOnTop(true);
+					if (State->PreviewActor)
+					{
+						State->PreviewActor->AddOwnedComponent(State->ConstraintMeshComponent);
+						State->ConstraintMeshComponent->RegisterComponent(State->World);
+					}
+				}
+
+				// ConstraintPreviewLineComponent 생성 (없으면)
+				if (!State->ConstraintPreviewLineComponent)
+				{
+					State->ConstraintPreviewLineComponent = NewObject<ULineComponent>();
+					State->ConstraintPreviewLineComponent->SetAlwaysOnTop(true);
+					if (State->PreviewActor)
+					{
+						State->PreviewActor->AddOwnedComponent(State->ConstraintPreviewLineComponent);
+						State->ConstraintPreviewLineComponent->RegisterComponent(State->World);
+					}
+				}
+
+				// 메시/라인 데이터 설정 (캐싱)
+				State->ConstraintMeshComponent->SetMesh(ConstraintTriBatch);
+				State->ConstraintMeshComponent->SetMeshVisible(State->bShowConstraints);
+
+				State->ConstraintLinesBatch = ConstraintLineBatch;
+				State->ConstraintPreviewLineComponent->SetDirectBatch(State->ConstraintLinesBatch);
+				State->ConstraintPreviewLineComponent->SetLineVisible(State->bShowConstraints);
+			}
+		}
+	}
+	else if (!State->bShowConstraints)
+	{
+		// Constraint 숨기기
+		if (State->ConstraintMeshComponent)
+		{
+			State->ConstraintMeshComponent->SetMeshVisible(false);
+		}
+		if (State->ConstraintPreviewLineComponent)
+		{
+			State->ConstraintPreviewLineComponent->SetLineVisible(false);
+		}
 	}
 }
 
@@ -1521,6 +1617,9 @@ void SPhysicsAssetEditorWindow::UpdateSelectedBodyLines()
 	if (MeshComp && Body->BoneIndex >= 0)
 	{
 		BoneTransform = MeshComp->GetBoneWorldTransform(Body->BoneIndex);
+		// m → cm 변환 (PhysX에서 0.01 스케일이 적용된 경우 복원)
+		constexpr float MToCm = 100.0f;
+		BoneTransform.Scale3D = BoneTransform.Scale3D * MToCm;
 	}
 
 	// 헬퍼 함수로 좌표 생성 (AggGeom의 모든 Shape 처리)
@@ -1545,8 +1644,8 @@ void SPhysicsAssetEditorWindow::UpdateSelectedBodyLines()
 		UTriangleMeshComponent* MeshComp = State->BodyMeshComponents[State->SelectedBodyIndex];
 		if (MeshComp)
 		{
-			// 선택된 바디는 옅은 노란색
-			FVector4 MeshColor(1.0f, 1.0f, 0.8f, 0.25f);
+			// 선택된 바디는 옅은 노란색 (40% 투명)
+			FVector4 MeshColor(1.0f, 1.0f, 0.8f, 0.4f);
 
 			FTrianglesBatch MeshBatch;
 			FPhysicsDebugUtils::GenerateBodyShapeMesh(Body, BoneTransform, MeshColor,
@@ -1595,6 +1694,9 @@ void SPhysicsAssetEditorWindow::UpdateSelectionColors()
 				if (SkeletalMeshComp && Body->BoneIndex >= 0)
 				{
 					BoneTransform = SkeletalMeshComp->GetBoneWorldTransform(Body->BoneIndex);
+					// m → cm 변환 (PhysX에서 0.01 스케일이 적용된 경우 복원)
+					constexpr float MToCm = 100.0f;
+					BoneTransform.Scale3D = BoneTransform.Scale3D * MToCm;
 				}
 
 				FTrianglesBatch MeshBatch;
@@ -1616,7 +1718,7 @@ void SPhysicsAssetEditorWindow::UpdateSelectionColors()
 		// 새로 선택된 바디를 선택 색상으로 (바디 선택 모드일 때만)
 		if (State->bBodySelectionMode)
 		{
-			FVector4 SelectedMeshColor(1.0f, 1.0f, 0.8f, 0.25f);  // 옅은 노란색
+			FVector4 SelectedMeshColor(1.0f, 1.0f, 0.8f, 0.4f);  // 옅은 노란색 (40% 투명)
 			UpdateBodyColor(State->SelectedBodyIndex, SelectedColor, SelectedMeshColor);
 		}
 	}
@@ -1752,12 +1854,6 @@ void SPhysicsAssetEditorWindow::LoadPhysicsAsset()
 						State->CurrentMesh = Mesh;
 						State->LoadedMeshPath = LoadedAsset->SkeletalMeshPath;
 						State->RequestLinesRebuild();
-
-						// Physics Debug를 항상 렌더링하도록 플래그 설정 (에디터용)
-						if (USkeletalMeshComponent* MeshComp = State->GetPreviewMeshComponent())
-						{
-							MeshComp->bAlwaysRenderPhysicsDebug = true;
-						}
 					}
 				}
 
@@ -1813,12 +1909,6 @@ void SPhysicsAssetEditorWindow::LoadMeshAndResetPhysics(PhysicsAssetEditorState*
 		State->PreviewActor->SetSkeletalMesh(MeshPath);
 		State->CurrentMesh = Mesh;
 		State->LoadedMeshPath = MeshPath;
-
-		// Physics Debug를 항상 렌더링하도록 플래그 설정 (에디터용)
-		if (USkeletalMeshComponent* MeshComp = State->GetPreviewMeshComponent())
-		{
-			MeshComp->bAlwaysRenderPhysicsDebug = true;
-		}
 
 		// 새 Physics Asset 생성 (기존 캐시된 에셋 수정하지 않음)
 		State->EditingAsset = NewObject<UPhysicsAsset>();

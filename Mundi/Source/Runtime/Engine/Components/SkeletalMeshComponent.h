@@ -111,6 +111,11 @@ public:
     // Notify
     void TriggerAnimNotify(const FAnimNotifyEvent& NotifyEvent);
 
+    /**
+     * @brief CurrentComponentSpacePose getter (에디터 시각화용)
+     */
+    const TArray<FTransform>& GetCurrentComponentSpacePose() const { return CurrentComponentSpacePose; }
+
 protected:
     /**
      * @brief CurrentLocalSpacePose의 변경사항을 ComponentSpace -> FinalMatrices 계산까지 모두 수행

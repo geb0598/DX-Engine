@@ -477,9 +477,8 @@ void URenderer::BeginTriangleBatch()
 	bTriangleBatchActive = true;
 
 	// Clear previous batch data
-	TriangleBatchData->Vertices.clear();
-	TriangleBatchData->Color.clear();
 	TriangleBatchData->Indices.clear();
+	TriangleInterleavedVertices.clear();
 }
 
 void URenderer::AddTriangle(const FVector& V0, const FVector& V1, const FVector& V2, const FVector4& Color)
@@ -544,21 +543,19 @@ void URenderer::AddTriangles(const TArray<FVector>& Vertices, const TArray<uint3
 		return;
 	}
 
-	uint32 startIndex = static_cast<uint32>(TriangleBatchData->Vertices.size());
+	uint32 startIndex = static_cast<uint32>(TriangleInterleavedVertices.size());
 
-	// Reserve space for efficiency
-	TriangleBatchData->Vertices.reserve(TriangleBatchData->Vertices.size() + Vertices.size());
-	TriangleBatchData->Color.reserve(TriangleBatchData->Color.size() + Colors.size());
-	TriangleBatchData->Indices.reserve(TriangleBatchData->Indices.size() + Indices.size());
-
-	// Add all vertices with their colors
+	// 인터리브된 버텍스 배열에 직접 추가 (GPU 업로드 시 memcpy 가능)
+	size_t prevSize = TriangleInterleavedVertices.size();
+	TriangleInterleavedVertices.resize(prevSize + Vertices.size());
 	for (size_t i = 0; i < Vertices.size(); ++i)
 	{
-		TriangleBatchData->Vertices.push_back(Vertices[i]);
-		TriangleBatchData->Color.push_back(Colors[i]);
+		TriangleInterleavedVertices[prevSize + i].Position = Vertices[i];
+		TriangleInterleavedVertices[prevSize + i].Color = Colors[i];
 	}
 
-	// Add indices (offset by startIndex)
+	// 인덱스는 offset을 적용해야 하므로 reserve 후 추가
+	TriangleBatchData->Indices.reserve(TriangleBatchData->Indices.size() + Indices.size());
 	for (uint32 Idx : Indices)
 	{
 		TriangleBatchData->Indices.push_back(startIndex + Idx);
@@ -568,46 +565,25 @@ void URenderer::AddTriangles(const TArray<FVector>& Vertices, const TArray<uint3
 
 void URenderer::EndTriangleBatch(const FMatrix& ModelMatrix)
 {
-	UE_LOG("[EndTriangleBatch] Active=%d, Data=%p, Mesh=%p, Verts=%zu, MeshInit=%d, MaxV=%u, MaxI=%u",
-		bTriangleBatchActive ? 1 : 0,
-		TriangleBatchData,
-		DynamicTriangleMesh,
-		TriangleBatchData ? TriangleBatchData->Vertices.size() : 0,
-		DynamicTriangleMesh ? (DynamicTriangleMesh->IsInitialized() ? 1 : 0) : -1,
-		DynamicTriangleMesh ? DynamicTriangleMesh->GetMaxVertices() : 0,
-		DynamicTriangleMesh ? DynamicTriangleMesh->GetMaxIndices() : 0);
-
-	if (!bTriangleBatchActive || !TriangleBatchData || !DynamicTriangleMesh || TriangleBatchData->Vertices.empty())
+	if (!bTriangleBatchActive || !TriangleBatchData || !DynamicTriangleMesh || TriangleInterleavedVertices.empty())
 	{
-		UE_LOG("[EndTriangleBatch] Early return - active=%d, data=%p, mesh=%p, empty=%d",
-			bTriangleBatchActive ? 1 : 0, TriangleBatchData, DynamicTriangleMesh,
-			TriangleBatchData ? (TriangleBatchData->Vertices.empty() ? 1 : 0) : -1);
 		bTriangleBatchActive = false;
 		return;
 	}
 
 	// Clamp to GPU buffer capacity
 	const uint32 totalTriangles = static_cast<uint32>(TriangleBatchData->Indices.size() / 3);
-	UE_LOG("[EndTriangleBatch] totalTriangles=%u, MAX=%u", totalTriangles, MAX_TRIANGLES);
 	if (totalTriangles > MAX_TRIANGLES)
 	{
-		const uint32 clampedTriangles = MAX_TRIANGLES;
-		const uint32 clampedVerts = clampedTriangles * 3;
-		const uint32 clampedIndices = clampedTriangles * 3;
-		TriangleBatchData->Vertices.resize(clampedVerts);
-		TriangleBatchData->Color.resize(clampedVerts);
+		const uint32 clampedVerts = MAX_TRIANGLES * 3;
+		const uint32 clampedIndices = MAX_TRIANGLES * 3;
+		TriangleInterleavedVertices.resize(clampedVerts);
 		TriangleBatchData->Indices.resize(clampedIndices);
 	}
 
-	UE_LOG("[EndTriangleBatch] Before UpdateData - DataVerts=%zu, DataIndices=%zu",
-		TriangleBatchData->Vertices.size(), TriangleBatchData->Indices.size());
-
-	// Efficiently update dynamic mesh data
-	bool updateResult = DynamicTriangleMesh->UpdateData(TriangleBatchData, RHIDevice->GetDeviceContext());
-	UE_LOG("[EndTriangleBatch] UpdateData returned %d", updateResult ? 1 : 0);
-	if (!updateResult)
+	// 인터리브된 배열로 GPU 업로드 (memcpy 사용 - 고속)
+	if (!DynamicTriangleMesh->UpdateDataInterleaved(TriangleInterleavedVertices, TriangleBatchData->Indices, RHIDevice->GetDeviceContext()))
 	{
-		UE_LOG("[EndTriangleBatch] UpdateData FAILED");
 		bTriangleBatchActive = false;
 		return;
 	}
@@ -620,8 +596,6 @@ void URenderer::EndTriangleBatch(const FMatrix& ModelMatrix)
 	// Render using dynamic mesh
 	if (DynamicTriangleMesh->GetCurrentVertexCount() > 0 && DynamicTriangleMesh->GetCurrentIndexCount() > 0)
 	{
-		UE_LOG("[EndTriangleBatch] Drawing %d indices", DynamicTriangleMesh->GetCurrentIndexCount());
-
 		UINT stride = sizeof(FVertexSimple);
 		UINT offset = 0;
 
@@ -646,17 +620,13 @@ void URenderer::EndTriangleBatch(const FMatrix& ModelMatrix)
 		RHIDevice->RSSetState(ERasterizerMode::Solid);  // Restore culling
 		RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual);  // Restore depth write
 	}
-	else
-	{
-		UE_LOG("[EndTriangleBatch] Skip draw - no data in mesh");
-	}
 
 	bTriangleBatchActive = false;
 }
 
 void URenderer::EndTriangleBatchAlwaysOnTop(const FMatrix& ModelMatrix)
 {
-	if (!bTriangleBatchActive || !TriangleBatchData || !DynamicTriangleMesh || TriangleBatchData->Vertices.empty())
+	if (!bTriangleBatchActive || !TriangleBatchData || !DynamicTriangleMesh || TriangleInterleavedVertices.empty())
 	{
 		bTriangleBatchActive = false;
 		return;
@@ -666,16 +636,14 @@ void URenderer::EndTriangleBatchAlwaysOnTop(const FMatrix& ModelMatrix)
 	const uint32 totalTriangles = static_cast<uint32>(TriangleBatchData->Indices.size() / 3);
 	if (totalTriangles > MAX_TRIANGLES)
 	{
-		const uint32 clampedTriangles = MAX_TRIANGLES;
-		const uint32 clampedVerts = clampedTriangles * 3;
-		const uint32 clampedIndices = clampedTriangles * 3;
-		TriangleBatchData->Vertices.resize(clampedVerts);
-		TriangleBatchData->Color.resize(clampedVerts);
+		const uint32 clampedVerts = MAX_TRIANGLES * 3;
+		const uint32 clampedIndices = MAX_TRIANGLES * 3;
+		TriangleInterleavedVertices.resize(clampedVerts);
 		TriangleBatchData->Indices.resize(clampedIndices);
 	}
 
-	// Efficiently update dynamic mesh data
-	if (!DynamicTriangleMesh->UpdateData(TriangleBatchData, RHIDevice->GetDeviceContext()))
+	// 인터리브된 배열로 GPU 업로드 (memcpy 사용 - 고속)
+	if (!DynamicTriangleMesh->UpdateDataInterleaved(TriangleInterleavedVertices, TriangleBatchData->Indices, RHIDevice->GetDeviceContext()))
 	{
 		bTriangleBatchActive = false;
 		return;
@@ -710,7 +678,6 @@ void URenderer::EndTriangleBatchAlwaysOnTop(const FMatrix& ModelMatrix)
 		RHIDevice->OMSetBlendState(false);
 		RHIDevice->OMSetDepthStencilState(EComparisonFunc::LessEqual);
 	}
-
 	bTriangleBatchActive = false;
 }
 
