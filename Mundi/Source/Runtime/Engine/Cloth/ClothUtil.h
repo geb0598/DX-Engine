@@ -19,6 +19,24 @@ public:
     {
         if (!Source || !Target) return;
 
+        // ===== Stiffness 설정 =====
+        // PhaseConfig 직접 생성
+        Fabric& Fabric = Source->getFabric();
+        int numPhases = Fabric.getNumPhases();
+        std::vector<nv::cloth::PhaseConfig> phaseConfigs(numPhases);
+
+        for (int i = 0; i < numPhases; i++)
+        {
+            phaseConfigs[i].mPhaseIndex = i;
+            phaseConfigs[i].mStiffness = 1.0f;           // 0.0 ~ 1.0
+            phaseConfigs[i].mStiffnessMultiplier = 1.0f;
+            phaseConfigs[i].mCompressionLimit = 1.0f;
+            phaseConfigs[i].mStretchLimit = 1.0f;        // 늘어남 제한
+        }
+
+        nv::cloth::Range<nv::cloth::PhaseConfig> range(phaseConfigs.data(), phaseConfigs.data() + numPhases);
+        Target->setPhaseConfig(range);
+
         // 기본 물리 설정
         Target->setGravity(Source->getGravity());
         Target->setDamping(Source->getDamping());

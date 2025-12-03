@@ -26,6 +26,11 @@ void UClothComponent::TickComponent(float DeltaSeconds)
 {
 	Super::TickComponent(DeltaSeconds);
 	ClothInstance->Sync();
+	FVector Down = FVector(0, 0, -1);
+	FQuat WorldRot = GetWorldRotation();
+	FVector WorldDown = WorldRot.Inverse().RotateVector(Down) * Gravity;
+	UE_LOG("%f,%f,%f", WorldDown.X, WorldDown.Y, WorldDown.Z);
+	ClothInstance->Cloth->setGravity(PxVec3(WorldDown.X, WorldDown.Y, WorldDown.Z));
 }
 void UClothComponent::EndPlay()
 {
@@ -39,6 +44,8 @@ void UClothComponent::DuplicateSubObjects()
 
 void UClothComponent::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 {
+	auto temp = this;
+	auto temp2 = &Winds;
 	Super::Serialize(bInIsLoading, InOutHandle);
 }
 void UClothComponent::CollectMeshBatches(TArray<FMeshBatchElement>& OutMeshBatchElements, const FSceneView* View)

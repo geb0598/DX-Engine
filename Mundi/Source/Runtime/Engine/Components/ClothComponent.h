@@ -22,4 +22,11 @@ public:
 	void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
 	UClothMeshInstance* ClothInstance = nullptr;
+	
+	UPROPERTY(EditAnywhere, DisplayName = "Cloth")
+	float Gravity = 9.8f;
+
+	UPROPERTY(EditAnywhere, DisplayName = "Cloth")
+	TArray<FVector> Winds;
+
 };

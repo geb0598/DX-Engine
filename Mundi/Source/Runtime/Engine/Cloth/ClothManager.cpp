@@ -47,16 +47,16 @@ void UClothManager::InitClothManager(ID3D11Device* InDevice, ID3D11DeviceContext
 
     TestCloth = new FClothMesh();
 
-    for (int y = 0; y <= 10; y++)
+    for (int z= 0; z<= 10; z++)
     {
         for (int x = 0; x <= 10; x++)
         {
             FVertexDynamic Vert;
-            Vert.Position = FVector(x, y, 0);
-            Vert.Normal = FVector(0, 0, 1);
-            Vert.UV = FVector2D(x / 10.0f, y / 10.0f);
+            Vert.Position = FVector(x, 0, -z);
+            Vert.Normal = FVector(0, 1, 0);
+            Vert.UV = FVector2D(x / 10.0f, z/ 10.0f);
             TestCloth->OriginVertices.push_back(Vert);
-            float InvMass = x == 0 && y == 0 ? 0 : 1.0f;
+            float InvMass = (x == 0 || x == 5 || x == 10) && z == 0 ? 0 : 1.0f;
             TestCloth->OriginParticles.push_back(physx::PxVec4(Vert.Position.X, Vert.Position.Y, Vert.Position.Z, InvMass));
         }
     }

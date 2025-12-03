@@ -66,6 +66,7 @@ UClothMeshInstance* UClothMeshInstance::GetDuplicated()
         OriginFabric
     );
 
+    ClothUtil::CopySettings(OriginCloth, DuplicatedInstance->Cloth);
     DuplicatedInstance->Particles = Particles;
     DuplicatedInstance->Indices = Indices; //얘는 원본써도될걸?
     DuplicatedInstance->Vertices = Vertices;
