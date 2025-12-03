@@ -1371,6 +1371,8 @@ void SPhysicsAssetEditorWindow::RenderToolbar()
 	{
 		if (State->ConstraintPreviewLineComponent)
 			State->ConstraintPreviewLineComponent->SetLineVisible(State->bShowConstraints);
+		if (State->ConstraintMeshComponent)
+			State->ConstraintMeshComponent->SetMeshVisible(State->bShowConstraints);
 	}
 }
 
