@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "Pawn.h"
 #include "VehicleMovementComponent.h"
 #include "StaticMeshComponent.h" // 스태틱 메쉬 헤더 (가정)

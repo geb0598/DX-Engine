@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "VehicleMovementComponent.h"
 #include "SceneComponent.h"
 #include "PrimitiveComponent.h"
@@ -10,7 +10,7 @@
 /** 차량 자신 (RayCast가 자기 자신을 맞추지 않기 위함) */
 static const PxU32 VEHICLE_SURFACE_TYPE_CHASSIS = 0xffff;
 static const float VEHICLE_MASS = 1500.0f;
-static const uint32 MAX_WHEELS = 4;
+static const uint32 MAX_WHEELS = 2;
 
 /** 레이캐스트가 닿은 물체가 차량 자신이면 무시하기위한 필터 */
 static PxQueryHitType::Enum WheelRaycastPreFilter(
@@ -60,34 +60,46 @@ UVehicleMovementComponent::UVehicleMovementComponent()
     , BatchQueryResults(nullptr)
     , BatchQueryTouchBuffer(nullptr)
 {
-    VehicleWheels.SetNum(MAX_WHEELS);
-    for (int32 i = 0; i < MAX_WHEELS; i++)
-    {
-        VehicleWheels[i] = NewObject<UVehicleWheel>();
+    //VehicleWheels.SetNum(MAX_WHEELS);
+    //for (int32 i = 0; i < MAX_WHEELS; i++)
+    //{
+    //    VehicleWheels[i] = NewObject<UVehicleWheel>();
 
-        // @todo 현재 하드코딩된 스티어링 각도 사용
-        if (i < 2) 
-        {
-            VehicleWheels[i]->SteerAngle = 45.0f; 
-        }
-        else
-        {
-            VehicleWheels[i]->SteerAngle = 0.0f; 
-        }
-    }
-    
+    //    // @todo 현재 하드코딩된 스티어링 각도 사용
+    //    if (i == 0) 
+    //    {
+    //        VehicleWheels[i]->SteerAngle = 45.0f; 
+    //    }
+    //    else
+    //    {
+    //        VehicleWheels[i]->SteerAngle = 0.0f; 
+    //    }
+    //}
+    VehicleWheel0 = NewObject<UVehicleWheel>();
+    VehicleWheel0->SteerAngle = 45.0f;
+    VehicleWheel0->MaxSuspensionCompression = 0.1f;
+    VehicleWheel0->MaxSuspensionDroop = 0.1f;
+    VehicleWheel0->WheelOffset = FVector(1.0f, 0.0f, -0.5f);
+
+    VehicleWheel1 = NewObject<UVehicleWheel>();
+    VehicleWheel1->SteerAngle = 0.0f;
+    VehicleWheel1->MaxSuspensionCompression = 0.1f;
+    VehicleWheel1->MaxSuspensionDroop = 0.1f;
+    VehicleWheel1->WheelOffset = FVector(-1.0f, 0.0f, -0.5f);
+
     // @todo 현재 하드코딩된 바퀴 설정 사용
-    FVector COM = FVector(0, 0, 0.723);
     WheelSetups.SetNum(MAX_WHEELS);
-    WheelSetups[0].BoneOffset = FVector( 1.289f, -0.939f, 0.354f) - COM;
+    /*WheelSetups[0].BoneOffset = FVector( 1.289f, -0.939f, 0.354f) - COM;
     WheelSetups[1].BoneOffset = FVector( 1.289f,  0.939f, 0.354f) - COM;
     WheelSetups[2].BoneOffset = FVector(-1.062f, -0.954f, 0.411f) - COM;
-    WheelSetups[3].BoneOffset = FVector(-1.062f,  0.954f, 0.411f) - COM;
-    for (int i = 0; i < MAX_WHEELS; i++)
+    WheelSetups[3].BoneOffset = FVector(-1.062f,  0.954f, 0.411f) - COM;*/
+    WheelSetups[0].BoneOffset = VehicleWheel0->WheelOffset;
+    WheelSetups[1].BoneOffset = VehicleWheel1->WheelOffset;
+ /*   for (int i = 0; i < MAX_WHEELS; i++)
     {
         VehicleWheels[i]->MaxSuspensionCompression = 0.1f;
         VehicleWheels[i]->MaxSuspensionDroop = 0.1f;
-    }
+    }*/
 }
 
 UVehicleMovementComponent::~UVehicleMovementComponent()
@@ -116,7 +128,8 @@ void UVehicleMovementComponent::OnRegister(UWorld* InWorld)
     
     if (!PInputData)
     {
-        PInputData = new PxVehicleDrive4WRawInputData();
+        //PInputData = new PxVehicleDrive4WRawInputData();
+        PInputData = new PxVehicleDriveNWRawInputData();
     }
 }
 
@@ -140,6 +153,9 @@ void UVehicleMovementComponent::OnUnregister()
 void UVehicleMovementComponent::SetupVehicle()
 {
     ReleaseVehicle();
+
+    WheelSetups[0].BoneOffset = VehicleWheel0->WheelOffset;
+    WheelSetups[1].BoneOffset = VehicleWheel1->WheelOffset;
 
     PxRigidDynamic* RigidActor = GetValidDynamicActor();
     if (!RigidActor)
@@ -207,6 +223,7 @@ void UVehicleMovementComponent::SetupWheelShape(physx::PxRigidDynamic* RigidActo
         return;
     }
 
+    UVehicleWheel* VehicleWheels[] = { VehicleWheel0, VehicleWheel1 };
     for (int32 i = 0; i < MAX_WHEELS; i++)
     {
         if (VehicleWheels[i])
@@ -248,6 +265,7 @@ void UVehicleMovementComponent::SetupWheelSimulationData(physx::PxRigidDynamic* 
     PxVec3 WheelOffsets[MAX_WHEELS];
     TArray<uint32> ValidWheelIndices;
 
+    UVehicleWheel* VehicleWheels[] = { VehicleWheel0, VehicleWheel1 };
     for (int32 i = 0; i < MAX_WHEELS; i++)
     {
         if (VehicleWheels[i])
@@ -286,7 +304,8 @@ void UVehicleMovementComponent::SetupWheelSimulationData(physx::PxRigidDynamic* 
 
 void UVehicleMovementComponent::SetupDriveSimulationData(physx::PxRigidDynamic* RigidActor)
 {
-    PxVehicleDriveSimData4W DriveSimData;
+    //PxVehicleDriveSimData4W DriveSimData;
+    PxVehicleDriveSimDataNW DriveSimData;
     DriveSimData.setEngineData(EngineSetup.GetPxEngineData());
     DriveSimData.setGearsData(TransmissionSetup.GetPxGearsData());
     
@@ -297,13 +316,18 @@ void UVehicleMovementComponent::SetupDriveSimulationData(physx::PxRigidDynamic* 
     PxVehicleAutoBoxData AutoBoxData;
     AutoBoxData.setDownRatios(PxVehicleGearsData::eFIRST, 0.5f);
     AutoBoxData.setUpRatios(PxVehicleGearsData::eFIRST, 0.65f);
+    AutoBoxData.setUpRatios(PxVehicleGearsData::eSECOND, 0.5f);
+    AutoBoxData.setDownRatios(PxVehicleGearsData::eSECOND, 0.4f);
     DriveSimData.setAutoBoxData(AutoBoxData);
     
-    PxVehicleDifferential4WData DiffData;
-    DiffData.mType = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;
+    /*PxVehicleDifferential4WData DiffData;
+    DiffData.mType = PxVehicleDifferential4WData::eDIFF_TYPE_LS_4WD;*/
+    PxVehicleDifferentialNWData DiffData;
+    DiffData.setDrivenWheel(0, false);
+    DiffData.setDrivenWheel(1, true);
     DriveSimData.setDiffData(DiffData);
 
-    if (PWheelsSimData)
+  /*  if (PWheelsSimData)
     {
         PxVec3 FL = PWheelsSimData->getWheelCentreOffset(0);
         PxVec3 FR = PWheelsSimData->getWheelCentreOffset(1);
@@ -315,13 +339,14 @@ void UVehicleMovementComponent::SetupDriveSimulationData(physx::PxRigidDynamic* 
         Ackermann.mFrontWidth = PxAbs(FL.y - FR.y);
         Ackermann.mRearWidth = PxAbs(RL.y - RR.y);
         DriveSimData.setAckermannGeometryData(Ackermann);
-    }
+    }*/
 
     if (PWheelsSimData)
     {
-        PVehicleDrive = PxVehicleDrive4W::allocate(4);
+        //PVehicleDrive = PxVehicleDrive4W::allocate(4);
+        PVehicleDrive = PxVehicleDriveNW::allocate(2);
     
-        PVehicleDrive->setup(GPhysXSDK, RigidActor, *PWheelsSimData, DriveSimData, 0);
+        PVehicleDrive->setup(GPhysXSDK, RigidActor, *PWheelsSimData, DriveSimData, 2);
 
         PVehicleDrive->mDriveDynData.setUseAutoGears(true);
         PVehicleDrive->mDriveDynData.forceGearChange(PxVehicleGearsData::eFIRST);
@@ -457,6 +482,8 @@ void UVehicleMovementComponent::TickComponent(float DeltaSeconds)
     
     ProcessVehicleInput(DeltaSeconds);
 
+    BalanceVehicle(DeltaSeconds);
+
     // @note 디버그용 (불필요할 시 주석처리 혹은 삭제할 것)
     if (PVehicleDrive)
     {
@@ -513,7 +540,7 @@ void UVehicleMovementComponent::ProcessVehicleInput(float DeltaTime)
 
     bool bIsInAir = IsVehicleInAir();
 
-    PxVehicleDrive4WSmoothAnalogRawInputsAndSetAnalogInputs(
+    PxVehicleDriveNWSmoothAnalogRawInputsAndSetAnalogInputs(
         gPadSmoothingData,
         gSteerVsForwardSpeedTable,
         *PInputData,
@@ -546,6 +573,56 @@ void UVehicleMovementComponent::UpdateVehicleSimulation(float DeltaTime)
     if (Actor && Actor->isSleeping())
     {
         Actor->wakeUp();
+    }
+}
+
+void UVehicleMovementComponent::BalanceVehicle(float DeltaSeconds)
+{
+    if (PVehicleDrive)
+    {
+        PxRigidDynamic* Actor = PVehicleDrive->getRigidDynamicActor();
+
+        PxTransform Transform = Actor->getGlobalPose();
+
+        // 70도 이상 기울면 그냥 넘어지도록 함
+        if (Transform.q.getBasisVector2().z < 0.34)
+        {
+            return;
+        }
+        
+        PxVec3 LocalRight = Transform.q.getBasisVector1();
+
+        float SinRoll = LocalRight.z;
+
+        float Mass = Actor->getMass();
+        float COMHegith = Actor->getCMassLocalPose().p.z;
+
+        // 중력에 의한 토크(sin은 Damping때문에 나중에 곱함, 여기서 곱하면 댐핑이 현재 각속도 반대 보장이 안됨)
+        float GravityTorque = Mass * 9.81f * COMHegith;
+
+        // 중력에 의한 토크 복원력(그대로 쓰면 가속만 안 할 뿐 결국 원래 속도대로 넘어짐)
+        float InvGravityTorque = GravityTorque * GravityTorqueInverseFactor;
+
+        // 원심력에 의한 토크 복원력(속도 제곱 쓰면 엔진에선 값이 너무 커서 안 씀)
+        float InvCentrifugalTorque = InvGravityTorque * CentrifugalTorqueInverseFactor;
+
+        float InvTorque = InvGravityTorque + InvCentrifugalTorque * Actor->getLinearVelocity().magnitude();
+
+        // 최대 복원력 제한(너무 세면 날라감)
+        InvTorque = FMath::Min(InvTorque, InvGravityTorque * 10.0f);
+
+        // 복원력만 적용하면 에너지가 그대로라서 영원히 진동 -> 현재 각속도에 저항하는 댐핑이 필요
+        float Damping = InvTorque * DampingFactor;
+
+        PxVec3 LocalForward = Transform.q.getBasisVector0();
+
+        PxVec3 BalanceTorque = LocalForward * (-InvTorque*SinRoll - Damping * Actor->getAngularVelocity().dot(LocalForward));
+
+        if (BalanceTorque.isFinite())
+        {
+            Actor->addTorque(BalanceTorque, PxForceMode::eFORCE);
+        }
+
     }
 }
 

@@ -29,6 +29,7 @@
 #include "PhysicalMaterial.h"
 #include "BodySetup.h"
 #include "ConvexElem.h"
+#include "VehicleMovementComponent.h"
 
 // 정적 멤버 변수 초기화
 TArray<FString> UPropertyRenderer::CachedSkeletalMeshPaths;
@@ -351,6 +352,7 @@ bool UPropertyRenderer::RenderProperty(const FProperty& Property, void* ObjectIn
 		Obj->OnPropertyChanged(Property);
 	}
 
+
 	return bChanged;
 }
 
@@ -476,6 +478,15 @@ bool UPropertyRenderer::RenderAllPropertiesWithInheritance(UObject* Object)
 				bAnyChanged = true;
 			}
 			ImGui::PopID();
+		}
+	}
+
+
+	if (UVehicleMovementComponent* Vehicle = Cast<UVehicleMovementComponent>(Object))
+	{
+		if (ImGui::Button("Reset Vehicle"))
+		{
+			Vehicle->SetupVehicle();
 		}
 	}
 
@@ -854,7 +865,8 @@ bool UPropertyRenderer::RenderObjectPtrProperty(const FProperty& Prop, void* Ins
 		// 객체가 있으면 클래스 이름과 객체 이름 표시
 		UClass* ObjClass = (*ObjPtr)->GetClass();
 		FString ObjName = (*ObjPtr)->GetName();
-		ImGui::Text("%s: %s (%s)", Prop.Name, ObjName.c_str(), ObjClass->Name);
+		//ImGui::Text("%s: %s (%s)", Prop.Name, ObjName.c_str(), ObjClass->Name);
+		RenderAllProperties(*ObjPtr);
 	}
 	else
 	{

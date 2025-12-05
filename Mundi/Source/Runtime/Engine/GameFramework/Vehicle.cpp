@@ -15,15 +15,21 @@ AVehicle::AVehicle()
     ChassisMesh->SetSimulatePhysics(true);
     ChassisMesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
-    FString WheelFileName[4] = {
+   /* FString WheelFileName[4] = {
         "/Model/Buggy/Buggy_Wheel_LF.obj",
         "/Model/Buggy/Buggy_Wheel_RF.obj",
         "/Model/Buggy/Buggy_Wheel_LB.obj",
         "/Model/Buggy/Buggy_Wheel_RB.obj"
+    };*/
+    FString WheelFileName[2] = {
+        "/Model/Buggy/Buggy_Wheel_LF.obj",
+        "/Model/Buggy/Buggy_Wheel_LB.obj",
     };
 
-    WheelMeshes.SetNum(4);
-    for (int i = 0; i < 4; i++)
+    //WheelMeshes.SetNum(4);
+    WheelMeshes.SetNum(2);
+    //for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 2; i++)
     {
         FName WheelName = "WheelMesh_" + std::to_string(i);
         WheelMeshes[i] = CreateDefaultSubobject<UStaticMeshComponent>(WheelName);
@@ -172,7 +178,8 @@ void AVehicle::SyncWheelVisuals()
 {
     if (!VehicleMovement) return;
 
-    for (int i = 0; i < 4; i++)
+    //for (int i = 0; i < 4; i++)
+    for (int i = 0; i < 2; i++)
     {
         if (WheelMeshes[i])
         {

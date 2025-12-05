@@ -1337,6 +1337,11 @@
     <ClCompile Include="Generated\UClothComponent.generated.cpp">
       <Filter>Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\Components\ClothComponent.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\Cloth\NvClothEnvironment.cpp" />
+    <ClCompile Include="Generated\FVehicleEngineData.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Runtime\AssetManagement\LinesBatch.h">
@@ -2913,6 +2918,9 @@
       <Filter>Generated</Filter>
     </ClInclude>
     <ClInclude Include="Generated\UClothComponent.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\FVehicleEngineData.generated.h">
       <Filter>Generated</Filter>
     </ClInclude>
   </ItemGroup>

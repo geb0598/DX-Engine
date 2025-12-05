@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "PhysXPublic.h"
 #include "UVehicleWheel.generated.h"
 
@@ -17,6 +17,9 @@ public:
     // ====================================================================
     // Wheel Properties (PxVehicleWheelData 대응)
     // ====================================================================
+
+    UPROPERTY(EditAnywhere, Category = "Wheel")
+    FVector WheelOffset = FVector::Zero();
 
     /** 바퀴 반경 (m 단위) */
     UPROPERTY(EditAnywhere, Category = "Wheel")

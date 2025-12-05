@@ -782,6 +782,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\$(Configuration)\*.dll" "$(OutDir
     <ClCompile Include="Generated\FKConvexElem.generated.cpp" />
     <ClCompile Include="Generated\APlayerGameMode.generated.cpp" />
     <ClCompile Include="Generated\UClothComponent.generated.cpp" />
+    <ClCompile Include="Generated\FVehicleEngineData.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
@@ -1405,6 +1406,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\$(Configuration)\*.dll" "$(OutDir
     <ClInclude Include="Generated\FKConvexElem.generated.h" />
     <ClInclude Include="Generated\APlayerGameMode.generated.h" />
     <ClInclude Include="Generated\UClothComponent.generated.h" />
+    <ClInclude Include="Generated\FVehicleEngineData.generated.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTools\CodeGenerator\generate.py" />

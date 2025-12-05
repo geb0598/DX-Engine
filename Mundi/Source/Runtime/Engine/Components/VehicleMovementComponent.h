@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "MovementComponent.h"
 #include "Vehicle/VehicleWheel.h"
 #include "VehicleDefinitions.h"
@@ -49,12 +49,29 @@ public:
     // ====================================================================
     // 차량 설정 데이터 (에디터 노출)
     // ====================================================================
+    UPROPERTY(EditAnywhere, Category = "Engine")
     FVehicleEngineData EngineSetup;
     FVehicleTransmissionData TransmissionSetup;
 
     /** 4개의 휠 설정 (순서: 0:FL, 1:FR, 2:RL, 3:RR) */
-    UPROPERTY()
-    TArray<UVehicleWheel*> VehicleWheels;
+    /*UPROPERTY()
+    TArray<UVehicleWheel*> VehicleWheels;*/
+    UPROPERTY(EditAnywhere, Category = "Wheel0")
+    UVehicleWheel* VehicleWheel0 = nullptr;
+    UPROPERTY(EditAnywhere, Category = "Wheel1")
+    UVehicleWheel* VehicleWheel1 = nullptr;
+
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass")
+    FVector COM = FVector(0, 0, 0.723);
+
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass")
+    float GravityTorqueInverseFactor = 1.5f;
+
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass")
+    float CentrifugalTorqueInverseFactor = 0.5f;
+
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass")
+    float DampingFactor = 0.1f;
 
     TArray<FVehicleWheelSetup> WheelSetups;
 
@@ -89,14 +106,15 @@ public:
     // ====================================================================
     FTransform GetWheelTransform(int32 WheelIndex) const;
 
+    /** 차량 물리 인스턴스 생성 및 초기화 (가장 중요한 함수) */
+    /** UI에서 동적으로 Vehicle 정보 변경하려고 public으로 뺌 */
+    void SetupVehicle();
+
 private:
     // ====================================================================
     // 내부 구현 함수 (Setup & Helper)
     // ====================================================================
     
-    /** 차량 물리 인스턴스 생성 및 초기화 (가장 중요한 함수) */
-    void SetupVehicle();
-
     /** 차량 물리 인스턴스 해제 */
     void ReleaseVehicle();
 
@@ -136,18 +154,22 @@ private:
     /** 물리 시뮬레이션 (레이캐스트 및 차량 업데이트) */
     void UpdateVehicleSimulation(float DeltaTime);
 
+    void BalanceVehicle(float DeltaSeconds);
+
     // ====================================================================
     // PhysX 멤버 변수 (Sim Data)
     // ====================================================================
     
     /** PhysX 차량 드라이브 인스턴스 (핵심 객체) */
-    physx::PxVehicleDrive4W* PVehicleDrive;
+    //physx::PxVehicleDrive4W* PVehicleDrive;
+    physx::PxVehicleDriveNW* PVehicleDrive;
 
     /** 휠 시뮬레이션 데이터 (질량, 서스펜션, 타이어 등) */
     physx::PxVehicleWheelsSimData* PWheelsSimData;
 
     /** 입력 데이터 버퍼 (키보드 -> PhysX 변환용) */
-    physx::PxVehicleDrive4WRawInputData* PInputData;
+    //physx::PxVehicleDrive4WRawInputData* PInputData;
+    physx::PxVehicleDriveNWRawInputData* PInputData;
 
     /** 타이어 마찰력 데이터 쌍 */
     physx::PxVehicleDrivableSurfaceToTireFrictionPairs* FrictionPairs;
