@@ -8,7 +8,7 @@ AVehicle::AVehicle()
     , bIsBoosting(false)
 {
     ChassisMesh = CreateDefaultSubobject<UStaticMeshComponent>("ChassisMesh");
-    FString ChassisFileName = GDataDir + "/Model/Buggy/Buggy_Chassis.obj";
+    FString ChassisFileName = GDataDir + "/Model/ShoppingCart/ShoppingCart.obj";
     ChassisMesh->SetStaticMesh(ChassisFileName);
     SetRootComponent(ChassisMesh);
     
@@ -45,6 +45,7 @@ AVehicle::AVehicle()
     SpringArm->SetupAttachment(ChassisMesh);
     SpringArm->TargetArmLength = 10.0f;
     SpringArm->SocketOffset = FVector(-4.6f, 0.0f, 4.6f);
+    SpringArm->bUsePawnControlRotation = true;
 
     Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
     Camera->SetupAttachment(SpringArm);
