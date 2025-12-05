@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <string>
 #include <limits>
+#include <random>
 
 #include "UEContainer.h"
 #include "Archive.h"
@@ -1550,5 +1551,44 @@ inline void operator*= (TArray<FVector4>& Vectors, const FMatrix& Mat)
 	for (int i = 0; i < VectorCount; i++)
 	{
 		Vectors[i] = Vectors[i] * Mat;
+	}
+}
+
+namespace FMath
+{
+	/**
+	 * @brief 현재 벡터에서 목표 벡터까지 부드럽게 보간합니다.
+	 * @param Current 현재 위치
+	 * @param Target 목표 위치
+	 * @param DeltaTime 프레임 시간
+	 * @param InterpSpeed 보간 속도 (0이면 즉시 이동)
+	 * @return 보간된 새로운 위치
+	 */
+	inline FVector VInterpTo(const FVector& Current, const FVector& Target, float DeltaTime, float InterpSpeed)
+	{
+		// 속도가 0 이하이거나, 거리가 너무 가까우면 바로 목표지점으로
+		if (InterpSpeed <= 0.f)
+		{
+			return Target;
+		}
+
+		const FVector Dist = Target - Current;
+		if (Dist.SizeSquared() < KINDA_SMALL_NUMBER)
+		{
+			return Target;
+		}
+
+		// DeltaTime * Speed 만큼 이동하되, 1.0(목표지점)을 넘지 않도록 Clamp
+		const float DeltaMove = Clamp(DeltaTime * InterpSpeed, 0.0f, 1.0f);
+
+		return Current + Dist * DeltaMove;
+	}
+
+	inline float RandRange(float Min, float Max)
+	{
+		static std::random_device RandomDevice;
+		static std::mt19937 RandomGenerator(RandomDevice());
+		std::uniform_real_distribution<float> Dist(Min, Max);
+		return Dist(RandomGenerator);
 	}
 }

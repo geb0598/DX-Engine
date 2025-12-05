@@ -78,6 +78,7 @@ void FPhysScene::StartFrame()
     if (OwningWorld)
     {
         FlushDeferredAdds();
+        FlushCommands();
         float DeltaTime = OwningWorld->GetDeltaTime(EDeltaTime::Game);
         TickPhysScene(DeltaTime);
     }
@@ -110,7 +111,7 @@ void FPhysScene::DeferAddActor(PxActor* InActor)
 {
     if (!InActor) { return; }
 
-    std::lock_guard<std::mutex> Lock(DeferredReleaseMutex);
+    std::lock_guard<std::mutex> Lock(DeferredAddMutex);
     DeferredAddQueue.Add(InActor);
 }
 
@@ -139,10 +140,21 @@ void FPhysScene::DeferReleaseActor(PxActor* InActor)
 {
     if (!InActor) { return; }
 
-    InActor->userData = nullptr;
+    {
+        std::lock_guard<std::mutex> Lock(DeferredAddMutex);
+        if (DeferredAddQueue.Contains(InActor))
+        {
+            DeferredAddQueue.Remove(InActor);
+            InActor->release();
+            return;
+        }
+    }
 
-    std::lock_guard<std::mutex> Lock(DeferredReleaseMutex);
-    DeferredReleaseQueue.Add(InActor);
+    InActor->userData = nullptr;
+    {
+        std::lock_guard<std::mutex> Lock(DeferredReleaseMutex);
+        DeferredReleaseQueue.Add(InActor);
+    }
 }
 
 void FPhysScene::FlushDeferredReleases()
@@ -159,6 +171,39 @@ void FPhysScene::FlushDeferredReleases()
         }
     }
     DeferredReleaseQueue.Empty();
+}
+
+void FPhysScene::EnqueueCommand(std::function<void()> InCommand)
+{
+    std::lock_guard<std::mutex> Lock(CommandMutex);
+    CommandQueue.Add(InCommand);
+}
+
+void FPhysScene::FlushCommands()
+{
+    // 큐를 비우기 위해 로컬 변수로 이동 (실행 중 락을 잡지 않기 위함)
+    TArray<std::function<void()>> LocalCommands;
+    {
+        std::lock_guard<std::mutex> Lock(CommandMutex);
+        if (CommandQueue.IsEmpty())
+        {
+            return;
+        }
+        LocalCommands = std::move(CommandQueue); 
+        CommandQueue.Empty();
+    }
+
+    if (PhysXScene)
+    {
+        SCOPED_SCENE_WRITE_LOCK(PhysXScene);
+        for (auto& Cmd : LocalCommands)
+        {
+            if (Cmd)
+            {
+                Cmd();
+            }
+        }
+    }
 }
 
 void FPhysScene::InitPhysScene()

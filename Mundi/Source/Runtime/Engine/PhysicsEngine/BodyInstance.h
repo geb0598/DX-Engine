@@ -63,6 +63,10 @@ struct FBodyInstance
      */
     void AddTorque(const FVector& Torque, bool bAccelChange = false);
 
+    void AddImpulse(const FVector& Impulse, bool bVelChange = true);
+    
+    void AddAngularImpulse(const FVector& Impulse, bool bVelChange = true);
+
     /** 동적 바디여부 확인*/
     bool IsDynamic() const;
     
@@ -111,6 +115,9 @@ public:
 
     /** True일 경우, Kinematic 바디 (애니메이션이 위치를 제어) */
     bool bKinematic = false;
+
+    /** 커맨드 큐 내부에서 바디 인스턴스의 수명 추적용 (복사되면 안 됨) */
+    std::shared_ptr<bool> LifeHandle;
 
     /**
      * Kinematic 바디의 목표 트랜스폼을 설정합니다.
