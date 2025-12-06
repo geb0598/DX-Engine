@@ -1,0 +1,5372 @@
+{
+  "Actors" : {
+    "1480" : {
+      "ObjectName" : "Map_Main",
+      "OwnedComponents" : [{
+          "CollisionChannel" : 1,
+          "CollisionEnabled" : 3,
+          "CollisionMask" : -1,
+          "Id" : 1482,
+          "MaterialSlots" : [{
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Tire",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Tire",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Tire",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Tire",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Tire",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Tire",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Tire",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Tire",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "elise",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Basketball",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Basketball",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Basketball",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Clinic",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "GreenGlow",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RedGLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "CityProps",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "WhiteGlow1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Laundrymat",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FishFactory",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "LMProjects",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop1GLOW",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "UStaticMeshComponent_2",
+          "ParentId" : 0,
+          "PhysicalMaterial" : "",
+          "RelativeLocation" : [0.000000, 0.000000, -0.100000],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "StaticMesh" : "Data/ccity/ccity.obj",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1482,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1483" : {
+      "ObjectName" : "ADirectionalLightActor_1",
+      "OwnedComponents" : [{
+          "CascadedAreaColorDebugValue" : 0.000000,
+          "CascadedAreaShadowDebugValue" : -1,
+          "CascadedCount" : 6,
+          "CascadedLinearBlendingValue" : 0.150000,
+          "CascadedOverlapValue" : 0.500000,
+          "Id" : 1485,
+          "Intensity" : 1.000000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "ObjectName" : "UDirectionalLightComponent_1",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [-62.900280, 16.769619, -62.900280],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : 0.000010,
+          "ShadowResolutionScale" : 2048,
+          "ShadowSharpen" : 0.500000,
+          "ShadowSlopeBias" : 0.000010,
+          "Temperature" : 6500.000000,
+          "Type" : "UDirectionalLightComponent",
+          "bCascaded" : true,
+          "bCastShadows" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1485,
+      "Tag" : "",
+      "Type" : "ADirectionalLightActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1486" : {
+      "ObjectName" : "AAmbientLightActor_1",
+      "OwnedComponents" : [{
+          "Id" : 1488,
+          "Intensity" : 0.100000,
+          "LightColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+          "ObjectName" : "UAmbientLightComponent_1",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "ShadowBias" : 0.000010,
+          "ShadowResolutionScale" : 1024,
+          "ShadowSharpen" : 0.500000,
+          "ShadowSlopeBias" : 0.000010,
+          "Temperature" : 6500.000000,
+          "Type" : "UAmbientLightComponent",
+          "bCastShadows" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1488,
+      "Tag" : "",
+      "Type" : "AAmbientLightActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1489" : {
+      "ObjectName" : "APlayerCameraManager_1",
+      "OwnedComponents" : [{
+          "AspectRatio" : 1.000000,
+          "FarClip" : 100.000000,
+          "FieldOfView" : 60.000000,
+          "Id" : 1491,
+          "NearClip" : 0.100000,
+          "ObjectName" : "UCameraComponent_1",
+          "ParentId" : 0,
+          "ProjectionMode" : 0,
+          "RelativeLocation" : [-2.167314, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "UCameraComponent",
+          "ZoomFactor" : 1.000000,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1491,
+      "Tag" : "",
+      "Type" : "APlayerCameraManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1492" : {
+      "ObjectName" : "AParticleEventManager_1",
+      "OwnedComponents" : [{
+          "Id" : 1493,
+          "ObjectName" : "USceneComponent_1",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1493,
+      "Tag" : "",
+      "Type" : "AParticleEventManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1494" : {
+      "ObjectName" : "AParticleEventManager_3",
+      "OwnedComponents" : [{
+          "Id" : 1495,
+          "ObjectName" : "USceneComponent_4",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1495,
+      "Tag" : "",
+      "Type" : "AParticleEventManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1496" : {
+      "ObjectName" : "AParticleEventManager_6",
+      "OwnedComponents" : [{
+          "Id" : 1497,
+          "ObjectName" : "USceneComponent_7",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1497,
+      "Tag" : "",
+      "Type" : "AParticleEventManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1498" : {
+      "ObjectName" : "Building_0",
+      "OwnedComponents" : [{
+          "CollisionChannel" : 1,
+          "CollisionEnabled" : 3,
+          "CollisionMask" : -1,
+          "Id" : 1500,
+          "MaterialSlots" : [{
+              "AssetPath" : "building",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "floor",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "glass",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "UStaticMeshComponent_9",
+          "ParentId" : 0,
+          "PhysicalMaterial" : "",
+          "RelativeLocation" : [51.550400, 28.408253, -0.100001],
+          "RelativeRotationEuler" : [-90.000008, -0.000000, 90.000000],
+          "RelativeScale" : [5.000000, 5.000000, 5.000000],
+          "StaticMesh" : "Data/Model/HongKongBuilding/HongKongBuilding.obj",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1500,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1501" : {
+      "ObjectName" : "AParticleEventManager_5",
+      "OwnedComponents" : [{
+          "Id" : 1502,
+          "ObjectName" : "USceneComponent_6",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1502,
+      "Tag" : "",
+      "Type" : "AParticleEventManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1503" : {
+      "ObjectName" : "AParticleEventManager_6",
+      "OwnedComponents" : [{
+          "Id" : 1504,
+          "ObjectName" : "USceneComponent_7",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1504,
+      "Tag" : "",
+      "Type" : "AParticleEventManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1505" : {
+      "ObjectName" : "Building_2",
+      "OwnedComponents" : [{
+          "CollisionChannel" : 1,
+          "CollisionEnabled" : 3,
+          "CollisionMask" : -1,
+          "Id" : 1507,
+          "MaterialSlots" : [{
+              "AssetPath" : "RoadsGround",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Pawnshop1GLOW",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "UStaticMeshComponent_7",
+          "ParentId" : 0,
+          "PhysicalMaterial" : "",
+          "RelativeLocation" : [55.000000, -53.249931, -3.605627],
+          "RelativeRotationEuler" : [0.000000, -0.000000, -90.000008],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "StaticMesh" : "Data/ccity_buildings/ccity_beige.obj",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1507,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1508" : {
+      "ObjectName" : "Building_3",
+      "OwnedComponents" : [{
+          "CollisionChannel" : 1,
+          "CollisionEnabled" : 3,
+          "CollisionMask" : -1,
+          "Id" : 1510,
+          "MaterialSlots" : [{
+              "AssetPath" : "Paramount",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Paramount1GLOW",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "UStaticMeshComponent_7",
+          "ParentId" : 0,
+          "PhysicalMaterial" : "",
+          "RelativeLocation" : [52.834583, -89.982407, -0.170326],
+          "RelativeRotationEuler" : [0.000000, -0.000000, -90.000008],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "StaticMesh" : "Data/ccity_buildings/ccity_brown.obj",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1510,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1511" : {
+      "ObjectName" : "Building_1",
+      "OwnedComponents" : [{
+          "CollisionChannel" : 1,
+          "CollisionEnabled" : 3,
+          "CollisionMask" : -1,
+          "Id" : 1513,
+          "MaterialSlots" : [{
+              "AssetPath" : "FillerBuildings1",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "FillerBuildings1GLOW",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "UStaticMeshComponent_7",
+          "ParentId" : 0,
+          "PhysicalMaterial" : "",
+          "RelativeLocation" : [52.539635, -108.498100, 0.100000],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 90.000008],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "StaticMesh" : "Data/ccity_buildings/ccity_blue.obj",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1513,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1514" : {
+      "ObjectName" : "AParticleEventManager_7",
+      "OwnedComponents" : [{
+          "Id" : 1515,
+          "ObjectName" : "USceneComponent_8",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1515,
+      "Tag" : "",
+      "Type" : "AParticleEventManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1516" : {
+      "ObjectName" : "Building_4",
+      "OwnedComponents" : [{
+          "CollisionChannel" : 1,
+          "CollisionEnabled" : 3,
+          "CollisionMask" : -1,
+          "Id" : 1518,
+          "MaterialSlots" : [{
+              "AssetPath" : "Building_2",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "Windows_2",
+              "Type" : "UMaterial"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [0.810811, 0.810811, 0.810811, 1.000000],
+                  "DiffuseColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Roof_2",
+              "Type" : "UMaterialInstanceDynamic"
+            }],
+          "ObjectName" : "UStaticMeshComponent_7",
+          "ParentId" : 0,
+          "PhysicalMaterial" : "",
+          "RelativeLocation" : [55.366051, -125.229988, 0.100000],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 90.000008],
+          "RelativeScale" : [1.800000, 1.800000, 1.500000],
+          "StaticMesh" : "Data/old_building_1/old_building_1.obj",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1518,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1520" : {
+      "ObjectName" : "AParticleEventManager_8",
+      "OwnedComponents" : [{
+          "Id" : 1521,
+          "ObjectName" : "USceneComponent_9",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1521,
+      "Tag" : "",
+      "Type" : "AParticleEventManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1522" : {
+      "ObjectName" : "AC_Prop",
+      "OwnedComponents" : [{
+          "CollisionChannel" : 1,
+          "CollisionEnabled" : 3,
+          "CollisionMask" : -1,
+          "Id" : 1524,
+          "MaterialSlots" : [{
+              "Type" : "None"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "DiffuseColor" : [0.366795, 0.366795, 0.366795, 1.000000]
+                }
+              },
+              "ParentPath" : "ACmaterial",
+              "Type" : "UMaterialInstanceDynamic"
+            }],
+          "ObjectName" : "UStaticMeshComponent_16",
+          "ParentId" : 0,
+          "PhysicalMaterial" : "",
+          "RelativeLocation" : [60.959667, -130.191223, 10.533956],
+          "RelativeRotationEuler" : [0.000000, -0.000000, -179.999985],
+          "RelativeScale" : [0.300000, 0.300000, 0.300000],
+          "StaticMesh" : "Data/Model/ac_unit.fbx",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1524,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1526" : {
+      "ObjectName" : "AC_Prop",
+      "OwnedComponents" : [{
+          "CollisionChannel" : 1,
+          "CollisionEnabled" : 3,
+          "CollisionMask" : -1,
+          "Id" : 1528,
+          "MaterialSlots" : [{
+              "Type" : "None"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "DiffuseColor" : [0.366795, 0.366795, 0.366795, 1.000000]
+                }
+              },
+              "ParentPath" : "ACmaterial",
+              "Type" : "UMaterialInstanceDynamic"
+            }],
+          "ObjectName" : "UStaticMeshComponent_16",
+          "ParentId" : 0,
+          "PhysicalMaterial" : "",
+          "RelativeLocation" : [60.959667, -128.589737, 10.533956],
+          "RelativeRotationEuler" : [0.000000, -0.000000, -179.999985],
+          "RelativeScale" : [0.300000, 0.300000, 0.300000],
+          "StaticMesh" : "Data/Model/ac_unit.fbx",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1528,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1530" : {
+      "ObjectName" : "AParticleEventManager_9",
+      "OwnedComponents" : [{
+          "Id" : 1531,
+          "ObjectName" : "USceneComponent_10",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1531,
+      "Tag" : "",
+      "Type" : "AParticleEventManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1532" : {
+      "ObjectName" : "AStaticMeshActor_0",
+      "OwnedComponents" : [{
+          "CollisionChannel" : 1,
+          "CollisionEnabled" : 3,
+          "CollisionMask" : -1,
+          "Id" : 1534,
+          "MaterialSlots" : [{
+              "AssetPath" : "building",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "floor",
+              "Type" : "UMaterial"
+            }, {
+              "AssetPath" : "glass",
+              "Type" : "UMaterial"
+            }],
+          "ObjectName" : "UStaticMeshComponent_9",
+          "ParentId" : 0,
+          "PhysicalMaterial" : "",
+          "RelativeLocation" : [197.484528, -185.401840, -0.099983],
+          "RelativeRotationEuler" : [-90.000008, -0.000000, -90.000000],
+          "RelativeScale" : [4.500000, 4.500000, 4.500000],
+          "StaticMesh" : "Data/Model/HongKongBuilding/HongKongBuilding.obj",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1534,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1547" : {
+      "ObjectName" : "AParticleEventManager_10",
+      "OwnedComponents" : [{
+          "Id" : 1548,
+          "ObjectName" : "USceneComponent_11",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1548,
+      "Tag" : "",
+      "Type" : "AParticleEventManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1557" : {
+      "ObjectName" : "STORE",
+      "OwnedComponents" : [{
+          "CollisionChannel" : 1,
+          "CollisionEnabled" : 3,
+          "CollisionMask" : -1,
+          "Id" : 1558,
+          "MaterialSlots" : [{
+              "Type" : "None"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [0.806950, 0.806950, 0.806950, 1.000000]
+                }
+              },
+              "ParentPath" : "Metal_04",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Glass",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Bricks",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Plaste",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Asphalt",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Concrete_01",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Concrete",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Roof_tiles",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Office",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Refrigerators",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Refrigerators_01",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Door_02",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Metal_02",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Sign",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "6twelve",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Metal_03",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Leather_01",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Metal_05",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Mostrator",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Plastic_07",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Candys",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Toothbrushes",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Metal",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Food_shelf_03",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Plastic_03",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Food_shelf_04",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Lottery",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "AssetPath" : "Lights",
+              "Type" : "UMaterial"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Metal_07",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Respirator",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "outdoor electronics",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Door_03",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Sign_01",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Metal_09",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Trash_01",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Garbage_bag",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Plastic_01",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "SoilSand",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Fabric",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Fabric_01",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Wood_02",
+              "Type" : "UMaterialInstanceDynamic"
+            }, {
+              "Overrides" : {
+                "Scalars" : {
+
+                },
+                "Textures" : {
+
+                },
+                "Vectors" : {
+                  "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+                }
+              },
+              "ParentPath" : "Tiles",
+              "Type" : "UMaterialInstanceDynamic"
+            }],
+          "ObjectName" : "StaticMeshComponent",
+          "ParentId" : 0,
+          "PhysicalMaterial" : "",
+          "RelativeLocation" : [167.269043, 23.092138, 4.510000],
+          "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+          "RelativeScale" : [1.200000, 1.200000, 1.200000],
+          "StaticMesh" : "Data/Model/ConvenienceStore.fbx",
+          "Type" : "UStaticMeshComponent",
+          "bBlockComponent" : false,
+          "bCastShadows" : true,
+          "bGenerateOverlapEvents" : true,
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bSimulatePhysics" : false,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1558,
+      "Tag" : "",
+      "Type" : "AStaticMeshActor",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    }
+  },
+  "NextUUID" : 1600,
+  "PerspectiveCamera" : {
+    "FOV" : [60.000000],
+    "FarClip" : [2000.000000],
+    "Location" : [101.346725, 14.960340, 54.485241],
+    "NearClip" : [0.100000],
+    "Rotation" : [0.000000, 35.001282, -59.000408]
+  },
+  "Version" : 1,
+  "WorldSettings" : {
+
+  }
+}
