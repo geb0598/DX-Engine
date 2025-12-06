@@ -120,6 +120,9 @@ public:
     /** 부스터 힘 적용 (전진 방향으로) */
     void ApplyBoostForce(float BoostStrength);
 
+    /** 현재 속도가 0이면 기어 중립으로 바꿈 */
+    void SetGearToNeutralIfZeroVel();
+
     /** 기어를 전진(Drive/Auto) 모드로 변경 */
     void SetGearToDrive();
 

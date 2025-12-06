@@ -739,6 +739,18 @@ void UVehicleMovementComponent::ApplyBoostForce(float BoostStrength)
     Actor->addForce(BoostForce, PxForceMode::eACCELERATION);
 }
 
+void UVehicleMovementComponent::SetGearToNeutralIfZeroVel()
+{
+    if (PVehicleDrive)
+    {
+        if (std::abs(PVehicleDrive->computeForwardSpeed()) <= 1.0f)
+        {
+            PVehicleDrive->mDriveDynData.forceGearChange(physx::PxVehicleGearsData::eNEUTRAL);
+        }
+    }
+}
+
+
 void UVehicleMovementComponent::SetGearToDrive()
 {
     if (PVehicleDrive)

@@ -98,6 +98,7 @@ void AVehicle::Tick(float DeltaSeconds)
         }
         else
         {
+            VehicleMovement->SetGearToNeutralIfZeroVel();
             VehicleMovement->SetThrottleInput(0.0f);
             VehicleMovement->SetBrakeInput(0.0f);
         }
