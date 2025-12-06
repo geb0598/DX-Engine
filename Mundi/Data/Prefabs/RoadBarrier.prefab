@@ -4,7 +4,7 @@
       "CollisionChannel" : 1,
       "CollisionEnabled" : 3,
       "CollisionMask" : -1,
-      "Id" : 1645,
+      "Id" : 1703,
       "MaterialSlots" : [{
           "Type" : "None"
         }, {
@@ -25,9 +25,9 @@
       "ObjectName" : "UStaticMeshComponent_23",
       "ParentId" : 0,
       "PhysicalMaterial" : "",
-      "RelativeLocation" : [175.813202, -61.907257, 0.769868],
-      "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
-      "RelativeScale" : [2.500000, 2.500000, 2.500000],
+      "RelativeLocation" : [204.024307, 10.480993, 1.000000],
+      "RelativeRotationEuler" : [0.000000, -0.000000, 36.107395],
+      "RelativeScale" : [2.500000, 2.500000, 3.200000],
       "StaticMesh" : "Data/Model/RoadBarrier.fbx",
       "Type" : "UStaticMeshComponent",
       "bBlockComponent" : false,
@@ -40,7 +40,7 @@
       "bTickEnabled" : true,
       "bTickInEditor" : false
     }],
-  "RootComponentId" : 1645,
+  "RootComponentId" : 1703,
   "Tag" : "",
   "Type" : "AStaticMeshActor",
   "bActorHiddenInGame" : false,

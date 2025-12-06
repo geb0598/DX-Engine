@@ -16,7 +16,7 @@ struct FVehicleEngineData
 
     /** 엔진 관성 (kg*m^2) */
     UPROPERTY(EditAnywhere, Category = "Struct")
-    float MOI = 1.0f;
+    float MOI = 2.0f;
 
     /** 감속 계수 (악셀 뗐을 때) */
     UPROPERTY(EditAnywhere, Category = "Struct")

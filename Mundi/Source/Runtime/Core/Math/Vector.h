@@ -1595,6 +1595,25 @@ namespace FMath
 		return Current + Dist * DeltaMove;
 	}
 
+	inline float FInterpTo(float Current, float Target, float DeltaTime, float InterpSpeed)
+	{
+		if (InterpSpeed <= 0.f)
+		{
+			return Target;
+		}
+
+		float Dist = Target - Current;
+
+		if (Dist < KINDA_SMALL_NUMBER)
+		{
+			return Target;
+		}
+
+		const float DeltaMove = Clamp(DeltaTime * InterpSpeed, 0.0f, 1.0f);
+
+		return Current + Dist * DeltaMove;
+	}
+
 	inline float RandRange(float Min, float Max)
 	{
 		static std::random_device RandomDevice;
