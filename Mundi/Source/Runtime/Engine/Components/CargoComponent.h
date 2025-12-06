@@ -72,6 +72,7 @@ public:
     float RandomSpinImpulse = 1.0f;
 
     /** 화물이 모두 붕괴될 때 운전자를 발사시키는 힘의 크기 */
+    UPROPERTY(EditAnywhere, Category="Cargo Physics")
     float EjectionImpulse = 10.0f;
 
     /** 랜덤으로 선택될 화물 메쉬 경로 목록 */

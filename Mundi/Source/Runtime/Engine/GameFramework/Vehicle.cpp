@@ -208,14 +208,14 @@ void AVehicle::EjectDriver(const FVector& Impulse)
         return;
     }
 
-    // Driver->DetachFromParent(true);
+    Driver->DetachFromParent(true);
 
     Driver->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
 
-    Driver->SetPhysicsMode(EPhysicsMode::Ragdoll);
-
     UPhysicsAsset* NewAsset = UResourceManager::GetInstance().Load<UPhysicsAsset>("Data/Physics/Brian.physicsasset");
     Driver->SetPhysicsAsset(NewAsset);
+    
+    Driver->SetPhysicsMode(EPhysicsMode::Ragdoll);
 
     if (!Impulse.IsZero())
     {

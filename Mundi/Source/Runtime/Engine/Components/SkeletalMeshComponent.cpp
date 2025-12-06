@@ -703,14 +703,14 @@ void USkeletalMeshComponent::AddImpulse(const FVector& Impulse, const FName& Bon
         return;
     }
 
-    if (BoneName.ToString().empty())
+    if (BoneName == FName())
     {
         // 모든 바디에 충격 적용
         for (FBodyInstance* Body : Bodies)
         {
             if (Body && Body->IsDynamic())
             {
-                Body->AddForce(Impulse, true);  // bAccelChange = true for impulse
+                Body->AddImpulse(Impulse, true);
             }
         }
     }
