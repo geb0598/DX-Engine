@@ -25,96 +25,6 @@ constexpr float PI = 3.14159265358979323846f;
 constexpr float TWO_PI = 6.2831853071795864769f;
 constexpr float HALF_PI = 1.5707963267948966192f;
 
-inline float DegreesToRadians(float Degree) { return Degree * (PI / 180.0f); }
-inline float RadiansToDegrees(float Radian) { return Radian * (180.0f / PI); }
-// FMath 네임스페이스 대체
-namespace FMath
-{
-	template<typename T>
-	static T Max(T A, T B) { return std::max(A, B); }
-
-	template<typename T, typename...Ts>
-	constexpr T Max(T first, Ts... rest)
-	{
-		((first = std::max(first, static_cast<T>(rest))), ...);
-		return first;
-	}
-
-	template<typename T> 
-	static T Sqrt(T A)
-	{
-		return std::sqrt(A);
-	} 
-	
-	template<typename T>
-	static T Min(T A, T B) { return std::min(A, B); }
-
-	template<typename T>
-	static T Abs(T Value) { return Value < 0 ? -Value : Value; }
-
-	template<typename T>
-	static T Clamp(T Value, T Min, T Max)
-	{
-		return Value < Min ? Min : (Value > Max ? Max : Value);
-	}
-
-	template<typename T>
-	static T Lerp(T A, T B, float Alpha)
-	{
-		return A + (B - A) * Alpha;
-	}
-}
-// 각도를 -180 ~ 180 범위로 정규화 (모듈러 연산)
-inline float NormalizeAngleDeg(float angleDeg)
-{
-	// fmod로 -360 ~ 360 범위로 만든 후, -180 ~ 180 범위로 조정
-	angleDeg = std::fmod(angleDeg, 360.0f);
-	if (angleDeg > 180.0f)
-		angleDeg -= 360.0f;
-	else if (angleDeg < -180.0f)
-		angleDeg += 360.0f;
-	return angleDeg;
-}
-
-// ─────────────────────────────
-// Forward Declarations
-// ─────────────────────────────
-struct FVector;
-struct FVector4;
-struct FQuat;
-struct FMatrix;
-struct FTransform;
-struct FAABB;
-
-// ─────────────────────────────
-// FVector (2D Vector)
-// ─────────────────────────────
-
-//// Add this global operator== for FVector2D and FVector4 to fix E0349 errors
-//inline bool operator==(const FVector2D& A, const FVector2D& B)
-//{
-//    return std::fabs(A.X - B.X) < KINDA_SMALL_NUMBER &&
-//        std::fabs(A.Y - B.Y) < KINDA_SMALL_NUMBER;
-//}
-//
-//inline bool operator!=(const FVector2D& A, const FVector2D& B)
-//{
-//    return !(A == B);
-//}
-//
-//inline bool operator==(const FVector4& A, const FVector4& B)
-//{
-//    return std::fabs(A.X - B.X) < KINDA_SMALL_NUMBER &&
-//        std::fabs(A.Y - B.Y) < KINDA_SMALL_NUMBER &&
-//        std::fabs(A.Z - B.Z) < KINDA_SMALL_NUMBER &&
-//        std::fabs(A.W - B.W) < KINDA_SMALL_NUMBER;
-//}
-//
-//inline bool operator!=(const FVector4& A, const FVector4& B)
-//{
-//    return !(A == B);
-//}
-
 struct FVector2D
 {
 	float X, Y;
@@ -186,6 +96,107 @@ struct FVector2D
 		return Ar;
 	}
 };
+
+inline float DegreesToRadians(float Degree) { return Degree * (PI / 180.0f); }
+inline float RadiansToDegrees(float Radian) { return Radian * (180.0f / PI); }
+// FMath 네임스페이스 대체
+namespace FMath
+{
+	template<typename T>
+	static T Max(T A, T B) { return std::max(A, B); }
+
+	template<typename T, typename...Ts>
+	constexpr T Max(T first, Ts... rest)
+	{
+		((first = std::max(first, static_cast<T>(rest))), ...);
+		return first;
+	}
+
+	template<typename T> 
+	static T Sqrt(T A)
+	{
+		return std::sqrt(A);
+	} 
+	
+	template<typename T>
+	static T Min(T A, T B) { return std::min(A, B); }
+
+	template<typename T>
+	static T Abs(T Value) { return Value < 0 ? -Value : Value; }
+
+	template<typename T>
+	static T Clamp(T Value, T Min, T Max)
+	{
+		return Value < Min ? Min : (Value > Max ? Max : Value);
+	}
+
+	template<typename T>
+	static T Lerp(T A, T B, float Alpha)
+	{
+		return A + (B - A) * Alpha;
+	}
+
+	static float GetMappedRangeValueClamped(const FVector2D& InRange, const FVector2D& OutRange, float InValue)
+	{
+		float ClampedValue = Clamp(InValue, InRange.X, InRange.Y);
+
+		float Alpha = (ClampedValue - InRange.X) / (InRange.Y - InRange.X);
+
+		return Lerp(OutRange.X, OutRange.Y, Alpha);
+	}
+}
+// 각도를 -180 ~ 180 범위로 정규화 (모듈러 연산)
+inline float NormalizeAngleDeg(float angleDeg)
+{
+	// fmod로 -360 ~ 360 범위로 만든 후, -180 ~ 180 범위로 조정
+	angleDeg = std::fmod(angleDeg, 360.0f);
+	if (angleDeg > 180.0f)
+		angleDeg -= 360.0f;
+	else if (angleDeg < -180.0f)
+		angleDeg += 360.0f;
+	return angleDeg;
+}
+
+// ─────────────────────────────
+// Forward Declarations
+// ─────────────────────────────
+struct FVector;
+struct FVector4;
+struct FQuat;
+struct FMatrix;
+struct FTransform;
+struct FAABB;
+
+// ─────────────────────────────
+// FVector (2D Vector)
+// ─────────────────────────────
+
+//// Add this global operator== for FVector2D and FVector4 to fix E0349 errors
+//inline bool operator==(const FVector2D& A, const FVector2D& B)
+//{
+//    return std::fabs(A.X - B.X) < KINDA_SMALL_NUMBER &&
+//        std::fabs(A.Y - B.Y) < KINDA_SMALL_NUMBER;
+//}
+//
+//inline bool operator!=(const FVector2D& A, const FVector2D& B)
+//{
+//    return !(A == B);
+//}
+//
+//inline bool operator==(const FVector4& A, const FVector4& B)
+//{
+//    return std::fabs(A.X - B.X) < KINDA_SMALL_NUMBER &&
+//        std::fabs(A.Y - B.Y) < KINDA_SMALL_NUMBER &&
+//        std::fabs(A.Z - B.Z) < KINDA_SMALL_NUMBER &&
+//        std::fabs(A.W - B.W) < KINDA_SMALL_NUMBER;
+//}
+//
+//inline bool operator!=(const FVector4& A, const FVector4& B)
+//{
+//    return !(A == B);
+//}
+
+
 
 
 // ─────────────────────────────

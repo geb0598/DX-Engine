@@ -77,15 +77,15 @@ UVehicleMovementComponent::UVehicleMovementComponent()
     //}
     VehicleWheel0 = NewObject<UVehicleWheel>();
     VehicleWheel0->SteerAngle = 45.0f;
-    VehicleWheel0->MaxSuspensionCompression = 0.1f;
-    VehicleWheel0->MaxSuspensionDroop = 0.1f;
-    VehicleWheel0->WheelOffset = FVector(1.0f, 0.0f, -0.5f);
+    VehicleWheel0->MaxSuspensionCompression = 0.001f;
+    VehicleWheel0->MaxSuspensionDroop = 0.001f;
+    VehicleWheel0->WheelOffset = FVector(1.0f, 0.0f, -0.7f);
 
     VehicleWheel1 = NewObject<UVehicleWheel>();
     VehicleWheel1->SteerAngle = 0.0f;
-    VehicleWheel1->MaxSuspensionCompression = 0.1f;
-    VehicleWheel1->MaxSuspensionDroop = 0.1f;
-    VehicleWheel1->WheelOffset = FVector(-1.0f, 0.0f, -0.5f);
+    VehicleWheel1->MaxSuspensionCompression = 0.001f;
+    VehicleWheel1->MaxSuspensionDroop = 0.001f;
+    VehicleWheel1->WheelOffset = FVector(-1.0f, 0.0f, -0.7f);
 
     // @todo 현재 하드코딩된 바퀴 설정 사용
     WheelSetups.SetNum(MAX_WHEELS);
@@ -172,6 +172,7 @@ void UVehicleMovementComponent::SetupVehicle()
     {
         const float ScaleRatio = NewMass / OldMass;
         PxVec3 InertiaTensor = RigidActor->getMassSpaceInertiaTensor();
+        InertiaTensor.x *= RollInertial;
         RigidActor->setMassSpaceInertiaTensor(InertiaTensor * ScaleRatio);
     }
 
@@ -494,7 +495,7 @@ void UVehicleMovementComponent::TickComponent(float DeltaSeconds)
         // 실제 바퀴 회전 속도 (첫번째 바퀴)
         float WheelSpeed = PVehicleDrive->mWheelsDynData.getWheelRotationSpeed(0);
     
-        UE_LOG("RPM: %.1f | Gear: %d | WheelSpeed: %.1f", RPM, Gear, WheelSpeed);
+       // UE_LOG("RPM: %.1f | Gear: %d | WheelSpeed: %.1f", RPM, Gear, WheelSpeed);
     }
 }
 
@@ -578,14 +579,14 @@ void UVehicleMovementComponent::UpdateVehicleSimulation(float DeltaTime)
 
 void UVehicleMovementComponent::BalanceVehicle(float DeltaSeconds)
 {
-    if (PVehicleDrive)
+    if (PVehicleDrive && !IsVehicleInAir())
     {
         PxRigidDynamic* Actor = PVehicleDrive->getRigidDynamicActor();
 
         PxTransform Transform = Actor->getGlobalPose();
 
-        // 70도 이상 기울면 그냥 넘어지도록 함
-        if (Transform.q.getBasisVector2().z < 0.34)
+        // CiriticalDegree 이상 기울면 그냥 넘어지도록 함
+        if (Transform.q.getBasisVector2().z < cos(DegreesToRadians(CriticalDegree)))
         {
             return;
         }
@@ -593,10 +594,21 @@ void UVehicleMovementComponent::BalanceVehicle(float DeltaSeconds)
         PxVec3 LocalRight = Transform.q.getBasisVector1();
 
         float SinRoll = LocalRight.z;
+        float SinRollAbs = std::abs(SinRoll);
 
         float Mass = Actor->getMass();
         float COMHegith = Actor->getCMassLocalPose().p.z;
 
+
+        float UpRightStength = 1.0f;  
+        float SinTorqueDown = sin(DegreesToRadians(TorqueDownDegree));
+        if (SinRollAbs > SinTorqueDown)
+        {
+            UpRightStength = FMath::GetMappedRangeValueClamped(
+                FVector2D(SinTorqueDown, sin(DegreesToRadians(CriticalDegree))),
+                FVector2D(1.0f, 1.0f - TorqueDownScale),
+                SinRollAbs);
+        }
         // 중력에 의한 토크(sin은 Damping때문에 나중에 곱함, 여기서 곱하면 댐핑이 현재 각속도 반대 보장이 안됨)
         float GravityTorque = Mass * 9.81f * COMHegith;
 
@@ -606,10 +618,10 @@ void UVehicleMovementComponent::BalanceVehicle(float DeltaSeconds)
         // 원심력에 의한 토크 복원력(속도 제곱 쓰면 엔진에선 값이 너무 커서 안 씀)
         float InvCentrifugalTorque = InvGravityTorque * CentrifugalTorqueInverseFactor;
 
-        float InvTorque = InvGravityTorque + InvCentrifugalTorque * Actor->getLinearVelocity().magnitude();
+        float InvTorque = (InvGravityTorque + InvCentrifugalTorque * Actor->getLinearVelocity().magnitude()) * UpRightStength;
 
         // 최대 복원력 제한(너무 세면 날라감)
-        InvTorque = FMath::Min(InvTorque, InvGravityTorque * 10.0f);
+        InvTorque = FMath::Min(InvTorque, InvGravityTorque * MaxTorqueLimit);
 
         // 복원력만 적용하면 에너지가 그대로라서 영원히 진동 -> 현재 각속도에 저항하는 댐핑이 필요
         float Damping = InvTorque * DampingFactor;

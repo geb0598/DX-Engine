@@ -61,17 +61,32 @@ public:
     UPROPERTY(EditAnywhere, Category = "Wheel1")
     UVehicleWheel* VehicleWheel1 = nullptr;
 
-    UPROPERTY(EditAnywhere, Category = "Center Of Mass")
-    FVector COM = FVector(0, 0, 0.723);
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "물체의 Roll방향 관성모멘트입니다. 값이 클수록 잘 안 기울어집니다")
+    float RollInertial = 4.0f;
 
-    UPROPERTY(EditAnywhere, Category = "Center Of Mass")
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "물체의 무게중심입니다. 낮을 수록 기울어지는 현상이 줄어듭니다")
+    FVector COM = FVector(0, 0, 0.1);
+
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "중력에 의한 Roll 토크 복원력에 대한 계수입니다")
     float GravityTorqueInverseFactor = 1.5f;
 
-    UPROPERTY(EditAnywhere, Category = "Center Of Mass")
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooptip = "원심력에 의한 Roll 토크 복원력에 대한 계수입니다")
     float CentrifugalTorqueInverseFactor = 0.5f;
 
-    UPROPERTY(EditAnywhere, Category = "Center Of Mass")
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "Roll 각속도를 줄여줍니다. 설정된 값이 커질수록 Roll 진동이 빠르게 사라집니다")
     float DampingFactor = 0.1f;
+
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "최대 복원력에 곱해지는 계수입니다")
+    float MaxTorqueLimit = 3.0f;
+
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "설정된 Degree부터 복원력이 점점 감소합니다")
+    float TorqueDownDegree = 20.0f;
+
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "위에서 설정한 Degree부터 복원력이 감소되는 비율을 결정합니다. 값이 클수록 감소 비율이 커지고 0~1 외의 값은 의미가 없습니다")
+    float TorqueDownScale = 0.8f;
+
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "설정된 Degree을 넘어가면 복원력을 받지 못하고 넘어집니다")
+    float CriticalDegree = 50.0f;
 
     TArray<FVehicleWheelSetup> WheelSetups;
 

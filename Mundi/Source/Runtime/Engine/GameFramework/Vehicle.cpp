@@ -21,9 +21,8 @@ AVehicle::AVehicle()
         "/Model/Buggy/Buggy_Wheel_LB.obj",
         "/Model/Buggy/Buggy_Wheel_RB.obj"
     };*/
-    FString WheelFileName[2] = {
-        "/Model/Buggy/Buggy_Wheel_LF.obj",
-        "/Model/Buggy/Buggy_Wheel_LB.obj",
+    FString WheelFileName[1] = {
+        "/Model/ShoppingCart/Wheel/Wheel.obj",
     };
 
     //WheelMeshes.SetNum(4);
@@ -36,7 +35,7 @@ AVehicle::AVehicle()
         WheelMeshes[i]->SetupAttachment(ChassisMesh);
         WheelMeshes[i]->SetSimulatePhysics(false);
         WheelMeshes[i]->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-        WheelMeshes[i]->SetStaticMesh(GDataDir + WheelFileName[i]);
+        WheelMeshes[i]->SetStaticMesh(GDataDir + WheelFileName[0]);
     }
 
     VehicleMovement = CreateDefaultSubobject<UVehicleMovementComponent>("VehicleMovement");
