@@ -77,6 +77,12 @@ public:
      */
     void Update(float MouseX, float MouseY, bool bLeftButtonDown);
 
+    /**
+     * 위젯 애니메이션 업데이트 (매 프레임 호출)
+     * @param DeltaTime 델타 타임
+     */
+    void UpdateAnimations(float DeltaTime);
+
     /** 렌더링 (매 프레임 호출) */
     void Render();
 

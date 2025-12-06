@@ -33,6 +33,22 @@ void SCanvas::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 }
 
 // =====================================================
+// 업데이트
+// =====================================================
+
+void SCanvas::Update(float DeltaTime)
+{
+    // 모든 자식 위젯의 Update 호출
+    for (const FCanvasSlot& Slot : CanvasSlots)
+    {
+        if (Slot.Widget)
+        {
+            Slot.Widget->Update(DeltaTime);
+        }
+    }
+}
+
+// =====================================================
 // 자식 관리
 // =====================================================
 

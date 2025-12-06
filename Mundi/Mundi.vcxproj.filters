@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <ItemGroup>
     <FxCompile Include="Shaders\Materials\Fireball.hlsl">
@@ -1346,12 +1346,14 @@
       <Filter>Generated</Filter>
     </ClCompile>
     <ClCompile Include="Source\Runtime\Engine\Components\CargoComponent.cpp" />
-    <ClCompile Include="Source\Slate\GameUI\SImage.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\DumbRiderGameMode.cpp">
       <Filter>Source\Runtime\Engine\GameFramework</Filter>
     </ClCompile>
     <ClCompile Include="Generated\ADumbRiderGameMode.generated.cpp">
       <Filter>Generated</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\GameUI\SImage.cpp">
+      <Filter>Source\Slate\GameUI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2938,12 +2940,14 @@
       <Filter>Generated</Filter>
     </ClInclude>
     <ClInclude Include="Source\Runtime\Engine\Components\CargoComponent.h" />
-    <ClInclude Include="Source\Slate\GameUI\SImage.h" />
+    <ClInclude Include="Generated\ADumbRiderGameMode.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
     <ClInclude Include="Source\Runtime\Engine\GameFramework\DumbRiderGameMode.h">
       <Filter>Source\Runtime\Engine\GameFramework</Filter>
     </ClInclude>
-    <ClInclude Include="Generated\ADumbRiderGameMode.generated.h">
-      <Filter>Generated</Filter>
+    <ClInclude Include="Source\Slate\GameUI\SImage.h">
+      <Filter>Source\Slate\GameUI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -25,6 +25,10 @@ void SImage::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
     FVector2D DrawSize = Geometry.GetAbsoluteSize();
     FVector2D DrawPosition = Geometry.AbsolutePosition;
 
+    // 스케일 적용
+    DrawSize.X *= Scale.X;
+    DrawSize.Y *= Scale.Y;
+
     // 종횡비 유지 모드
     if (bMaintainAspectRatio && ImageSize.X > 0.f && ImageSize.Y > 0.f)
     {
@@ -54,6 +58,18 @@ void SImage::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
         DrawSize,
         TintColor,
         Opacity
+    );
+}
+
+void SImage::Update(float DeltaTime)
+{
+    // 애니메이션 업데이트 (완료된 것은 제거)
+    Animations.erase(
+        std::remove_if(Animations.begin(), Animations.end(),
+            [DeltaTime](TSharedPtr<FWidgetAnimation>& Anim) {
+                return Anim && Anim->Update(DeltaTime);
+            }),
+        Animations.end()
     );
 }
 
@@ -116,4 +132,51 @@ SImage& SImage::SetMaintainAspectRatio(bool bMaintain)
 {
     bMaintainAspectRatio = bMaintain;
     return *this;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 애니메이션
+// ────────────────────────────────────────────────────────────────────────────
+
+SImage& SImage::PlayFadeIn(float Duration, EEasingType Easing)
+{
+    auto FadeAnim = MakeShared<FFadeAnimation>(&Opacity, 0.0f, 1.0f, Duration);
+    FadeAnim->SetEasingType(Easing);
+    FadeAnim->Play();
+    Animations.push_back(FadeAnim);
+    return *this;
+}
+
+SImage& SImage::PlayFadeOut(float Duration, EEasingType Easing)
+{
+    auto FadeAnim = MakeShared<FFadeAnimation>(&Opacity, Opacity, 0.0f, Duration);
+    FadeAnim->SetEasingType(Easing);
+    FadeAnim->Play();
+    Animations.push_back(FadeAnim);
+    return *this;
+}
+
+SImage& SImage::PlayScaleAnimation(FVector2D ToScale, float Duration, EEasingType Easing)
+{
+    auto ScaleAnim = MakeShared<FScaleAnimation>(&Scale, Scale, ToScale, Duration);
+    ScaleAnim->SetEasingType(Easing);
+    ScaleAnim->Play();
+    Animations.push_back(ScaleAnim);
+    return *this;
+}
+
+SImage& SImage::SetScale(FVector2D InScale)
+{
+    Scale = InScale;
+    return *this;
+}
+
+void SImage::StopAllAnimations()
+{
+    for (auto& Anim : Animations)
+    {
+        if (Anim)
+            Anim->Stop();
+    }
+    Animations.clear();
 }

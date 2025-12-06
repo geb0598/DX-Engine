@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "SWidget.h"
+#include "WidgetAnimation.h"
+#include <vector>
 
 /**
  * @file SImage.h
@@ -23,6 +25,12 @@ public:
      * @note ID2D1Bitmap을 화면에 그림
      */
     void Paint(FD2DRenderer& Renderer, const FGeometry& Geometry) override;
+
+    /**
+     * 위젯 업데이트 (애니메이션 처리)
+     * @param DeltaTime 델타 타임
+     */
+    void Update(float DeltaTime) override;
 
     /**
      * 파일에서 텍스처 로드 (WIC 사용)
@@ -54,6 +62,41 @@ public:
     /** 원본 이미지 크기 */
     FVector2D GetImageSize() const { return ImageSize; }
 
+    // =====================================================
+    // 애니메이션
+    // =====================================================
+
+    /**
+     * Fade In 애니메이션 재생
+     * @param Duration 지속 시간
+     * @param Easing 이징 타입
+     */
+    SImage& PlayFadeIn(float Duration = 0.3f, EEasingType Easing = EEasingType::EaseOutQuad);
+
+    /**
+     * Fade Out 애니메이션 재생
+     * @param Duration 지속 시간
+     * @param Easing 이징 타입
+     */
+    SImage& PlayFadeOut(float Duration = 0.3f, EEasingType Easing = EEasingType::EaseInQuad);
+
+    /**
+     * Scale 애니메이션 재생
+     * @param ToScale 목표 스케일
+     * @param Duration 지속 시간
+     * @param Easing 이징 타입
+     */
+    SImage& PlayScaleAnimation(FVector2D ToScale, float Duration = 0.3f, EEasingType Easing = EEasingType::EaseOutQuad);
+
+    /**
+     * 스케일 설정
+     * @param InScale 스케일 값
+     */
+    SImage& SetScale(FVector2D InScale);
+
+    /** 모든 애니메이션 중지 */
+    void StopAllAnimations();
+
 private:
     /** D2D 비트맵 (소유) */
     ID2D1Bitmap* Bitmap = nullptr;
@@ -69,4 +112,10 @@ private:
 
     /** 원본 이미지 크기 */
     FVector2D ImageSize = FVector2D(0.f, 0.f);
+
+    /** 스케일 (애니메이션용) */
+    FVector2D Scale = FVector2D(1.f, 1.f);
+
+    /** 실행 중인 애니메이션 */
+    std::vector<TSharedPtr<FWidgetAnimation>> Animations;
 };

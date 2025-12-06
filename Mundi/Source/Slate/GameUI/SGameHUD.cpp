@@ -89,6 +89,15 @@ void SGameHUD::Update(float MouseX, float MouseY, bool bLeftButtonDown)
     bWasLeftButtonDown = bLeftButtonDown;
 }
 
+void SGameHUD::UpdateAnimations(float DeltaTime)
+{
+    if (!bInitialized || !RootCanvas)
+        return;
+
+    // 모든 위젯의 Update 호출
+    RootCanvas->Update(DeltaTime);
+}
+
 void SGameHUD::Render()
 {
     if (!bInitialized || !RootCanvas || !Renderer || !SwapChain)
