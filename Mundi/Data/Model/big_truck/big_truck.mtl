@@ -1,0 +1,96 @@
+# Blender 4.5.3 LTS MTL File: 'big truck.blend'
+# www.blender.org
+
+newmtl Material__4040
+Ns 99.999969
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd textures/Tire_Defuse.png
+map_d textures/Tire_Defuse.png
+
+newmtl Material__4041
+Ns 99.999969
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd textures/Main_Defuse.png
+map_d textures/Main_Defuse.png
+
+newmtl Material__4043
+Ns 99.999969
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd textures/Main2_Defuse.png
+map_d textures/Main2_Defuse.png
+
+newmtl Material__4045
+Ns 99.999969
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd textures/Floor_Defuse.png
+map_d textures/Floor_Defuse.png
+map_Bump -bm 1.000000 textures/Floor_Normal.png
+
+newmtl Material__4046
+Ns 99.999969
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd textures/Logo_Defuse.png
+map_d textures/Logo_Defuse.png
+map_Bump -bm 1.000000 textures/Logo_Normal.png
+
+newmtl Material__4048
+Ns 99.999969
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd textures/SteelGuide_Defuse.png
+map_d textures/SteelGuide_Defuse.png
+
+newmtl Material__4049
+Ns 99.999969
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd textures/Stuff_Defuse.png
+map_d textures/Stuff_Defuse.png
+map_Bump -bm 1.000000 textures/Stuff_Normal.png
+
+newmtl Material__4051
+Ns 99.999969
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd textures/Stuff2_Defuse.png
+map_d textures/Stuff2_Defuse.png
+
+newmtl Material__4053
+Ns 99.999969
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd textures/Glass_Defuse.png
+map_d textures/Glass_Defuse.png
+map_Bump -bm 1.000000 textures/Glass_Normal.png
