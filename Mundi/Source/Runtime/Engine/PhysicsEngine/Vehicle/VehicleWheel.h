@@ -55,15 +55,15 @@ public:
 
     /** 서스펜션 댐퍼 강도 (값이 클수록 출렁거림이 적음) */
     UPROPERTY(EditAnywhere, Category = "Suspension")
-    float SuspensionDamping = 1000.0f;
+    float SuspensionDamping = 6000.0f;
 
     /** 서스펜션 스프링 강성 */
     UPROPERTY(EditAnywhere, Category = "Suspension")
-    float SuspensionStiffness = 50000.0f;
+    float SuspensionStiffness = 45000.0f;
 
     /** 서스펜션 최대 압축 거리 (m) - 바퀴가 위로 얼마나 올라갈 수 있는지 */
     UPROPERTY(EditAnywhere, Category = "Suspension")
-    float MaxSuspensionCompression = 0.1f;
+    float MaxSuspensionCompression = 0.3f;
 
     /** 서스펜션 최대 이완 거리 (m) - 바퀴가 아래로 얼마나 내려갈 수 있는지 */
     UPROPERTY(EditAnywhere, Category = "Suspension")
@@ -94,7 +94,7 @@ public:
         Data.mMaxDroop         = MaxSuspensionDroop;
         Data.mSpringStrength   = SuspensionStiffness;
         Data.mSpringDamperRate = SuspensionDamping;
-        Data.mSprungMass       = (SprungMass > 0.0f) ? SprungMass : 1500.0f / 4.0f;
+        Data.mSprungMass       = (SprungMass > 0.0f) ? SprungMass : 1500.0f / 2.0f;
         return Data;
     }
 };

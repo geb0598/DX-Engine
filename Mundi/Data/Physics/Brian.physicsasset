@@ -1,0 +1,860 @@
+{
+  "BodySetups" : [{
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.005881, -0.009968, -0.004975],
+            "Length" : 0.127236,
+            "Radius" : 0.153070,
+            "Rotation" : [-0.744741, -0.000000, 0.000000, 0.667353]
+          }]
+      },
+      "BoneIndex" : 0,
+      "BoneName" : "mixamorig12:Hips",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.012051, 0.046478, -0.004724],
+            "Length" : 0.128367,
+            "Radius" : 0.120730,
+            "Rotation" : [0.000000, 0.707107, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 1,
+      "BoneName" : "mixamorig12:Spine",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.004121, 0.013117, 0.011170],
+            "Length" : 0.145931,
+            "Radius" : 0.119000,
+            "Rotation" : [-0.000000, 0.707107, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 2,
+      "BoneName" : "mixamorig12:Spine1",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [0.002437, 0.102132, 0.032133],
+            "Length" : 0.122149,
+            "Radius" : 0.107000,
+            "Rotation" : [-0.000000, 0.707107, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 3,
+      "BoneName" : "mixamorig12:Spine2",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.002588, 0.069956, 0.029196],
+            "Length" : 0.000000,
+            "Radius" : 0.066000,
+            "Rotation" : [-0.983089, 0.000001, 0.000000, 0.183129]
+          }]
+      },
+      "BoneIndex" : 4,
+      "BoneName" : "mixamorig12:Neck",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.000649, 0.058450, 0.079923],
+            "Length" : 0.096743,
+            "Radius" : 0.084048,
+            "Rotation" : [-0.565656, -0.000000, 0.000000, 0.824641]
+          }]
+      },
+      "BoneIndex" : 5,
+      "BoneName" : "mixamorig12:Head",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [0.012366, 0.073300, 0.009298],
+            "Length" : 0.125240,
+            "Radius" : 0.081477,
+            "Rotation" : [-0.707107, -0.000000, 0.000000, 0.707106]
+          }]
+      },
+      "BoneIndex" : 7,
+      "BoneName" : "mixamorig12:LeftShoulder",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [0.002563, 0.127322, 0.009152],
+            "Length" : 0.303591,
+            "Radius" : 0.060203,
+            "Rotation" : [-0.707107, -0.000000, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 8,
+      "BoneName" : "mixamorig12:LeftArm",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.002116, 0.136347, 0.003430],
+            "Length" : 0.202036,
+            "Radius" : 0.038154,
+            "Rotation" : [-0.707107, -0.000000, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 9,
+      "BoneName" : "mixamorig12:LeftForeArm",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [0.004454, 0.063180, 0.000267],
+            "Length" : 0.000000,
+            "Radius" : 0.069859,
+            "Rotation" : [-0.425839, 0.400004, 0.000000, 0.811578]
+          }]
+      },
+      "BoneIndex" : 10,
+      "BoneName" : "mixamorig12:LeftHand",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.003953, 0.088279, 0.010409],
+            "Length" : 0.119310,
+            "Radius" : 0.079450,
+            "Rotation" : [-0.707107, -0.000000, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 31,
+      "BoneName" : "mixamorig12:RightShoulder",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.001092, 0.115995, 0.010509],
+            "Length" : 0.305061,
+            "Radius" : 0.061113,
+            "Rotation" : [-0.707107, -0.000000, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 32,
+      "BoneName" : "mixamorig12:RightArm",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [0.002268, 0.136358, 0.003419],
+            "Length" : 0.201776,
+            "Radius" : 0.038234,
+            "Rotation" : [-0.707107, -0.000000, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 33,
+      "BoneName" : "mixamorig12:RightForeArm",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.004110, 0.063129, 0.000028],
+            "Length" : 0.000000,
+            "Radius" : 0.069662,
+            "Rotation" : [-0.433597, -0.403231, 0.000000, 0.805853]
+          }]
+      },
+      "BoneIndex" : 34,
+      "BoneName" : "mixamorig12:RightHand",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.011956, 0.212138, 0.004543],
+            "Length" : 0.360352,
+            "Radius" : 0.075000,
+            "Rotation" : [-0.707107, 0.000001, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 55,
+      "BoneName" : "mixamorig12:LeftUpLeg",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.003780, 0.277022, -0.011207],
+            "Length" : 0.376248,
+            "Radius" : 0.068091,
+            "Rotation" : [-0.707107, 0.000001, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 56,
+      "BoneName" : "mixamorig12:LeftLeg",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [0.002228, 0.075220, 0.004409],
+            "Length" : 0.235873,
+            "Radius" : 0.058640,
+            "Rotation" : [-0.707106, 0.000011, 0.000000, 0.707108]
+          }]
+      },
+      "BoneIndex" : 57,
+      "BoneName" : "mixamorig12:LeftFoot",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.000218, -0.016301, 0.039496],
+            "Length" : 0.052675,
+            "Radius" : 0.068159,
+            "Rotation" : [-0.707106, 0.000012, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 58,
+      "BoneName" : "mixamorig12:LeftToeBase",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [0.010393, 0.222672, 0.004748],
+            "Length" : 0.375248,
+            "Radius" : 0.074000,
+            "Rotation" : [-0.707107, -0.000001, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 60,
+      "BoneName" : "mixamorig12:RightUpLeg",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.001454, 0.267117, 0.001733],
+            "Length" : 0.380009,
+            "Radius" : 0.066879,
+            "Rotation" : [-0.707107, -0.000000, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 61,
+      "BoneName" : "mixamorig12:RightLeg",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [-0.003747, 0.088994, 0.009592],
+            "Length" : 0.241512,
+            "Radius" : 0.056392,
+            "Rotation" : [-0.707106, -0.000010, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 62,
+      "BoneName" : "mixamorig12:RightFoot",
+      "PhysicalMaterial" : ""
+    }, {
+      "AggGeom" : {
+        "BoxElems" : [],
+        "ConvexElems" : [],
+        "SphereElems" : [],
+        "SphylElems" : [{
+            "Center" : [0.000908, -0.018865, 0.039606],
+            "Length" : 0.052032,
+            "Radius" : 0.068464,
+            "Rotation" : [-0.707106, -0.000009, 0.000000, 0.707107]
+          }]
+      },
+      "BoneIndex" : 63,
+      "BoneName" : "mixamorig12:RightToeBase",
+      "PhysicalMaterial" : ""
+    }],
+  "ConstraintSetups" : [{
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 1,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:Spine",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 0,
+      "ParentPosition" : [-0.000000, 10.052368, -1.105116],
+      "ParentPriAxis" : [1.000000, 0.000000, -0.000000],
+      "ParentRotation" : [-6.273722, 0.000004, 0.000003],
+      "ParentSecAxis" : [-0.000000, 0.994011, -0.109278],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 2,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:Spine1",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 1,
+      "ParentPosition" : [-0.000009, 11.798454, -0.000008],
+      "ParentPriAxis" : [1.000000, 0.000000, -0.000000],
+      "ParentRotation" : [0.000009, 0.000009, 0.000003],
+      "ParentSecAxis" : [-0.000000, 1.000000, 0.000000],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 3,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:Spine2",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 2,
+      "ParentPosition" : [0.000001, 13.483917, -0.000014],
+      "ParentPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ParentRotation" : [0.000003, -0.000007, 0.000003],
+      "ParentSecAxis" : [-0.000000, 1.000000, 0.000000],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 4,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:Neck",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 3,
+      "ParentPosition" : [0.000001, 15.169449, -0.000006],
+      "ParentPriAxis" : [1.000000, -0.000000, 0.000000],
+      "ParentRotation" : [6.273700, -0.000016, -0.000018],
+      "ParentSecAxis" : [0.000000, 0.994011, 0.109278],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 5,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:Head",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 4,
+      "ParentPosition" : [-0.000009, 7.383942, 2.849885],
+      "ParentPriAxis" : [1.000000, 0.000000, -0.000000],
+      "ParentRotation" : [-0.000002, 0.000003, 0.000007],
+      "ParentSecAxis" : [-0.000000, 1.000000, -0.000000],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 6,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:LeftShoulder",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 3,
+      "ParentPosition" : [-7.052550, 13.015427, -0.256170],
+      "ParentPriAxis" : [-0.036563, -0.000142, 0.999331],
+      "ParentRotation" : [-73.112160, -87.904915, -179.777084],
+      "ParentSecAxis" : [-0.955097, -0.294221, -0.034986],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 7,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:LeftArm",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 6,
+      "ParentPosition" : [-0.000011, 14.673145, -0.000015],
+      "ParentPriAxis" : [0.999679, 0.025334, 0.000000],
+      "ParentRotation" : [-13.901380, -0.000004, 1.451685],
+      "ParentSecAxis" : [-0.024592, 0.970399, -0.240251],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 8,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:LeftForeArm",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 7,
+      "ParentPosition" : [-0.000005, 25.314650, 0.000015],
+      "ParentPriAxis" : [0.993886, -0.110409, 0.000000],
+      "ParentRotation" : [-5.221254, -0.000002, -6.338883],
+      "ParentSecAxis" : [0.109951, 0.989762, -0.091002],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 9,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:LeftHand",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 8,
+      "ParentPosition" : [-0.000009, 23.166370, 0.000015],
+      "ParentPriAxis" : [0.980073, -0.037985, 0.194970],
+      "ParentRotation" : [7.521045, -11.242998, -2.219534],
+      "ParentSecAxis" : [0.012895, 0.991641, 0.128378],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 10,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:RightShoulder",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 3,
+      "ParentPosition" : [7.052552, 13.011200, -0.217886],
+      "ParentPriAxis" : [-0.031113, 0.000126, -0.999516],
+      "ParentRotation" : [-73.087250, 88.217201, 179.767395],
+      "ParentSecAxis" : [0.955097, -0.294795, -0.029768],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 11,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:RightArm",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 10,
+      "ParentPosition" : [-0.000009, 14.673132, -0.000015],
+      "ParentPriAxis" : [0.999309, -0.037156, 0.000000],
+      "ParentRotation" : [-13.968848, -0.000010, -2.129354],
+      "ParentSecAxis" : [0.036057, 0.969757, -0.241394],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 12,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:RightForeArm",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 11,
+      "ParentPosition" : [-0.000005, 25.323524, -0.000031],
+      "ParentPriAxis" : [0.992765, 0.120069, -0.000000],
+      "ParentRotation" : [-5.181574, 0.000007, 6.896104],
+      "ParentSecAxis" : [-0.119579, 0.988709, -0.090312],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 13,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:RightHand",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 12,
+      "ParentPosition" : [-0.000004, 23.170750, 0.000046],
+      "ParentPriAxis" : [0.978017, 0.032686, -0.205950],
+      "ParentRotation" : [7.689065, 11.885102, 1.914144],
+      "ParentSecAxis" : [-0.005561, 0.991376, 0.130929],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 14,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:LeftUpLeg",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 0,
+      "ParentPosition" : [-9.816021, -5.592415, -0.310682],
+      "ParentPriAxis" : [-0.998235, 0.059224, 0.004357],
+      "ParentRotation" : [-4.174310, -0.249625, 176.604706],
+      "ParentSecAxis" : [-0.059384, -0.995578, -0.072790],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 15,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:LeftLeg",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 14,
+      "ParentPosition" : [0.000140, 42.846302, 0.000017],
+      "ParentPriAxis" : [1.000000, -0.000407, -0.000020],
+      "ParentRotation" : [-0.350661, 0.001121, -0.023312],
+      "ParentSecAxis" : [0.000407, 0.999981, -0.006120],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 16,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:LeftFoot",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 15,
+      "ParentPosition" : [0.000165, 39.384262, -0.000006],
+      "ParentPriAxis" : [0.994404, -0.000000, -0.105648],
+      "ParentRotation" : [61.868397, 6.064506, -0.000016],
+      "ParentSecAxis" : [0.093168, 0.471498, 0.876932],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 17,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:LeftToeBase",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 16,
+      "ParentPosition" : [0.000364, 19.011343, 0.000083],
+      "ParentPriAxis" : [0.985905, -0.000001, -0.167305],
+      "ParentRotation" : [34.313251, 9.631185, -0.000063],
+      "ParentSecAxis" : [0.094314, 0.825968, 0.555772],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 18,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:RightUpLeg",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 0,
+      "ParentPosition" : [9.816021, -5.592422, -0.355978],
+      "ParentPriAxis" : [-0.998234, -0.059269, -0.004034],
+      "ParentRotation" : [-3.864152, 0.231124, -176.602097],
+      "ParentSecAxis" : [0.059406, -0.995957, -0.067391],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 19,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:RightLeg",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 18,
+      "ParentPosition" : [-0.000124, 42.829895, 0.000006],
+      "ParentPriAxis" : [1.000000, 0.000249, 0.000002],
+      "ParentRotation" : [-2.619485, -0.000142, 0.014279],
+      "ParentSecAxis" : [-0.000249, 0.998955, -0.045703],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 20,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:RightFoot",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 19,
+      "ParentPosition" : [-0.000107, 39.513836, -0.000033],
+      "ParentPriAxis" : [0.995363, -0.000000, 0.096187],
+      "ParentRotation" : [65.931633, -5.519617, -0.000001],
+      "ParentSecAxis" : [-0.087824, 0.407826, 0.908826],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }, {
+      "AngularRotationOffset" : [0.000000, 0.000000, 0.000000],
+      "ChildBodyIndex" : 21,
+      "ChildPosition" : [0.000000, 0.000000, 0.000000],
+      "ChildPriAxis" : [1.000000, 0.000000, 0.000000],
+      "ChildRotation" : [0.000000, 0.000000, 0.000000],
+      "ChildSecAxis" : [0.000000, 1.000000, 0.000000],
+      "Damping" : 0.000000,
+      "JointName" : "Joint_mixamorig12:RightToeBase",
+      "LinearLimit" : 0.000000,
+      "LinearXMotion" : 2,
+      "LinearYMotion" : 2,
+      "LinearZMotion" : 2,
+      "ParentBodyIndex" : 20,
+      "ParentPosition" : [-0.000362, 20.187729, 0.000038],
+      "ParentPriAxis" : [0.980132, 0.000001, 0.198347],
+      "ParentRotation" : [32.337452, -11.440333, 0.000060],
+      "ParentSecAxis" : [-0.106098, 0.844912, 0.524277],
+      "Stiffness" : 0.000000,
+      "Swing1LimitDegrees" : 45.000000,
+      "Swing1Motion" : 1,
+      "Swing2LimitDegrees" : 45.000000,
+      "Swing2Motion" : 1,
+      "TwistLimitDegrees" : 45.000000,
+      "TwistMotion" : 1
+    }],
+  "SkeletalMeshPath" : "Data/Brian/Brian.fbx"
+}

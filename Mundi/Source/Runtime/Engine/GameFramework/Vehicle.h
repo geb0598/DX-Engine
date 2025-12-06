@@ -6,6 +6,7 @@
 #include "SpringArmComponent.h"
 #include "AVehicle.generated.h"
 
+class UAnimStateMachineInstance;
 /**
  * PhysX 기반의 4륜 구동 자동차 액터
  * 구조: StaticMesh (차체) + 4x StaticMesh (바퀴)
@@ -23,6 +24,8 @@ public:
     virtual void Tick(float DeltaSeconds) override;
 
     virtual void SetupPlayerInputComponent(UInputComponent* InInputComponent) override;
+
+    void EjectDriver(const FVector& Impulse = FVector::Zero());
 
     // ====================================================================
     // 컴포넌트 구성
@@ -46,6 +49,12 @@ public:
     UPROPERTY(EditAnywhere, Category = "Camera")
     UCameraComponent* Camera;
 
+    /** 운전자 스켈레탈 메쉬 */
+    USkeletalMeshComponent* Driver;
+
+    /** 운전자 애니메이션 상태 머신 */
+    UAnimStateMachineInstance* DriverStateMachine;
+
 protected:
     // ====================================================================
     // 입력 핸들러
@@ -56,6 +65,14 @@ protected:
     void MoveRight(float Val);   
     // Q, E 키 처리
     void AddTorque(float Val);
+
+    // Q, E 키 애니메이션 처리
+    void LeanLeftPressed();
+    void LeanLeftReleased();
+    void LeanRightPressed();
+    void LeanRightReleased();
+
+    void UpdateDriverAnimation(float DeltaSeconds);
 
     // SpaceBar 처리
     void HandbrakePressed();
@@ -77,4 +94,13 @@ protected:
 
     /** 부스터 힘 (가속도 단위) */
     float BoostStrength = 30.0f;
+
+    int32 StateId_Idle;
+    int32 StateId_LeanLeft;
+    int32 StateId_LeanRight;
+
+    bool bLeanLeftInput;
+    bool bLeanRightInput;
+
+    bool bIsDriverEjected;
 };

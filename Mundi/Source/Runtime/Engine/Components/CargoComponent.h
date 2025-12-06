@@ -59,9 +59,13 @@ public:
     UPROPERTY(EditAnywhere, Category="Cargo Physics")
     float CriticalAngle = 50.0f;
 
-    /** 화물이 부모의 바닥 면적 대비 벗어날 수 있는 비율 (0.5 = 모서리) */
+    /** 화물이 부모의 바닥 면적 대비 벗어날 수 있는 비율 (X방향, 0.5 = 모서리) */
     UPROPERTY(EditAnywhere, Category="Cargo Physics")
-    float FalloffThreshold = 0.6f;
+    float FalloffThresholdX = 1.0f;
+    
+    /** 화물이 부모의 바닥 면적 대비 벗어날 수 있는 비율 (Y방향, 0.5 = 모서리) */
+    UPROPERTY(EditAnywhere, Category="Cargo Physics")
+    float FalloffThresholdY = 0.6f;
 
     /** 붕괴 시 화물을 바깥으로 밀어내는 힘의 크기 */
     UPROPERTY(EditAnywhere, Category="Cargo Physics")
@@ -70,6 +74,10 @@ public:
     /** 붕괴 시 화물에 가해지는 랜덤 회전력의 크기 */
     UPROPERTY(EditAnywhere, Category="Cargo Physics")
     float RandomSpinImpulse = 1.0f;
+
+    /** 화물이 모두 붕괴될 때 운전자를 발사시키는 힘의 크기 */
+    UPROPERTY(EditAnywhere, Category="Cargo Physics")
+    float EjectionImpulse = 10.0f;
 
     /** 랜덤으로 선택될 화물 메쉬 경로 목록 */
     UPROPERTY(EditAnywhere, Category="Cargo Gen")
@@ -82,7 +90,19 @@ public:
     /** 화물 회전 최대값 */
     UPROPERTY(EditAnywhere, Category="Cargo Gen")
     float MaxCargoRotation = 15.0f;
-    
+
+    /** 붕괴 조건이 충족되어도 이 시간(초) 동안은 버텨줌 (충격 완화) */
+    UPROPERTY(EditAnywhere, Category="Cargo Difficulty")
+    float CollapseGraceTime = 0.1f;
+
+    /** 좌우(Roll) 흔들림 민감도 (기본 1.0) */
+    UPROPERTY(EditAnywhere, Category="Cargo Difficulty")
+    float RollSensitivity = 1.0f;
+
+    /** 앞뒤(Pitch) 흔들림 민감도 (언덕 등을 위해 낮게 설정, 예: 0.2) */
+    UPROPERTY(EditAnywhere, Category="Cargo Difficulty")
+    float PitchSensitivity = 0.2f; 
+
     /** * 화물 박스들을 생성하고 계층 구조로 연결합니다.
      * @param BoxCount 생성할 박스의 개수
      * @param MeshPath 박스에 사용할 스태틱 메시 경로
@@ -111,4 +131,7 @@ private:
 
     /** 관리 중인 화물 컴포넌트 목록 (0:최하단, N - 1:최상단) */
     TArray<UStaticMeshComponent*> CargoBoxes;
+
+    /** 현재 위험 상태가 지속된 시간 */
+    float CurrentDangerDuration = 0.0f;
 };

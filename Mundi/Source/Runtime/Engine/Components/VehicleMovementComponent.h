@@ -64,6 +64,16 @@ public:
     UPROPERTY(EditAnywhere, Category = "Wheel1")
     UVehicleWheel* VehicleWheel1 = nullptr;
 
+    UPROPERTY(EditAnywhere, Category = "Tire", Tooltip = "종방향 타이어 접지력입니다. 값이 클수록 타이어가 앞뒤 방향으로 잘 안 미끄러집니다")
+    float LongitudinalStiffness = 100000.0f;
+
+    UPROPERTY(EditAnywhere, Category = "Tire", Tooltip = "횡방향 타이어 접지력입니다. 값이 클수록 타이어가 양옆 방향으로 잘 안 미끄러집니다")
+    float LateralStiffness = 50.0f;
+
+    UPROPERTY(EditAnywhere, Category = "Tire", Tooltip = "캠버 스티프니스")
+    float CamberStiffness = 50.0f;
+
+
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "물체의 Roll방향 관성모멘트입니다. 값이 클수록 잘 안 기울어집니다")
     float RollInertial = 4.0f;
 
@@ -71,10 +81,10 @@ public:
     FVector COM = FVector(0, 0, 0.1);
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "중력에 의한 Roll 토크 복원력에 대한 계수입니다")
-    float GravityTorqueInverseFactor = 1.5f;
+    float GravityTorqueInverseFactor = 3.0f;
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooptip = "원심력에 의한 Roll 토크 복원력에 대한 계수입니다")
-    float CentrifugalTorqueInverseFactor = 0.5f;
+    float CentrifugalTorqueInverseFactor = 1.0f;
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "Roll 각속도를 줄여줍니다. 설정된 값이 커질수록 Roll 진동이 빠르게 사라집니다")
     float DampingFactor = 0.1f;
@@ -92,10 +102,23 @@ public:
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "설정된 Degree을 넘어가면 복원력을 받지 못하고 넘어집니다")
     float CriticalDegree = 50.0f;
 
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "회전 도중 엑셀을 뗄 때 바퀴가 들리지 않게 눌러주는 임계 속도를 조절합니다")
+    float DownForceSpeed = 20.0f;
+
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "회전 도중 엑셀을 뗄 때 바퀴가 들리지 않게 눌러주는 힘을 조절합니다")
+    float DownForceFactor = 3.0f;
+
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "Q, E 키 입력 시 기울어지는 정도를 조절합니다")
     float UserTorqueFactor = 1500.0f;
 
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "Space 키 입력 시 점프 세기를 조절합니다")
+    float JumpVelocity = 5.0f;
+
     float UserTorque = 0.0f;
+    bool JumpInput = false;
+
+    // 회전용(DownForce)
+    float CurrentForceMagnitude = 0.0f;
 
     TArray<FVehicleWheelSetup> WheelSetups;
 
@@ -107,6 +130,7 @@ public:
     void SetBrakeInput(float Brake);       // 0.0 ~ 1.0 (제동)
     void SetHandbrakeInput(bool bIsHandbrake);
     void SetUserTorque(float TorqueInput);
+    void SetJumpInput(bool InJumpInput);
 
     /** 현재 전진 속도 (m/s) */
     float GetForwardSpeed() const;
@@ -186,6 +210,8 @@ private:
     void UpdateVehicleSimulation(float DeltaTime);
 
     void BalanceVehicle(float DeltaSeconds);
+
+    void DownForceIfDecelerate(float DeltaTime);
 
     // ====================================================================
     // PhysX 멤버 변수 (Sim Data)

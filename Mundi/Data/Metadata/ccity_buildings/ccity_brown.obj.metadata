@@ -1,11 +1,13 @@
 {
   "AggGeom" : {
-    "BoxElems" : [],
-    "ConvexElems" : [{
-        "Center" : [0.000000, 0.000000, 0.000000],
+    "BoxElems" : [{
+        "Center" : [0.000000, 0.000000, 7.140000],
         "Rotation" : [0.000000, 0.000000, 0.000000, 1.000000],
-        "Source" : "Mesh"
+        "X" : 18.430000,
+        "Y" : 18.240000,
+        "Z" : 18.000000
       }],
+    "ConvexElems" : [],
     "SphereElems" : [],
     "SphylElems" : []
   },

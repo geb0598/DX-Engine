@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "PhysScene.h"
 
 #include "BodyInstance.h"
@@ -278,6 +278,7 @@ void FPhysScene::TickPhysScene(float DeltaTime)
 
     if (DeltaTime <= 0.0f)    { return; }
 
+    DeltaTime = FMath::Min(DeltaTime, 0.016f);
     PhysXScene->simulate(DeltaTime);
     bPhysXSceneExecuting = true;
 }
