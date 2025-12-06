@@ -56,6 +56,30 @@ void ADumbRiderGameMode::BeginPlay()
 		.SetAnchor(0.1f, 0.1f)
 		.SetOffset(0.f, 220.f)
 		.SetSize(300.f, 40.f);
+
+	// ────────────────────────────────────────────────────────────────────────────
+	// 박스 카운터 UI (우하단) - 임시 주석 처리
+	// ────────────────────────────────────────────────────────────────────────────
+
+	// 박스 아이콘
+	BoxesIcon = MakeShared<SImage>();
+	BoxesIcon->SetTexture(L"Data/Textures/Dumb/Box.png");
+
+	SGameHUD::Get().AddWidget(BoxesIcon)
+		.SetAnchor(1.0f, 1.0f)  // 우하단
+		.SetPivot(1.0f, 1.0f)   // 우하단 기준
+		.SetOffset(-250.f, -80.f)  // 우하단에서 왼쪽, 위로 오프셋
+		.SetSize(80.f, 80.f);
+
+	// "x BOXES LEFT" 텍스트
+	BoxesLeftText = MakeShared<SImage>();
+	BoxesLeftText->SetTexture(L"Data/Textures/Dumb/Boxesleft.png");
+
+	SGameHUD::Get().AddWidget(BoxesLeftText)
+		.SetAnchor(1.0f, 1.0f)  // 우하단
+		.SetPivot(1.0f, 1.0f)   // 우하단 기준
+		.SetOffset(-120.f, -100.f)  // 박스 아이콘 오른쪽
+		.SetSize(150.f, 40.f);
 }
 
 void ADumbRiderGameMode::Tick(float DeltaSeconds)

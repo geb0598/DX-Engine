@@ -46,4 +46,10 @@ protected:
 
     /** 디버그 텍스트 */
     TSharedPtr<STextBlock> DebugText;
+
+    /** 박스 아이콘 */
+    TSharedPtr<SImage> BoxesIcon;
+
+    /** "x BOXES LEFT" 텍스트 이미지 */
+    TSharedPtr<SImage> BoxesLeftText;
 };

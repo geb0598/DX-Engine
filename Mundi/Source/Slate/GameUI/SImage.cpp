@@ -5,6 +5,13 @@
 
 SImage::~SImage()
 {
+    // 애니메이션 해제
+    for (auto* Anim : Animations)
+    {
+        delete Anim;
+    }
+    Animations.Empty();
+
     // D2D 비트맵 해제
     if (Bitmap)
     {
@@ -64,13 +71,15 @@ void SImage::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 void SImage::Update(float DeltaTime)
 {
     // 애니메이션 업데이트 (완료된 것은 제거)
-    Animations.erase(
-        std::remove_if(Animations.begin(), Animations.end(),
-            [DeltaTime](TSharedPtr<FWidgetAnimation>& Anim) {
-                return Anim && Anim->Update(DeltaTime);
-            }),
-        Animations.end()
-    );
+    for (int32 i = Animations.Num() - 1; i >= 0; --i)
+    {
+        FWidgetAnimation* Anim = Animations[i];
+        if (Anim && Anim->Update(DeltaTime))
+        {
+            delete Anim;
+            Animations.RemoveAt(i);
+        }
+    }
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -140,28 +149,28 @@ SImage& SImage::SetMaintainAspectRatio(bool bMaintain)
 
 SImage& SImage::PlayFadeIn(float Duration, EEasingType Easing)
 {
-    auto FadeAnim = MakeShared<FFadeAnimation>(&Opacity, 0.0f, 1.0f, Duration);
+    FFadeAnimation* FadeAnim = new FFadeAnimation(&Opacity, 0.0f, 1.0f, Duration);
     FadeAnim->SetEasingType(Easing);
     FadeAnim->Play();
-    Animations.push_back(FadeAnim);
+    Animations.Add(FadeAnim);
     return *this;
 }
 
 SImage& SImage::PlayFadeOut(float Duration, EEasingType Easing)
 {
-    auto FadeAnim = MakeShared<FFadeAnimation>(&Opacity, Opacity, 0.0f, Duration);
+    FFadeAnimation* FadeAnim = new FFadeAnimation(&Opacity, Opacity, 0.0f, Duration);
     FadeAnim->SetEasingType(Easing);
     FadeAnim->Play();
-    Animations.push_back(FadeAnim);
+    Animations.Add(FadeAnim);
     return *this;
 }
 
 SImage& SImage::PlayScaleAnimation(FVector2D ToScale, float Duration, EEasingType Easing)
 {
-    auto ScaleAnim = MakeShared<FScaleAnimation>(&Scale, Scale, ToScale, Duration);
+    FScaleAnimation* ScaleAnim = new FScaleAnimation(&Scale, Scale, ToScale, Duration);
     ScaleAnim->SetEasingType(Easing);
     ScaleAnim->Play();
-    Animations.push_back(ScaleAnim);
+    Animations.Add(ScaleAnim);
     return *this;
 }
 
@@ -173,10 +182,13 @@ SImage& SImage::SetScale(FVector2D InScale)
 
 void SImage::StopAllAnimations()
 {
-    for (auto& Anim : Animations)
+    for (FWidgetAnimation* Anim : Animations)
     {
         if (Anim)
+        {
             Anim->Stop();
+            delete Anim;
+        }
     }
-    Animations.clear();
+    Animations.Empty();
 }

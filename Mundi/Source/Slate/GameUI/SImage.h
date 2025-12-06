@@ -1,7 +1,6 @@
 ﻿#pragma once
 #include "SWidget.h"
 #include "WidgetAnimation.h"
-#include <vector>
 
 /**
  * @file SImage.h
@@ -117,5 +116,5 @@ private:
     FVector2D Scale = FVector2D(1.f, 1.f);
 
     /** 실행 중인 애니메이션 */
-    std::vector<TSharedPtr<FWidgetAnimation>> Animations;
+    TArray<FWidgetAnimation*> Animations;
 };
