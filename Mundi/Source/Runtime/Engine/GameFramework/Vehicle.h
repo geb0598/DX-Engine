@@ -57,11 +57,7 @@ protected:
     // Q, E 키 처리
     void AddTorque(float Val);
 
-
-    // Space 키 처리
-    void JumpPressed();
-    void JumpReleased();
-    // C 처리
+    // SpaceBar 처리
     void HandbrakePressed();
     void HandbrakeReleased();
     // Shift 처리 (부스터)
