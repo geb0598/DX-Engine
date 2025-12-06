@@ -45,7 +45,6 @@ void UCargoComponent::TickComponent(float DeltaSeconds)
     }
 
     FTransform CompTransform = GetWorldTransform();
-    
     FVector WorldUp = FVector(0, 0, 1);
     FVector CompUp = CompTransform.TransformVector(WorldUp);
     CompUp.Normalize();
@@ -58,20 +57,27 @@ void UCargoComponent::TickComponent(float DeltaSeconds)
         return;
     }
 
-    FVector LeanDirection = FVector(CompUp.X, CompUp.Y, 0);
+    float PitchInput = CompUp.X;
+    float RollInput = CompUp.Y;
+
+    PitchInput *= PitchSensitivity;
+    RollInput *= RollSensitivity;
 
     switch (SwayMode)
     {
     case ECargoSwayMode::RollOnly:
-        LeanDirection.X = 0.0f;
+        PitchInput = 0.0f;
         break;
     case ECargoSwayMode::PitchOnly:
-        LeanDirection.Y = 0.0f;
+        RollInput = 0.0f;
         break;
     case ECargoSwayMode::Locked:
-        LeanDirection = FVector::Zero();
+        PitchInput = 0.0f;
+        RollInput = 0.0f;
         break;
     }
+    
+    FVector LeanDirection = FVector(PitchInput, RollInput, 0.0f);
     
     float LeanMagnitude = LeanDirection.Size();
     if (LeanMagnitude > 0.001f)
@@ -82,6 +88,9 @@ void UCargoComponent::TickComponent(float DeltaSeconds)
     {
         LeanDirection = FVector(0, 0, 0);
     }
+
+    bool bIsCollapseTriggered = false;
+    int32 FirstCollapseIndex = -1;
 
     for (int32 i = 1; i < ValidCargoCount; i++)
     {
@@ -109,9 +118,27 @@ void UCargoComponent::TickComponent(float DeltaSeconds)
 
         if (CheckCollapseRelative(ParentCargo, NewLocation))
         {
-            CollapseFrom(i);
+            bIsCollapseTriggered = true;
+            FirstCollapseIndex = i;
             break;
         }
+    }
+    
+    if (bIsCollapseTriggered)
+    {
+        CurrentDangerDuration += DeltaSeconds;
+        
+        // "위험해!" UI 연출을 넣기 좋은 타이밍 (화면 붉어짐, 짐 흔들림 소리 등)
+        UE_LOG("위험해!!!");
+        if (CurrentDangerDuration > CollapseGraceTime)
+        {
+            CollapseFrom(FirstCollapseIndex);
+            CurrentDangerDuration = 0.0f; 
+        }
+    }
+    else
+    {
+        CurrentDangerDuration = FMath::Max(0.0f, CurrentDangerDuration - DeltaSeconds * 2.0f);
     }
 }
 
@@ -240,8 +267,8 @@ bool UCargoComponent::CheckCollapseRelative(UStaticMeshComponent* ParentCargo, c
     float ParentX = ParentBound.Max.X - ParentBound.Min.X;
     float ParentY = ParentBound.Max.Y - ParentBound.Min.Y;
 
-    float LimitX = ParentX * FalloffThreshold;
-    float LimitY = ParentY * FalloffThreshold;
+    float LimitX = ParentX * FalloffThresholdX;
+    float LimitY = ParentY * FalloffThresholdY;
 
     bool bFailX = FMath::Abs(CurrentLocation.X) > LimitX;
     bool bFailY = FMath::Abs(CurrentLocation.Y) > LimitY;
