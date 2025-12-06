@@ -63,7 +63,7 @@ public:
 
     /** 서스펜션 최대 압축 거리 (m) - 바퀴가 위로 얼마나 올라갈 수 있는지 */
     UPROPERTY(EditAnywhere, Category = "Suspension")
-    float MaxSuspensionCompression = 0.3f;
+    float MaxSuspensionCompression = 0.1f;
 
     /** 서스펜션 최대 이완 거리 (m) - 바퀴가 아래로 얼마나 내려갈 수 있는지 */
     UPROPERTY(EditAnywhere, Category = "Suspension")

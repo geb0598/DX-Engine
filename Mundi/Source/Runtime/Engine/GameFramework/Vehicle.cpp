@@ -202,6 +202,8 @@ void AVehicle::SetupPlayerInputComponent(UInputComponent* InInputComponent)
     InInputComponent->BindAction<AVehicle>("LeanLeft",  'Q', this, &AVehicle::LeanLeftPressed,  &AVehicle::LeanLeftReleased);
     InInputComponent->BindAction<AVehicle>("LeanRight", 'E', this, &AVehicle::LeanRightPressed, &AVehicle::LeanRightReleased);
     
+    InInputComponent->BindAction<AVehicle>("Jump", 'F', this, &AVehicle::JumpPressed, &AVehicle::JumpReleased);
+
     // [액션 바인딩] Space로 핸드브레이크
     // VK_SPACE는 0x20
     InInputComponent->BindAction<AVehicle>("Handbrake", VK_SPACE, this, &AVehicle::HandbrakePressed, &AVehicle::HandbrakeReleased);
@@ -249,6 +251,19 @@ void AVehicle::AddTorque(float Val)
 {
     CurrentTorqueInput += Val;
 }
+
+void AVehicle::JumpPressed()
+{
+    if (VehicleMovement)
+    {
+        VehicleMovement->SetJumpInput(true);
+    }
+}
+
+void AVehicle::JumpReleased()
+{
+}
+
 
 void AVehicle::LeanLeftPressed()  { bLeanLeftInput = true; }
 void AVehicle::LeanLeftReleased() { bLeanLeftInput = false; }
@@ -328,7 +343,7 @@ void AVehicle::SyncWheelVisuals()
     //for (int i = 0; i < 4; i++)
     for (int i = 0; i < 2; i++)
     {
-        if (WheelMeshes[i])
+        if (WheelMeshes[i]) 
         {
             FTransform WheelTransform = VehicleMovement->GetWheelTransform(i);
             WheelMeshes[i]->SetRelativeLocation(WheelTransform.Translation);
