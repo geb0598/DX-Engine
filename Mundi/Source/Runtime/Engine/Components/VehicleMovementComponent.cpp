@@ -285,12 +285,14 @@ void UVehicleMovementComponent::SetupWheelSimulationData(physx::PxRigidDynamic* 
         PWheelsSimData->setSuspensionData(WheelIndex, VehicleWheels[i]->GetPxSuspensionData());
     }
 
+    PxVehicleTireData TireData;
+    TireData.mLongitudinalStiffnessPerUnitGravity = 100000.0f;
     for (int32 i = 0; i < MAX_WHEELS; i++)
     {
         if (VehicleWheels[i])
         {
             PWheelsSimData->setWheelData(i, VehicleWheels[i]->GetPxWheelData());
-            PWheelsSimData->setTireData(i, PxVehicleTireData());
+            PWheelsSimData->setTireData(i, TireData);
             PWheelsSimData->setSuspensionData(i, VehicleWheels[i]->GetPxSuspensionData());
 
             PxVec3 Offset = U2PVector(WheelSetups[i].BoneOffset);
@@ -311,7 +313,7 @@ void UVehicleMovementComponent::SetupDriveSimulationData(physx::PxRigidDynamic* 
     DriveSimData.setGearsData(TransmissionSetup.GetPxGearsData());
     
     PxVehicleClutchData ClutchData;
-    ClutchData.mStrength = 10.0f;
+    ClutchData.mStrength = Clutch;
     DriveSimData.setClutchData(ClutchData);
 
     PxVehicleAutoBoxData AutoBoxData;
@@ -342,6 +344,7 @@ void UVehicleMovementComponent::SetupDriveSimulationData(physx::PxRigidDynamic* 
         DriveSimData.setAckermannGeometryData(Ackermann);
     }*/
 
+    
     if (PWheelsSimData)
     {
         //PVehicleDrive = PxVehicleDrive4W::allocate(4);
@@ -360,7 +363,7 @@ void UVehicleMovementComponent::SetupDriveSimulationData(physx::PxRigidDynamic* 
     RigidActor->setAngularDamping(0.05f);
 
     RigidActor->setMaxDepenetrationVelocity(5.0f);
-    RigidActor->setSolverIterationCounts(12, 4);
+    RigidActor->setSolverIterationCounts(32, 5);
 }
 
 // ====================================================================
@@ -441,7 +444,7 @@ void UVehicleMovementComponent::SetupFrictionPairs()
     
     FrictionPairs->setup(1, 1, Mats, SurfaceTypes);
     
-    FrictionPairs->setTypePairFriction(0, 0, 1.0f);
+    FrictionPairs->setTypePairFriction(0, 0, 2.0f);
 }
 
 void UVehicleMovementComponent::ReleaseFrictionPairs()
@@ -532,6 +535,20 @@ bool UVehicleMovementComponent::IsVehicleInAir() const
     return true;
 }
 
+bool UVehicleMovementComponent::IsAllWheelGrounded() const
+{
+    if (!BatchQueryResults) return false;
+
+    for (int i = 0; i < MAX_WHEELS; i++)
+    {
+        if (BatchQueryResults[i].block.actor == nullptr)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
 void UVehicleMovementComponent::ProcessVehicleInput(float DeltaTime)
 {
     if (!PInputData || !PVehicleDrive)
@@ -579,7 +596,7 @@ void UVehicleMovementComponent::UpdateVehicleSimulation(float DeltaTime)
 
 void UVehicleMovementComponent::BalanceVehicle(float DeltaSeconds)
 {
-    if (PVehicleDrive && !IsVehicleInAir())
+    if (PVehicleDrive && IsAllWheelGrounded())
     {
         PxRigidDynamic* Actor = PVehicleDrive->getRigidDynamicActor();
 
@@ -619,13 +636,13 @@ void UVehicleMovementComponent::BalanceVehicle(float DeltaSeconds)
         // 원심력에 의한 토크 복원력(속도 제곱 쓰면 엔진에선 값이 너무 커서 안 씀)
         float InvCentrifugalTorque = InvGravityTorque * CentrifugalTorqueInverseFactor;
 
-        float InvTorque = (InvGravityTorque + InvCentrifugalTorque * Actor->getLinearVelocity().magnitude()) * UpRightStength;
+        float InvTorque = (InvGravityTorque + InvCentrifugalTorque * ActorSpeed) * UpRightStength;
 
         // 최대 복원력 제한(너무 세면 날라감)
         InvTorque = FMath::Min(InvTorque, InvGravityTorque * MaxTorqueLimit);
 
         // 복원력만 적용하면 에너지가 그대로라서 영원히 진동 -> 현재 각속도에 저항하는 댐핑이 필요
-        float Damping = InvTorque * DampingFactor;
+        float Damping = GravityTorque * 0.5f + (InvTorque * DampingFactor);
 
         PxVec3 LocalForward = Transform.q.getBasisVector0();
 

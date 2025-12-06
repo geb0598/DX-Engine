@@ -51,6 +51,9 @@ public:
     // ====================================================================
     UPROPERTY(EditAnywhere, Category = "Engine")
     FVehicleEngineData EngineSetup;
+
+    UPROPERTY(EditAnywhere, Category = "Engine")
+    float Clutch = 1000.0f;
     FVehicleTransmissionData TransmissionSetup;
 
     /** 4개의 휠 설정 (순서: 0:FL, 1:FR, 2:RL, 3:RR) */
@@ -169,6 +172,9 @@ private:
 
     /** 차량이 공중에 떠 있는지 확인 (스티어링 보정용) */
     bool IsVehicleInAir() const;
+
+    /** 차의 모든 바퀴가 땅에 닿아있는지 확인 */
+    bool IsAllWheelGrounded() const;
 
     /** Raw 입력을 스무딩하여 PhysX Drive에 적용 */
     void ProcessVehicleInput(float DeltaTime);
