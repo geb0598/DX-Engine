@@ -1,0 +1,48 @@
+{
+  "ObjectName" : "스태틱 메시_0",
+  "OwnedComponents" : [{
+      "CollisionChannel" : 1,
+      "CollisionEnabled" : 3,
+      "CollisionMask" : -1,
+      "Id" : 1645,
+      "MaterialSlots" : [{
+          "Type" : "None"
+        }, {
+          "Overrides" : {
+            "Scalars" : {
+              "SpecularExponent" : 200.000000
+            },
+            "Textures" : {
+
+            },
+            "Vectors" : {
+              "AmbientColor" : [1.000000, 1.000000, 1.000000, 1.000000]
+            }
+          },
+          "ParentPath" : "None",
+          "Type" : "UMaterialInstanceDynamic"
+        }],
+      "ObjectName" : "UStaticMeshComponent_23",
+      "ParentId" : 0,
+      "PhysicalMaterial" : "",
+      "RelativeLocation" : [175.813202, -61.907257, 0.769868],
+      "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [2.500000, 2.500000, 2.500000],
+      "StaticMesh" : "Data/Model/RoadBarrier.fbx",
+      "Type" : "UStaticMeshComponent",
+      "bBlockComponent" : false,
+      "bCastShadows" : true,
+      "bGenerateOverlapEvents" : true,
+      "bHiddenInGame" : false,
+      "bIsActive" : true,
+      "bIsVisible" : true,
+      "bSimulatePhysics" : false,
+      "bTickEnabled" : true,
+      "bTickInEditor" : false
+    }],
+  "RootComponentId" : 1645,
+  "Tag" : "",
+  "Type" : "AStaticMeshActor",
+  "bActorHiddenInGame" : false,
+  "bActorIsActive" : true
+}
