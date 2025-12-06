@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "FD2DRenderer.h"
 
 #include <dxgi1_2.h>
@@ -253,6 +253,75 @@ void FD2DRenderer::DrawLine(const FVector2D& Start, const FVector2D& End, const 
         SolidBrush,
         Thickness
     );
+}
+
+void FD2DRenderer::DrawImage(ID2D1Bitmap* Bitmap, const FVector2D& Position, const FVector2D& Size, const FSlateColor& Tint, float Opacity)
+{
+    if (!bInFrame || !D2DContext || !Bitmap)
+        return;
+
+    D2D1_RECT_F DestRect = D2D1::RectF(
+        Position.X, Position.Y, Position.X + Size.X, Position.Y + Size.Y
+    );
+    float FinalOpacity = Opacity * Tint.A;
+
+    D2DContext->DrawBitmap(
+        Bitmap,
+        DestRect,
+        FinalOpacity,
+        D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+        nullptr     // 전체 소스 이미지 사용
+    );
+
+    // TODO: Tint 색상 적용하려면 D2D Effect 필요
+}
+
+ID2D1Bitmap* FD2DRenderer::CreateBitmapFromUTexture(UTexture* Texture)
+{
+    if (!D2DContext || !Texture || !Texture->GetTexture2D())
+        return nullptr;
+
+    ID2D1Bitmap1* Bitmap = nullptr;
+    ID3D11Texture2D* D3dTexture = Texture->GetTexture2D();
+
+    // D3D11 텍스처 정보 가져오기
+    D3D11_TEXTURE2D_DESC Desc;
+    D3dTexture->GetDesc(&Desc);
+
+    // DXGI Surface 획득 (텍스처의 표면 인터페이스)
+    IDXGISurface* Surface = nullptr;
+    HRESULT Hr = D3dTexture->QueryInterface(__uuidof(IDXGISurface), (void**)&Surface);
+
+    if (SUCCEEDED(Hr))
+    {
+        // D2D 비트맵 속성 설정
+        D2D1_BITMAP_PROPERTIES1 BitmapProps = D2D1::BitmapProperties1(
+            D2D1_BITMAP_OPTIONS_NONE,
+            D2D1::PixelFormat(Desc.Format, D2D1_ALPHA_MODE_PREMULTIPLIED)
+        );
+
+        // DXGI Surface로부터 D2D 비트맵 생성
+        Hr = D2DContext->CreateBitmapFromDxgiSurface(
+            Surface,
+            &BitmapProps,
+            &Bitmap
+        );
+
+        Surface->Release();
+
+        if (FAILED(Hr))
+        {
+            UE_LOG("[FD2DRenderer] Failed to create D2D bitmap from UTexture");
+            return nullptr;
+        }
+    }
+    else
+    {
+        UE_LOG("[FD2DRenderer] Failed to get DXGI surface from UTexture");
+        return nullptr;
+    }
+
+    return Bitmap;
 }
 
 // =====================================================

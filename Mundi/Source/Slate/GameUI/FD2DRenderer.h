@@ -77,6 +77,34 @@ public:
     void DrawLine(const FVector2D& Start, const FVector2D& End, const FSlateColor& Color, float Thickness = 1.0f);
 
     // =====================================================
+    // 이미지 렌더링
+    // =====================================================
+    
+    /**
+    * 이미지 그리기
+    * @param Bitmap D2D 비트맵
+    * @param Position 위치
+    * @param Size 크기
+    * @param Tint 색상 틴트 (곱셈)
+    * @param Opacity 투명도 (0.0 ~ 1.0)
+    */
+    void DrawImage(
+        ID2D1Bitmap* Bitmap,
+        const FVector2D& Position,
+        const FVector2D& Size,
+        const FSlateColor& Tint = FSlateColor::White(),
+        float Opacity = 1.0f
+    );
+
+    /**
+    * UTexture를 ID2D1Bitmap으로 변환
+    * @param Texture 3D 렌더링용 UTexture
+    * @return D2D용 비트맵 (실패 시 nullptr)
+    * @note 반환된 비트맵은 호출자가 Release() 책임
+    */
+    ID2D1Bitmap* CreateBitmapFromUTexture(UTexture* Texture);
+
+    // =====================================================
     // 텍스트 렌더링
     // =====================================================
 

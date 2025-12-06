@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /**
  * @file SGameHUD.h
@@ -103,6 +103,9 @@ public:
 
     /** 루트 캔버스 접근 */
     TSharedPtr<SCanvas> GetRootCanvas() { return RootCanvas; }
+
+    /** D2D 렌더러 접근 (텍스처 로딩용) */
+    FD2DRenderer* GetRenderer() { return Renderer.get(); }
 
     // =====================================================
     // 뷰포트 설정
