@@ -3827,15 +3827,12 @@ bool UPropertyRenderer::RenderSearchableCombo(const char* Label, int* current, T
 
 	bool bChanged = false;
 	static ImGuiTextFilter Filter;
-	static bool bWasOpen = false;
 
 	// 현재 선택된 항목의 텍스트
 	const char* PreviewText = (*current >= 0 && *current < Items.Num()) ? Items[*current].c_str() : "None";
 
 	ImGui::SetNextItemWidth(240);
-	const bool bIsOpen = ImGui::BeginCombo(Label, PreviewText);
-
-	if (bIsOpen)
+	if (ImGui::BeginCombo(Label, PreviewText))
 	{
 		// 콤보박스가 처음 열린 프레임에만 검색창에 포커스
 		if (ImGui::IsWindowAppearing())
@@ -3873,13 +3870,6 @@ bool UPropertyRenderer::RenderSearchableCombo(const char* Label, int* current, T
 		ImGui::EndCombo();
 	}
 
-	// 콤보가 닫힐 때 검색어 초기화
-	if (bWasOpen && !bIsOpen)
-	{
-		Filter.Clear();
-	}
-	bWasOpen = bIsOpen;
-
 	return bChanged;
 }
 
@@ -3893,14 +3883,12 @@ bool UPropertyRenderer::RenderSearchableComboWithThumbnails(const char* Label, i
 
 	bool bChanged = false;
 	static ImGuiTextFilter Filter;
-	static bool bWasOpen = false;
 
 	const char* PreviewText = (*current >= 0 && *current < Items.Num()) ? Items[*current].c_str() : "None";
 
 	ImGui::SetNextItemWidth(240);
-	const bool bIsOpen = ImGui::BeginCombo(Label, PreviewText);
 
-	if (bIsOpen)
+	if (ImGui::BeginCombo(Label, PreviewText))
 	{
 		if (ImGui::IsWindowAppearing())
 		{
@@ -3980,12 +3968,6 @@ bool UPropertyRenderer::RenderSearchableComboWithThumbnails(const char* Label, i
 
 		ImGui::EndCombo();
 	}
-
-	if (bWasOpen && !bIsOpen)
-	{
-		Filter.Clear();
-	}
-	bWasOpen = bIsOpen;
 
 	return bChanged;
 }
