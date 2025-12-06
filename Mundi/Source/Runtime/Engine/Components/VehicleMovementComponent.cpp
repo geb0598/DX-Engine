@@ -77,11 +77,11 @@ UVehicleMovementComponent::UVehicleMovementComponent()
     //}
     VehicleWheel0 = NewObject<UVehicleWheel>();
     VehicleWheel0->SteerAngle = 45.0f;
-    VehicleWheel0->WheelOffset = FVector(1.0f, 0.0f, -0.7f);
+    VehicleWheel0->WheelOffset = FVector(0.62f, 0.0f, -0.7f);
 
     VehicleWheel1 = NewObject<UVehicleWheel>();
     VehicleWheel1->SteerAngle = 0.0f;
-    VehicleWheel1->WheelOffset = FVector(-0.6f, 0.0f, -0.7f);
+    VehicleWheel1->WheelOffset = FVector(-0.85f, 0.0f, -0.7f);
 
     // @todo 현재 하드코딩된 바퀴 설정 사용
     WheelSetups.SetNum(MAX_WHEELS);
