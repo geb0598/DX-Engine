@@ -118,13 +118,23 @@ void AVehicle::Tick(float DeltaSeconds)
         VehicleMovement->SetUserTorque(CurrentTorqueInput);
 
         const float ForwardSpeed = VehicleMovement->GetForwardSpeed();
-        const float SpeedThreshold = 2.0f; // @note 속도가 이 값보다 낮으면 멈춘 것으로 간주
+        // 자꾸 윌리해서 0.0으로 수정함
+        const float SpeedThreshold = 0.0f; // @note 속도가 이 값보다 낮으면 멈춘 것으로 간주
+        
 
         if (CurrentForwardInput > 0.0f)
         {
-            VehicleMovement->SetGearToDrive();
-            VehicleMovement->SetThrottleInput(CurrentForwardInput);
-            VehicleMovement->SetBrakeInput(0.0f);
+            if (ForwardSpeed < SpeedThreshold)
+            {
+                VehicleMovement->SetThrottleInput(0.0f);
+                VehicleMovement->SetBrakeInput(CurrentForwardInput);
+            }
+            else
+            {
+                VehicleMovement->SetGearToDrive();
+                VehicleMovement->SetThrottleInput(CurrentForwardInput);
+                VehicleMovement->SetBrakeInput(0.0f);
+            }
         }
         else if (CurrentForwardInput < 0.0f)
         {

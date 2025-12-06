@@ -81,7 +81,7 @@ UVehicleMovementComponent::UVehicleMovementComponent()
 
     VehicleWheel1 = NewObject<UVehicleWheel>();
     VehicleWheel1->SteerAngle = 0.0f;
-    VehicleWheel1->WheelOffset = FVector(-1.0f, 0.0f, -0.7f);
+    VehicleWheel1->WheelOffset = FVector(-0.6f, 0.0f, -0.7f);
 
     // @todo 현재 하드코딩된 바퀴 설정 사용
     WheelSetups.SetNum(MAX_WHEELS);
@@ -282,7 +282,9 @@ void UVehicleMovementComponent::SetupWheelSimulationData(physx::PxRigidDynamic* 
     }
 
     PxVehicleTireData TireData;
-    TireData.mLongitudinalStiffnessPerUnitGravity = 100000.0f;
+    TireData.mLongitudinalStiffnessPerUnitGravity = LongitudinalStiffness;
+    TireData.mLatStiffY = LateralStiffness;
+    TireData.mCamberStiffnessPerUnitGravity = CamberStiffness;
     for (int32 i = 0; i < MAX_WHEELS; i++)
     {
         if (VehicleWheels[i])
@@ -484,6 +486,8 @@ void UVehicleMovementComponent::TickComponent(float DeltaSeconds)
 
     BalanceVehicle(DeltaSeconds);
 
+    DownForceIfDecelerate(DeltaSeconds);
+
     // @note 디버그용 (불필요할 시 주석처리 혹은 삭제할 것)
     if (PVehicleDrive)
     {
@@ -667,6 +671,52 @@ void UVehicleMovementComponent::BalanceVehicle(float DeltaSeconds)
     }
 }
 
+void UVehicleMovementComponent::DownForceIfDecelerate(float DeltaTime)
+{
+    if (PVehicleDrive)
+    {
+        PxRigidDynamic* Actor = PVehicleDrive->getRigidDynamicActor();
+        if (!IsVehicleInAir() &&
+            PInputData->getAnalogAccel() < 0.1f &&
+            Actor->getLinearVelocity().magnitudeSquared() > DownForceSpeed)
+        {
+            PxTransform CarPose = Actor->getGlobalPose();
+
+            PxVec3 ForwardPos = CarPose.q.getBasisVector0();
+            PxVec3 WheelPos;
+
+            // 전진시 뒷바퀴 누르기
+            if (PVehicleDrive->computeForwardSpeed() > 0.0f)
+            {
+                // AddForceAtPos함수는 월드 좌표를 입력으로 받고 액터의 월드 좌표랑 비교해서 힘을 가함. 그래서 로컬 좌표계의 바퀴를 월드 좌표로 변환해야함.
+                WheelPos = CarPose.transform(PVehicleDrive->mWheelsSimData.getWheelCentreOffset(1));
+            }
+            // 후진시 앞바퀴 누르기
+            else
+            {
+                WheelPos = CarPose.transform(PVehicleDrive->mWheelsSimData.getWheelCentreOffset(0));
+            }
+
+            PxVec3 UpVector = CarPose.q.getBasisVector2();
+
+            float TargetForceMagnitude = Actor->getMass() * 9.81f * DownForceFactor;
+
+            CurrentForceMagnitude = FMath::FInterpTo(CurrentForceMagnitude, TargetForceMagnitude, DeltaTime, 0.5f);
+
+            PxRigidBodyExt::addForceAtPos(
+                *Actor,
+                -UpVector * CurrentForceMagnitude,
+                WheelPos,
+                PxForceMode::eFORCE
+            );
+        }
+        else
+        {
+            CurrentForceMagnitude = 0.0f;
+        }
+    }
+}
+
 // ====================================================================
 // 입력 인터페이스 (PlayerController에서 호출)
 // ====================================================================
@@ -754,7 +804,7 @@ void UVehicleMovementComponent::SetGearToNeutralIfZeroVel()
 {
     if (PVehicleDrive)
     {
-        if (std::abs(PVehicleDrive->computeForwardSpeed()) <= 1.0f)
+        if (PVehicleDrive->getRigidDynamicActor()->getLinearVelocity().magnitudeSquared() <= 1.0f)
         {
             PVehicleDrive->mDriveDynData.forceGearChange(physx::PxVehicleGearsData::eNEUTRAL);
         }
