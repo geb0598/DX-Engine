@@ -2,8 +2,6 @@
 #include "SImage.h"
 #include "FD2DRenderer.h"
 #include "SGameHUD.h"
-#include "Texture.h"
-#include "ResourceManager.h"
 
 SImage::~SImage()
 {
@@ -24,11 +22,36 @@ void SImage::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
     if (!IsVisible() || !Bitmap)
         return;
 
+    FVector2D DrawSize = Geometry.GetAbsoluteSize();
+    FVector2D DrawPosition = Geometry.AbsolutePosition;
+
+    // 종횡비 유지 모드
+    if (bMaintainAspectRatio && ImageSize.X > 0.f && ImageSize.Y > 0.f)
+    {
+        float WidgetAspect = DrawSize.X / DrawSize.Y;
+        float ImageAspect = ImageSize.X / ImageSize.Y;
+
+        if (ImageAspect > WidgetAspect)
+        {
+            // 이미지가 더 넓음 - 가로 맞춤, 세로 중앙 정렬
+            float NewHeight = DrawSize.X / ImageAspect;
+            DrawPosition.Y += (DrawSize.Y - NewHeight) * 0.5f;
+            DrawSize.Y = NewHeight;
+        }
+        else
+        {
+            // 이미지가 더 높음 - 세로 맞춤, 가로 중앙 정렬
+            float NewWidth = DrawSize.Y * ImageAspect;
+            DrawPosition.X += (DrawSize.X - NewWidth) * 0.5f;
+            DrawSize.X = NewWidth;
+        }
+    }
+
     // 이미지 렌더링
     Renderer.DrawImage(
         Bitmap,
-        Geometry.AbsolutePosition,
-        Geometry.GetAbsoluteSize(),
+        DrawPosition,
+        DrawSize,
         TintColor,
         Opacity
     );
@@ -47,54 +70,26 @@ SImage& SImage::SetTexture(const FWideString& FilePath)
         Bitmap = nullptr;
     }
 
-    // UTF-16 → UTF-8 변환
-    FString FilePathUTF8 = WideToUTF8(FilePath);
+    ImageSize = FVector2D(0.f, 0.f);
 
-    // UTexture로 로드 (AssetManager가 자동 캐싱)
-    UTexture* Texture = UResourceManager::GetInstance().Load<UTexture>(FilePathUTF8);
-    if (!Texture)
-    {
-        UE_LOG("[SImage] Failed to load texture: %s", FilePathUTF8.c_str());
-        return *this;
-    }
-
-    // D2D 비트맵으로 변환
+    // WIC로 직접 D2D 비트맵 로드 (UTexture 우회)
     if (SGameHUD::Get().IsInitialized())
     {
         FD2DRenderer* Renderer = SGameHUD::Get().GetRenderer();
         if (Renderer)
         {
-            Bitmap = Renderer->CreateBitmapFromUTexture(Texture);
+            Bitmap = Renderer->LoadBitmapFromFile(FilePath);
 
             if (!Bitmap)
             {
-                UE_LOG("[SImage] Failed to convert UTexture to D2D Bitmap: %s", FilePathUTF8.c_str());
+                UE_LOG("[SImage] Failed to load bitmap from file: %ls", FilePath.c_str());
             }
-        }
-    }
-
-    return *this;
-}
-
-SImage& SImage::SetTexture(UTexture* InTexture)
-{
-    // 기존 비트맵 해제
-    if (Bitmap)
-    {
-        Bitmap->Release();
-        Bitmap = nullptr;
-    }
-
-    if (!InTexture)
-        return *this;
-
-    // D2D 비트맵으로 변환
-    if (SGameHUD::Get().IsInitialized())
-    {
-        FD2DRenderer* Renderer = SGameHUD::Get().GetRenderer();
-        if (Renderer)
-        {
-            Bitmap = Renderer->CreateBitmapFromUTexture(InTexture);
+            else
+            {
+                // 비트맵 크기 저장
+                D2D1_SIZE_F Size = Bitmap->GetSize();
+                ImageSize = FVector2D(Size.width, Size.height);
+            }
         }
     }
 
@@ -114,5 +109,11 @@ SImage& SImage::SetTint(const FSlateColor& Color)
 SImage& SImage::SetOpacity(float InOpacity)
 {
     Opacity = FMath::Clamp(InOpacity, 0.0f, 1.0f);
+    return *this;
+}
+
+SImage& SImage::SetMaintainAspectRatio(bool bMaintain)
+{
+    bMaintainAspectRatio = bMaintain;
     return *this;
 }

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /**
  * @file FD2DRenderer.h
@@ -12,6 +12,7 @@
 #include <dxgi.h>
 #include <d2d1_1.h>
 #include <dwrite.h>
+#include <wincodec.h>
 
 #include "SlateTypes.h"
 
@@ -97,12 +98,12 @@ public:
     );
 
     /**
-    * UTexture를 ID2D1Bitmap으로 변환
-    * @param Texture 3D 렌더링용 UTexture
+    * 파일에서 직접 D2D 비트맵 로드 (WIC 사용)
+    * @param FilePath 이미지 파일 경로
     * @return D2D용 비트맵 (실패 시 nullptr)
     * @note 반환된 비트맵은 호출자가 Release() 책임
     */
-    ID2D1Bitmap* CreateBitmapFromUTexture(UTexture* Texture);
+    ID2D1Bitmap* LoadBitmapFromFile(const FWideString& FilePath);
 
     // =====================================================
     // 텍스트 렌더링

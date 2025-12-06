@@ -276,51 +276,102 @@ void FD2DRenderer::DrawImage(ID2D1Bitmap* Bitmap, const FVector2D& Position, con
     // TODO: Tint 색상 적용하려면 D2D Effect 필요
 }
 
-ID2D1Bitmap* FD2DRenderer::CreateBitmapFromUTexture(UTexture* Texture)
+ID2D1Bitmap* FD2DRenderer::LoadBitmapFromFile(const FWideString& FilePath)
 {
-    if (!D2DContext || !Texture || !Texture->GetTexture2D())
+    if (!D2DContext)
         return nullptr;
 
-    ID2D1Bitmap1* Bitmap = nullptr;
-    ID3D11Texture2D* D3dTexture = Texture->GetTexture2D();
+    // WIC 팩토리 생성
+    IWICImagingFactory* WicFactory = nullptr;
+    HRESULT Hr = CoCreateInstance(
+        CLSID_WICImagingFactory,
+        nullptr,
+        CLSCTX_INPROC_SERVER,
+        IID_PPV_ARGS(&WicFactory)
+    );
 
-    // D3D11 텍스처 정보 가져오기
-    D3D11_TEXTURE2D_DESC Desc;
-    D3dTexture->GetDesc(&Desc);
-
-    // DXGI Surface 획득 (텍스처의 표면 인터페이스)
-    IDXGISurface* Surface = nullptr;
-    HRESULT Hr = D3dTexture->QueryInterface(__uuidof(IDXGISurface), (void**)&Surface);
-
-    if (SUCCEEDED(Hr))
+    if (FAILED(Hr))
     {
-        // D2D 비트맵 속성 설정
-        D2D1_BITMAP_PROPERTIES1 BitmapProps = D2D1::BitmapProperties1(
-            D2D1_BITMAP_OPTIONS_NONE,
-            D2D1::PixelFormat(Desc.Format, D2D1_ALPHA_MODE_PREMULTIPLIED)
-        );
-
-        // DXGI Surface로부터 D2D 비트맵 생성
-        Hr = D2DContext->CreateBitmapFromDxgiSurface(
-            Surface,
-            &BitmapProps,
-            &Bitmap
-        );
-
-        Surface->Release();
-
-        if (FAILED(Hr))
-        {
-            UE_LOG("[FD2DRenderer] Failed to create D2D bitmap from UTexture");
-            return nullptr;
-        }
-    }
-    else
-    {
-        UE_LOG("[FD2DRenderer] Failed to get DXGI surface from UTexture");
+        UE_LOG("[FD2DRenderer] Failed to create WIC factory");
         return nullptr;
     }
 
+    // 디코더 생성
+    IWICBitmapDecoder* Decoder = nullptr;
+    Hr = WicFactory->CreateDecoderFromFilename(
+        FilePath.c_str(),
+        nullptr,
+        GENERIC_READ,
+        WICDecodeMetadataCacheOnLoad,
+        &Decoder
+    );
+
+    if (FAILED(Hr))
+    {
+        UE_LOG("[FD2DRenderer] Failed to create WIC decoder for file: %ls", FilePath.c_str());
+        WicFactory->Release();
+        return nullptr;
+    }
+
+    // 첫 번째 프레임 가져오기
+    IWICBitmapFrameDecode* Frame = nullptr;
+    Hr = Decoder->GetFrame(0, &Frame);
+    if (FAILED(Hr))
+    {
+        UE_LOG("[FD2DRenderer] Failed to get frame from WIC decoder");
+        Decoder->Release();
+        WicFactory->Release();
+        return nullptr;
+    }
+
+    // 포맷 컨버터 생성 (D2D 호환 포맷으로 변환)
+    IWICFormatConverter* Converter = nullptr;
+    Hr = WicFactory->CreateFormatConverter(&Converter);
+    if (FAILED(Hr))
+    {
+        Frame->Release();
+        Decoder->Release();
+        WicFactory->Release();
+        return nullptr;
+    }
+
+    // BGRA 32비트 premultiplied alpha로 변환
+    Hr = Converter->Initialize(
+        Frame,
+        GUID_WICPixelFormat32bppPBGRA,
+        WICBitmapDitherTypeNone,
+        nullptr,
+        0.0,
+        WICBitmapPaletteTypeMedianCut
+    );
+
+    if (FAILED(Hr))
+    {
+        UE_LOG("[FD2DRenderer] Failed to initialize WIC converter");
+        Converter->Release();
+        Frame->Release();
+        Decoder->Release();
+        WicFactory->Release();
+        return nullptr;
+    }
+
+    // D2D 비트맵 생성
+    ID2D1Bitmap* Bitmap = nullptr;
+    Hr = D2DContext->CreateBitmapFromWicBitmap(Converter, nullptr, &Bitmap);
+
+    // 정리
+    Converter->Release();
+    Frame->Release();
+    Decoder->Release();
+    WicFactory->Release();
+
+    if (FAILED(Hr))
+    {
+        UE_LOG("[FD2DRenderer] Failed to create D2D bitmap from WIC (HRESULT: 0x%08X)", Hr);
+        return nullptr;
+    }
+
+    UE_LOG("[FD2DRenderer] Successfully loaded bitmap from file: %ls", FilePath.c_str());
     return Bitmap;
 }
 

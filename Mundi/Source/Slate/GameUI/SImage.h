@@ -5,11 +5,10 @@
  * @file SImage.h
  * @brief 이미지를 표시하는 위젯
  *
- * UTexture를 로드하여 화면에 렌더링합니다.
+ * WIC를 사용하여 파일에서 직접 D2D 비트맵을 로드하여 렌더링합니다.
  */
 
 struct ID2D1Bitmap;
-class UTexture;
 
 class SImage : public SWidget
 {
@@ -26,17 +25,10 @@ public:
     void Paint(FD2DRenderer& Renderer, const FGeometry& Geometry) override;
 
     /**
-     * 파일에서 텍스처 로드
-     * @param FilePath 이미지 파일 경로
-     * @note AssetManager가 자동으로 캐싱 관리
+     * 파일에서 텍스처 로드 (WIC 사용)
+     * @param FilePath 이미지 파일 경로 (예: L"Data/Textures/UI/Image.png")
      */
     SImage& SetTexture(const FWideString& FilePath);
-
-    /**
-     * 이미 로드된 UTexture 설정
-     * @param InTexture UTexture 객체
-     */
-    SImage& SetTexture(UTexture* InTexture);
 
     /**
      * 색상 틴트 (곱셈 블렌딩)
@@ -50,8 +42,17 @@ public:
      */
     SImage& SetOpacity(float InOpacity);
 
+    /**
+     * 종횡비 유지 설정
+     * @param bMaintain true = 비율 유지, false = 위젯 크기에 맞게 늘림
+     */
+    SImage& SetMaintainAspectRatio(bool bMaintain);
+
     /** 텍스처 로드 여부 */
     bool IsTextureLoaded() const { return Bitmap != nullptr; }
+
+    /** 원본 이미지 크기 */
+    FVector2D GetImageSize() const { return ImageSize; }
 
 private:
     /** D2D 비트맵 (소유) */
@@ -62,4 +63,10 @@ private:
 
     /** 투명도 */
     float Opacity = 1.0f;
+
+    /** 종횡비 유지 여부 */
+    bool bMaintainAspectRatio = true;
+
+    /** 원본 이미지 크기 */
+    FVector2D ImageSize = FVector2D(0.f, 0.f);
 };

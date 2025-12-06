@@ -1345,6 +1345,14 @@
     <ClCompile Include="Generated\FVehicleEngineData.generated.cpp">
       <Filter>Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\Components\CargoComponent.cpp" />
+    <ClCompile Include="Source\Slate\GameUI\SImage.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\DumbRiderGameMode.cpp">
+      <Filter>Source\Runtime\Engine\GameFramework</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\ADumbRiderGameMode.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Runtime\AssetManagement\LinesBatch.h">
@@ -2927,6 +2935,14 @@
       <Filter>Generated</Filter>
     </ClInclude>
     <ClInclude Include="Generated\FVehicleEngineData.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\Components\CargoComponent.h" />
+    <ClInclude Include="Source\Slate\GameUI\SImage.h" />
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\DumbRiderGameMode.h">
+      <Filter>Source\Runtime\Engine\GameFramework</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\ADumbRiderGameMode.generated.h">
       <Filter>Generated</Filter>
     </ClInclude>
   </ItemGroup>
