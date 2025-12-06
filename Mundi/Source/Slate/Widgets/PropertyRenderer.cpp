@@ -1916,7 +1916,7 @@ bool UPropertyRenderer::RenderSkeletalMeshProperty(const FProperty& Prop, void* 
 	}
 
 	ImGui::SetNextItemWidth(240);
-	if (ImGui::Combo(Prop.Name, &SelectedIdx, &ItemsGetter, (void*)&CachedSkeletalMeshItems, static_cast<int>(CachedSkeletalMeshItems.size())))
+	if (RenderSearchableCombo(Prop.Name, &SelectedIdx, CachedSkeletalMeshItems))
 	{
 		if (SelectedIdx >= 0 && SelectedIdx < static_cast<int>(CachedSkeletalMeshPaths.size()))
 		{
@@ -1983,16 +1983,8 @@ bool UPropertyRenderer::RenderStaticMeshProperty(const FProperty& Prop, void* In
 		}
 	}
 
-	// TArray<FString>을 const char* 배열로 변환
-	TArray<const char*> ItemsPtr;
-	ItemsPtr.reserve(CachedStaticMeshItems.size());
-	for (const FString& item : CachedStaticMeshItems)
-	{
-		ItemsPtr.push_back(item.c_str());
-	}
-
-	ImGui::SetNextItemWidth(240);
-	if (ImGui::Combo(Prop.Name, &SelectedIdx, ItemsPtr.data(), static_cast<int>(ItemsPtr.size())))
+	// RenderSearchableCombo 사용 (검색 기능 추가)
+	if (RenderSearchableCombo(Prop.Name, &SelectedIdx, CachedStaticMeshItems))
 	{
 		if (SelectedIdx >= 0 && SelectedIdx < static_cast<int>(CachedStaticMeshPaths.size()))
 		{
@@ -2006,6 +1998,8 @@ bool UPropertyRenderer::RenderStaticMeshProperty(const FProperty& Prop, void* In
 			{
 				*MeshPtr = UResourceManager::GetInstance().Load<UStaticMesh>(CachedStaticMeshPaths[SelectedIdx]);
 			}
+
+			// BodySetup UI는 메시가 변경된 후 다음 프레임에 렌더링되므로 여기서 return
 			return true;
 		}
 	}
@@ -2119,16 +2113,7 @@ bool UPropertyRenderer::RenderParticleSystemProperty(const FProperty& Prop, void
 		}
 	}
 
-	// TArray<FString>을 const char* 배열로 변환
-	TArray<const char*> ItemsPtr;
-	ItemsPtr.reserve(CachedParticleSystemItems.size());
-	for (const FString& item : CachedParticleSystemItems)
-	{
-		ItemsPtr.push_back(item.c_str());
-	}
-
-	ImGui::SetNextItemWidth(240);
-	if (ImGui::Combo(Prop.Name, &SelectedIdx, ItemsPtr.data(), static_cast<int>(ItemsPtr.size())))
+	if (RenderSearchableCombo(Prop.Name, &SelectedIdx, CachedParticleSystemItems))
 	{
 		if (SelectedIdx >= 0 && SelectedIdx < static_cast<int>(CachedParticleSystemPaths.size()))
 		{
@@ -2206,16 +2191,7 @@ bool UPropertyRenderer::RenderPhysicsAssetProperty(const FProperty& Prop, void* 
 		}
 	}
 
-	// TArray<FString>을 const char* 배열로 변환
-	TArray<const char*> ItemsPtr;
-	ItemsPtr.reserve(CachedPhysicsAssetItems.size());
-	for (const FString& item : CachedPhysicsAssetItems)
-	{
-		ItemsPtr.push_back(item.c_str());
-	}
-
-	ImGui::SetNextItemWidth(240);
-	if (ImGui::Combo(Prop.Name, &SelectedIdx, ItemsPtr.data(), static_cast<int>(ItemsPtr.size())))
+	if (RenderSearchableCombo(Prop.Name, &SelectedIdx, CachedPhysicsAssetItems))
 	{
 		if (SelectedIdx >= 0 && SelectedIdx < static_cast<int>(CachedPhysicsAssetPaths.size()))
 		{
@@ -2369,16 +2345,29 @@ bool UPropertyRenderer::RenderSingleMaterialSlot(const char* Label, UMaterialInt
 		// UMaterial로 캐스팅 (SetMaterialInfo, ResolveTextures는 UMaterial에만 있음)
 		UMaterial* Material = Cast<UMaterial>(CurrentMaterial);
 
-		ImGui::SetNextItemWidth(200);
-		FString ComboLabel = "##ParticleTexture" + FString(Label);
-		if (ImGui::BeginCombo(ComboLabel.c_str(), CurrentTexturePath.c_str()))
+		// 선택 인덱스 계산
+		int SelectedTextureIdx = 0; // 0 = None
+		for (int j = 0; j < static_cast<int>(CachedTexturePaths.size()); ++j)
 		{
-			// 미리보기 썸네일 크기
-			const float PreviewSize = 96.0f;
+			if (CachedTexturePaths[j] == CurrentTexturePath)
+			{
+				SelectedTextureIdx = j + 1; // +1 for "None"
+				break;
+			}
+		}
 
-			// "None" 옵션
-			bool bIsNoneSelected = (CurrentDiffuse == nullptr);
-			if (ImGui::Selectable("None", bIsNoneSelected))
+		// 검색 콤보용 아이템 (const char* 캐시를 FString으로 변환)
+		TArray<FString> TextureComboItems;
+		TextureComboItems.Reserve(CachedTextureItems.size());
+		for (const char* Item : CachedTextureItems)
+		{
+			TextureComboItems.Add(Item);
+		}
+
+		FString ComboLabel = "##ParticleTexture" + FString(Label);
+		if (RenderSearchableComboWithThumbnails(ComboLabel.c_str(), &SelectedTextureIdx, TextureComboItems, CachedTexturePaths, 24.0f, 96.0f))
+		{
+			if (SelectedTextureIdx == 0)
 			{
 				if (Material)
 				{
@@ -2389,46 +2378,18 @@ bool UPropertyRenderer::RenderSingleMaterialSlot(const char* Label, UMaterialInt
 					bElementChanged = true;
 				}
 			}
-			if (bIsNoneSelected) ImGui::SetItemDefaultFocus();
-
-			// 캐시된 텍스처 목록
-			for (int j = 0; j < (int)CachedTexturePaths.size(); ++j)
+			else
 			{
-				const FString& Path = CachedTexturePaths[j];
-				const char* DisplayName = CachedTextureItems[j + 1];
-				bool bIsSelected = (CurrentTexturePath == Path);
-
-				if (ImGui::Selectable(DisplayName, bIsSelected))
+				const FString& Path = CachedTexturePaths[SelectedTextureIdx - 1];
+				if (Material)
 				{
-					if (Material)
-					{
-						// 셰이더는 유지하고 텍스처만 변경
-						FMaterialInfo Info = Material->GetMaterialInfo();
-						Info.DiffuseTextureFileName = Path;
-						Material->SetMaterialInfo(Info);
-						Material->ResolveTextures();
-						bElementChanged = true;
-					}
+					FMaterialInfo Info = Material->GetMaterialInfo();
+					Info.DiffuseTextureFileName = Path;
+					Material->SetMaterialInfo(Info);
+					Material->ResolveTextures();
+					bElementChanged = true;
 				}
-
-				// 호버링 시 텍스처 미리보기 툴팁
-				if (ImGui::IsItemHovered())
-				{
-					// 텍스처 로드 (캐시에서 가져옴)
-					UTexture* PreviewTexture = UResourceManager::GetInstance().Load<UTexture>(Path);
-					if (PreviewTexture && PreviewTexture->GetShaderResourceView())
-					{
-						ImGui::BeginTooltip();
-						ImGui::Image((void*)PreviewTexture->GetShaderResourceView(), ImVec2(PreviewSize, PreviewSize));
-						ImGui::Text("%s", Path.c_str());
-						ImGui::EndTooltip();
-					}
-				}
-
-				if (bIsSelected) ImGui::SetItemDefaultFocus();
 			}
-
-			ImGui::EndCombo();
 		}
 
 		ImGui::EndGroup();
@@ -2449,12 +2410,26 @@ bool UPropertyRenderer::RenderSingleMaterialSlot(const char* Label, UMaterialInt
 	// --- 1. 머티리얼 에셋 선택 콤보박스 ---
 	FString CurrentMaterialPath = (CurrentMaterial) ? CurrentMaterial->GetFilePath() : "None";
 
-	ImGui::SetNextItemWidth(240);
-	if (ImGui::BeginCombo(Label, CurrentMaterialPath.c_str()))
+	int SelectedMaterialIdx = 0; // 0 = None
+	for (int j = 0; j < static_cast<int>(CachedMaterialPaths.size()); ++j)
 	{
-		// "None" 옵션
-		bool bIsNoneSelected = (CurrentMaterial == nullptr);
-		if (ImGui::Selectable(CachedMaterialItems[0], bIsNoneSelected))
+		if (CachedMaterialPaths[j] == CurrentMaterialPath)
+		{
+			SelectedMaterialIdx = j + 1; // +1 for "None"
+			break;
+		}
+	}
+
+	TArray<FString> MaterialComboItems;
+	MaterialComboItems.Reserve(CachedMaterialItems.size());
+	for (const char* Item : CachedMaterialItems)
+	{
+		MaterialComboItems.Add(Item);
+	}
+
+	if (RenderSearchableCombo(Label, &SelectedMaterialIdx, MaterialComboItems))
+	{
+		if (SelectedMaterialIdx == 0)
 		{
 			bElementChanged = true;
 			if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(OwningObject))
@@ -2466,31 +2441,19 @@ bool UPropertyRenderer::RenderSingleMaterialSlot(const char* Label, UMaterialInt
 				*MaterialPtr = nullptr;
 			}
 		}
-		if (bIsNoneSelected) ImGui::SetItemDefaultFocus();
-
-		// 캐시된 머티리얼 목록
-		for (int j = 0; j < (int)CachedMaterialPaths.size(); ++j)
+		else
 		{
-			const FString& Path = CachedMaterialPaths[j];
-			const char* DisplayName = CachedMaterialItems[j + 1];
-			bool bIsSelected = (CurrentMaterialPath == Path);
-
-			if (ImGui::Selectable(DisplayName, bIsSelected))
+			const FString& Path = CachedMaterialPaths[SelectedMaterialIdx - 1];
+			bElementChanged = true;
+			if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(OwningObject))
 			{
-				bElementChanged = true;
-				if (UPrimitiveComponent* PrimitiveComponent = Cast<UPrimitiveComponent>(OwningObject))
-				{
-					PrimitiveComponent->SetMaterialByName(MaterialIndex, Path);
-				}
-				else
-				{
-					*MaterialPtr = UResourceManager::GetInstance().Load<UMaterial>(Path);
-				}
+				PrimitiveComponent->SetMaterialByName(MaterialIndex, Path);
 			}
-			if (bIsSelected) ImGui::SetItemDefaultFocus();
+			else
+			{
+				*MaterialPtr = UResourceManager::GetInstance().Load<UMaterial>(Path);
+			}
 		}
-
-		ImGui::EndCombo();
 		CurrentMaterial = *MaterialPtr; // 콤보박스에서 변경되었을 수 있으므로 업데이트
 	}
 
@@ -2692,19 +2655,11 @@ bool UPropertyRenderer::RenderPhysicalMaterialProperty(const FProperty& Prop, vo
 		}
 	}
 
-	// TArray<FString>을 const char* 배열로 변환 (ImGui용)
-	TArray<const char*> ItemsPtr;
-	ItemsPtr.reserve(CachedPhysicalMaterialItems.size());
-	for (const FString& item : CachedPhysicalMaterialItems)
-	{
-		ItemsPtr.push_back(item.c_str());
-	}
-
 	bool bChanged = false;
 
 	// 콤보박스 렌더링
 	ImGui::SetNextItemWidth(240);
-	if (ImGui::Combo(Prop.Name, &SelectedIdx, ItemsPtr.data(), static_cast<int>(ItemsPtr.size())))
+	if (RenderSearchableCombo(Prop.Name, &SelectedIdx, CachedPhysicalMaterialItems))
 	{
 		if (SelectedIdx >= 0 && SelectedIdx < static_cast<int>(CachedPhysicalMaterialPaths.size()))
 		{
@@ -2807,111 +2762,28 @@ bool UPropertyRenderer::RenderTextureSelectionCombo(const char* Label, UTexture*
 
 	ImGui::SameLine();
 
-	// 3. 커스텀 콤보박스 시작
-	// 콤보박스에 표시될 텍스트 (현재 선택된 항목의 텍스트)
-	const char* PreviewText = CachedTextureItems[SelectedTextureIdx];
-
-	// SetNextItemWidth를 썸네일 크기만큼 보정
-	ImGui::SetNextItemWidth(220.0f - ThumbnailSize - ImGui::GetStyle().ItemSpacing.x);
-
-	if (ImGui::BeginCombo(Label, PreviewText))
+	// 3. 검색 가능 콤보박스
+	TArray<FString> TextureComboItems;
+	TextureComboItems.Reserve(CachedTextureItems.size());
+	for (const char* Item : CachedTextureItems)
 	{
-		// --- 콤보박스 드롭다운 리스트 렌더링 ---
+		TextureComboItems.Add(Item);
+	}
 
-		// 드롭다운 리스트 내부의 아이템 간 수직 간격 설정
-		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(ImGui::GetStyle().ItemSpacing.x, 1.0f));
-
-		// 텍스처 리스트 (미리보기 포함) - "None" 옵션(i=0)을 루프에 포함
-		for (int i = 0; i < (int)CachedTextureItems.size(); ++i)
+	if (RenderSearchableComboWithThumbnails(Label, &SelectedTextureIdx, TextureComboItems, CachedTexturePaths, 24.0f, 128.0f))
+	{
+		if (SelectedTextureIdx == 0)
 		{
-			bool is_selected = (SelectedTextureIdx == i);
-			const char* ItemText = CachedTextureItems[i];
-
-			UTexture* previewTexture = nullptr;
-			FString TexturePath = "None";
-
-			if (i > 0)
-			{
-				TexturePath = CachedTexturePaths[i - 1];
-				previewTexture = UResourceManager::GetInstance().Load<UTexture>(TexturePath);
-			}
-
-			FString SelectableID = FString("##Selectable_") + TexturePath + std::to_string(i) + Label; // Label을 추가하여 ID 고유성 보장
-
-			// 1. Selectable을 먼저 호출
-			if (ImGui::Selectable(SelectableID.c_str(), is_selected, 0, ImVec2(0, ThumbnailSize - 1.0f)))
-			{
-				// 선택된 텍스처 리소스를 경로로부터 로드합니다.
-				UTexture* SelectedTexture = (i == 0)
-					? nullptr
-					: UResourceManager::GetInstance().Load<UTexture>(TexturePath);
-
-				// OutNewTexture에 선택된 텍스처를 할당합니다.
-				OutNewTexture = SelectedTexture;
-				bChanged = true;
-			}
-			ImVec2 NextItemCursorPos = ImGui::GetCursorPos(); // 다음 아이템 위치 저장
-
-			// 2. 툴팁 표시
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::BeginTooltip();
-				if (previewTexture && previewTexture->GetTexture2D() && previewTexture->GetShaderResourceView())
-				{
-					ImGui::TextUnformatted(previewTexture->GetFilePath().c_str());
-					ImGui::Text("Size: %u x %u", previewTexture->GetWidth(), previewTexture->GetHeight());
-					float width = (float)previewTexture->GetWidth();
-					float height = (float)previewTexture->GetHeight();
-					float ratio = width / height;
-					ImVec2 thumbSize = (ratio > 1.0f) ? ImVec2(128.0f, 128.0f / ratio) : ImVec2(128.0f * ratio, 128.0f);
-					ImGui::Image(reinterpret_cast<ImTextureID>(previewTexture->GetShaderResourceView()), thumbSize);
-				}
-				else
-				{
-					ImGui::TextUnformatted("텍스처 없음");
-				}
-				ImGui::EndTooltip();
-			}
-
-			// 3. Selectable 위에 겹쳐 그리기 위해 커서를 되돌림
-			ImVec2 ItemPos = ImGui::GetItemRectMin();
-
-			// 4. 내용물(썸네일) 그리기
-			ImVec2 ImagePos = ImVec2(ItemPos.x, ItemPos.y);
-			ImGui::SetCursorScreenPos(ImagePos);
-
-
-			if (previewTexture && previewTexture->GetShaderResourceView())
-			{
-				ImGui::Image(reinterpret_cast<ImTextureID>(previewTexture->GetShaderResourceView()), ThumbnailImVec);
-			}
-			else
-			{
-				ImGui::Dummy(ThumbnailImVec);
-			}
-
-			// 5. 내용물(텍스트) 그리기
-			ImVec2 TextPos = ImVec2(
-				ItemPos.x + ThumbnailSize + ImGui::GetStyle().ItemSpacing.x,
-				ItemPos.y
-			);
-			ImGui::SetCursorScreenPos(TextPos);
-			ImGui::TextUnformatted(ItemText);
-
-			if (is_selected)
-				ImGui::SetItemDefaultFocus();
-
-			// 6. 커서 위치 복원
-			ImGui::SetCursorPos(NextItemCursorPos);
-
-			// --- 어설션 해결을 위해 Dummy 위젯 추가 ---
-			ImGui::Dummy(ImVec2(0.0f, 0.0f));
+			OutNewTexture = nullptr;
+			CurrentTexturePath = "None";
 		}
-
-		// PushStyleVar로 변경했던 스타일을 원래대로 복원합니다.
-		ImGui::PopStyleVar();
-
-		ImGui::EndCombo();
+		else
+		{
+			FString TexturePath = CachedTexturePaths[SelectedTextureIdx - 1];
+			OutNewTexture = UResourceManager::GetInstance().Load<UTexture>(TexturePath);
+			CurrentTexturePath = TexturePath;
+		}
+		bChanged = true;
 	}
 
 	// 닫힌 콤보박스 '텍스트' 부분에 마우스를 올렸을 때 전체 경로 툴팁
@@ -2963,28 +2835,24 @@ bool UPropertyRenderer::RenderSoundSelectionComboSimple(const char* Label, USoun
         }
     }
 
-    const char* PreviewText = CachedSoundItems[SelectedSoundIdx];
-    ImGui::SetNextItemWidth(220.0f);
-    if (ImGui::BeginCombo(Label, PreviewText))
+	TArray<FString> SoundComboItems;
+	SoundComboItems.Reserve(CachedSoundItems.size());
+	for (const char* Item : CachedSoundItems)
+	{
+		SoundComboItems.Add(Item);
+	}
+
+    if (RenderSearchableCombo(Label, &SelectedSoundIdx, SoundComboItems))
     {
-        for (int i = 0; i < (int)CachedSoundItems.size(); ++i)
+        if (SelectedSoundIdx == 0)
         {
-            bool is_selected = (SelectedSoundIdx == i);
-            const char* ItemText = CachedSoundItems[i];
-
-            if (ImGui::Selectable(ItemText, is_selected))
-            {
-                USound* SelectedSound = (i == 0)
-                    ? nullptr
-                    : UResourceManager::GetInstance().Load<USound>(CachedSoundPaths[i - 1]);
-                OutNewSound = SelectedSound;
-                bChanged = true;
-            }
-
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
+            OutNewSound = nullptr;
         }
-        ImGui::EndCombo();
+        else
+        {
+            OutNewSound = UResourceManager::GetInstance().Load<USound>(CachedSoundPaths[SelectedSoundIdx - 1]);
+        }
+        bChanged = true;
     }
 
     return bChanged;
@@ -3945,6 +3813,179 @@ bool UPropertyRenderer::RenderDistributionColorProperty(const FProperty& Prop, v
 
 		ImGui::TreePop();
 	}
+
+	return bChanged;
+}
+
+bool UPropertyRenderer::RenderSearchableCombo(const char* Label, int* current, TArray<FString>& Items)
+{
+	if (Items.empty())
+	{
+		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "%s: <No Items>", Label);
+		return false;
+	}
+
+	bool bChanged = false;
+	static ImGuiTextFilter Filter;
+	static bool bWasOpen = false;
+
+	// 현재 선택된 항목의 텍스트
+	const char* PreviewText = (*current >= 0 && *current < Items.Num()) ? Items[*current].c_str() : "None";
+
+	ImGui::SetNextItemWidth(240);
+	const bool bIsOpen = ImGui::BeginCombo(Label, PreviewText);
+
+	if (bIsOpen)
+	{
+		// 콤보박스가 처음 열린 프레임에만 검색창에 포커스
+		if (ImGui::IsWindowAppearing())
+		{
+			ImGui::SetKeyboardFocusHere(0);
+		}
+
+		// 검색 필터 입력
+		Filter.Draw("검색", 220.0f);
+
+		ImGui::Separator();
+
+		// 필터링된 항목들을 렌더링
+		for (int i = 0; i < Items.Num(); ++i)
+		{
+			// 필터 통과 여부 확인
+			if (Filter.PassFilter(Items[i].c_str()))
+			{
+				const bool bIsSelected = (*current == i);
+				if (ImGui::Selectable(Items[i].c_str(), bIsSelected))
+				{
+					*current = i;
+					bChanged = true;
+					Filter.Clear(); // 선택 후 필터 초기화
+				}
+
+				// 선택된 항목에 포커스
+				if (bIsSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+		}
+
+		ImGui::EndCombo();
+	}
+
+	// 콤보가 닫힐 때 검색어 초기화
+	if (bWasOpen && !bIsOpen)
+	{
+		Filter.Clear();
+	}
+	bWasOpen = bIsOpen;
+
+	return bChanged;
+}
+
+bool UPropertyRenderer::RenderSearchableComboWithThumbnails(const char* Label, int* current, const TArray<FString>& Items, const TArray<FString>& Paths, float ThumbnailSize, float TooltipSize)
+{
+	if (Items.empty())
+	{
+		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "%s: <No Items>", Label);
+		return false;
+	}
+
+	bool bChanged = false;
+	static ImGuiTextFilter Filter;
+	static bool bWasOpen = false;
+
+	const char* PreviewText = (*current >= 0 && *current < Items.Num()) ? Items[*current].c_str() : "None";
+
+	ImGui::SetNextItemWidth(240);
+	const bool bIsOpen = ImGui::BeginCombo(Label, PreviewText);
+
+	if (bIsOpen)
+	{
+		if (ImGui::IsWindowAppearing())
+		{
+			ImGui::SetKeyboardFocusHere(0);
+		}
+
+		Filter.Draw("검색", 220.0f);
+		ImGui::Separator();
+
+		for (int i = 0; i < Items.Num(); ++i)
+		{
+			if (!Filter.PassFilter(Items[i].c_str()))
+			{
+				continue;
+			}
+
+			ImGui::PushID(i);
+
+			// 썸네일
+			if (i > 0 && i - 1 < static_cast<int>(Paths.size()))
+			{
+				const FString& Path = Paths[i - 1];
+				UTexture* PreviewTexture = Path.empty() ? nullptr : UResourceManager::GetInstance().Load<UTexture>(Path);
+				if (PreviewTexture && PreviewTexture->GetShaderResourceView())
+				{
+					ImGui::Image(reinterpret_cast<ImTextureID>(PreviewTexture->GetShaderResourceView()), ImVec2(ThumbnailSize, ThumbnailSize));
+				}
+				else
+				{
+					ImGui::Dummy(ImVec2(ThumbnailSize, ThumbnailSize));
+				}
+				ImGui::SameLine();
+			}
+			else
+			{
+				ImGui::Dummy(ImVec2(ThumbnailSize, ThumbnailSize));
+				ImGui::SameLine();
+			}
+
+			const bool bIsSelected = (*current == i);
+			if (ImGui::Selectable(Items[i].c_str(), bIsSelected))
+			{
+				*current = i;
+				bChanged = true;
+				Filter.Clear();
+			}
+
+			// 툴팁(확대 미리보기)
+			if (ImGui::IsItemHovered() && i > 0 && i - 1 < static_cast<int>(Paths.size()))
+			{
+				const FString& Path = Paths[i - 1];
+				UTexture* PreviewTexture = Path.empty() ? nullptr : UResourceManager::GetInstance().Load<UTexture>(Path);
+				if (PreviewTexture && PreviewTexture->GetShaderResourceView())
+				{
+					ImGui::BeginTooltip();
+					ImGui::TextUnformatted(Path.c_str());
+
+					float width = static_cast<float>(PreviewTexture->GetWidth());
+					float height = static_cast<float>(PreviewTexture->GetHeight());
+					float ratio = (height != 0.0f) ? width / height : 1.0f;
+					ImVec2 LargeSize = (ratio > 1.0f)
+						? ImVec2(TooltipSize, TooltipSize / ratio)
+						: ImVec2(TooltipSize * ratio, TooltipSize);
+
+					ImGui::Image(reinterpret_cast<ImTextureID>(PreviewTexture->GetShaderResourceView()), LargeSize);
+					ImGui::EndTooltip();
+				}
+			}
+
+			if (bIsSelected)
+			{
+				ImGui::SetItemDefaultFocus();
+			}
+
+			ImGui::PopID();
+		}
+
+		ImGui::EndCombo();
+	}
+
+	if (bWasOpen && !bIsOpen)
+	{
+		Filter.Clear();
+	}
+	bWasOpen = bIsOpen;
 
 	return bChanged;
 }
