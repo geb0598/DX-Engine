@@ -4368,7 +4368,7 @@
           "ObjectName" : "UStaticMeshComponent_7",
           "ParentId" : 0,
           "PhysicalMaterial" : "",
-          "RelativeLocation" : [55.000000, -53.249931, -3.605627],
+          "RelativeLocation" : [55.000000, -53.249931, -0.134518],
           "RelativeRotationEuler" : [0.000000, -0.000000, -90.000008],
           "RelativeScale" : [1.000000, 1.000000, 1.000000],
           "StaticMesh" : "Data/ccity_buildings/ccity_beige.obj",
@@ -5522,10 +5522,10 @@
       "bActorHiddenInGame" : false,
       "bActorIsActive" : true
     },
-    "1680" : {
+    "1666" : {
       "ObjectName" : "AParticleEventManager_12",
       "OwnedComponents" : [{
-          "Id" : 1681,
+          "Id" : 1667,
           "ObjectName" : "USceneComponent_13",
           "ParentId" : 0,
           "RelativeLocation" : [0.000000, 0.000000, 0.000000],
@@ -5538,20 +5538,42 @@
           "bTickEnabled" : true,
           "bTickInEditor" : false
         }],
-      "RootComponentId" : 1681,
+      "RootComponentId" : 1667,
+      "Tag" : "",
+      "Type" : "AParticleEventManager",
+      "bActorHiddenInGame" : false,
+      "bActorIsActive" : true
+    },
+    "1683" : {
+      "ObjectName" : "AParticleEventManager_13",
+      "OwnedComponents" : [{
+          "Id" : 1684,
+          "ObjectName" : "USceneComponent_14",
+          "ParentId" : 0,
+          "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+          "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+          "RelativeScale" : [1.000000, 1.000000, 1.000000],
+          "Type" : "USceneComponent",
+          "bHiddenInGame" : false,
+          "bIsActive" : true,
+          "bIsVisible" : true,
+          "bTickEnabled" : true,
+          "bTickInEditor" : false
+        }],
+      "RootComponentId" : 1684,
       "Tag" : "",
       "Type" : "AParticleEventManager",
       "bActorHiddenInGame" : false,
       "bActorIsActive" : true
     }
   },
-  "NextUUID" : 1812,
+  "NextUUID" : 2584,
   "PerspectiveCamera" : {
     "FOV" : [60.000000],
     "FarClip" : [2000.000000],
-    "Location" : [260.061432, -18.024578, 38.538910],
+    "Location" : [70.258011, -298.523773, 16.310753],
     "NearClip" : [0.100000],
-    "Rotation" : [0.000000, 23.601583, -161.204208]
+    "Rotation" : [0.000000, 29.799530, 51.797577]
   },
   "Version" : 1,
   "WorldSettings" : {

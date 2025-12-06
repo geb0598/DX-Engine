@@ -507,20 +507,16 @@ bool UStaticMesh::SavePhysicsMetadata()
         return false;
     }
 
-    // Shape가 하나도 없으면 기존 파일들 삭제
-    if (BodySetup->AggGeom.GetElementCount() == 0)
+    const bool bHasShapes = BodySetup->AggGeom.GetElementCount() > 0;
+
+    // Shape가 없으면 캐시만 정리하고, 메타데이터 파일은 "의도적 비움" 상태를 기록하기 위해 유지/생성한다.
+    if (!bHasShapes)
     {
-        if (std::filesystem::exists(MetadataPath))
-        {
-            std::filesystem::remove(MetadataPath);
-        }
-        // Convex 캐시도 삭제
         FString CachePath = GetPhysicsCachePath();
         if (!CachePath.empty() && std::filesystem::exists(CachePath))
         {
             std::filesystem::remove(CachePath);
         }
-        return true;
     }
 
     // 메타데이터 디렉토리 생성
@@ -545,7 +541,7 @@ bool UStaticMesh::SavePhysicsMetadata()
         UE_LOG("[UStaticMesh] Physics 메타데이터 저장 성공: %s", MetadataPath.c_str());
 
         // Convex가 있으면 CookedData 캐시도 저장
-        if (!BodySetup->AggGeom.ConvexElems.IsEmpty())
+        if (bHasShapes && !BodySetup->AggGeom.ConvexElems.IsEmpty())
         {
             SavePhysicsCache();
         }
@@ -569,6 +565,15 @@ void UStaticMesh::CreateDefaultConvexIfNeeded()
 
     // BodySetup 생성
     CreateBodySetupIfNeeded();
+
+    // 메타데이터 파일이 존재하고, AggGeom이 비어 있다면 사용자가 의도적으로 비워둔 상태이므로 자동 생성 스킵
+    const FString MetadataPath = GetPhysicsMetadataPath();
+    const bool bHasMetadataFile = !MetadataPath.empty() && std::filesystem::exists(MetadataPath);
+    if (bHasMetadataFile && BodySetup->AggGeom.GetElementCount() == 0)
+    {
+        UE_LOG("[UStaticMesh] 메타데이터가 존재하지만 충돌체가 비어 있어 자동 생성 스킵: %s", FilePath.c_str());
+        return;
+    }
 
     // 이미 충돌체가 있으면 스킵
     if (BodySetup->AggGeom.GetElementCount() > 0)
