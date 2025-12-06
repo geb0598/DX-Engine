@@ -1983,16 +1983,8 @@ bool UPropertyRenderer::RenderStaticMeshProperty(const FProperty& Prop, void* In
 		}
 	}
 
-	// TArray<FString>을 const char* 배열로 변환
-	TArray<const char*> ItemsPtr;
-	ItemsPtr.reserve(CachedStaticMeshItems.size());
-	for (const FString& item : CachedStaticMeshItems)
-	{
-		ItemsPtr.push_back(item.c_str());
-	}
-
-	ImGui::SetNextItemWidth(240);
-	if (ImGui::Combo(Prop.Name, &SelectedIdx, ItemsPtr.data(), static_cast<int>(ItemsPtr.size())))
+	// RenderSearchableCombo 사용 (검색 기능 추가)
+	if (RenderSearchableCombo(Prop.Name, &SelectedIdx, CachedStaticMeshItems))
 	{
 		if (SelectedIdx >= 0 && SelectedIdx < static_cast<int>(CachedStaticMeshPaths.size()))
 		{
@@ -2006,6 +1998,8 @@ bool UPropertyRenderer::RenderStaticMeshProperty(const FProperty& Prop, void* In
 			{
 				*MeshPtr = UResourceManager::GetInstance().Load<UStaticMesh>(CachedStaticMeshPaths[SelectedIdx]);
 			}
+
+			// BodySetup UI는 메시가 변경된 후 다음 프레임에 렌더링되므로 여기서 return
 			return true;
 		}
 	}
@@ -3944,6 +3938,62 @@ bool UPropertyRenderer::RenderDistributionColorProperty(const FProperty& Prop, v
 		}
 
 		ImGui::TreePop();
+	}
+
+	return bChanged;
+}
+
+bool UPropertyRenderer::RenderSearchableCombo(const char* Label, int* current, TArray<FString>& Items)
+{
+	if (Items.empty())
+	{
+		ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "%s: <No Items>", Label);
+		return false;
+	}
+
+	bool bChanged = false;
+	static ImGuiTextFilter Filter;
+
+	// 현재 선택된 항목의 텍스트
+	const char* PreviewText = (*current >= 0 && *current < Items.Num()) ? Items[*current].c_str() : "None";
+
+	ImGui::SetNextItemWidth(240);
+	if (ImGui::BeginCombo(Label, PreviewText))
+	{
+		// 콤보박스가 처음 열린 프레임에만 검색창에 포커스
+		if (ImGui::IsWindowAppearing())
+		{
+			ImGui::SetKeyboardFocusHere(0);
+		}
+
+		// 검색 필터 입력
+		Filter.Draw("검색", 220.0f);
+
+		ImGui::Separator();
+
+		// 필터링된 항목들을 렌더링
+		for (int i = 0; i < Items.Num(); ++i)
+		{
+			// 필터 통과 여부 확인
+			if (Filter.PassFilter(Items[i].c_str()))
+			{
+				const bool bIsSelected = (*current == i);
+				if (ImGui::Selectable(Items[i].c_str(), bIsSelected))
+				{
+					*current = i;
+					bChanged = true;
+					Filter.Clear(); // 선택 후 필터 초기화
+				}
+
+				// 선택된 항목에 포커스
+				if (bIsSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+		}
+
+		ImGui::EndCombo();
 	}
 
 	return bChanged;

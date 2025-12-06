@@ -78,6 +78,9 @@ private:
 
 	static void CacheResources();	// 필요할 때 리소스 목록을 멤버 변수에 캐시합니다.
 
+	// 콤보박스 헬퍼
+	static bool RenderSearchableCombo(const char* Label, int* current, TArray<FString>& Items);
+
 private:
 	// 렌더링 중 캐시되는 리소스 목록
 	static TArray<FString> CachedSkeletalMeshPaths;
