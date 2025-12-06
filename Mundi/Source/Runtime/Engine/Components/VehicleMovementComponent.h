@@ -76,6 +76,7 @@ public:
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "Roll 각속도를 줄여줍니다. 설정된 값이 커질수록 Roll 진동이 빠르게 사라집니다")
     float DampingFactor = 0.1f;
 
+
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "최대 복원력에 곱해지는 계수입니다")
     float MaxTorqueLimit = 3.0f;
 
@@ -88,6 +89,11 @@ public:
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "설정된 Degree을 넘어가면 복원력을 받지 못하고 넘어집니다")
     float CriticalDegree = 50.0f;
 
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "Q, E 키 입력 시 기울어지는 정도를 조절합니다")
+    float UserTorqueFactor = 1500.0f;
+
+    float UserTorque = 0.0f;
+
     TArray<FVehicleWheelSetup> WheelSetups;
 
     // ====================================================================
@@ -97,6 +103,7 @@ public:
     void SetSteeringInput(float Steering); // -1.0 ~ 1.0 (좌우)
     void SetBrakeInput(float Brake);       // 0.0 ~ 1.0 (제동)
     void SetHandbrakeInput(bool bIsHandbrake);
+    void SetUserTorque(float TorqueInput);
 
     /** 현재 전진 속도 (m/s) */
     float GetForwardSpeed() const;

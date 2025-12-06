@@ -54,6 +54,9 @@ protected:
     void MoveForward(float Val); 
     // A, D 키 처리
     void MoveRight(float Val);   
+    // Q, E 키 처리
+    void AddTorque(float Val);
+
     // SpaceBar 처리
     void HandbrakePressed();
     void HandbrakeReleased();
@@ -69,6 +72,7 @@ protected:
 
     float CurrentForwardInput;
     float CurrentSteeringInput;
+    float CurrentTorqueInput;
     bool bIsBoosting;
 
     /** 부스터 힘 (가속도 단위) */

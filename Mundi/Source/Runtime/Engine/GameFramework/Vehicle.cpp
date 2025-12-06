@@ -5,6 +5,7 @@
 AVehicle::AVehicle()
     : CurrentForwardInput(0.0f)
     , CurrentSteeringInput(0.0f)
+    , CurrentTorqueInput(0.0f)
     , bIsBoosting(false)
 {
     ChassisMesh = CreateDefaultSubobject<UStaticMeshComponent>("ChassisMesh");
@@ -68,6 +69,8 @@ void AVehicle::Tick(float DeltaSeconds)
     {
         VehicleMovement->SetSteeringInput(CurrentSteeringInput);
 
+        VehicleMovement->SetUserTorque(CurrentTorqueInput);
+
         const float ForwardSpeed = VehicleMovement->GetForwardSpeed();
         const float SpeedThreshold = 2.0f; // @note 속도가 이 값보다 낮으면 멈춘 것으로 간주
 
@@ -81,6 +84,7 @@ void AVehicle::Tick(float DeltaSeconds)
         {
             if (ForwardSpeed > SpeedThreshold) 
             {
+
                 VehicleMovement->SetGearToDrive(); 
                 VehicleMovement->SetThrottleInput(0.0f);
                 VehicleMovement->SetBrakeInput(-CurrentForwardInput); 
@@ -101,6 +105,7 @@ void AVehicle::Tick(float DeltaSeconds)
 
     CurrentForwardInput = 0.0f;
     CurrentSteeringInput = 0.0f;
+    CurrentTorqueInput = 0.0f;
 
     // 부스터 적용
     if (bIsBoosting && VehicleMovement)
@@ -129,6 +134,12 @@ void AVehicle::SetupPlayerInputComponent(UInputComponent* InInputComponent)
     // A 키: Scale -1.0 -> 좌회전
     InInputComponent->BindAxis<AVehicle>("MoveRight_A", 'A', -1.0f, this, &AVehicle::MoveRight);
 
+    // [축 바인딩] Q/E로 Roll
+    // Q 키: Scale 1.0f -> 좌로 기울어짐
+    InInputComponent->BindAxis<AVehicle>("AddTorque_Q", 'Q', 1.0f, this, &AVehicle::AddTorque);
+    // A 키: Scale -1.0f -> 우로 기울어짐
+    InInputComponent->BindAxis<AVehicle>("AddTorque_E", 'E', -1.0f, this, &AVehicle::AddTorque);
+    
     // [액션 바인딩] Space로 핸드브레이크
     // VK_SPACE는 0x20
     InInputComponent->BindAction<AVehicle>("Handbrake", VK_SPACE, this, &AVehicle::HandbrakePressed, &AVehicle::HandbrakeReleased);
@@ -146,6 +157,11 @@ void AVehicle::MoveForward(float Val)
 void AVehicle::MoveRight(float Val)
 {
     CurrentSteeringInput += Val;
+}
+
+void AVehicle::AddTorque(float Val)
+{
+    CurrentTorqueInput += Val;
 }
 
 void AVehicle::HandbrakePressed()

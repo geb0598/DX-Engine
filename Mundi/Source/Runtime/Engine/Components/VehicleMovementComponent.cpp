@@ -598,6 +598,7 @@ void UVehicleMovementComponent::BalanceVehicle(float DeltaSeconds)
 
         float Mass = Actor->getMass();
         float COMHegith = Actor->getCMassLocalPose().p.z;
+        float ActorSpeed = Actor->getLinearVelocity().magnitude();
 
 
         float UpRightStength = 1.0f;  
@@ -630,6 +631,11 @@ void UVehicleMovementComponent::BalanceVehicle(float DeltaSeconds)
 
         PxVec3 BalanceTorque = LocalForward * (-InvTorque*SinRoll - Damping * Actor->getAngularVelocity().dot(LocalForward));
 
+
+        float UserTorqueMag = UserTorqueFactor * (1 + CentrifugalTorqueInverseFactor * ActorSpeed);
+
+        BalanceTorque += LocalForward * (UserTorque * UserTorqueMag);
+
         if (BalanceTorque.isFinite())
         {
             Actor->addTorque(BalanceTorque, PxForceMode::eFORCE);
@@ -660,6 +666,11 @@ void UVehicleMovementComponent::SetBrakeInput(float Brake)
 void UVehicleMovementComponent::SetHandbrakeInput(bool bNewHandbrake)
 {
     if (PInputData) PInputData->setAnalogHandbrake(bNewHandbrake ? 1.0f : 0.0f);
+}
+
+void UVehicleMovementComponent::SetUserTorque(float TorqueInput)
+{
+    UserTorque = TorqueInput;
 }
 
 float UVehicleMovementComponent::GetForwardSpeed() const
