@@ -95,7 +95,11 @@ public:
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "Q, E 키 입력 시 기울어지는 정도를 조절합니다")
     float UserTorqueFactor = 1500.0f;
 
+    UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "Space 키 입력 시 점프 세기를 조절합니다")
+    float JumpVelocity = 5.0f;
+
     float UserTorque = 0.0f;
+    bool JumpInput = false;
 
     TArray<FVehicleWheelSetup> WheelSetups;
 
@@ -107,6 +111,7 @@ public:
     void SetBrakeInput(float Brake);       // 0.0 ~ 1.0 (제동)
     void SetHandbrakeInput(bool bIsHandbrake);
     void SetUserTorque(float TorqueInput);
+    void SetJumpInput(bool InJumpInput);
 
     /** 현재 전진 속도 (m/s) */
     float GetForwardSpeed() const;

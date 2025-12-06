@@ -77,14 +77,10 @@ UVehicleMovementComponent::UVehicleMovementComponent()
     //}
     VehicleWheel0 = NewObject<UVehicleWheel>();
     VehicleWheel0->SteerAngle = 45.0f;
-    VehicleWheel0->MaxSuspensionCompression = 0.001f;
-    VehicleWheel0->MaxSuspensionDroop = 0.001f;
     VehicleWheel0->WheelOffset = FVector(1.0f, 0.0f, -0.7f);
 
     VehicleWheel1 = NewObject<UVehicleWheel>();
     VehicleWheel1->SteerAngle = 0.0f;
-    VehicleWheel1->MaxSuspensionCompression = 0.001f;
-    VehicleWheel1->MaxSuspensionDroop = 0.001f;
     VehicleWheel1->WheelOffset = FVector(-1.0f, 0.0f, -0.7f);
 
     // @todo 현재 하드코딩된 바퀴 설정 사용
@@ -363,7 +359,7 @@ void UVehicleMovementComponent::SetupDriveSimulationData(physx::PxRigidDynamic* 
     RigidActor->setAngularDamping(0.05f);
 
     RigidActor->setMaxDepenetrationVelocity(5.0f);
-    RigidActor->setSolverIterationCounts(32, 5);
+    RigidActor->setSolverIterationCounts(12, 4);
 }
 
 // ====================================================================
@@ -558,6 +554,16 @@ void UVehicleMovementComponent::ProcessVehicleInput(float DeltaTime)
 
     bool bIsInAir = IsVehicleInAir();
 
+    if (IsAllWheelGrounded() && JumpInput)
+    {
+        PxRigidDynamic* Actor = PVehicleDrive->getRigidDynamicActor();
+        if (Actor)
+        {
+            Actor->addForce(PxVec3(0, 0, JumpVelocity), PxForceMode::eVELOCITY_CHANGE);
+        }              
+    }
+    JumpInput = false;
+
     PxVehicleDriveNWSmoothAnalogRawInputsAndSetAnalogInputs(
         gPadSmoothingData,
         gSteerVsForwardSpeedTable,
@@ -688,6 +694,11 @@ void UVehicleMovementComponent::SetHandbrakeInput(bool bNewHandbrake)
 void UVehicleMovementComponent::SetUserTorque(float TorqueInput)
 {
     UserTorque = TorqueInput;
+}
+
+void UVehicleMovementComponent::SetJumpInput(bool InJumpInput)
+{
+    JumpInput = InJumpInput;
 }
 
 float UVehicleMovementComponent::GetForwardSpeed() const

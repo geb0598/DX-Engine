@@ -140,10 +140,14 @@ void AVehicle::SetupPlayerInputComponent(UInputComponent* InInputComponent)
     InInputComponent->BindAxis<AVehicle>("AddTorque_Q", 'Q', 1.0f, this, &AVehicle::AddTorque);
     // A 키: Scale -1.0f -> 우로 기울어짐
     InInputComponent->BindAxis<AVehicle>("AddTorque_E", 'E', -1.0f, this, &AVehicle::AddTorque);
+
+   
+    // [액션 바인딩] Space로 점프
+    InInputComponent->BindAction<AVehicle>("Jump", VK_SPACE, this, &AVehicle::JumpPressed, &AVehicle::JumpReleased);
     
-    // [액션 바인딩] Space로 핸드브레이크
-    // VK_SPACE는 0x20
-    InInputComponent->BindAction<AVehicle>("Handbrake", VK_SPACE, this, &AVehicle::HandbrakePressed, &AVehicle::HandbrakeReleased);
+    // [액션 바인딩] c로 핸드브레이크
+    // 
+    InInputComponent->BindAction<AVehicle>("Handbrake", 'C', this, &AVehicle::HandbrakePressed, &AVehicle::HandbrakeReleased);
 
     // [액션 바인딩] Shift로 부스터
     // VK_SHIFT는 0x10
@@ -163,6 +167,18 @@ void AVehicle::MoveRight(float Val)
 void AVehicle::AddTorque(float Val)
 {
     CurrentTorqueInput += Val;
+}
+
+void AVehicle::JumpPressed()
+{
+    if (VehicleMovement)
+    {
+        VehicleMovement->SetJumpInput(true);
+    }
+}
+
+void AVehicle::JumpReleased()
+{
 }
 
 void AVehicle::HandbrakePressed()
