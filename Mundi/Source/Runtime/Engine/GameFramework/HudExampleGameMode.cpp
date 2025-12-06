@@ -10,7 +10,9 @@
 #include "GameUI/SGameHUD.h"
 #include "GameUI/SButton.h"
 #include "GameUI/STextBlock.h"
-#include"PlayerController.h"
+#include "GameUI/SImage.h"
+#include "PlayerController.h"
+#include "CargoComponent.h"
 
 // ────────────────────────────────────────────────────────────────────────────
 // 생성자
@@ -103,6 +105,41 @@ void AHudExampleGameMode::BeginPlay()
 		.SetPivot(1.f, 1.f)
 		.SetOffset(-40.f, -160.f)  // 기어 위
 		.SetSize(200.f, 40.f);
+
+	// 박스 아이콘
+	BoxesIcon = MakeShared<SImage>();
+	BoxesIcon->SetTexture(L"Data/Textures/Dumb/Box.png");
+
+	SGameHUD::Get().AddWidget(BoxesIcon)
+		.SetAnchor(1.0f, 1.0f)  // 우하단
+		.SetPivot(1.0f, 1.0f)   // 우하단 기준
+		.SetOffset(-250.f, -80.f)  // 우하단에서 왼쪽, 위로 오프셋
+		.SetSize(80.f, 80.f);
+
+	// "x BOXES LEFT" 텍스트
+	BoxesLeftText = MakeShared<SImage>();
+	BoxesLeftText->SetTexture(L"Data/Textures/Dumb/Boxesleft.png");
+
+	SGameHUD::Get().AddWidget(BoxesLeftText)
+		.SetAnchor(1.0f, 1.0f)  // 우하단
+		.SetPivot(1.0f, 1.0f)   // 우하단 기준
+		.SetOffset(-120.f, -100.f)  // 박스 아이콘 오른쪽
+		.SetSize(150.f, 40.f);
+
+	// 박스 개수 텍스트 (박스 아이콘 중앙에서 약간 오른쪽 아래)
+	BoxesCountText = MakeShared<STextBlock>();
+	BoxesCountText->SetText(L"0")
+		.SetFontSize(27.f)
+		.SetColor(FSlateColor::White())
+		.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor::Black())
+		.SetHAlign(ETextHAlign::Center)
+		.SetVAlign(ETextVAlign::Center);
+
+	SGameHUD::Get().AddWidget(BoxesCountText)
+		.SetAnchor(1.0f, 1.0f)
+		.SetPivot(1.0f, 1.0f)  // 우하단 기준 (박스 아이콘과 동일)
+		.SetOffset(-225.f, -65.f)  // 박스 아이콘에서 오른쪽(+40), 아래(+40) 이동
+		.SetSize(80.f, 80.f);  // 박스 아이콘과 동일한 크기
 }
 
 void AHudExampleGameMode::EndPlay()
@@ -136,6 +173,21 @@ void AHudExampleGameMode::EndPlay()
 		{
 			SGameHUD::Get().RemoveWidget(GearText);
 			GearText.Reset();
+		}
+		if (BoxesIcon)
+		{
+			SGameHUD::Get().RemoveWidget(BoxesIcon);
+			BoxesIcon.Reset();
+		}
+		if (BoxesLeftText)
+		{
+			SGameHUD::Get().RemoveWidget(BoxesLeftText);
+			BoxesLeftText.Reset();
+		}
+		if (BoxesCountText)
+		{
+			SGameHUD::Get().RemoveWidget(BoxesCountText);
+			BoxesCountText.Reset();
 		}
 	}
 }
@@ -210,5 +262,16 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 			GearStr = std::to_wstring(Gear);
 
 		GearText->SetText(GearStr);
+	}
+
+	// 박스 개수 UI 업데이트
+	if (BoxesCountText)
+	{
+		UCargoComponent* CargoComp = Cast<UCargoComponent>(Vehicle->GetComponent(UCargoComponent::StaticClass()));
+		if (CargoComp)
+		{
+			int32 BoxCount = CargoComp->GetValidCargoCount();
+			BoxesCountText->SetText(std::to_wstring(BoxCount));
+		}
 	}
 }

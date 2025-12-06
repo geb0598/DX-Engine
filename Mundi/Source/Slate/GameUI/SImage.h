@@ -55,6 +55,16 @@ public:
      */
     SImage& SetMaintainAspectRatio(bool bMaintain);
 
+    /**
+     * 소스 영역 설정 (스프라이트 시트용)
+     * @param InSourceRect 소스 영역 (픽셀 좌표: Left, Top, Right, Bottom)
+     * @note (0,0,0,0)을 설정하면 전체 이미지 사용
+     */
+    SImage& SetSourceRect(const FSlateRect& InSourceRect);
+
+    /** 소스 영역 초기화 (전체 이미지 사용) */
+    SImage& ClearSourceRect();
+
     /** 텍스처 로드 여부 */
     bool IsTextureLoaded() const { return Bitmap != nullptr; }
 
@@ -117,4 +127,10 @@ private:
 
     /** 실행 중인 애니메이션 */
     TArray<FWidgetAnimation*> Animations;
+
+    /** 소스 영역 (스프라이트 시트용, 픽셀 좌표) */
+    FSlateRect SourceRect = FSlateRect(0.f, 0.f, 0.f, 0.f);
+
+    /** 소스 영역 사용 여부 */
+    bool bUseSourceRect = false;
 };

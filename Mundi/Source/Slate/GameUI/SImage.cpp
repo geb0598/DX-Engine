@@ -59,13 +59,29 @@ void SImage::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
     }
 
     // 이미지 렌더링
-    Renderer.DrawImage(
-        Bitmap,
-        DrawPosition,
-        DrawSize,
-        TintColor,
-        Opacity
-    );
+    if (bUseSourceRect)
+    {
+        // 스프라이트 시트 - 소스 영역 지정
+        Renderer.DrawImage(
+            Bitmap,
+            DrawPosition,
+            DrawSize,
+            TintColor,
+            Opacity,
+            SourceRect
+        );
+    }
+    else
+    {
+        // 전체 이미지
+        Renderer.DrawImage(
+            Bitmap,
+            DrawPosition,
+            DrawSize,
+            TintColor,
+            Opacity
+        );
+    }
 }
 
 void SImage::Update(float DeltaTime)
@@ -140,6 +156,22 @@ SImage& SImage::SetOpacity(float InOpacity)
 SImage& SImage::SetMaintainAspectRatio(bool bMaintain)
 {
     bMaintainAspectRatio = bMaintain;
+    return *this;
+}
+
+SImage& SImage::SetSourceRect(const FSlateRect& InSourceRect)
+{
+    SourceRect = InSourceRect;
+    // (0,0,0,0)이 아니면 소스 영역 사용
+    bUseSourceRect = (InSourceRect.Left != 0.f || InSourceRect.Top != 0.f ||
+                      InSourceRect.Right != 0.f || InSourceRect.Bottom != 0.f);
+    return *this;
+}
+
+SImage& SImage::ClearSourceRect()
+{
+    SourceRect = FSlateRect(0.f, 0.f, 0.f, 0.f);
+    bUseSourceRect = false;
     return *this;
 }
 

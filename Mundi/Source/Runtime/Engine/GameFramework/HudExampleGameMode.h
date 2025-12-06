@@ -10,6 +10,7 @@
 
 class SButton;
 class STextBlock;
+class SImage;
 
 /**
  * AHudExampleGameMode
@@ -59,4 +60,13 @@ protected:
 	TSharedPtr<STextBlock> SpeedText;
 	TSharedPtr<STextBlock> RpmText;
 	TSharedPtr<STextBlock> GearText;
+
+	/** 박스 아이콘 */
+	TSharedPtr<SImage> BoxesIcon;
+
+	/** "x BOXES LEFT" 텍스트 이미지 */
+	TSharedPtr<SImage> BoxesLeftText;
+
+	/** 박스 개수 텍스트 */
+	TSharedPtr<STextBlock> BoxesCountText;
 };
