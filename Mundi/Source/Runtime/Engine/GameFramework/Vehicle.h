@@ -25,6 +25,8 @@ public:
 
     virtual void SetupPlayerInputComponent(UInputComponent* InInputComponent) override;
 
+    void EjectDriver(const FVector& Impulse = FVector::Zero());
+
     // ====================================================================
     // 컴포넌트 구성
     // ====================================================================
@@ -99,4 +101,6 @@ protected:
 
     bool bLeanLeftInput;
     bool bLeanRightInput;
+
+    bool bIsDriverEjected;
 };

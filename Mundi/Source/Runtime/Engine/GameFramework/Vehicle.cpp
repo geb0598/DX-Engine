@@ -16,6 +16,7 @@ AVehicle::AVehicle()
     , Driver(nullptr)
     , DriverStateMachine(nullptr)
     , StateId_Idle(-1)
+    , bIsDriverEjected(false)
 {
     ChassisMesh = CreateDefaultSubobject<UStaticMeshComponent>("ChassisMesh");
     FString ChassisFileName = GDataDir + "/Model/ShoppingCart/ShoppingCart.obj";
@@ -200,6 +201,30 @@ void AVehicle::SetupPlayerInputComponent(UInputComponent* InInputComponent)
     InInputComponent->BindAction<AVehicle>("Boost", VK_SHIFT, this, &AVehicle::BoostPressed, &AVehicle::BoostReleased);
 }
 
+void AVehicle::EjectDriver(const FVector& Impulse)
+{
+    if (bIsDriverEjected || !Driver)
+    {
+        return;
+    }
+
+    // Driver->DetachFromParent(true);
+
+    Driver->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+    Driver->SetPhysicsMode(EPhysicsMode::Ragdoll);
+
+    UPhysicsAsset* NewAsset = UResourceManager::GetInstance().Load<UPhysicsAsset>("Data/Physics/Brian.physicsasset");
+    Driver->SetPhysicsAsset(NewAsset);
+
+    if (!Impulse.IsZero())
+    {
+        Driver->AddImpulse(Impulse);
+    }
+
+    bIsDriverEjected = true;
+}
+
 void AVehicle::MoveForward(float Val)
 {
     CurrentForwardInput += Val;
@@ -222,7 +247,7 @@ void AVehicle::LeanRightReleased() { bLeanRightInput = false; }
 
 void AVehicle::UpdateDriverAnimation(float DeltaSeconds)
 {
-    if (!DriverStateMachine) return;
+    if (bIsDriverEjected || !DriverStateMachine) return;
 
     // 현재 상태 인덱스
     int32 CurrentStateIdx = DriverStateMachine->GetCurrentStateIndex();

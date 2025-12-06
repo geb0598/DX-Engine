@@ -2,6 +2,7 @@
 #include "CargoComponent.h"
 
 #include "StaticMeshComponent.h"
+#include "Vehicle.h"
 
 // ====================================================================
 // 생성자 & 소멸자
@@ -294,5 +295,14 @@ void UCargoComponent::CollapseFrom(int32 StartIndex)
 
 void UCargoComponent::CollapseAll()
 {
+    AVehicle* Vehicle = Cast<AVehicle>(GetOwner());
+    if (Vehicle)
+    {
+        FTransform VehicleTransform = Vehicle->GetRootComponent()->GetWorldTransform();
+        FVector WorldUp = FVector(0, 0, 1);
+        FVector VehicleUp = VehicleTransform.TransformVector(WorldUp);
+        VehicleUp.Normalize();
+        Vehicle->EjectDriver(VehicleUp * EjectionImpulse);
+    }
     CollapseFrom(0);
 }
