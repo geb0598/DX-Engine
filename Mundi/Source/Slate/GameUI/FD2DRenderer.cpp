@@ -276,6 +276,36 @@ void FD2DRenderer::DrawImage(ID2D1Bitmap* Bitmap, const FVector2D& Position, con
     // TODO: Tint 색상 적용하려면 D2D Effect 필요
 }
 
+void FD2DRenderer::DrawImage(
+    ID2D1Bitmap* Bitmap,
+    const FVector2D& Position,
+    const FVector2D& Size,
+    const FSlateColor& Tint,
+    float Opacity,
+    const FSlateRect& SourceRect)
+{
+    if (!bInFrame || !D2DContext || !Bitmap)
+        return;
+
+    D2D1_RECT_F DestRect = D2D1::RectF(
+        Position.X, Position.Y, Position.X + Size.X, Position.Y + Size.Y
+    );
+
+    D2D1_RECT_F SrcRect = D2D1::RectF(
+        SourceRect.Left, SourceRect.Top, SourceRect.Right, SourceRect.Bottom
+    );
+
+    float FinalOpacity = Opacity * Tint.A;
+
+    D2DContext->DrawBitmap(
+        Bitmap,
+        DestRect,
+        FinalOpacity,
+        D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+        &SrcRect  // 지정된 소스 영역만 그리기
+    );
+}
+
 ID2D1Bitmap* FD2DRenderer::LoadBitmapFromFile(const FWideString& FilePath)
 {
     if (!D2DContext)

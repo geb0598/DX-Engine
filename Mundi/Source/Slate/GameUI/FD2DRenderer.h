@@ -82,7 +82,7 @@ public:
     // =====================================================
     
     /**
-    * 이미지 그리기
+    * 이미지 그리기 (전체 이미지)
     * @param Bitmap D2D 비트맵
     * @param Position 위치
     * @param Size 크기
@@ -95,6 +95,24 @@ public:
         const FVector2D& Size,
         const FSlateColor& Tint = FSlateColor::White(),
         float Opacity = 1.0f
+    );
+
+    /**
+    * 이미지 그리기 (소스 영역 지정 - 스프라이트 시트용)
+    * @param Bitmap D2D 비트맵
+    * @param Position 화면 위치
+    * @param Size 화면 크기
+    * @param Tint 색상 틴트 (곱셈)
+    * @param Opacity 투명도 (0.0 ~ 1.0)
+    * @param SourceRect 소스 영역 (픽셀 좌표: Left, Top, Right, Bottom)
+    */
+    void DrawImage(
+        ID2D1Bitmap* Bitmap,
+        const FVector2D& Position,
+        const FVector2D& Size,
+        const FSlateColor& Tint,
+        float Opacity,
+        const FSlateRect& SourceRect
     );
 
     /**
