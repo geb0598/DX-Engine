@@ -8,6 +8,7 @@
 #include "FAudioDevice.h"
 #include "GameUI/SGameHUD.h"
 #include "PhysXSupport.h"
+#include "FBXLoader.h"
 #include <sol/sol.hpp>
 
 float UGameEngine::ClientWidth = 1024.0f;
@@ -200,6 +201,7 @@ bool UGameEngine::Startup(HINSTANCE hInstance)
     InitGamePhys();
 
     FObjManager::Preload();
+    UFbxLoader::PreLoad();
 
     // Preload audio assets
     FAudioDevice::Preload();
