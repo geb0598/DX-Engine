@@ -4,7 +4,11 @@
 #include "AnimStateMachine.h"
 #include "AnimStateMachineInstance.h"
 #include "InputComponent.h"
+#include "Landmine.h"
+#include "PhysScene.h"
 #include "SkeletalMeshComponent.h"
+
+class ALandmine;
 
 AVehicle::AVehicle()
     : CurrentForwardInput(0.0f)
@@ -173,6 +177,8 @@ void AVehicle::Tick(float DeltaSeconds)
     SyncWheelVisuals();
 
     UpdateDriverAnimation(DeltaSeconds);
+
+    CheckWheelInteractions();
 }
 
 void AVehicle::SetupPlayerInputComponent(UInputComponent* InInputComponent)
@@ -336,11 +342,58 @@ void AVehicle::BoostReleased()
     bIsBoosting = false;
 }
 
+void AVehicle::CheckWheelInteractions()
+{
+    if (!VehicleMovement || !ChassisMesh) return;
+    
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    FPhysScene* PhysScene = World->GetPhysicsScene();
+    if (!PhysScene) return;
+
+    UVehicleWheel* Wheels[2] = { VehicleMovement->VehicleWheel0, VehicleMovement->VehicleWheel1 };
+
+    for (int i = 0; i < 2; ++i)
+    {
+        FTransform WheelTrans = VehicleMovement->GetWheelTransform(i);
+        FVector WheelPos = ChassisMesh->GetWorldTransform().TransformPosition(WheelTrans.Translation);
+        FVector SweepStart = WheelPos + FVector(0, 0, 0.1f);
+        FVector SweepEnd = WheelPos - FVector(0, 0, 0.2f);
+
+        float WheelRadius = (Wheels[i]) ? Wheels[i]->WheelRadius : 0.3f;
+
+        FHitResult Hit;
+        bool bHit = PhysScene->SweepSingleSphere(
+            SweepStart,
+            SweepEnd,
+            WheelRadius, // 반지름
+            Hit,      // 결과
+            this         // IgnoreActor (내 차체는 무시)
+        );
+
+        if (bHit && Hit.Actor.Get()) 
+        {
+            if (ALandmine* Mine = Cast<ALandmine>(Hit.Actor.Get()))
+            {
+                UPrimitiveComponent* MineComp = Mine->GetMeshComponent();
+                if (MineComp)
+                {
+                    FHitResult FakeHit = Hit;
+                    FakeHit.Actor = this;            
+                    FakeHit.Component = ChassisMesh; 
+
+                    MineComp->DispatchBlockingHit(this, ChassisMesh, FVector::Zero(), FakeHit);
+                }
+            }
+        }
+    }
+}
+
 void AVehicle::SyncWheelVisuals()
 {
     if (!VehicleMovement) return;
 
-    //for (int i = 0; i < 4; i++)
     for (int i = 0; i < 2; i++)
     {
         if (WheelMeshes[i]) 

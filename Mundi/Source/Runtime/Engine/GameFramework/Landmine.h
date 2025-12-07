@@ -29,16 +29,26 @@ public:
     UPROPERTY(EditAnywhere, Category="Mine")
     float UpwardBias = 0.5f;
 
+    /** 현재 활성화 상태 여부 */
+    UPROPERTY(VisibleAnywhere, Category="Mine")
+    bool bIsActive = true;
+
     // ===== Functions =====
 
     UStaticMeshComponent* GetMeshComponent() const { return MeshComponent; }
+
+    /** 지뢰를 다시 활성화합니다. */
+    void Activate();
+
+    /** 지뢰를 비활성화합니다. (밟아도 안 터짐, 이펙트 끔 등) */
+    void Deactivate();
 
     void DuplicateSubObjects() override;
     void Serialize(const bool bInIsLoading, JSON& InOutHandle) override;
 
 protected:
     /** 충돌 시 호출될 콜백 함수 */
-    void OnCompHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+    void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 protected:
     UStaticMeshComponent* MeshComponent;

@@ -54,7 +54,7 @@ public:
 
     /** 운전자 애니메이션 상태 머신 */
     UAnimStateMachineInstance* DriverStateMachine;
-
+    
 protected:
     // ====================================================================
     // 입력 핸들러
@@ -83,7 +83,9 @@ protected:
     // Shift 처리 (부스터)
     void BoostPressed();
     void BoostReleased();
-    
+
+    void CheckWheelInteractions();
+
     // ====================================================================
     // 내부 로직
     // ====================================================================
