@@ -8,6 +8,7 @@
 #include "PlayerController.h"
 #include "Pawn.h"
 #include "World.h"
+#include "LuaScriptComponent.h"
 
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -26,6 +27,9 @@ AGameModeBase::AGameModeBase()
 	// 기본 클래스 설정
 	PlayerControllerClass = APlayerController::StaticClass();
 	DefaultPawnClass = APawn::StaticClass();
+
+	ScriptComponent = CreateDefaultSubobject<ULuaScriptComponent>("GameModeLuaScript");
+	ScriptComponent->ScriptFilePath = GDataDir + "/Scripts/test.lua";
 }
 
 // ────────────────────────────────────────────────────────────────────────────

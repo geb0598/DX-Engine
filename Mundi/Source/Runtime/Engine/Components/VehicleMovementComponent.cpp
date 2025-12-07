@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "VehicleMovementComponent.h"
 #include "SceneComponent.h"
 #include "PrimitiveComponent.h"
@@ -696,7 +696,7 @@ void UVehicleMovementComponent::DownForceIfDecelerate(float DeltaTime)
         PxRigidDynamic* Actor = PVehicleDrive->getRigidDynamicActor();
         if (!IsVehicleInAir() &&
             PInputData->getAnalogAccel() < 0.1f &&
-            std::abs(PInputData->getAnalogSteer()) > 0.1f &&
+            // std::abs(PInputData->getAnalogSteer()) > 0.1f &&
             Actor->getLinearVelocity().magnitudeSquared() > DownForceSpeed)
         {
             PxTransform CarPose = Actor->getGlobalPose();

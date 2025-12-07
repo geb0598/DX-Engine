@@ -1,0 +1,14 @@
+{
+  "AggGeom" : {
+    "BoxElems" : [],
+    "ConvexElems" : [],
+    "SphereElems" : [{
+        "Center" : [0.000000, 0.000000, 0.000000],
+        "Radius" : 1.270000
+      }],
+    "SphylElems" : []
+  },
+  "BoneIndex" : -1,
+  "BoneName" : "None",
+  "PhysicalMaterial" : ""
+}
