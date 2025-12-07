@@ -74,8 +74,13 @@ public:
 	UPROPERTY(EditAnywhere, Category="GameMode", Tooltip="플레이어 스폰 위치입니다.")
 	FVector PlayerSpawnLocation;
 
+	UPROPERTY(EditAnywhere, Category = "GameMode", Tooltip = "플레이어 스폰시 기본 회전 상태입니다.")
+	FVector PlayerSpawnRotationEuler;
+
 	virtual FVector GetPlayerSpawnLocation() const { return PlayerSpawnLocation; }
 	virtual void SetPlayerSpawnLocation(const FVector& Location) { PlayerSpawnLocation = Location; }
+	virtual FVector GetPlayerSpawnRotationEuler() const { return PlayerSpawnRotationEuler; }
+	virtual void SetPlayerSpawnRotationEuler(const FVector& RotationEuler) { PlayerSpawnRotationEuler = RotationEuler; }
 
 	/** DefaultPawnClass Getter/Setter */
 	UClass* GetDefaultPawnClass() const { return DefaultPawnClass; }
