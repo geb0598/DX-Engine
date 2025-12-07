@@ -13,6 +13,7 @@ class STextBlock;
 class SImage;
 class SGradientBox;
 class SBorderBox;
+class SMinimap;
 
 /**
  * AHudExampleGameMode
@@ -92,4 +93,7 @@ protected:
 
 	/** 차량 정보: 기어 텍스트 */
 	TSharedPtr<STextBlock> VehicleGearText;
+
+	/** 미니맵 */
+	TSharedPtr<SMinimap> Minimap;
 };

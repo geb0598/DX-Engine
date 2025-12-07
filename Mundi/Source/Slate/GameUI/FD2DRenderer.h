@@ -178,6 +178,9 @@ public:
     /** 화면 크기 업데이트 (리사이즈 시) */
     void OnScreenResize(const FVector2D& NewSize);
 
+    /** D2D 컨텍스트 가져오기 (Transform 등 고급 기능 사용) */
+    ID2D1DeviceContext* GetContext() const { return D2DContext; }
+
 private:
     // =====================================================
     // 내부 헬퍼

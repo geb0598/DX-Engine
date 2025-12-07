@@ -13,6 +13,7 @@
 #include "GameUI/SImage.h"
 #include "GameUI/SGradientBox.h"
 #include "GameUI/SBorderBox.h"
+#include "GameUI/SMinimap.h"
 #include "PlayerController.h"
 #include "CargoComponent.h"
 
@@ -197,6 +198,23 @@ void AHudExampleGameMode::BeginPlay()
 		.SetPivot(0.0f, 1.0f)
 		.SetOffset(35.f, -30.f)  // RPM 아래
 		.SetSize(180.f, 25.f);
+
+	// ─────────────────────────────────────────────────
+	// 미니맵 (왼쪽 하단, 차량 정보 패널 위)
+	// ─────────────────────────────────────────────────
+
+	Minimap = MakeShared<SMinimap>();
+	Minimap->SetMapTexture(L"Data/Textures/Dumb/Minimap.png")  // 미니맵 이미지 (준비 필요)
+		.SetPlayerMarkerTexture(L"Data/Textures/Dumb/PlayerMarker.png")  // 플레이어 마커 (준비 필요)
+		.SetWorldBounds(FVector(-278.5f, -116.5f, 0.f), FVector(278.5f, 116.5f, 0.f))  // 실제 맵 크기 (X: 557, Y: 233)
+		.SetMarkerSize(12.f)
+		.SetZoomLevel(150.f);  // 플레이어 주변 150 유닛 반경 표시 (작을수록 확대됨)
+
+	SGameHUD::Get().AddWidget(Minimap)
+		.SetAnchor(0.0f, 1.0f)  // 왼쪽 하단
+		.SetPivot(0.0f, 1.0f)   // 왼쪽 하단 기준
+		.SetOffset(20.f, -140.f)  // 차량 정보 패널 위 (20 + 100 + 20 = 140)
+		.SetSize(180.f, 180.f);   // 정사각형 미니맵
 }
 
 void AHudExampleGameMode::EndPlay()
@@ -260,6 +278,11 @@ void AHudExampleGameMode::EndPlay()
 		{
 			SGameHUD::Get().RemoveWidget(VehicleGearText);
 			VehicleGearText.Reset();
+		}
+		if (Minimap)
+		{
+			SGameHUD::Get().RemoveWidget(Minimap);
+			Minimap.Reset();
 		}
 	}
 }
@@ -351,5 +374,22 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 			GearStr = L"GEAR: " + std::to_wstring(Gear);
 
 		VehicleGearText->SetText(GearStr);
+	}
+
+	// ─────────────────────────────────────────────────
+	// 미니맵 업데이트
+	// ─────────────────────────────────────────────────
+
+	if (Minimap)
+	{
+		// 플레이어 위치 업데이트
+		FVector PlayerPos = Vehicle->GetActorLocation();
+		Minimap->UpdatePlayerPosition(PlayerPos);
+
+		// 플레이어 회전 업데이트 (Quaternion을 Euler로 변환)
+		FQuat PlayerQuat = Vehicle->GetActorRotation();
+		FVector EulerAngles = PlayerQuat.ToEulerZYXDeg();
+		float PlayerYaw = EulerAngles.Z;  // Yaw는 Z축 회전
+		Minimap->UpdatePlayerRotation(PlayerYaw);
 	}
 }
