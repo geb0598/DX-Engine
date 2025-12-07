@@ -16,6 +16,19 @@ class SBorderBox;
 class SMinimap;
 class SPanel;
 
+// 전방 선언
+class ACameraActor;
+
+/**
+ * 게임 상태
+ */
+enum class EGameState
+{
+	MainMenu,              // 메인 메뉴 (시작 화면)
+	Tutorial_Camera,       // 튜토리얼: 카메라 연출
+	Playing,               // 게임 플레이 중
+};
+
 /**
  * AHudExampleGameMode
  *
@@ -48,6 +61,22 @@ public:
 	void StartGame() override;
 
 	// ────────────────────────────────────────────────
+	// 게임 상태 관리
+	// ────────────────────────────────────────────────
+
+	/** 현재 게임 상태 */
+	EGameState GetGameState() const { return CurrentGameState; }
+
+	/** 메인 메뉴로 전환 */
+	void ShowMainMenu();
+
+	/** 게임 플레이 시작 */
+	void StartGamePlay();
+
+	/** 카메라 시네마틱 시작 */
+	void StartCameraCinematic();
+
+	// ────────────────────────────────────────────────
 	// UI 업데이트
 	// ────────────────────────────────────────────────
 
@@ -56,10 +85,55 @@ public:
 
 protected:
 	// ────────────────────────────────────────────────
-	// UI 위젯
+	// 게임 상태
 	// ────────────────────────────────────────────────
 
+	/** 현재 게임 상태 */
+	EGameState CurrentGameState = EGameState::MainMenu;
+
+	// ────────────────────────────────────────────────
+	// UI 위젯 - 메인 메뉴
+	// ────────────────────────────────────────────────
+
+	/** 타이틀 이미지 */
+	TSharedPtr<SImage> TitleImage;
+
+	/** "Press Space to Continue" 배경 그라데이션 */
+	TSharedPtr<SGradientBox> PressSpaceBg;
+
+	/** "Press Space to Continue" 이미지 */
+	TSharedPtr<SImage> PressSpaceImage;
+
+	/** 메인 메뉴 타이머 */
+	float MainMenuTimer = 0.f;
+
+	/** 최소 대기 시간 (애니메이션 완료 전에는 입력 무시) */
+	float MinWaitTime = 3.5f;  // 애니메이션 시간과 동일
+
+	/** 입력 대기 준비 완료 */
+	bool bReadyForInput = false;
+
+	/** 초기 카메라 설정 완료 플래그 */
+	bool bInitialCameraSet = false;
+
+	// ────────────────────────────────────────────────
+	// 카메라 연출
+	// ────────────────────────────────────────────────
+
+	/** 타이틀 화면 카메라 (게임 시작 시) */
+	ACameraActor* TitleCamera = nullptr;
+
+	/** 튜토리얼 카메라 (입력 후 전환) */
+	ACameraActor* TutorialCamera = nullptr;
+
+	/** 카메라 전환 블렌드 시간 */
+	float CameraBlendTime = 2.0f;
+
 	TSharedPtr<SButton> StartButton;
+
+	// ────────────────────────────────────────────────
+	// UI 위젯 - 게임 플레이
+	// ────────────────────────────────────────────────
 	TSharedPtr<STextBlock> ScoreText;
 	TSharedPtr<STextBlock> SpeedText;
 	TSharedPtr<STextBlock> RpmText;

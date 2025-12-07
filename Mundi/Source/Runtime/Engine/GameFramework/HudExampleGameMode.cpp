@@ -17,6 +17,9 @@
 #include "GameUI/SPanel.h"
 #include "PlayerController.h"
 #include "CargoComponent.h"
+#include "CameraActor.h"
+#include "PlayerCameraManager.h"
+#include "CameraComponent.h"
 
 // ────────────────────────────────────────────────────────────────────────────
 // 생성자
@@ -43,21 +46,73 @@ void AHudExampleGameMode::BeginPlay()
 	if (VehicleSpeedText)
 		return;
 
-	// 시작 버튼 (화면 중앙)
-	/*StartButton = MakeShared<SButton>();
+	// ─────────────────────────────────────────────────
+	// 메인 메뉴 UI
+	// ─────────────────────────────────────────────────
+
+	// 타이틀 이미지 (화면 중앙, Fade In + Scale 애니메이션)
+	TitleImage = MakeShared<SImage>();
+	TitleImage->SetTexture(L"Data/Textures/Dumb/DumbRider3d.png")
+		.SetHighQualityInterpolation(true);  // 고품질 보간 적용
+
+	SGameHUD::Get().AddWidget(TitleImage)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
+		.SetPivot(0.5f, 0.5f)   // 이미지 중앙 기준
+		.SetOffset(0.f, -10.f)  // 살짝 위로
+		.SetSize(600.f, 300.f);  // 타이틀 크기 (조정 필요)
+
+	// 애니메이션: Scale만 (Fade In 제거)
+	TitleImage->SetScale(FVector2D(0.7f, 0.7f));  // 70% 크기로 시작
+
+	// Scale 애니메이션만 실행 (3.5초)
+	TitleImage->PlayScaleAnimation(FVector2D(1.0f, 1.0f), 3.5f, EEasingType::EaseOutCubic);
+
+	// "Press Space to Continue" 배경 그라데이션 (타이틀 오른쪽 아래)
+	PressSpaceBg = MakeShared<SGradientBox>();
+	PressSpaceBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.6f))  // 반투명 검정
+		.SetFadeWidth(80.f);
+
+	SGameHUD::Get().AddWidget(PressSpaceBg)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙 기준
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(0.f, 200.f)  // 타이틀 오른쪽 아래 (더 아래로: 160 → 200)
+		.SetSize(280.f, 28.f);    // 두께 감소 (40 → 30)
+
+	// "Press Space to Continue" 이미지 (Press.png)
+	PressSpaceImage = MakeShared<SImage>();
+	PressSpaceImage->SetTexture(L"Data/Textures/Dumb/pressanykey.png");
+
+	SGameHUD::Get().AddWidget(PressSpaceImage)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙 기준
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(0.f, 201.f)  // 배경과 같은 위치
+		.SetSize(180.f, 20.f);    // 배경과 같은 크기
+
+	// 초기에는 숨김 (애니메이션 완료 후 표시)
+	PressSpaceBg->SetVisibility(ESlateVisibility::Hidden);
+	PressSpaceImage->SetVisibility(ESlateVisibility::Hidden);
+
+	// 시작 버튼 (화면 중앙) - 일단 숨김 처리 (자동 전환 방식 사용)
+	StartButton = MakeShared<SButton>();
 	StartButton->SetText(L"게임 시작")
 		.SetBackgroundColor(FSlateColor(0.2f, 0.5f, 0.8f, 1.f))
 		.SetFontSize(24.f)
 		.SetCornerRadius(8.f)
 		.OnClicked([this]() {
-			StartGame();
+			StartGamePlay();
 		});
 
 	SGameHUD::Get().AddWidget(StartButton)
 		.SetAnchor(0.5f, 0.5f)
 		.SetPivot(0.5f, 0.5f)
-		.SetOffset(0.f, 0.f)
-		.SetSize(200.f, 60.f);*/
+		.SetOffset(0.f, 100.f)  // 타이틀 아래
+		.SetSize(200.f, 60.f);
+
+	StartButton->SetVisibility(ESlateVisibility::Hidden);  // 자동 전환 사용하므로 숨김
+
+	// ─────────────────────────────────────────────────
+	// 게임 플레이 UI (성능 테스트를 위해 일부 주석 처리 가능)
+	// ─────────────────────────────────────────────────
 
 	// 점수 텍스트 (좌상단)
 	ScoreText = MakeShared<STextBlock>();
@@ -226,6 +281,41 @@ void AHudExampleGameMode::BeginPlay()
 		.SetPivot(1.0f, 1.0f)   // 오른쪽 하단 기준
 		.SetOffset(-40.f, -60.f)  // 위로 올림 (-20 → -60)
 		.SetSize(180.f, 180.f);   // 정사각형 미니맵
+
+	// ─────────────────────────────────────────────────
+	// 카메라 찾기 (이름으로 검색)
+	// ─────────────────────────────────────────────────
+
+	// 타이틀 화면 카메라
+	AActor* FoundTitleCamera = GetWorld()->FindActorByName(FName("TitleCamera"));
+	if (FoundTitleCamera)
+	{
+		TitleCamera = Cast<ACameraActor>(FoundTitleCamera);
+	}
+
+	// 튜토리얼 카메라
+	AActor* FoundTutorialCamera = GetWorld()->FindActorByName(FName("TutorialCamera"));
+	if (FoundTutorialCamera)
+	{
+		TutorialCamera = Cast<ACameraActor>(FoundTutorialCamera);
+	}
+
+	// ─────────────────────────────────────────────────
+	// 초기 상태: 메인 메뉴 표시
+	// ─────────────────────────────────────────────────
+
+	ShowMainMenu();
+
+	// ─────────────────────────────────────────────────
+	// 플레이어 입력 비활성화 (타이틀 화면 동안)
+	// 카메라는 기본 스프링암 카메라 사용
+	// ─────────────────────────────────────────────────
+
+	APlayerController* PC = GetPlayerController();
+	if (PC)
+	{
+		PC->SetInputEnabled(false);  // 플레이어 입력 비활성화
+	}
 }
 
 void AHudExampleGameMode::EndPlay()
@@ -235,10 +325,25 @@ void AHudExampleGameMode::EndPlay()
 	// HUD 위젯 정리
 	if (SGameHUD::Get().IsInitialized())
 	{
+		if (TitleImage)
+		{
+			SGameHUD::Get().RemoveWidget(TitleImage);
+			TitleImage.Reset();
+		}
 		if (StartButton)
 		{
 			SGameHUD::Get().RemoveWidget(StartButton);
 			StartButton.Reset();
+		}
+		if (PressSpaceBg)
+		{
+			SGameHUD::Get().RemoveWidget(PressSpaceBg);
+			PressSpaceBg.Reset();
+		}
+		if (PressSpaceImage)
+		{
+			SGameHUD::Get().RemoveWidget(PressSpaceImage);
+			PressSpaceImage.Reset();
 		}
 		if (ScoreText)
 		{
@@ -305,18 +410,113 @@ void AHudExampleGameMode::EndPlay()
 }
 
 // ────────────────────────────────────────────────────────────────────────────
+// 게임 상태 관리
+// ────────────────────────────────────────────────────────────────────────────
+
+void AHudExampleGameMode::ShowMainMenu()
+{
+	CurrentGameState = EGameState::MainMenu;
+	MainMenuTimer = 0.f;  // 타이머 리셋
+	bReadyForInput = false;  // 입력 대기 상태 리셋
+
+	// 메인 메뉴 UI 표시
+	if (TitleImage)
+		TitleImage->SetVisibility(ESlateVisibility::Visible);
+
+	// "Press Space" 이미지는 초기에 숨김 (애니메이션 완료 후 표시)
+	if (PressSpaceBg)
+		PressSpaceBg->SetVisibility(ESlateVisibility::Hidden);
+	if (PressSpaceImage)
+		PressSpaceImage->SetVisibility(ESlateVisibility::Hidden);
+
+	// 시작 버튼은 숨김 (자동 전환)
+	if (StartButton)
+		StartButton->SetVisibility(ESlateVisibility::Hidden);
+
+	// 게임 플레이 UI 숨기기
+	if (ScoreText) ScoreText->SetVisibility(ESlateVisibility::Hidden);
+	if (TestImage) TestImage->SetVisibility(ESlateVisibility::Hidden);
+	if (BoxesIcon) BoxesIcon->SetVisibility(ESlateVisibility::Hidden);
+	if (BoxesLeftText) BoxesLeftText->SetVisibility(ESlateVisibility::Hidden);
+	if (BoxesCountText) BoxesCountText->SetVisibility(ESlateVisibility::Hidden);
+	if (ReachHomeBg) ReachHomeBg->SetVisibility(ESlateVisibility::Hidden);
+	if (ReachHomeText) ReachHomeText->SetVisibility(ESlateVisibility::Hidden);
+	if (CartImage) CartImage->SetVisibility(ESlateVisibility::Hidden);
+	if (VehicleInfoPanel) VehicleInfoPanel->SetVisibility(ESlateVisibility::Hidden);
+	if (Minimap) Minimap->SetVisibility(ESlateVisibility::Hidden);
+}
+
+void AHudExampleGameMode::StartCameraCinematic()
+{
+	CurrentGameState = EGameState::Tutorial_Camera;
+
+	// 타이틀 UI 숨기기
+	if (TitleImage)
+		TitleImage->SetVisibility(ESlateVisibility::Hidden);
+	if (PressSpaceBg)
+		PressSpaceBg->SetVisibility(ESlateVisibility::Hidden);
+	if (PressSpaceImage)
+		PressSpaceImage->SetVisibility(ESlateVisibility::Hidden);
+
+	// 플레이어 입력은 여전히 비활성화 유지 (튜토리얼 보는 동안)
+	// 나중에 튜토리얼 종료 시 활성화
+
+	// TutorialCamera로 전환 (블렌드)
+	if (TutorialCamera)
+	{
+		APlayerController* PC = GetPlayerController();
+		if (PC)
+		{
+			APlayerCameraManager* CameraManager = PC->GetPlayerCameraManager();
+			if (CameraManager)
+			{
+				UCameraComponent* TutorialCameraComp = TutorialCamera->GetCameraComponent();
+				if (TutorialCameraComp)
+				{
+					// 블렌드 시간을 주고 카메라 전환
+					CameraManager->SetViewCameraWithBlend(TutorialCameraComp, CameraBlendTime);
+				}
+			}
+		}
+	}
+
+	// TODO: 튜토리얼 UI 표시 등 추가 작업
+	// 나중에 타이머로 일정 시간 후 StartGamePlay() 호출하도록 변경 가능
+}
+
+void AHudExampleGameMode::StartGamePlay()
+{
+	CurrentGameState = EGameState::Playing;
+
+	// 메인 메뉴 UI 숨기기
+	if (TitleImage)
+		TitleImage->SetVisibility(ESlateVisibility::Hidden);
+	if (StartButton)
+		StartButton->SetVisibility(ESlateVisibility::Hidden);
+
+	// 게임 플레이 UI 표시
+	if (ScoreText) ScoreText->SetVisibility(ESlateVisibility::Visible);
+	if (TestImage) TestImage->SetVisibility(ESlateVisibility::Visible);
+	if (BoxesIcon) BoxesIcon->SetVisibility(ESlateVisibility::Visible);
+	if (BoxesLeftText) BoxesLeftText->SetVisibility(ESlateVisibility::Visible);
+	if (BoxesCountText) BoxesCountText->SetVisibility(ESlateVisibility::Visible);
+	if (ReachHomeBg) ReachHomeBg->SetVisibility(ESlateVisibility::Visible);
+	if (ReachHomeText) ReachHomeText->SetVisibility(ESlateVisibility::Visible);
+	if (CartImage) CartImage->SetVisibility(ESlateVisibility::Visible);
+	if (VehicleInfoPanel) VehicleInfoPanel->SetVisibility(ESlateVisibility::Visible);
+	if (Minimap) Minimap->SetVisibility(ESlateVisibility::Visible);
+
+	// 게임 시작
+	StartGame();
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // 게임 라이프사이클
 // ────────────────────────────────────────────────────────────────────────────
 
 void AHudExampleGameMode::StartGame()
 {
 	Super::StartGame();
-
-	// 게임 시작 시 시작 버튼 숨기기
-	if (StartButton)
-	{
-		StartButton->SetVisibility(ESlateVisibility::Hidden);
-	}
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -334,6 +534,107 @@ void AHudExampleGameMode::UpdateScoreUI(int32 Score)
 void AHudExampleGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
+
+	// ─────────────────────────────────────────────────
+	// 첫 프레임: 플레이어 카메라(스프링암)로 명시적 설정
+	// ─────────────────────────────────────────────────
+
+	if (!bInitialCameraSet && CurrentGameState == EGameState::MainMenu)
+	{
+		APlayerController* PC = GetPlayerController();
+		if (PC)
+		{
+			APawn* PlayerPawn = PC->GetPawn();
+			if (PlayerPawn)
+			{
+				// Pawn에서 카메라 컴포넌트 찾기
+				UCameraComponent* PawnCamera = Cast<UCameraComponent>(
+					PlayerPawn->GetComponent(UCameraComponent::StaticClass())
+				);
+
+				if (PawnCamera)
+				{
+					APlayerCameraManager* CameraManager = PC->GetPlayerCameraManager();
+					if (CameraManager)
+					{
+						// Pawn의 카메라를 명시적으로 설정 (TutorialCamera 무시)
+						CameraManager->SetViewCamera(PawnCamera);
+						bInitialCameraSet = true;  // 한 번만 실행
+					}
+				}
+			}
+		}
+	}
+
+	// ─────────────────────────────────────────────────
+	// UI 애니메이션 업데이트
+	// ─────────────────────────────────────────────────
+
+	SGameHUD::Get().UpdateAnimations(DeltaSeconds);
+
+	// ─────────────────────────────────────────────────
+	// 메인 메뉴 입력 대기 (Space 또는 Enter만)
+	// ─────────────────────────────────────────────────
+
+	if (CurrentGameState == EGameState::MainMenu)
+	{
+		MainMenuTimer += DeltaSeconds;
+
+		// 최소 대기 시간이 지나면 입력 대기 준비
+		if (!bReadyForInput && MainMenuTimer >= MinWaitTime)
+		{
+			bReadyForInput = true;
+
+			// "Press Space to Continue" 이미지 표시
+			if (PressSpaceBg)
+				PressSpaceBg->SetVisibility(ESlateVisibility::Visible);
+			if (PressSpaceImage)
+				PressSpaceImage->SetVisibility(ESlateVisibility::Visible);
+		}
+
+		// 깜박이는 효과 (느리고 부드럽게)
+		if (bReadyForInput && PressSpaceImage)
+		{
+			// sin 함수로 부드러운 깜박임 (주기를 3초로 늘림)
+			float BlinkSpeed = 2.5f;  // 2.0 → 3.0 (더 느리게)
+			float Alpha = (std::sin(MainMenuTimer * 3.14159f * 2.0f / BlinkSpeed) + 1.0f) * 0.5f;  // 0~1 사이 값
+
+			// 최소 투명도 0.5, 최대 0.8 사이로 조정 (너무 밝지 않게)
+			float FinalAlpha = 0.5f + (Alpha * 0.4f);  // 0.5~0.9 사이
+
+			// 이미지의 투명도 변경
+			PressSpaceImage->SetOpacity(FinalAlpha);
+		}
+
+		// 입력 대기 준비 완료 후 아무 키나 체크
+		if (bReadyForInput)
+		{
+			// 아무 키나 눌렸는지 체크 (0~255까지 모든 가상 키코드)
+			bool bAnyKeyPressed = false;
+			for (int key = 0; key < 256; key++)
+			{
+				if (GetAsyncKeyState(key) & 0x8000)
+				{
+					bAnyKeyPressed = true;
+					break;
+				}
+			}
+
+			if (bAnyKeyPressed)
+			{
+				// 튜토리얼 화면으로 전환
+				StartCameraCinematic();
+				return;
+			}
+		}
+	}
+
+	// ─────────────────────────────────────────────────
+	// 게임 플레이 중일 때만 업데이트
+	// ─────────────────────────────────────────────────
+
+	if (CurrentGameState != EGameState::Playing)
+		return;
 
 	if (!GetPlayerController()) return;
 

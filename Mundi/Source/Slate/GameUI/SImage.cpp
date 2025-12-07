@@ -33,9 +33,14 @@ void SImage::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
     FVector2D DrawSize = Geometry.GetAbsoluteSize();
     FVector2D DrawPosition = Geometry.AbsolutePosition;
 
-    // 스케일 적용
+    // 스케일 적용 (중앙 기준으로 확대/축소)
+    FVector2D OriginalSize = DrawSize;
     DrawSize.X *= Scale.X;
     DrawSize.Y *= Scale.Y;
+
+    // 중앙 기준으로 확대하기 위해 위치 조정
+    DrawPosition.X += (OriginalSize.X - DrawSize.X) * 0.5f;
+    DrawPosition.Y += (OriginalSize.Y - DrawSize.Y) * 0.5f;
 
     // 종횡비 유지 모드
     if (bMaintainAspectRatio && ImageSize.X > 0.f && ImageSize.Y > 0.f)

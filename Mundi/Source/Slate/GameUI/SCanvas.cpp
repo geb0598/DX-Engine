@@ -38,10 +38,10 @@ void SCanvas::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 
 void SCanvas::Update(float DeltaTime)
 {
-    // 모든 자식 위젯의 Update 호출
+    // 모든 자식 위젯의 Update 호출 (보이는 위젯만)
     for (const FCanvasSlot& Slot : CanvasSlots)
     {
-        if (Slot.Widget)
+        if (Slot.Widget && Slot.Widget->IsVisible())
         {
             Slot.Widget->Update(DeltaTime);
         }
