@@ -43,6 +43,13 @@ UCapsuleComponent::~UCapsuleComponent()
 void UCapsuleComponent::DuplicateSubObjects()
 {
 	Super::DuplicateSubObjects();
+
+	if (CapsuleBodySetup)
+	{
+		UBodySetup* OldSetup = CapsuleBodySetup;
+		CapsuleBodySetup = NewObject<UBodySetup>();
+		CapsuleBodySetup->AggGeom = OldSetup->AggGeom;
+	}
 }
 
 // ────────────────────────────────────────────────────────────────────────────
