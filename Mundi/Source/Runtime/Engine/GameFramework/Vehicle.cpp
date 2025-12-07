@@ -8,6 +8,7 @@
 #include "PhysScene.h"
 #include "SkeletalMeshComponent.h"
 #include "LuaScriptComponent.h"
+#include "ParticleSystemComponent.h"
 
 class ALandmine;
 
@@ -20,8 +21,10 @@ AVehicle::AVehicle()
     , bLeanRightInput(false)
     , Driver(nullptr)
     , DriverStateMachine(nullptr)
+    , SparkParticleComponent(nullptr)
     , StateId_Idle(-1)
     , bIsDriverEjected(false)
+    , bSparkParticleActive(false)
 {
     ChassisMesh = CreateDefaultSubobject<UStaticMeshComponent>("ChassisMesh");
     FString ChassisFileName = GDataDir + "/Model/ShoppingCart/ShoppingCart.obj";
@@ -73,6 +76,12 @@ AVehicle::AVehicle()
 
     ScriptComponent = CreateDefaultSubobject<ULuaScriptComponent>("GameModeLuaScript");
     ScriptComponent->ScriptFilePath = GDataDir + "/Scripts/Vehicle.lua";
+
+    SparkParticleComponent = CreateDefaultSubobject<UParticleSystemComponent>("SparkParticle");
+    SparkParticleComponent->SetupAttachment(WheelMeshes[1]);
+    SparkParticleComponent->bAutoActivate = false;
+    UParticleSystem* SparkParticle = UResourceManager::GetInstance().Load<UParticleSystem>(GDataDir + "/Particles/Spark.particle");
+    SparkParticleComponent->SetTemplate(SparkParticle);
 }
 
 AVehicle::~AVehicle()
@@ -176,6 +185,26 @@ void AVehicle::Tick(float DeltaSeconds)
     if (bIsBoosting && VehicleMovement)
     {
         VehicleMovement->ApplyBoostForce(BoostStrength);
+    }
+
+    // 파티클 활성화
+    float SpeedMs = VehicleMovement->GetForwardSpeed();
+    float SpeedKmh = std::abs(SpeedMs) * 3.6f;
+    if (SpeedKmh >= SparkParticleSpawnSpeed)
+    {
+        if (!bSparkParticleActive)
+        {
+            SparkParticleComponent->ActivateSystem();
+            bSparkParticleActive = true;
+        }
+    }
+    else
+    {
+        if (bSparkParticleActive)
+        {
+            SparkParticleComponent->FinishSystem();
+            bSparkParticleActive = false;
+        }
     }
 
     SyncWheelVisuals();

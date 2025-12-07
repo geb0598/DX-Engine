@@ -49,6 +49,13 @@ public:
     UPROPERTY(EditAnywhere, Category = "Camera")
     UCameraComponent* Camera;
 
+    /** 이 속도 이상으로 운전하면 스파크 파티클 생성 (km/h) */
+    UPROPERTY(EditAnywhere, Category = "Camera")
+    float SparkParticleSpawnSpeed = 45.0f;
+
+    /** 스파크 파티클이 켜져있는지 여부 */
+    bool bSparkParticleActive;
+
     /** 운전자 스켈레탈 메쉬 */
     USkeletalMeshComponent* Driver;
 
@@ -56,6 +63,10 @@ public:
     UAnimStateMachineInstance* DriverStateMachine;
 
     class ULuaScriptComponent* ScriptComponent;
+
+    /** 바퀴에서 생성되는 스파크용 파티클 */
+    UParticleSystemComponent* SparkParticleComponent;
+    
 protected:
     // ====================================================================
     // 입력 핸들러

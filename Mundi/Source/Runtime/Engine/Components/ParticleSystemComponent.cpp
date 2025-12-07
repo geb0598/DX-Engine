@@ -679,7 +679,7 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 	{
 		if (Instance)
 		{
-			Instance->Tick(DeltaTime, false);
+			Instance->Tick(DeltaTime, bSuppressSpawning);
 		}
 	}
 
@@ -818,6 +818,8 @@ void UParticleSystemComponent::DispatchEventsToReceivers()
 
 void UParticleSystemComponent::ActivateSystem()
 {
+	bSuppressSpawning = false;
+	
 	if (Template)
 	{
 		InitializeEmitterInstances();
@@ -827,6 +829,11 @@ void UParticleSystemComponent::ActivateSystem()
 void UParticleSystemComponent::DeactivateSystem()
 {
 	ClearEmitterInstances();
+}
+
+void UParticleSystemComponent::FinishSystem()
+{
+	bSuppressSpawning = true;	
 }
 
 void UParticleSystemComponent::ResetParticles()
