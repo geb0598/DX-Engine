@@ -1345,6 +1345,9 @@
     <ClCompile Include="Generated\FVehicleEngineData.generated.cpp">
       <Filter>Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Generated\ALandmine.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Runtime\AssetManagement\LinesBatch.h">
@@ -2927,6 +2930,9 @@
       <Filter>Generated</Filter>
     </ClInclude>
     <ClInclude Include="Generated\FVehicleEngineData.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\ALandmine.generated.h">
       <Filter>Generated</Filter>
     </ClInclude>
   </ItemGroup>
