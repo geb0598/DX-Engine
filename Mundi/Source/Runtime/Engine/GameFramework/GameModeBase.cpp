@@ -219,7 +219,7 @@ void AGameModeBase::InitPlayer()
 	// 2. Pawn 스폰 위치 결정
 	FTransform SpawnTransform;
 	SpawnTransform.Translation = PlayerSpawnLocation;
-	SpawnTransform.Rotation = FQuat::Identity();
+	SpawnTransform.Rotation = FQuat::MakeFromEulerZYX(PlayerSpawnRotationEuler);
 	SpawnTransform.Scale3D = FVector(1.0f, 1.0f, 1.0f);
 
 	// 3. Pawn 스폰 및 빙의
@@ -291,7 +291,7 @@ void AGameModeBase::RestartPlayer(APlayerController* Player)
 	// 새 Pawn 스폰
 	FTransform SpawnTransform;
 	SpawnTransform.Translation = PlayerSpawnLocation;
-	SpawnTransform.Rotation = FQuat::Identity();
+	SpawnTransform.Rotation = FQuat::MakeFromEulerZYX(PlayerSpawnRotationEuler);
 	SpawnTransform.Scale3D = FVector(1.0f, 1.0f, 1.0f);
 
 	APawn* NewPawn = SpawnDefaultPawnFor(Player, SpawnTransform);

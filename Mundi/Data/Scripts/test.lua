@@ -3,6 +3,7 @@ function BeginPlay()
     print("[BeginPlay] " .. Obj.UUID)
     GameMode = GetOwnerAs(Obj, "AGameModeBase")
     GameMode.PlayerSpawnLocation = Vector(166.79, 1.3, 3)
+    GameMode.PlayerSpawnRotationEuler = Vector(0, 0, 180.0)
 end
 
 function EndPlay()
