@@ -87,6 +87,10 @@ public:
      */
     FTransform GetBoneWorldTransform(int32 BoneIndex);
 
+    // 루아에 Transform 바인딩 안 되어있어서 만듦
+    UFUNCTION(LuaBind, DisplayName = "GetBoneWorldLocation")
+    FVector GetBoneWorldLocation(int32 BoneIndex);
+
     /**
      * @brief 애니메이션 포즈 위에 추가적인(additive) 트랜스폼을 적용 (by 사용자 조작)
      * @param AdditiveTransforms BoneIndex -> Additive FTransform 맵

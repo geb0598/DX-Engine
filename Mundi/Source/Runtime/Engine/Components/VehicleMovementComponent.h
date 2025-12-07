@@ -160,6 +160,7 @@ public:
 
     /** 차량 물리 인스턴스 생성 및 초기화 (가장 중요한 함수) */
     /** UI에서 동적으로 Vehicle 정보 변경하려고 public으로 뺌 */
+    UFUNCTION(LuaBind, DisplayName = "SetupVehicle")
     void SetupVehicle();
 
 private:

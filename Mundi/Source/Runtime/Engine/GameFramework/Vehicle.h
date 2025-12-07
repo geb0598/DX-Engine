@@ -54,7 +54,8 @@ public:
 
     /** 운전자 애니메이션 상태 머신 */
     UAnimStateMachineInstance* DriverStateMachine;
-    
+
+    class ULuaScriptComponent* ScriptComponent;
 protected:
     // ====================================================================
     // 입력 핸들러

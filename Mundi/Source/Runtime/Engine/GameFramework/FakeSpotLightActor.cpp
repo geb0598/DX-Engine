@@ -75,13 +75,13 @@ void AFakeSpotLightActor::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 			if (UPerspectiveDecalComponent* PerpectiveDecalComp = Cast<UPerspectiveDecalComponent>(Component))
 			{
 				DecalComponentPre = DecalComponent;  // 기존 native 컴포넌트 백업
-				DecalComponent->DetachFromParent();  // 부모에서 분리
+				DecalComponent->DetachFromParent(true);  // 부모에서 분리
 				DecalComponent = PerpectiveDecalComp;  // 새로 로드된 컴포넌트로 교체
 			}
 			else if (UBillboardComponent* BillboardCompTemp = Cast<UBillboardComponent>(Component))
 			{
 				BillboardCompPre = BillboardComponent;  // 기존 native 컴포넌트 백업
-				BillboardComponent->DetachFromParent();  // 부모에서 분리
+				BillboardComponent->DetachFromParent(true);  // 부모에서 분리
 				BillboardComponent = BillboardCompTemp;  // 새로 로드된 컴포넌트로 교체
 			}
 		}

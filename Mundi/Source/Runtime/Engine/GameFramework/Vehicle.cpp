@@ -7,6 +7,7 @@
 #include "Landmine.h"
 #include "PhysScene.h"
 #include "SkeletalMeshComponent.h"
+#include "LuaScriptComponent.h"
 
 class ALandmine;
 
@@ -69,6 +70,9 @@ AVehicle::AVehicle()
     Driver->SetupAttachment(ChassisMesh);
     Driver->SetRelativeLocation(FVector(-1.43f, 0.0f, 0.27f));
     Driver->SetSkeletalMesh(GDataDir + "/Brian/Brian.fbx");
+
+    ScriptComponent = CreateDefaultSubobject<ULuaScriptComponent>("GameModeLuaScript");
+    ScriptComponent->ScriptFilePath = GDataDir + "/Scripts/Vehicle.lua";
 }
 
 AVehicle::~AVehicle()
