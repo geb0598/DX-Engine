@@ -72,6 +72,9 @@ protected:
     void LeanRightPressed();
     void LeanRightReleased();
 
+    void JumpPressed();
+    void JumpReleased();
+
     void UpdateDriverAnimation(float DeltaSeconds);
 
     // SpaceBar 처리

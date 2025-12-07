@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "VehicleMovementComponent.h"
 #include "SceneComponent.h"
 #include "PrimitiveComponent.h"
@@ -59,6 +59,7 @@ UVehicleMovementComponent::UVehicleMovementComponent()
     , SuspensionBatchQuery(nullptr)
     , BatchQueryResults(nullptr)
     , BatchQueryTouchBuffer(nullptr)
+    , WheelQueryResults(nullptr)
 {
     //VehicleWheels.SetNum(MAX_WHEELS);
     //for (int32 i = 0; i < MAX_WHEELS; i++)
@@ -77,11 +78,11 @@ UVehicleMovementComponent::UVehicleMovementComponent()
     //}
     VehicleWheel0 = NewObject<UVehicleWheel>();
     VehicleWheel0->SteerAngle = 45.0f;
-    VehicleWheel0->WheelOffset = FVector(0.62f, 0.0f, -0.7f);
+    VehicleWheel0->WheelOffset = FVector(0.75f, 0.0f, -0.5f);
 
     VehicleWheel1 = NewObject<UVehicleWheel>();
     VehicleWheel1->SteerAngle = 0.0f;
-    VehicleWheel1->WheelOffset = FVector(-0.85f, 0.0f, -0.7f);
+    VehicleWheel1->WheelOffset = FVector(-0.8f, 0.0f, -0.5f);
 
     // @todo 현재 하드코딩된 바퀴 설정 사용
     WheelSetups.SetNum(MAX_WHEELS);
@@ -150,15 +151,18 @@ void UVehicleMovementComponent::SetupVehicle()
 {
     ReleaseVehicle();
 
-    WheelSetups[0].BoneOffset = VehicleWheel0->WheelOffset;
-    WheelSetups[1].BoneOffset = VehicleWheel1->WheelOffset;
-
     PxRigidDynamic* RigidActor = GetValidDynamicActor();
     if (!RigidActor)
     {
         return;
     }
 
+    RigidActor->setCMassLocalPose(PxTransform(U2PVector(COM)));
+
+    // bone Offset은 차체 무게중심에 대한 상대좌표로 저장해야함(setWheelCentreOffset 함수 자체가 인자를 로컬로 받음)
+    WheelSetups[0].BoneOffset = VehicleWheel0->WheelOffset - COM;
+    WheelSetups[1].BoneOffset = VehicleWheel1->WheelOffset - COM;
+  
     const float OldMass = RigidActor->getMass();
     const float NewMass = VEHICLE_MASS; 
     
@@ -181,10 +185,21 @@ void UVehicleMovementComponent::SetupVehicle()
     SetupFrictionPairs();
     
     SetupBatchQuery();
+
+    WheelQueryResults = new PxWheelQueryResult[MAX_WHEELS];
+    VehicleQueryResult->wheelQueryResults = WheelQueryResults;
+    VehicleQueryResult->nbWheelQueryResults = MAX_WHEELS;
 }
 
 void UVehicleMovementComponent::ReleaseVehicle()
 {
+    if (WheelQueryResults)
+    {
+        delete[] WheelQueryResults;
+        WheelQueryResults = nullptr;
+    }
+
+
     if (PVehicleDrive)
     {
         PVehicleDrive->free(); PVehicleDrive = nullptr;
@@ -253,10 +268,11 @@ void UVehicleMovementComponent::SetupWheelSimulationData(physx::PxRigidDynamic* 
     const int32 WheelShapeStartIndex = TotalShapes - MAX_WHEELS;
     assert(WheelShapeStartIndex >= 0);
 
+
     PWheelsSimData = PxVehicleWheelsSimData::allocate(MAX_WHEELS);
 
     const float TotalMass = RigidActor->getMass();
-    const PxVec3 BodyCMOffset = RigidActor->getCMassLocalPose().p;
+    const PxVec3 BodyCMOffset = U2PVector(COM);
 
     PxF32 SprungMasses[MAX_WHEELS];
     PxVec3 WheelOffsets[MAX_WHEELS];
@@ -301,6 +317,8 @@ void UVehicleMovementComponent::SetupWheelSimulationData(physx::PxRigidDynamic* 
             PWheelsSimData->setWheelShapeMapping(i, WheelShapeStartIndex + i);
         }
     }
+
+
 }
 
 void UVehicleMovementComponent::SetupDriveSimulationData(physx::PxRigidDynamic* RigidActor)
@@ -595,7 +613,7 @@ void UVehicleMovementComponent::UpdateVehicleSimulation(float DeltaTime)
     }
 
     PxVehicleWheels* Vehicles[] = { PVehicleDrive };
-    PxVehicleUpdates(DeltaTime, Gravity, *FrictionPairs, 1, Vehicles, nullptr);
+    PxVehicleUpdates(DeltaTime, Gravity, *FrictionPairs, 1, Vehicles, VehicleQueryResult);
 
     PxRigidDynamic* Actor = PVehicleDrive->getRigidDynamicActor();
     if (Actor && Actor->isSleeping())
@@ -678,6 +696,7 @@ void UVehicleMovementComponent::DownForceIfDecelerate(float DeltaTime)
         PxRigidDynamic* Actor = PVehicleDrive->getRigidDynamicActor();
         if (!IsVehicleInAir() &&
             PInputData->getAnalogAccel() < 0.1f &&
+            // std::abs(PInputData->getAnalogSteer()) > 0.1f &&
             Actor->getLinearVelocity().magnitudeSquared() > DownForceSpeed)
         {
             PxTransform CarPose = Actor->getGlobalPose();
@@ -685,21 +704,37 @@ void UVehicleMovementComponent::DownForceIfDecelerate(float DeltaTime)
             PxVec3 ForwardPos = CarPose.q.getBasisVector0();
             PxVec3 WheelPos;
 
+            float SuspensionScale = 1.0f;
             // 전진시 뒷바퀴 누르기
             if (PVehicleDrive->computeForwardSpeed() > 0.0f)
             {
                 // AddForceAtPos함수는 월드 좌표를 입력으로 받고 액터의 월드 좌표랑 비교해서 힘을 가함. 그래서 로컬 좌표계의 바퀴를 월드 좌표로 변환해야함.
                 WheelPos = CarPose.transform(PVehicleDrive->mWheelsSimData.getWheelCentreOffset(1));
+
+                // 서스펜션이 이미 많이 압축된 상태에서 다운포스를 주면 미친듯이 떨리기 시작함
+                // 현재 서스펜션 눌린 정도랑 MaxCompression 비교해서 눌린 정도에 따라 힘을 조절할 것임
+                float Compression = WheelQueryResults[1].suspJounce;
+                float MaxCompression = VehicleWheel1->MaxSuspensionCompression;
+
+                // 많이 눌릴수록 1에 가까워짐 -> 1에서 빼줘야 많이 눌렸을때 적은 힘 적용
+                SuspensionScale = 1.0f - FMath::Clamp(Compression / MaxCompression, 0.0f, 1.0f);
             }
             // 후진시 앞바퀴 누르기
             else
             {
                 WheelPos = CarPose.transform(PVehicleDrive->mWheelsSimData.getWheelCentreOffset(0));
+
+                float Compression = WheelQueryResults[0].suspJounce;
+                float MaxCompression = VehicleWheel0->MaxSuspensionCompression;
+
+                SuspensionScale = 1.0f - FMath::Clamp(Compression / MaxCompression, 0.0f, 1.0f);
             }
 
             PxVec3 UpVector = CarPose.q.getBasisVector2();
 
-            float TargetForceMagnitude = Actor->getMass() * 9.81f * DownForceFactor;
+            
+
+            float TargetForceMagnitude = Actor->getMass() * 9.81f * DownForceFactor * SuspensionScale;
 
             CurrentForceMagnitude = FMath::FInterpTo(CurrentForceMagnitude, TargetForceMagnitude, DeltaTime, 0.5f);
 

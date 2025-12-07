@@ -1,0 +1,48 @@
+{
+  "ObjectName" : "스태틱 메시_0",
+  "OwnedComponents" : [{
+      "CollisionChannel" : 1,
+      "CollisionEnabled" : 3,
+      "CollisionMask" : -1,
+      "Id" : 2155,
+      "MaterialSlots" : [{
+          "AssetPath" : "Barrier.001",
+          "Type" : "UMaterial"
+        }, {
+          "AssetPath" : "Barrier.001",
+          "Type" : "UMaterial"
+        }],
+      "ObjectName" : "UStaticMeshComponent_193",
+      "ParentId" : 0,
+      "PhysicalMaterial" : "",
+      "RelativeLocation" : [71.568962, -125.259239, 0.077118],
+      "RelativeRotationEuler" : [0.000000, -0.000000, 90.000008],
+      "RelativeScale" : [3.000000, 3.000000, 2.000000],
+      "StaticMesh" : "Data/Model/RotateBarrier/RotateBarrier.obj",
+      "Type" : "UStaticMeshComponent",
+      "bBlockComponent" : false,
+      "bCastShadows" : true,
+      "bGenerateOverlapEvents" : true,
+      "bHiddenInGame" : false,
+      "bIsActive" : true,
+      "bIsVisible" : true,
+      "bSimulatePhysics" : false,
+      "bTickEnabled" : true,
+      "bTickInEditor" : false
+    }, {
+      "ObjectName" : "URotatingMovementComponent_4",
+      "PivotTranslation" : [0.000000, 0.000000, 0.000000],
+      "RotationRate" : [0.000000, 0.000000, 180.000000],
+      "Type" : "URotatingMovementComponent",
+      "bHiddenInGame" : false,
+      "bIsActive" : true,
+      "bRotationInLocalSpace" : true,
+      "bTickEnabled" : true,
+      "bTickInEditor" : false
+    }],
+  "RootComponentId" : 2155,
+  "Tag" : "",
+  "Type" : "AStaticMeshActor",
+  "bActorHiddenInGame" : false,
+  "bActorIsActive" : true
+}

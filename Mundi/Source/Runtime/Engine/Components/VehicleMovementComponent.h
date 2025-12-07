@@ -81,7 +81,7 @@ public:
     FVector COM = FVector(0, 0, 0.1);
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "중력에 의한 Roll 토크 복원력에 대한 계수입니다")
-    float GravityTorqueInverseFactor = 3.0f;
+    float GravityTorqueInverseFactor = 4.0f;
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooptip = "원심력에 의한 Roll 토크 복원력에 대한 계수입니다")
     float CentrifugalTorqueInverseFactor = 1.0f;
@@ -91,7 +91,7 @@ public:
 
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "최대 복원력에 곱해지는 계수입니다")
-    float MaxTorqueLimit = 3.0f;
+    float MaxTorqueLimit = 10.0f;
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "설정된 Degree부터 복원력이 점점 감소합니다")
     float TorqueDownDegree = 20.0f;
@@ -106,7 +106,7 @@ public:
     float DownForceSpeed = 20.0f;
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "회전 도중 엑셀을 뗄 때 바퀴가 들리지 않게 눌러주는 힘을 조절합니다")
-    float DownForceFactor = 3.0f;
+    float DownForceFactor = 2.0f;
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "Q, E 키 입력 시 기울어지는 정도를 조절합니다")
     float UserTorqueFactor = 1500.0f;
@@ -243,4 +243,8 @@ private:
 
     /** [더미 버퍼] "TouchBuffer is NULL" 에러 방지용 (사용은 안함) */
     physx::PxRaycastHit* BatchQueryTouchBuffer;
+
+    physx::PxVehicleWheelQueryResult VehicleQueryResult[1];
+
+    physx::PxWheelQueryResult* WheelQueryResults;
 };
