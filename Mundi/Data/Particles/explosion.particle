@@ -123,13 +123,13 @@
                   "Points" : [],
                   "bIsLooped" : false
                 },
-                "MaxValue" : [16.000000, 16.000000, 16.000000],
+                "MaxValue" : [20.000000, 20.000000, 20.000000],
                 "MinCurve" : {
                   "LoopKeyOffset" : 0.000000,
                   "Points" : [],
                   "bIsLooped" : false
                 },
-                "MinValue" : [16.000000, 16.000000, 16.000000],
+                "MinValue" : [20.000000, 20.000000, 20.000000],
                 "ParameterDefaultValue" : [0.000000, 0.000000, 0.000000],
                 "ParameterName" : "",
                 "Type" : 1

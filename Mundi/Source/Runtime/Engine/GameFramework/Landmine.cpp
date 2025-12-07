@@ -1,5 +1,7 @@
 ﻿#include "pch.h"
 #include "Landmine.h"
+
+#include "ParticleSystemComponent.h"
 #include "StaticMeshComponent.h"
 #include "PrimitiveComponent.h"
 
@@ -8,15 +10,34 @@ ALandmine::ALandmine()
     ObjectName = "Landmine";
 
     MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>("MeshComponent");
-    
-    MeshComponent->SetStaticMesh(GDataDir + "/cube-tex.obj");
-    
+    MeshComponent->SetStaticMesh(GDataDir + "/Model/Landmine/Landmine.obj");
     MeshComponent->SetSimulatePhysics(false); 
     MeshComponent->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-    
     MeshComponent->OnComponentHit.AddDynamic(this, &ALandmine::OnHit);
-
     RootComponent = MeshComponent;
+
+    FlashingEffect = CreateDefaultSubobject<UParticleSystemComponent>("");
+    FlashingEffect->ObjectName = "FlashingEffect";
+    FlashingEffect->SetupAttachment(MeshComponent);
+    FlashingEffect->SetRelativeLocation(FVector(0, 0, 0.75f));
+    FlashingEffect->bAutoActivate = true;
+
+    UParticleSystem* FlashingTemplate = UResourceManager::GetInstance().Load<UParticleSystem>(GDataDir + "/Particles/MineFlash.particle");
+    if (FlashingTemplate)
+    {
+        FlashingEffect->SetTemplate(FlashingTemplate);
+    }
+
+    ExplosionEffect = CreateDefaultSubobject<UParticleSystemComponent>("");
+    ExplosionEffect->ObjectName = "ExplosionEffect";
+    ExplosionEffect->SetupAttachment(RootComponent);
+    ExplosionEffect->bAutoActivate = false;
+
+    UParticleSystem* ExplosionTemplate = UResourceManager::GetInstance().Load<UParticleSystem>(GDataDir + "/Particles/explosion.particle");
+    if (ExplosionTemplate)
+    {
+        ExplosionEffect->SetTemplate(ExplosionTemplate);
+    }
 
     bIsActive = true;
 }
@@ -62,6 +83,11 @@ void ALandmine::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimiti
 void ALandmine::Activate()
 {
     bIsActive = true;
+
+    if (ExplosionEffect)
+    {
+        ExplosionEffect->DeactivateSystem(); 
+    }
 }
 
 void ALandmine::Deactivate()
@@ -69,6 +95,13 @@ void ALandmine::Deactivate()
     if (!bIsActive) return;
 
     bIsActive = false;
+    UE_LOG("Explosion");
+
+    if (ExplosionEffect)
+    {
+        UE_LOG("Effect");
+        ExplosionEffect->ActivateSystem();
+    }
 }
 
 void ALandmine::DuplicateSubObjects()
@@ -82,7 +115,17 @@ void ALandmine::DuplicateSubObjects()
             MeshComponent = Mesh;
             MeshComponent->OnComponentHit.Clear(); // 중복 방지
             MeshComponent->OnComponentHit.AddDynamic(this, &ALandmine::OnHit);
-            break;
+        }
+        else if (UParticleSystemComponent* Particle = Cast<UParticleSystemComponent>(Component))
+        {
+            if (Particle->ObjectName == "ExplosionEffect")
+            {
+                ExplosionEffect = Particle;
+            }
+            else if (Particle->ObjectName == "FlashingEffect")
+            {
+                FlashingEffect = Particle;
+            }
         }
     }
 }
@@ -98,6 +141,21 @@ void ALandmine::Serialize(const bool bInIsLoading, JSON& InOutHandle)
         if (MeshComponent)
         {
              MeshComponent->OnComponentHit.AddDynamic(this, &ALandmine::OnHit);
+        }
+
+        for (UActorComponent* Component : OwnedComponents)
+        {
+            if (UParticleSystemComponent* Particle = Cast<UParticleSystemComponent>(Component))
+            {
+                if (Particle->ObjectName == "ExplosionEffect")
+                {
+                    ExplosionEffect = Particle;
+                }
+                else if (Particle->ObjectName == "FlashingEffect")
+                {
+                    FlashingEffect = Particle;
+                }
+            }
         }
     }
 }

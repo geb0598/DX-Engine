@@ -52,4 +52,8 @@ protected:
 
 protected:
     UStaticMeshComponent* MeshComponent;
+
+    UParticleSystemComponent* FlashingEffect;
+
+    UParticleSystemComponent* ExplosionEffect;
 };
