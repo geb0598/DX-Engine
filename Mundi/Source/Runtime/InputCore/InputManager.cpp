@@ -109,6 +109,12 @@ void UInputManager::Update()
         }
     }
 
+    // 연결 완료, State 폴링해야함(패드는 이벤트가 아니라 폴링)
+    if (XInputGetState(0, &GamepadState) == ERROR_SUCCESS)
+    {
+        ProcessGamePad();
+    }
+
     memcpy(PreviousMouseButtons, MouseButtons, sizeof(MouseButtons));
     memcpy(PreviousKeyStates, KeyStates, sizeof(KeyStates));
 }
@@ -354,20 +360,69 @@ bool UInputManager::IsMouseButtonReleased(EMouseButton Button) const
 
 bool UInputManager::IsKeyDown(int KeyCode) const
 {
-    if (KeyCode < 0 || KeyCode >= 256) return false; 
-    return KeyStates[KeyCode];
+    if (KeyCode >= 0 && KeyCode < 256)
+    {
+        return KeyStates[KeyCode];
+    }
+    else if (KeyCode >= GAMEPAD_BUTTON_OFFSET && KeyCode < GAMEPAD_BUTTON_COUNT + GAMEPAD_BUTTON_OFFSET)
+    {
+        int Index = (int)KeyCode - GAMEPAD_BUTTON_OFFSET;
+        return GamepadStates[Index];
+    }
+    else
+    {
+        return false;
+    }
+    
 }
 
 bool UInputManager::IsKeyPressed(int KeyCode) const
 {
-    if (KeyCode < 0 || KeyCode >= 256) return false;
-    return KeyStates[KeyCode] && !PreviousKeyStates[KeyCode];
+    if (KeyCode >= 0 && KeyCode < 256)
+    {
+        return KeyStates[KeyCode] && !PreviousKeyStates[KeyCode];
+    }
+    else if (KeyCode >= GAMEPAD_BUTTON_OFFSET && KeyCode < GAMEPAD_BUTTON_COUNT + GAMEPAD_BUTTON_OFFSET)
+    {
+        int Index = (int)KeyCode - GAMEPAD_BUTTON_OFFSET;
+        return GamepadStates[Index] && !PreviousGamepadStates[Index];
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool UInputManager::IsKeyReleased(int KeyCode) const
 {
-    if (KeyCode < 0 || KeyCode >= 256) return false;
-    return !KeyStates[KeyCode] && PreviousKeyStates[KeyCode];
+    if (KeyCode >= 0 && KeyCode < 256)
+    {
+        return !KeyStates[KeyCode] && PreviousKeyStates[KeyCode];
+    }
+    else if (KeyCode >= GAMEPAD_BUTTON_OFFSET && KeyCode < GAMEPAD_BUTTON_COUNT + GAMEPAD_BUTTON_OFFSET)
+    {
+        int Index = (int)KeyCode - GAMEPAD_BUTTON_OFFSET;
+        return !GamepadStates[Index] && PreviousGamepadStates[Index];
+    }
+    else
+    {
+        return false;
+    }
+}
+
+float UInputManager::GetGamepadAxisValue(int KeyCode) const
+{
+    if (KeyCode < GAMEPAD_AXIS_OFFSET || KeyCode >= GAMEPAD_AXIS_COUNT + GAMEPAD_AXIS_OFFSET)
+    {
+        return false;
+    }
+
+    return GamepadAxisStates[KeyCode - GAMEPAD_AXIS_OFFSET];
+}
+
+FStickInput UInputManager::GetRightStickValue() const
+{
+    return RightStick;
 }
 
 void UInputManager::UpdateMousePosition(int X, int Y)
@@ -390,6 +445,67 @@ void UInputManager::UpdateKeyState(int KeyCode, bool bPressed)
     {
         KeyStates[KeyCode] = bPressed;
     }
+}
+
+void UInputManager::ProcessGamePad()
+{
+    memcpy(PreviousGamepadStates, GamepadStates, sizeof(GamepadStates));
+
+    WORD Buttons = GamepadState.Gamepad.wButtons;
+
+    GamepadStates[(int)EGamepadButton::DPAD_UP - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_DPAD_UP) != 0;
+    GamepadStates[(int)EGamepadButton::DPAD_DOWN - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_DPAD_DOWN) != 0;
+    GamepadStates[(int)EGamepadButton::DPAD_LEFT - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_DPAD_LEFT) != 0;
+    GamepadStates[(int)EGamepadButton::DPAD_RIGHT - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0;
+
+    GamepadStates[(int)EGamepadButton::START - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_START) != 0;
+    GamepadStates[(int)EGamepadButton::BACK - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_BACK) != 0;
+
+    GamepadStates[(int)EGamepadButton::L_THUMB - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_LEFT_THUMB) != 0;
+    GamepadStates[(int)EGamepadButton::R_THUMB - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_RIGHT_THUMB) != 0;
+    GamepadStates[(int)EGamepadButton::L_SHOULDER - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_LEFT_SHOULDER) != 0;
+    GamepadStates[(int)EGamepadButton::R_SHOULDER - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_RIGHT_SHOULDER) != 0;
+
+    GamepadStates[(int)EGamepadButton::A - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_A) != 0;
+    GamepadStates[(int)EGamepadButton::B - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_B) != 0;
+    GamepadStates[(int)EGamepadButton::X - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_X) != 0;
+    GamepadStates[(int)EGamepadButton::Y - GAMEPAD_BUTTON_OFFSET] = (Buttons & XINPUT_GAMEPAD_Y) != 0;
+
+    GamepadAxisStates[(int)EGamepadAxis::LSTICK_X - GAMEPAD_AXIS_OFFSET] = NormalizeGamepadStick(GamepadState.Gamepad.sThumbLX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+    GamepadAxisStates[(int)EGamepadAxis::LSTICK_Y - GAMEPAD_AXIS_OFFSET] = NormalizeGamepadStick(GamepadState.Gamepad.sThumbLY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+    GamepadAxisStates[(int)EGamepadAxis::RSTICK_X - GAMEPAD_AXIS_OFFSET] = NormalizeGamepadStick(GamepadState.Gamepad.sThumbRX, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+    GamepadAxisStates[(int)EGamepadAxis::RSTICK_Y - GAMEPAD_AXIS_OFFSET] = NormalizeGamepadStick(GamepadState.Gamepad.sThumbRY, XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE);
+
+    GamepadAxisStates[(int)EGamepadAxis::LTRIGGER - GAMEPAD_AXIS_OFFSET] = NormalizeGamepadTrigger(GamepadState.Gamepad.bLeftTrigger, XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
+    GamepadAxisStates[(int)EGamepadAxis::RTRIGGER - GAMEPAD_AXIS_OFFSET] = NormalizeGamepadTrigger(GamepadState.Gamepad.bRightTrigger, XINPUT_GAMEPAD_TRIGGER_THRESHOLD);
+
+    LeftStick = FStickInput(GamepadAxisStates[(int)EGamepadAxis::LSTICK_X - GAMEPAD_AXIS_OFFSET], GamepadAxisStates[(int)EGamepadAxis::LSTICK_Y - GAMEPAD_AXIS_OFFSET]);
+    RightStick = FStickInput(GamepadAxisStates[(int)EGamepadAxis::RSTICK_X - GAMEPAD_AXIS_OFFSET], GamepadAxisStates[(int)EGamepadAxis::RSTICK_Y - GAMEPAD_AXIS_OFFSET]);
+    
+}
+
+float UInputManager::NormalizeGamepadStick(SHORT RawValue, SHORT DeadZone)
+{
+    if (abs(RawValue) < DeadZone)
+    {
+        return 0.0f;
+    }
+    
+    float Normalized = (float)RawValue / SHORT_MAX;
+
+    return FMath::Clamp(Normalized, -1.0f, 1.0f);
+}
+
+float UInputManager::NormalizeGamepadTrigger(BYTE RawValue, BYTE DeadZone)
+{
+    if (RawValue < DeadZone)
+    {
+        return 0.0f;
+    }
+
+    float Normalized = (float)RawValue / BYTE_MAX;
+
+    return FMath::Clamp(Normalized, 0.0f, 1.0f);
 }
 
 FVector2D UInputManager::GetScreenSize() const

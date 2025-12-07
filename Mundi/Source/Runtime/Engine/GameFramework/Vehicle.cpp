@@ -197,30 +197,47 @@ void AVehicle::SetupPlayerInputComponent(UInputComponent* InInputComponent)
     // S 키: Scale -1.0 -> 후진/브레이크
     InInputComponent->BindAxis<AVehicle>("MoveForward_S", 'S', -1.0f, this, &AVehicle::MoveForward);
 
+    // LTrigger 감속 RTrigger 가속 (트리거 0~1사이로 정규화되므로 Scale곱해줌)
+    InInputComponent->BindAxis<AVehicle>("MoveForward_RTRIGGER", (int32)EGamepadAxis::RTRIGGER, 1.0f, this, &AVehicle::MoveForward);
+    InInputComponent->BindAxis<AVehicle>("MoveForward_LTRIGGER", (int32)EGamepadAxis::LTRIGGER, -1.0f, this, &AVehicle::MoveForward);
+
     // [축 바인딩] A/D로 조향
     // D 키: Scale 1.0 -> 우회전
     InInputComponent->BindAxis<AVehicle>("MoveRight_D", 'D', 1.0f, this, &AVehicle::MoveRight);
     // A 키: Scale -1.0 -> 좌회전
     InInputComponent->BindAxis<AVehicle>("MoveRight_A", 'A', -1.0f, this, &AVehicle::MoveRight);
 
+    InInputComponent->BindAxis<AVehicle>("MoveRight_LSTICK_X", (int32)EGamepadAxis::LSTICK_X, 1.0f, this, &AVehicle::MoveRight);
+
+
     // [축 바인딩] Q/E로 Roll
     // Q 키: Scale 1.0f -> 좌로 기울어짐
     InInputComponent->BindAxis<AVehicle>("AddTorque_Q", 'Q', 1.0f, this, &AVehicle::AddTorque);
     // A 키: Scale -1.0f -> 우로 기울어짐
     InInputComponent->BindAxis<AVehicle>("AddTorque_E", 'E', -1.0f, this, &AVehicle::AddTorque);
+
+    InInputComponent->BindAxis<AVehicle>("AddTorque_Y", (int32)EGamepadButton::Y, 1.0f, this, &AVehicle::AddTorque);
+    InInputComponent->BindAxis<AVehicle>("AddTorque_A", (int32)EGamepadButton::A, -1.0f, this, &AVehicle::AddTorque);
     
     InInputComponent->BindAction<AVehicle>("LeanLeft",  'Q', this, &AVehicle::LeanLeftPressed,  &AVehicle::LeanLeftReleased);
     InInputComponent->BindAction<AVehicle>("LeanRight", 'E', this, &AVehicle::LeanRightPressed, &AVehicle::LeanRightReleased);
+
+    InInputComponent->BindAction<AVehicle>("LeanLeft_Y", (int32)EGamepadButton::Y, this, &AVehicle::LeanLeftPressed, &AVehicle::LeanLeftReleased);
+    InInputComponent->BindAction<AVehicle>("LeanRight_A", (int32)EGamepadButton::A, this, &AVehicle::LeanRightPressed, &AVehicle::LeanRightReleased);
     
     InInputComponent->BindAction<AVehicle>("Jump", 'F', this, &AVehicle::JumpPressed, &AVehicle::JumpReleased);
+    InInputComponent->BindAction<AVehicle>("Jump", (int32)EGamepadButton::X, this, &AVehicle::JumpPressed, &AVehicle::JumpReleased);
+
 
     // [액션 바인딩] Space로 핸드브레이크
     // VK_SPACE는 0x20
     InInputComponent->BindAction<AVehicle>("Handbrake", VK_SPACE, this, &AVehicle::HandbrakePressed, &AVehicle::HandbrakeReleased);
+    InInputComponent->BindAction<AVehicle>("Handbrake", (int32)EGamepadButton::B, this, &AVehicle::HandbrakePressed, &AVehicle::HandbrakeReleased);
 
     // [액션 바인딩] Shift로 부스터
     // VK_SHIFT는 0x10
     InInputComponent->BindAction<AVehicle>("Boost", VK_SHIFT, this, &AVehicle::BoostPressed, &AVehicle::BoostReleased);
+    InInputComponent->BindAction<AVehicle>("Boost", (int32)EGamepadButton::R_SHOULDER, this, &AVehicle::BoostPressed, &AVehicle::BoostReleased);
 }
 
 void AVehicle::EjectDriver(const FVector& Impulse)

@@ -123,6 +123,7 @@ void APlayerController::ProcessPlayerInput()
 	}
 }
 
+// 게임패드 RStick도 처리하는데 일단 함수명 변경 안 함
 void APlayerController::ProcessMouseInput()
 {
 	if (!InputManager)
@@ -147,6 +148,19 @@ void APlayerController::ProcessMouseInput()
 			AddPitchInput(MouseDelta.Y * MouseSensitivity);
 		}
 	}
+
+	FStickInput RightStickValue = InputManager->GetRightStickValue();
+
+	if (RightStickValue.X != 0.0f)
+	{
+		AddYawInput(RightStickValue.X * MouseSensitivity*2);
+	}
+
+	if (RightStickValue.Y != 0.0f)
+	{
+		AddPitchInput(-RightStickValue.Y * MouseSensitivity*2);
+	}
+	
 }
 
 void APlayerController::ShowMouseCursor()

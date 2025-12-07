@@ -7,6 +7,11 @@
 #include "Vector.h"
 #include "ImGui/imgui.h"
 
+#include <Xinput.h>
+#pragma comment(lib, "xinput.lib")
+
+
+
 // 마우스 버튼 상수
 enum EMouseButton
 {
@@ -16,6 +21,45 @@ enum EMouseButton
     XButton1 = 3,
     XButton2 = 4,
     MaxMouseButtons = 5
+};
+
+struct FStickInput
+{
+    float X = 0.0f;
+    float Y = 0.0f;
+};
+
+// InputComponent에서 Keycode로 게임패드도 처리하려고 만듦
+#define GAMEPAD_BUTTON_OFFSET 1000
+#define GAMEPAD_BUTTON_COUNT 14
+enum class EGamepadButton
+{
+    DPAD_UP = GAMEPAD_BUTTON_OFFSET,
+    DPAD_DOWN,
+    DPAD_LEFT,
+    DPAD_RIGHT,
+    START,
+    BACK,
+    L_THUMB, // 왼쪽 스틱 누르기
+    R_THUMB, // 오른쪽 스틱 누르기
+    L_SHOULDER, // LB
+    R_SHOULDER, // RB
+    A,
+    B,
+    X,
+    Y,
+};
+
+#define GAMEPAD_AXIS_OFFSET 2000
+#define GAMEPAD_AXIS_COUNT 6
+enum class EGamepadAxis
+{
+    LSTICK_X = GAMEPAD_AXIS_OFFSET,
+    LSTICK_Y,
+    RSTICK_X,
+    RSTICK_Y,
+    LTRIGGER,
+    RTRIGGER,
 };
 
 class UInputManager : public UObject
@@ -53,10 +97,12 @@ public:
     bool IsMouseButtonPressed(EMouseButton Button) const; // 이번 프레임에 눌림
     bool IsMouseButtonReleased(EMouseButton Button) const; // 이번 프레임에 떼짐
 
-    // 키보드 함수들
+    // 키보드, 게임패드 함수들
     bool IsKeyDown(int KeyCode) const;
     bool IsKeyPressed(int KeyCode) const; // 이번 프레임에 눌림
     bool IsKeyReleased(int KeyCode) const; // 이번 프레임에 떼짐
+    float GetGamepadAxisValue(int KeyCode) const;
+    FStickInput GetRightStickValue() const;
 
     // 마우스 휠 함수들
     float GetMouseWheelDelta() const { return MouseWheelDelta; }
@@ -81,6 +127,10 @@ private:
     void UpdateMousePosition(int X, int Y);
     void UpdateMouseButton(EMouseButton Button, bool bPressed);
     void UpdateKeyState(int KeyCode, bool bPressed);
+    void ProcessGamePad();
+
+    float NormalizeGamepadStick(SHORT RawValue, SHORT DeadZone);
+    float NormalizeGamepadTrigger(BYTE RawValue, BYTE DeadZone);
 
     // 윈도우 핸들
     HWND WindowHandle;
@@ -109,4 +159,14 @@ private:
     // 커서 잠금 상태
     bool bIsCursorLocked = false;
     FVector2D LockedCursorPosition; // 우클릭한 위치 (기준점)
+
+    // 패드 State 확인하는 변수
+    XINPUT_STATE GamepadState;
+
+    float GamepadAxisStates[GAMEPAD_AXIS_COUNT];
+    FStickInput LeftStick;
+    FStickInput RightStick;
+
+    bool GamepadStates[GAMEPAD_BUTTON_COUNT];
+    bool PreviousGamepadStates[GAMEPAD_BUTTON_COUNT];
 };
