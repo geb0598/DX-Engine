@@ -216,25 +216,41 @@ void SMinimap::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 		EllipseGeometry->Release();
 	}
 
-	// 원형 테두리 그리기 (선택사항)
-	if (Context)
+	// 링 텍스처 그리기 (미니맵 위에 오버레이)
+	if (RingBitmap)
 	{
-		ID2D1SolidColorBrush* Brush = nullptr;
-		Context->CreateSolidColorBrush(
-			D2D1::ColorF(0.3f, 0.3f, 0.3f, 1.0f),
-			&Brush
+		// 링은 미니맵과 같은 크기로 렌더링
+		Renderer.DrawImage(
+			RingBitmap,
+			Position,
+			Size,
+			FSlateColor::White(),
+			1.0f,
+			bUseHighQualityRing  // 고품질 보간 옵션
 		);
-
-		if (Brush)
+	}
+	else
+	{
+		// 링 텍스처가 없으면 기본 원형 테두리 그리기
+		if (Context)
 		{
-			D2D1_ELLIPSE Ellipse;
-			Ellipse.point.x = Position.X + Size.X * 0.5f;
-			Ellipse.point.y = Position.Y + Size.Y * 0.5f;
-			Ellipse.radiusX = Size.X * 0.5f;
-			Ellipse.radiusY = Size.Y * 0.5f;
+			ID2D1SolidColorBrush* Brush = nullptr;
+			Context->CreateSolidColorBrush(
+				D2D1::ColorF(0.3f, 0.3f, 0.3f, 1.0f),
+				&Brush
+			);
 
-			Context->DrawEllipse(Ellipse, Brush, 2.0f);
-			Brush->Release();
+			if (Brush)
+			{
+				D2D1_ELLIPSE Ellipse;
+				Ellipse.point.x = Position.X + Size.X * 0.5f;
+				Ellipse.point.y = Position.Y + Size.Y * 0.5f;
+				Ellipse.radiusX = Size.X * 0.5f;
+				Ellipse.radiusY = Size.Y * 0.5f;
+
+				Context->DrawEllipse(Ellipse, Brush, 2.0f);
+				Brush->Release();
+			}
 		}
 	}
 
@@ -297,6 +313,30 @@ SMinimap& SMinimap::SetPlayerMarkerTexture(const FWideString& InTexturePath)
 		if (Renderer)
 		{
 			PlayerMarkerBitmap = Renderer->LoadBitmapFromFile(InTexturePath);
+		}
+	}
+
+	return *this;
+}
+
+SMinimap& SMinimap::SetRingTexture(const FWideString& InTexturePath)
+{
+	RingTexturePath = InTexturePath;
+
+	// 기존 비트맵 해제
+	if (RingBitmap)
+	{
+		RingBitmap->Release();
+		RingBitmap = nullptr;
+	}
+
+	// 새 비트맵 로드
+	if (SGameHUD::Get().IsInitialized())
+	{
+		FD2DRenderer* Renderer = SGameHUD::Get().GetRenderer();
+		if (Renderer)
+		{
+			RingBitmap = Renderer->LoadBitmapFromFile(InTexturePath);
 		}
 	}
 

@@ -44,6 +44,13 @@ public:
 	SMinimap& SetPlayerMarkerTexture(const FWideString& InTexturePath);
 
 	/**
+	 * 미니맵 테두리 링 텍스처 설정
+	 * @param InTexturePath 링 이미지 경로
+	 * @return 체이닝용 참조
+	 */
+	SMinimap& SetRingTexture(const FWideString& InTexturePath);
+
+	/**
 	 * 월드 좌표 범위 설정
 	 * @param InMin 월드 최소 좌표
 	 * @param InMax 월드 최대 좌표
@@ -83,6 +90,17 @@ public:
 	}
 
 	/**
+	 * 링 텍스처 고품질 보간 사용 여부 설정
+	 * @param bUseHighQuality true면 고품질 큐빅 보간
+	 * @return 체이닝용 참조
+	 */
+	SMinimap& SetRingHighQuality(bool bUseHighQuality)
+	{
+		bUseHighQualityRing = bUseHighQuality;
+		return *this;
+	}
+
+	/**
 	 * 미니맵 줌 레벨 설정 (플레이어 주변 보이는 범위)
 	 * @param InZoomLevel 월드 단위 반경 (예: 500 = 플레이어 주변 500 유닛)
 	 * @return 체이닝용 참조
@@ -117,6 +135,12 @@ private:
 	/** 플레이어 마커 비트맵 (Direct2D) */
 	ID2D1Bitmap* PlayerMarkerBitmap = nullptr;
 
+	/** 링 텍스처 경로 */
+	FWideString RingTexturePath;
+
+	/** 링 비트맵 (Direct2D) */
+	ID2D1Bitmap* RingBitmap = nullptr;
+
 	/** 월드 좌표 범위 */
 	FVector WorldMin = FVector(-1000.f, -1000.f, 0.f);
 	FVector WorldMax = FVector(1000.f, 1000.f, 0.f);
@@ -138,4 +162,7 @@ private:
 
 	/** 초기 위치 설정 여부 */
 	bool bInitialPosSet = false;
+
+	/** 링 텍스처 고품질 보간 사용 여부 */
+	bool bUseHighQualityRing = false;
 };
