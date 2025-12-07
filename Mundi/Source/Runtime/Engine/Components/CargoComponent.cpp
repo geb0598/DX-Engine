@@ -382,20 +382,20 @@ void UCargoComponent::CollapseFrom(int32 StartIndex)
 
     if (StartIndex == 0)
     {
+        AVehicle* Vehicle = Cast<AVehicle>(GetOwner());
+        if (Vehicle)
+        {
+            FTransform VehicleTransform = Vehicle->GetRootComponent()->GetWorldTransform();
+            FVector WorldUp = FVector(0, 0, 1);
+            FVector VehicleUp = VehicleTransform.TransformVector(WorldUp);
+            VehicleUp.Normalize();
+            Vehicle->EjectDriver(VehicleUp * EjectionImpulse);
+        }
         CurrentState = ECargoState::Collapsed;
     }
 }
 
 void UCargoComponent::CollapseAll()
 {
-    AVehicle* Vehicle = Cast<AVehicle>(GetOwner());
-    if (Vehicle)
-    {
-        FTransform VehicleTransform = Vehicle->GetRootComponent()->GetWorldTransform();
-        FVector WorldUp = FVector(0, 0, 1);
-        FVector VehicleUp = VehicleTransform.TransformVector(WorldUp);
-        VehicleUp.Normalize();
-        Vehicle->EjectDriver(VehicleUp * EjectionImpulse);
-    }
     CollapseFrom(0);
 }
