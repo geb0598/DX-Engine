@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "CargoComponent.h"
 
+#include "PhysScene.h"
 #include "StaticMeshComponent.h"
 #include "Vehicle.h"
 
@@ -44,12 +45,22 @@ void UCargoComponent::TickComponent(float DeltaSeconds)
         return;
     }
 
-    FTransform CompTransform = GetWorldTransform();
-    FVector WorldUp = FVector(0, 0, 1);
-    FVector CompUp = CompTransform.TransformVector(WorldUp);
-    CompUp.Normalize();
+    CheckBoxInteraction();
 
-    float LeanAngle = RadiansToDegrees(std::acos(FVector::Dot(CompUp, WorldUp)));
+    if (CurrentState == ECargoState::Collapsed)
+    {
+        return;
+    }
+
+    FTransform CompTransform = GetWorldTransform();
+
+    FVector WorldGravityDir = FVector(0, 0, -1);
+
+    FTransform InvTransform = CompTransform.Inverse();
+    FVector LocalGravityDir = InvTransform.TransformVector(WorldGravityDir);
+
+    float DotUp = -LocalGravityDir.Z; 
+    float LeanAngle = RadiansToDegrees(std::acos(FMath::Clamp(DotUp, -1.0f, 1.0f)));
 
     if (LeanAngle > CriticalAngle)
     {
@@ -57,8 +68,8 @@ void UCargoComponent::TickComponent(float DeltaSeconds)
         return;
     }
 
-    float PitchInput = CompUp.X;
-    float RollInput = CompUp.Y;
+    float PitchInput = LocalGravityDir.X;
+    float RollInput = LocalGravityDir.Y;
 
     PitchInput *= PitchSensitivity;
     RollInput *= RollSensitivity;
@@ -254,6 +265,56 @@ void UCargoComponent::InitializeCargo(int32 BoxCount)
 
     ValidCargoCount = CargoBoxes.Num();
     CurrentState = ECargoState::Stable;
+}
+
+void UCargoComponent::CheckBoxInteraction()
+{
+AActor* Owner = GetOwner();
+    if (!Owner) return;
+
+    UWorld* World = GetWorld();
+    if (!World) return;
+
+    FPhysScene* PhysScene = World->GetPhysicsScene();
+    if (!PhysScene) return;
+
+    FVector ActorForward = Owner->GetActorRotation().GetForwardVector();
+
+    for (int32 i = 0; i < ValidCargoCount; ++i)
+    {
+        UStaticMeshComponent* BoxComp = CargoBoxes[i];
+        if (!BoxComp || !BoxComp->GetStaticMesh()) continue;
+
+        FTransform BoxTransform = BoxComp->GetWorldTransform();
+        FVector BoxLocation = BoxTransform.Translation; // 현재 위치
+        FQuat BoxRotation = BoxTransform.Rotation;
+        FVector BoxScale = BoxTransform.Scale3D;
+
+        FAABB LocalBound = BoxComp->GetStaticMesh()->GetLocalBound();
+        FVector BoxSize = LocalBound.Max - LocalBound.Min;
+        FVector HalfExtent = BoxSize * 0.5f * BoxScale;
+
+        HalfExtent *= SweepExtentScale;
+
+        FVector SweepStart = BoxLocation;
+        FVector SweepEnd = BoxLocation + ActorForward * 0.1f; 
+
+        FHitResult Hit;
+        bool bHit = PhysScene->SweepSingleBox(
+            SweepStart,     // 시작
+            SweepEnd,       // 끝 (진행 방향으로 살짝 이동)
+            HalfExtent,     // 박스 크기
+            BoxRotation,    // 회전
+            Hit,         // 결과
+            Owner           // IgnoreActor: 차량(Owner) 및 그 부속물(화물 포함)은 모두 무시
+        );
+
+        if (bHit && Hit.Actor.Get())
+        {
+            CollapseFrom(i);
+            break;
+        }
+    }
 }
 
 // ====================================================================
