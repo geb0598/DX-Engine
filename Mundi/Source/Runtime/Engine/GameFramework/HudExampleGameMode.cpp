@@ -14,6 +14,7 @@
 #include "GameUI/SGradientBox.h"
 #include "GameUI/SBorderBox.h"
 #include "GameUI/SMinimap.h"
+#include "GameUI/SPanel.h"
 #include "PlayerController.h"
 #include "CargoComponent.h"
 
@@ -87,14 +88,14 @@ void AHudExampleGameMode::BeginPlay()
 
 	// 우하단 속도/기어/RPM UI는 제거됨 (왼쪽 하단 차량 정보 패널로 대체)
 
-	// 박스 아이콘
+	// 박스 아이콘 (왼쪽 하단으로 이동)
 	BoxesIcon = MakeShared<SImage>();
 	BoxesIcon->SetTexture(L"Data/Textures/Dumb/Box.png");
 
 	SGameHUD::Get().AddWidget(BoxesIcon)
-		.SetAnchor(1.0f, 1.0f)  // 우하단
-		.SetPivot(1.0f, 1.0f)   // 우하단 기준
-		.SetOffset(-250.f, -80.f)  // 우하단에서 왼쪽, 위로 오프셋
+		.SetAnchor(0.0f, 1.0f)  // 좌하단
+		.SetPivot(0.0f, 1.0f)   // 좌하단 기준
+		.SetOffset(20.f, -300.f)  // 미니맵, 차량 정보 위
 		.SetSize(80.f, 80.f);
 
 	// "x BOXES LEFT" 텍스트
@@ -102,12 +103,12 @@ void AHudExampleGameMode::BeginPlay()
 	BoxesLeftText->SetTexture(L"Data/Textures/Dumb/Boxesleft.png");
 
 	SGameHUD::Get().AddWidget(BoxesLeftText)
-		.SetAnchor(1.0f, 1.0f)  // 우하단
-		.SetPivot(1.0f, 1.0f)   // 우하단 기준
-		.SetOffset(-120.f, -100.f)  // 박스 아이콘 오른쪽
+		.SetAnchor(0.0f, 1.0f)  // 좌하단
+		.SetPivot(0.0f, 1.0f)   // 좌하단 기준
+		.SetOffset(110.f, -320.f)  // 박스 아이콘 오른쪽
 		.SetSize(150.f, 40.f);
 
-	// 박스 개수 텍스트 (박스 아이콘 중앙에서 약간 오른쪽 아래)
+	// 박스 개수 텍스트 (박스 아이콘 중앙)
 	BoxesCountText = MakeShared<STextBlock>();
 	BoxesCountText->SetText(L"0")
 		.SetFontSize(27.f)
@@ -117,10 +118,10 @@ void AHudExampleGameMode::BeginPlay()
 		.SetVAlign(ETextVAlign::Center);
 
 	SGameHUD::Get().AddWidget(BoxesCountText)
-		.SetAnchor(1.0f, 1.0f)
-		.SetPivot(1.0f, 1.0f)  // 우하단 기준 (박스 아이콘과 동일)
-		.SetOffset(-225.f, -65.f)  // 박스 아이콘에서 오른쪽(+40), 아래(+40) 이동
-		.SetSize(80.f, 80.f);  // 박스 아이콘과 동일한 크기
+		.SetAnchor(0.0f, 1.0f)  // 좌하단
+		.SetPivot(0.0f, 1.0f)   // 좌하단 기준
+		.SetOffset(45.f, -285.f)  // 박스 아이콘 중앙
+		.SetSize(80.f, 80.f);
 
 	// "REACH HOME" 배경 그라데이션 (상단 중앙)
 	ReachHomeBg = MakeShared<SGradientBox>();
@@ -144,63 +145,70 @@ void AHudExampleGameMode::BeginPlay()
 		.SetSize(160.f, 30.f);  // 크기 증가
 
 	// ─────────────────────────────────────────────────
-	// 차량 정보 패널 (왼쪽 하단)
+	// 카트 이미지 (좌하단) - 텍스트보다 먼저 그려야 텍스트가 위에 보임
 	// ─────────────────────────────────────────────────
 
-	// 배경 박스
-	VehicleInfoBg = MakeShared<SBorderBox>();
-	VehicleInfoBg->SetBackgroundColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.7f))  // 반투명 검정
-		.SetBorderColor(FSlateColor(1.0f, 1.0f, 1.0f, 0.4f))  // 반투명 흰색 테두리
-		.SetBorderThickness(2.0f)
-		.SetCornerRadius(8.0f);
+	CartImage = MakeShared<SImage>();
+	CartImage->SetTexture(L"Data/Textures/Dumb/CartPanel.png")
+		.SetRotation(-10.f);  // 왼쪽으로 15도 회전
 
-	SGameHUD::Get().AddWidget(VehicleInfoBg)
-		.SetAnchor(0.0f, 1.0f)  // 왼쪽 하단
-		.SetPivot(0.0f, 1.0f)   // 왼쪽 하단 기준
-		.SetOffset(20.f, -20.f)  // 왼쪽, 아래에서 20픽셀 안쪽
-		.SetSize(200.f, 100.f);
+	SGameHUD::Get().AddWidget(CartImage)
+		.SetAnchor(0.0f, 1.0f)  // 좌하단
+		.SetPivot(0.0f, 1.0f)   // 좌하단 기준
+		.SetOffset(-50.f, -20.f)  // 회전으로 인한 공백 보정 (왼쪽으로 더 밀기)
+		.SetSize(400.f, 300.f);   // 카트 이미지 크기
+
+	// ─────────────────────────────────────────────────
+	// 차량 정보 (카트 이미지 위에 표시)
+	// ─────────────────────────────────────────────────
+
+	// 차량 정보 패널 (텍스트들을 묶어서 회전)
+	VehicleInfoPanel = MakeShared<SPanel>();
+	VehicleInfoPanel->SetRotation(-10.f);  // 패널 전체를 기울임
 
 	// 속도 텍스트
 	VehicleSpeedText = MakeShared<STextBlock>();
 	VehicleSpeedText->SetText(L"0 km/h")
-		.SetFontSize(28.f)
+		.SetFontSize(24.f)
 		.SetColor(FSlateColor::White())
 		.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor::Black());
-
-	SGameHUD::Get().AddWidget(VehicleSpeedText)
-		.SetAnchor(0.0f, 1.0f)
-		.SetPivot(0.0f, 1.0f)
-		.SetOffset(35.f, -80.f)  // 배경 안쪽, 위쪽
-		.SetSize(180.f, 35.f);
 
 	// RPM 텍스트
 	VehicleRpmText = MakeShared<STextBlock>();
 	VehicleRpmText->SetText(L"0 RPM")
-		.SetFontSize(18.f)
-		.SetColor(FSlateColor(0.8f, 0.8f, 0.8f, 1.f))  // 밝은 회색
+		.SetFontSize(16.f)
+		.SetColor(FSlateColor(0.8f, 0.8f, 0.8f, 1.f))
 		.SetShadow(true, FVector2D(1.f, 1.f), FSlateColor::Black());
-
-	SGameHUD::Get().AddWidget(VehicleRpmText)
-		.SetAnchor(0.0f, 1.0f)
-		.SetPivot(0.0f, 1.0f)
-		.SetOffset(35.f, -60.f)  // 속도 아래
-		.SetSize(180.f, 25.f);
 
 	// 기어 텍스트
 	VehicleGearText = MakeShared<STextBlock>();
 	VehicleGearText->SetText(L"GEAR: N")
-		.SetFontSize(20.f)
-		.SetColor(FSlateColor(1.f, 0.8f, 0.2f, 1.f))  // 노란색
+		.SetFontSize(18.f)
+		.SetColor(FSlateColor(0.4f, 0.9f, 0.35f, 1.f))
 		.SetShadow(true, FVector2D(1.f, 1.f), FSlateColor::Black());
 
-	SGameHUD::Get().AddWidget(VehicleGearText)
-		.SetAnchor(0.0f, 1.0f)
-		.SetPivot(0.0f, 1.0f)
-		.SetOffset(35.f, -30.f)  // RPM 아래
-		.SetSize(180.f, 25.f);
+	// 패널에 자식 추가 (패널 내부 상대 좌표)
+	FSlot& SpeedSlot = VehicleInfoPanel->AddChild(VehicleSpeedText);
+	SpeedSlot.Position = FVector2D(0.f, 0.f);
+	SpeedSlot.Size = FVector2D(200.f, 40.f);
+
+	FSlot& RpmSlot = VehicleInfoPanel->AddChild(VehicleRpmText);
+	RpmSlot.Position = FVector2D(0.f, 30.f);  // 40 → 25 (간격 줄임)
+	RpmSlot.Size = FVector2D(200.f, 30.f);
+
+	FSlot& GearSlot = VehicleInfoPanel->AddChild(VehicleGearText);
+	GearSlot.Position = FVector2D(0.f, 53.f);  // 70 → 50 (간격 줄임)
+	GearSlot.Size = FVector2D(200.f, 30.f);
+
+	// 패널을 HUD에 추가
+	SGameHUD::Get().AddWidget(VehicleInfoPanel)
+		.SetAnchor(0.0f, 1.0f)  // 좌하단
+		.SetPivot(0.0f, 1.0f)   // 좌하단 기준
+		.SetOffset(145.f, -122.f)  // 아래로 내림 (-180 → -160)
+		.SetSize(200.f, 100.f);  // 3개 텍스트를 담을 크기
 
 	// ─────────────────────────────────────────────────
-	// 미니맵 (왼쪽 하단, 차량 정보 패널 위)
+	// 미니맵 (오른쪽 하단)
 	// ─────────────────────────────────────────────────
 
 	Minimap = MakeShared<SMinimap>();
@@ -211,9 +219,9 @@ void AHudExampleGameMode::BeginPlay()
 		.SetZoomLevel(150.f);  // 플레이어 주변 150 유닛 반경 표시 (작을수록 확대됨)
 
 	SGameHUD::Get().AddWidget(Minimap)
-		.SetAnchor(0.0f, 1.0f)  // 왼쪽 하단
-		.SetPivot(0.0f, 1.0f)   // 왼쪽 하단 기준
-		.SetOffset(20.f, -140.f)  // 차량 정보 패널 위 (20 + 100 + 20 = 140)
+		.SetAnchor(1.0f, 1.0f)  // 오른쪽 하단
+		.SetPivot(1.0f, 1.0f)   // 오른쪽 하단 기준
+		.SetOffset(-20.f, -20.f)  // 오른쪽 하단에서 약간 안쪽
 		.SetSize(180.f, 180.f);   // 정사각형 미니맵
 }
 
@@ -259,26 +267,12 @@ void AHudExampleGameMode::EndPlay()
 			SGameHUD::Get().RemoveWidget(ReachHomeText);
 			ReachHomeText.Reset();
 		}
-		if (VehicleInfoBg)
+		if (VehicleInfoPanel)
 		{
-			SGameHUD::Get().RemoveWidget(VehicleInfoBg);
-			VehicleInfoBg.Reset();
+			SGameHUD::Get().RemoveWidget(VehicleInfoPanel);
+			VehicleInfoPanel.Reset();
 		}
-		if (VehicleSpeedText)
-		{
-			SGameHUD::Get().RemoveWidget(VehicleSpeedText);
-			VehicleSpeedText.Reset();
-		}
-		if (VehicleRpmText)
-		{
-			SGameHUD::Get().RemoveWidget(VehicleRpmText);
-			VehicleRpmText.Reset();
-		}
-		if (VehicleGearText)
-		{
-			SGameHUD::Get().RemoveWidget(VehicleGearText);
-			VehicleGearText.Reset();
-		}
+		// VehicleSpeedText, VehicleRpmText, VehicleGearText는 VehicleInfoPanel의 자식이므로 별도 정리 불필요
 		if (Minimap)
 		{
 			SGameHUD::Get().RemoveWidget(Minimap);
@@ -298,6 +292,11 @@ void AHudExampleGameMode::EndPlay()
 		{
 			SGameHUD::Get().RemoveWidget(BoxesCountText);
 			BoxesCountText.Reset();
+		}
+		if (CartImage)
+		{
+			SGameHUD::Get().RemoveWidget(CartImage);
+			CartImage.Reset();
 		}
 	}
 }

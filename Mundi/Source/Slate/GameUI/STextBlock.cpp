@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "STextBlock.h"
+#include <d2d1.h>
 
 // =====================================================
 // 렌더링
@@ -16,6 +17,31 @@ void STextBlock::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 
     FVector2D Position = Geometry.AbsolutePosition;
     FVector2D Size = Geometry.GetAbsoluteSize();
+
+    // 회전 적용
+    ID2D1DeviceContext* Context = Renderer.GetContext();
+    D2D1::Matrix3x2F OldTransform;
+    bool bAppliedRotation = false;
+
+    if (Context && Rotation != 0.f)
+    {
+        // 현재 Transform 저장
+        Context->GetTransform(&OldTransform);
+
+        // 텍스트 중심점 계산
+        D2D1_POINT_2F Center = D2D1::Point2F(
+            Position.X + Size.X * 0.5f,
+            Position.Y + Size.Y * 0.5f
+        );
+
+        // 회전 Transform 생성
+        D2D1::Matrix3x2F RotationTransform =
+            D2D1::Matrix3x2F::Rotation(Rotation, Center);
+
+        // Transform 적용
+        Context->SetTransform(RotationTransform * OldTransform);
+        bAppliedRotation = true;
+    }
 
     // 그림자 먼저 그리기
     if (bHasShadow)
@@ -41,6 +67,12 @@ void STextBlock::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
         HAlign,
         VAlign
     );
+
+    // Transform 복원
+    if (bAppliedRotation && Context)
+    {
+        Context->SetTransform(OldTransform);
+    }
 }
 
 // =====================================================
@@ -119,5 +151,11 @@ STextBlock& STextBlock::SetShadow(bool bEnable, const FVector2D& Offset, const F
     bHasShadow = bEnable;
     ShadowOffset = Offset;
     ShadowColor = Color;
+    return *this;
+}
+
+STextBlock& STextBlock::SetRotation(float InRotation)
+{
+    Rotation = InRotation;
     return *this;
 }

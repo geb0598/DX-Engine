@@ -2,6 +2,7 @@
 #include "SImage.h"
 #include "FD2DRenderer.h"
 #include "SGameHUD.h"
+#include <d2d1.h>
 
 SImage::~SImage()
 {
@@ -58,29 +59,51 @@ void SImage::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
         }
     }
 
-    // 이미지 렌더링
-    if (bUseSourceRect)
+    // 회전 적용
+    ID2D1DeviceContext* Context = Renderer.GetContext();
+    if (Context && Rotation != 0.f)
     {
-        // 스프라이트 시트 - 소스 영역 지정
-        Renderer.DrawImage(
-            Bitmap,
-            DrawPosition,
-            DrawSize,
-            TintColor,
-            Opacity,
-            SourceRect
+        // 현재 Transform 저장
+        D2D1::Matrix3x2F OldTransform;
+        Context->GetTransform(&OldTransform);
+
+        // 이미지 중심점 계산
+        D2D1_POINT_2F Center = D2D1::Point2F(
+            DrawPosition.X + DrawSize.X * 0.5f,
+            DrawPosition.Y + DrawSize.Y * 0.5f
         );
+
+        // 회전 Transform 생성
+        D2D1::Matrix3x2F RotationTransform =
+            D2D1::Matrix3x2F::Rotation(Rotation, Center);
+
+        // Transform 적용
+        Context->SetTransform(RotationTransform * OldTransform);
+
+        // 이미지 렌더링
+        if (bUseSourceRect)
+        {
+            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity, SourceRect);
+        }
+        else
+        {
+            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity);
+        }
+
+        // Transform 복원
+        Context->SetTransform(OldTransform);
     }
     else
     {
-        // 전체 이미지
-        Renderer.DrawImage(
-            Bitmap,
-            DrawPosition,
-            DrawSize,
-            TintColor,
-            Opacity
-        );
+        // 회전 없이 렌더링
+        if (bUseSourceRect)
+        {
+            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity, SourceRect);
+        }
+        else
+        {
+            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity);
+        }
     }
 }
 
@@ -209,6 +232,12 @@ SImage& SImage::PlayScaleAnimation(FVector2D ToScale, float Duration, EEasingTyp
 SImage& SImage::SetScale(FVector2D InScale)
 {
     Scale = InScale;
+    return *this;
+}
+
+SImage& SImage::SetRotation(float InRotation)
+{
+    Rotation = InRotation;
     return *this;
 }
 

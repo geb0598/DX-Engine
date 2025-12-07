@@ -103,6 +103,12 @@ public:
      */
     SImage& SetScale(FVector2D InScale);
 
+    /**
+     * 회전 설정
+     * @param InRotation 회전 각도 (도 단위, 시계 방향)
+     */
+    SImage& SetRotation(float InRotation);
+
     /** 모든 애니메이션 중지 */
     void StopAllAnimations();
 
@@ -124,6 +130,9 @@ private:
 
     /** 스케일 (애니메이션용) */
     FVector2D Scale = FVector2D(1.f, 1.f);
+
+    /** 회전 각도 (도 단위, 시계 방향) */
+    float Rotation = 0.f;
 
     /** 실행 중인 애니메이션 */
     TArray<FWidgetAnimation*> Animations;

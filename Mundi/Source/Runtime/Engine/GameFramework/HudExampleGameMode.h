@@ -14,6 +14,7 @@ class SImage;
 class SGradientBox;
 class SBorderBox;
 class SMinimap;
+class SPanel;
 
 /**
  * AHudExampleGameMode
@@ -82,10 +83,10 @@ protected:
 	/** "REACH HOME" 텍스트 이미지 (상단 중앙) */
 	TSharedPtr<SImage> ReachHomeText;
 
-	/** 차량 정보 패널 배경 (왼쪽 하단) */
-	TSharedPtr<SBorderBox> VehicleInfoBg;
+	/** 차량 정보 패널 (속도, RPM, 기어를 담는 컨테이너) */
+	TSharedPtr<SPanel> VehicleInfoPanel;
 
-	/** 차량 정보: 속도 텍스트 */
+	/** 차량 정보: 속도 텍스트 (카트 이미지 위) */
 	TSharedPtr<STextBlock> VehicleSpeedText;
 
 	/** 차량 정보: RPM 텍스트 */
@@ -96,4 +97,7 @@ protected:
 
 	/** 미니맵 */
 	TSharedPtr<SMinimap> Minimap;
+
+	/** 카트 배경 이미지 (좌하단) */
+	TSharedPtr<SImage> CartImage;
 };

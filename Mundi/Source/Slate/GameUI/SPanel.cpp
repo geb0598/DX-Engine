@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "SPanel.h"
+#include <d2d1.h>
 
 // =====================================================
 // 렌더링
@@ -10,8 +11,41 @@ void SPanel::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
     if (!IsVisible())
         return;
 
+    // 회전 적용
+    ID2D1DeviceContext* Context = Renderer.GetContext();
+    D2D1::Matrix3x2F OldTransform;
+    bool bAppliedRotation = false;
+
+    if (Context && Rotation != 0.f)
+    {
+        // 현재 Transform 저장
+        Context->GetTransform(&OldTransform);
+
+        // 패널 중심점 계산
+        FVector2D Position = Geometry.AbsolutePosition;
+        FVector2D Size = Geometry.GetAbsoluteSize();
+        D2D1_POINT_2F Center = D2D1::Point2F(
+            Position.X + Size.X * 0.5f,
+            Position.Y + Size.Y * 0.5f
+        );
+
+        // 회전 Transform 생성
+        D2D1::Matrix3x2F RotationTransform =
+            D2D1::Matrix3x2F::Rotation(Rotation, Center);
+
+        // Transform 적용
+        Context->SetTransform(RotationTransform * OldTransform);
+        bAppliedRotation = true;
+    }
+
     // 자식들 렌더링
     PaintChildren(Renderer, Geometry);
+
+    // Transform 복원
+    if (bAppliedRotation && Context)
+    {
+        Context->SetTransform(OldTransform);
+    }
 }
 
 void SPanel::PaintChildren(FD2DRenderer& Renderer, const FGeometry& Geometry)

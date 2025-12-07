@@ -60,6 +60,19 @@ public:
     TArray<FSlot>& GetSlots() { return ChildSlots; }
 
     // =====================================================
+    // 회전 설정
+    // =====================================================
+
+    /** 회전 설정 (자식들을 함께 회전) */
+    SPanel& SetRotation(float InRotation)
+    {
+        Rotation = InRotation;
+        return *this;
+    }
+
+    float GetRotation() const { return Rotation; }
+
+    // =====================================================
     // 히트 테스트 (자식 포함)
     // =====================================================
 
@@ -88,4 +101,7 @@ protected:
 
     TArray<FSlot> ChildSlots;
     TWeakPtr<SWidget> HoveredChild;
+
+    /** 회전 각도 (도 단위, 시계 방향) */
+    float Rotation = 0.f;
 };
