@@ -1352,6 +1352,9 @@
     <ClCompile Include="Generated\ADumbRiderGameMode.generated.cpp">
       <Filter>Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Generated\ALandmine.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
     <ClCompile Include="Source\Slate\GameUI\SImage.cpp">
       <Filter>Source\Slate\GameUI</Filter>
     </ClCompile>
@@ -2940,6 +2943,9 @@
       <Filter>Generated</Filter>
     </ClInclude>
     <ClInclude Include="Generated\FVehicleEngineData.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\ALandmine.generated.h">
       <Filter>Generated</Filter>
     </ClInclude>
     <ClInclude Include="Source\Runtime\Engine\Components\CargoComponent.h" />

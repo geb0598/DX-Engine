@@ -103,6 +103,14 @@ public:
     UPROPERTY(EditAnywhere, Category="Cargo Difficulty")
     float PitchSensitivity = 0.2f; 
 
+    /** 박스가 장애물에 부딪히는 정도 조절 (1.0 = 박스 크기 사용) */
+    UPROPERTY(EditAnywhere, Category="Cargo Difficulty")
+    float SweepExtentScale = 0.95f;
+
+    /** 루아에서 화물 개수에 따라 스프링 암 조절하기 위해 만든 함수 */
+    UFUNCTION(LuaBind, DisplayName = "GetValidCargoCount")
+    int32 Lua_ValidCargoCount();
+
     /** * 화물 박스들을 생성하고 계층 구조로 연결합니다.
      * @param BoxCount 생성할 박스의 개수
      * @param MeshPath 박스에 사용할 스태틱 메시 경로
@@ -120,6 +128,8 @@ private:
     // ====================================================================
     // 내부 구현 함수
     // ====================================================================
+
+    void CheckBoxInteraction();
 
     /** 현재 오프셋이 임계값을 넘었는지 검사 */
     bool CheckCollapseRelative(UStaticMeshComponent* ParentCargo, const FVector& CurrentLocation);

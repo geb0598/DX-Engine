@@ -328,6 +328,11 @@ FTransform USkeletalMeshComponent::GetBoneWorldTransform(int32 BoneIndex)
     return GetWorldTransform(); // 실패 시 컴포넌트 위치 반환
 }
 
+FVector USkeletalMeshComponent::GetBoneWorldLocation(int32 BoneIndex)
+{
+    return GetBoneWorldTransform(BoneIndex).Translation;
+}
+
 void USkeletalMeshComponent::ForceRecomputePose()
 {
     if (!SkeletalMesh) { return; } 

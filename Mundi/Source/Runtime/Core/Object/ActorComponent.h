@@ -69,6 +69,7 @@ public:
     }
 
     // ─────────────── Owner/World
+    UFUNCTION(LuaBind, DisplayName = "SetOwner")
     void   SetOwner(AActor* InOwner) { Owner = InOwner; }
     AActor* GetOwner() const { return Owner; }
     UWorld* GetWorld() const; // 구현은 .cpp에서 Owner->GetWorld()
