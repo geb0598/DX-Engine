@@ -45,7 +45,7 @@ public:
 
     /** 기본 밀림 단위 (m). 위층으로 갈수록 이 값의 배수로 밀려남 */
     UPROPERTY(EditAnywhere, Category="Cargo Physics")
-    float BaseSlideAmount = 0.2f;
+    float BaseSlideAmount = 0.12f;
 
     /** 흔들림 최소 반응 속도 (기울기가 작을 때) */
     UPROPERTY(EditAnywhere, Category="Cargo Physics")

@@ -81,10 +81,10 @@ public:
     FVector COM = FVector(0, 0, 0.1);
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "중력에 의한 Roll 토크 복원력에 대한 계수입니다")
-    float GravityTorqueInverseFactor = 4.0f;
+    float GravityTorqueInverseFactor = 5.0f;
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooptip = "원심력에 의한 Roll 토크 복원력에 대한 계수입니다")
-    float CentrifugalTorqueInverseFactor = 1.0f;
+    float CentrifugalTorqueInverseFactor = 1.5f;
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "Roll 각속도를 줄여줍니다. 설정된 값이 커질수록 Roll 진동이 빠르게 사라집니다")
     float DampingFactor = 0.1f;
@@ -106,7 +106,7 @@ public:
     float DownForceSpeed = 20.0f;
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "회전 도중 엑셀을 뗄 때 바퀴가 들리지 않게 눌러주는 힘을 조절합니다")
-    float DownForceFactor = 2.0f;
+    float DownForceFactor = 2.5f;
 
     UPROPERTY(EditAnywhere, Category = "Center Of Mass", Tooltip = "Q, E 키 입력 시 기울어지는 정도를 조절합니다")
     float UserTorqueFactor = 1500.0f;
