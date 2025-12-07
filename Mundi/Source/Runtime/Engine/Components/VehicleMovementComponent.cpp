@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "VehicleMovementComponent.h"
 #include "SceneComponent.h"
 #include "PrimitiveComponent.h"
@@ -187,8 +187,9 @@ void UVehicleMovementComponent::SetupVehicle()
     SetupBatchQuery();
 
     WheelQueryResults = new PxWheelQueryResult[MAX_WHEELS];
-    VehicleQueryResult->wheelQueryResults = WheelQueryResults;
-    VehicleQueryResult->nbWheelQueryResults = MAX_WHEELS;
+    std::memset(WheelQueryResults, 0, sizeof(PxWheelQueryResult) * MAX_WHEELS);
+    VehicleQueryResult[0].wheelQueryResults = WheelQueryResults;
+    VehicleQueryResult[0].nbWheelQueryResults = MAX_WHEELS;
 }
 
 void UVehicleMovementComponent::ReleaseVehicle()
@@ -398,6 +399,9 @@ void UVehicleMovementComponent::SetupBatchQuery()
     BatchQueryResults     = new PxRaycastQueryResult[MAX_WHEELS];
     BatchQueryTouchBuffer = new PxRaycastHit[MAX_WHEELS];
 
+    std::memset(BatchQueryResults, 0, sizeof(PxRaycastQueryResult) * MAX_WHEELS);
+    std::memset(BatchQueryTouchBuffer, 0, sizeof(PxRaycastHit) * MAX_WHEELS);
+
     PxBatchQueryDesc SqDesc(MAX_WHEELS, 0, 0);
 
     SqDesc.queryMemory.userRaycastResultBuffer = BatchQueryResults;
@@ -493,6 +497,12 @@ void UVehicleMovementComponent::TickComponent(float DeltaSeconds)
 {
     Super::TickComponent(DeltaSeconds);
 
+    // 서스펜션 배치 없으면 Update할때 알아서 해줌, 따로 테스트 안 함. 오히려 여기서 테스트하면 서스펜션 없어짐
+    // DeltaSeconds 0이면 0나누기로 초기값 폭발
+    if (DeltaSeconds <= 0.0f)
+    {
+        return;
+    }
     if (!PVehicleDrive || !UpdatedComponent) { return; }
 
     UPrimitiveComponent* MeshComp = Cast<UPrimitiveComponent>(UpdatedComponent);

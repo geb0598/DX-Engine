@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Vehicle.h"
 
 #include "AnimStateMachine.h"
@@ -24,6 +24,7 @@ AVehicle::AVehicle()
     , SparkParticleComponent(nullptr)
     , StateId_Idle(-1)
     , bIsDriverEjected(false)
+    , ScriptComponent(nullptr)
     , bSparkParticleActive(false)
 {
     ChassisMesh = CreateDefaultSubobject<UStaticMeshComponent>("ChassisMesh");
@@ -291,6 +292,11 @@ void AVehicle::EjectDriver(const FVector& Impulse)
     }
 
     bIsDriverEjected = true;
+}
+
+UCameraComponent* AVehicle::GetCamera()
+{
+    return Camera;
 }
 
 void AVehicle::MoveForward(float Val)

@@ -13,6 +13,7 @@
 #include "World.h"
 #include "FViewport.h"
 #include "RenderSettings.h"
+#include "Vehicle.h"
 // IMPLEMENT_CLASS is now auto-generated in .generated.cpp
 //
 //BEGIN_PROPERTIES(APlayerCameraManager)
@@ -72,7 +73,8 @@ void APlayerCameraManager::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 먼저 Character의 CameraComponent를 찾아서 설정
+	// 먼저 Character, Vehicle의 CameraComponent를 찾아서 설정
+	// TODO: 일일이 캐스팅하지말고 통일하기
 	UWorld* World = GetWorld();
 	if (World)
 	{
@@ -88,6 +90,16 @@ void APlayerCameraManager::BeginPlay()
 					UE_LOG("[PlayerCameraManager] Using Character's CameraComponent");
 					return;
 				}
+			}
+		}
+		AVehicle* Vehicle = World->FindActor<AVehicle>();
+		if (Vehicle)
+		{
+			UCameraComponent* Camera = Vehicle->GetCamera();
+			if (Camera)
+			{
+				CurrentViewCamera = Camera;
+				return;
 			}
 		}
 	}

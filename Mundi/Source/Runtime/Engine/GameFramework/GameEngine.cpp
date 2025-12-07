@@ -212,7 +212,7 @@ bool UGameEngine::Startup(HINSTANCE hInstance)
     ///////////////////////////////////
 
     // 시작 scene(level)을 직접 로드
-    const FString StartupScenePath = GDataDir + "/Scenes/PlayScene.scene";
+    const FString StartupScenePath = GDataDir + "/Scenes/DumbRider.scene";
     if (!GWorld->LoadLevelFromFile(UTF8ToWide(StartupScenePath)))
     {
         // 씬 로드 실패 시 경고만 표시하고 빈 월드로 계속 진행
