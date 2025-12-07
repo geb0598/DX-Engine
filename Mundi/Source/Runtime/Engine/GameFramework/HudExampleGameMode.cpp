@@ -284,6 +284,21 @@ void AHudExampleGameMode::EndPlay()
 			SGameHUD::Get().RemoveWidget(Minimap);
 			Minimap.Reset();
 		}
+		if (BoxesIcon)
+		{
+			SGameHUD::Get().RemoveWidget(BoxesIcon);
+			BoxesIcon.Reset();
+		}
+		if (BoxesLeftText)
+		{
+			SGameHUD::Get().RemoveWidget(BoxesLeftText);
+			BoxesLeftText.Reset();
+		}
+		if (BoxesCountText)
+		{
+			SGameHUD::Get().RemoveWidget(BoxesCountText);
+			BoxesCountText.Reset();
+		}
 	}
 }
 
@@ -391,5 +406,16 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		FVector EulerAngles = PlayerQuat.ToEulerZYXDeg();
 		float PlayerYaw = EulerAngles.Z;  // Yaw는 Z축 회전
 		Minimap->UpdatePlayerRotation(PlayerYaw);
+	}
+
+	// 박스 개수 UI 업데이트
+	if (BoxesCountText)
+	{
+		UCargoComponent* CargoComp = Cast<UCargoComponent>(Vehicle->GetComponent(UCargoComponent::StaticClass()));
+		if (CargoComp)
+		{
+			int32 BoxCount = CargoComp->GetValidCargoCount();
+			BoxesCountText->SetText(std::to_wstring(BoxCount));
+		}
 	}
 }
