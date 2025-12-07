@@ -91,13 +91,15 @@ public:
     * @param Size 크기
     * @param Tint 색상 틴트 (곱셈)
     * @param Opacity 투명도 (0.0 ~ 1.0)
+    * @param bHighQuality 고품질 보간 사용 여부 (기본: false)
     */
     void DrawImage(
         ID2D1Bitmap* Bitmap,
         const FVector2D& Position,
         const FVector2D& Size,
         const FSlateColor& Tint = FSlateColor::White(),
-        float Opacity = 1.0f
+        float Opacity = 1.0f,
+        bool bHighQuality = false
     );
 
     /**
@@ -108,6 +110,7 @@ public:
     * @param Tint 색상 틴트 (곱셈)
     * @param Opacity 투명도 (0.0 ~ 1.0)
     * @param SourceRect 소스 영역 (픽셀 좌표: Left, Top, Right, Bottom)
+    * @param bHighQuality 고품질 보간 사용 여부 (기본: false)
     */
     void DrawImage(
         ID2D1Bitmap* Bitmap,
@@ -115,7 +118,8 @@ public:
         const FVector2D& Size,
         const FSlateColor& Tint,
         float Opacity,
-        const FSlateRect& SourceRect
+        const FSlateRect& SourceRect,
+        bool bHighQuality = false
     );
 
     /**

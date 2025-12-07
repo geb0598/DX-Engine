@@ -81,6 +81,9 @@ bool FD2DRenderer::Initialize(ID3D11Device* InDevice, IDXGISwapChain* InSwapChai
         return false;
     }
 
+    // 안티앨리어싱 모드 설정 (회전/스케일링 시 부드러운 렌더링)
+    D2DContext->SetAntialiasMode(D2D1_ANTIALIAS_MODE_PER_PRIMITIVE);  // 프리미티브별 앤티앨리어싱
+
     // DWrite Factory 생성
     Hr = DWriteCreateFactory(
         DWRITE_FACTORY_TYPE_SHARED,
@@ -313,7 +316,7 @@ void FD2DRenderer::DrawHorizontalGradientRect(const FVector2D& Position, const F
     }
 }
 
-void FD2DRenderer::DrawImage(ID2D1Bitmap* Bitmap, const FVector2D& Position, const FVector2D& Size, const FSlateColor& Tint, float Opacity)
+void FD2DRenderer::DrawImage(ID2D1Bitmap* Bitmap, const FVector2D& Position, const FVector2D& Size, const FSlateColor& Tint, float Opacity, bool bHighQuality)
 {
     if (!bInFrame || !D2DContext || !Bitmap)
         return;
@@ -323,11 +326,16 @@ void FD2DRenderer::DrawImage(ID2D1Bitmap* Bitmap, const FVector2D& Position, con
     );
     float FinalOpacity = Opacity * Tint.A;
 
+    // 보간 모드 선택
+    D2D1_INTERPOLATION_MODE InterpolationMode = bHighQuality
+        ? D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC  // 고품질 큐빅 보간 (회전/스케일 시 부드러움)
+        : D2D1_INTERPOLATION_MODE_LINEAR;              // 기본 선형 보간 (빠름)
+
     D2DContext->DrawBitmap(
         Bitmap,
         DestRect,
         FinalOpacity,
-        D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+        InterpolationMode,
         nullptr     // 전체 소스 이미지 사용
     );
 
@@ -340,7 +348,8 @@ void FD2DRenderer::DrawImage(
     const FVector2D& Size,
     const FSlateColor& Tint,
     float Opacity,
-    const FSlateRect& SourceRect)
+    const FSlateRect& SourceRect,
+    bool bHighQuality)
 {
     if (!bInFrame || !D2DContext || !Bitmap)
         return;
@@ -355,11 +364,16 @@ void FD2DRenderer::DrawImage(
 
     float FinalOpacity = Opacity * Tint.A;
 
+    // 보간 모드 선택
+    D2D1_INTERPOLATION_MODE InterpolationMode = bHighQuality
+        ? D2D1_INTERPOLATION_MODE_HIGH_QUALITY_CUBIC  // 고품질 큐빅 보간 (회전/스케일 시 부드러움)
+        : D2D1_INTERPOLATION_MODE_LINEAR;              // 기본 선형 보간 (빠름)
+
     D2DContext->DrawBitmap(
         Bitmap,
         DestRect,
         FinalOpacity,
-        D2D1_BITMAP_INTERPOLATION_MODE_LINEAR,
+        InterpolationMode,
         &SrcRect  // 지정된 소스 영역만 그리기
     );
 }

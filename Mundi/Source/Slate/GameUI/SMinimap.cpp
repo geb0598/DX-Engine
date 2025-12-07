@@ -159,14 +159,49 @@ void SMinimap::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 
 	if (PlayerMarkerBitmap)
 	{
-		// TODO: 회전 적용 (Direct2D Transform 필요)
-		Renderer.DrawImage(
-			PlayerMarkerBitmap,
-			MarkerPos,
-			FVector2D(MarkerSize, MarkerSize),
-			FSlateColor::White(),
-			1.0f
-		);
+		// 플레이어 마커 회전 적용
+		if (Context)
+		{
+			// 현재 Transform 저장
+			D2D1::Matrix3x2F OldTransform;
+			Context->GetTransform(&OldTransform);
+
+			// 마커 중심점 계산
+			D2D1_POINT_2F MarkerCenter = D2D1::Point2F(
+				MarkerPos.X + MarkerSize * 0.5f,
+				MarkerPos.Y + MarkerSize * 0.5f
+			);
+
+			// 회전 Transform 생성 (플레이어의 forward 방향)
+			D2D1::Matrix3x2F RotationTransform =
+				D2D1::Matrix3x2F::Rotation(PlayerRotation, MarkerCenter);
+
+			// Transform 적용
+			Context->SetTransform(RotationTransform * OldTransform);
+
+			// 마커 그리기 (회전 적용됨)
+			Renderer.DrawImage(
+				PlayerMarkerBitmap,
+				MarkerPos,
+				FVector2D(MarkerSize, MarkerSize),
+				FSlateColor::White(),
+				1.0f
+			);
+
+			// Transform 복원
+			Context->SetTransform(OldTransform);
+		}
+		else
+		{
+			// Context가 없으면 회전 없이 그리기
+			Renderer.DrawImage(
+				PlayerMarkerBitmap,
+				MarkerPos,
+				FVector2D(MarkerSize, MarkerSize),
+				FSlateColor::White(),
+				1.0f
+			);
+		}
 	}
 	else
 	{

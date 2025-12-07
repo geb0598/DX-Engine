@@ -150,7 +150,8 @@ void AHudExampleGameMode::BeginPlay()
 
 	CartImage = MakeShared<SImage>();
 	CartImage->SetTexture(L"Data/Textures/Dumb/CartPanel.png")
-		.SetRotation(-10.f);  // 왼쪽으로 15도 회전
+		.SetRotation(-10.f)  // 왼쪽으로 10도 회전
+		.SetHighQualityInterpolation(true);  // 고품질 보간으로 앤티앨리어싱 개선
 
 	SGameHUD::Get().AddWidget(CartImage)
 		.SetAnchor(0.0f, 1.0f)  // 좌하단
@@ -215,13 +216,13 @@ void AHudExampleGameMode::BeginPlay()
 	Minimap->SetMapTexture(L"Data/Textures/Dumb/Minimap.png")  // 미니맵 이미지 (준비 필요)
 		.SetPlayerMarkerTexture(L"Data/Textures/Dumb/PlayerMarker.png")  // 플레이어 마커 (준비 필요)
 		.SetWorldBounds(FVector(-278.5f, -116.5f, 0.f), FVector(278.5f, 116.5f, 0.f))  // 실제 맵 크기 (X: 557, Y: 233)
-		.SetMarkerSize(12.f)
+		.SetMarkerSize(16.f)  // 마커 크기 증가 (12 → 20)
 		.SetZoomLevel(150.f);  // 플레이어 주변 150 유닛 반경 표시 (작을수록 확대됨)
 
 	SGameHUD::Get().AddWidget(Minimap)
 		.SetAnchor(1.0f, 1.0f)  // 오른쪽 하단
 		.SetPivot(1.0f, 1.0f)   // 오른쪽 하단 기준
-		.SetOffset(-20.f, -20.f)  // 오른쪽 하단에서 약간 안쪽
+		.SetOffset(-40.f, -60.f)  // 위로 올림 (-20 → -60)
 		.SetSize(180.f, 180.f);   // 정사각형 미니맵
 }
 

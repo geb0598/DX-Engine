@@ -109,6 +109,16 @@ public:
      */
     SImage& SetRotation(float InRotation);
 
+    /**
+     * 고품질 보간 사용 여부 설정 (회전/스케일링 시 앤티앨리어싱 개선)
+     * @param bUseHighQuality true면 고품질 큐빅 보간, false면 빠른 선형 보간
+     */
+    SImage& SetHighQualityInterpolation(bool bUseHighQuality)
+    {
+        bUseHighQualityInterpolation = bUseHighQuality;
+        return *this;
+    }
+
     /** 모든 애니메이션 중지 */
     void StopAllAnimations();
 
@@ -142,4 +152,7 @@ private:
 
     /** 소스 영역 사용 여부 */
     bool bUseSourceRect = false;
+
+    /** 고품질 보간 사용 여부 (회전/스케일링 시 앤티앨리어싱 개선, 성능 비용 있음) */
+    bool bUseHighQualityInterpolation = false;
 };

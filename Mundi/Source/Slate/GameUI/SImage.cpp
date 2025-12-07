@@ -83,11 +83,11 @@ void SImage::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
         // 이미지 렌더링
         if (bUseSourceRect)
         {
-            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity, SourceRect);
+            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity, SourceRect, bUseHighQualityInterpolation);
         }
         else
         {
-            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity);
+            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity, bUseHighQualityInterpolation);
         }
 
         // Transform 복원
@@ -98,11 +98,11 @@ void SImage::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
         // 회전 없이 렌더링
         if (bUseSourceRect)
         {
-            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity, SourceRect);
+            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity, SourceRect, bUseHighQualityInterpolation);
         }
         else
         {
-            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity);
+            Renderer.DrawImage(Bitmap, DrawPosition, DrawSize, TintColor, Opacity, bUseHighQualityInterpolation);
         }
     }
 }
