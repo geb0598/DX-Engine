@@ -78,7 +78,7 @@ void AHudExampleGameMode::BeginPlay()
 		.SetOffset(0.f, 200.f)  // 타이틀 오른쪽 아래 (더 아래로: 160 → 200)
 		.SetSize(280.f, 28.f);    // 두께 감소 (40 → 30)
 
-	// "Press Space to Continue" 이미지 (Press.png)
+	// "Press Space to Continue" 이미지 (메인 메뉴용)
 	PressSpaceImage = MakeShared<SImage>();
 	PressSpaceImage->SetTexture(L"Data/Textures/Dumb/pressanykey.png");
 
@@ -91,6 +91,30 @@ void AHudExampleGameMode::BeginPlay()
 	// 초기에는 숨김 (애니메이션 완료 후 표시)
 	PressSpaceBg->SetVisibility(ESlateVisibility::Hidden);
 	PressSpaceImage->SetVisibility(ESlateVisibility::Hidden);
+
+	// "Press Any Key" 배경 그라데이션 (튜토리얼 카메라용 - 위치 조정됨)
+	PressSpaceBg2 = MakeShared<SGradientBox>();
+	PressSpaceBg2->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.6f))  // 반투명 검정
+		.SetFadeWidth(80.f);
+
+	SGameHUD::Get().AddWidget(PressSpaceBg2)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙 기준
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(300.f, 350.f)  // 오른쪽(+50), 아래(+250)로 조정
+		.SetSize(280.f, 28.f);
+
+	// "Press Any Key" 이미지 (튜토리얼 카메라용 - 위치 조정됨)
+	PressSpaceImage2 = MakeShared<SImage>();
+	PressSpaceImage2->SetTexture(L"Data/Textures/Dumb/pressanykey.png");
+
+	SGameHUD::Get().AddWidget(PressSpaceImage2)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙 기준
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(300.f, 351.f)  // 배경과 같은 위치
+		.SetSize(180.f, 20.f);
+
+	PressSpaceBg2->SetVisibility(ESlateVisibility::Hidden);
+	PressSpaceImage2->SetVisibility(ESlateVisibility::Hidden);
 
 	// 시작 버튼 (화면 중앙) - 일단 숨김 처리 (자동 전환 방식 사용)
 	StartButton = MakeShared<SButton>();
@@ -283,6 +307,33 @@ void AHudExampleGameMode::BeginPlay()
 		.SetSize(180.f, 180.f);   // 정사각형 미니맵
 
 	// ─────────────────────────────────────────────────
+	// 튜토리얼 만화/컷씬 (전체 화면, 7장)
+	// ─────────────────────────────────────────────────
+
+	for (int32 i = 0; i < 7; i++)
+	{
+		TSharedPtr<SImage> ComicImage = MakeShared<SImage>();
+
+		// 파일명: Comic_01.png, Comic_02.png, ...
+		wchar_t FileName[256];
+		swprintf_s(FileName, L"Data/Textures/Dumb/Comic_%02d.png", i + 1);
+
+		ComicImage->SetTexture(FileName);
+
+		// 전체 화면을 채우도록 설정 (상대 크기 사용)
+		SGameHUD::Get().AddWidget(ComicImage)
+			.SetAnchor(0.0f, 0.0f)      // 좌상단 앵커
+			.SetPivot(0.0f, 0.0f)       // 좌상단 피벗
+			.SetOffset(0.f, 0.f)        // 오프셋 없음
+			.SetRelativeSize(1.0f, 1.0f);  // 부모(뷰포트) 크기의 100% (전체 화면)
+
+		// 초기에는 모두 숨김
+		ComicImage->SetVisibility(ESlateVisibility::Hidden);
+
+		ComicImages.Add(ComicImage);
+	}
+
+	// ─────────────────────────────────────────────────
 	// 카메라 찾기 (이름으로 검색)
 	// ─────────────────────────────────────────────────
 
@@ -345,6 +396,16 @@ void AHudExampleGameMode::EndPlay()
 			SGameHUD::Get().RemoveWidget(PressSpaceImage);
 			PressSpaceImage.Reset();
 		}
+		if (PressSpaceBg2)
+		{
+			SGameHUD::Get().RemoveWidget(PressSpaceBg2);
+			PressSpaceBg2.Reset();
+		}
+		if (PressSpaceImage2)
+		{
+			SGameHUD::Get().RemoveWidget(PressSpaceImage2);
+			PressSpaceImage2.Reset();
+		}
 		if (ScoreText)
 		{
 			SGameHUD::Get().RemoveWidget(ScoreText);
@@ -406,6 +467,16 @@ void AHudExampleGameMode::EndPlay()
 			SGameHUD::Get().RemoveWidget(CartImage);
 			CartImage.Reset();
 		}
+		// 만화 이미지들 정리
+		for (auto& Comic : ComicImages)
+		{
+			if (Comic)
+			{
+				SGameHUD::Get().RemoveWidget(Comic);
+				Comic.Reset();
+			}
+		}
+		ComicImages.Empty();
 	}
 }
 
@@ -480,8 +551,29 @@ void AHudExampleGameMode::StartCameraCinematic()
 		}
 	}
 
-	// TODO: 튜토리얼 UI 표시 등 추가 작업
-	// 나중에 타이머로 일정 시간 후 StartGamePlay() 호출하도록 변경 가능
+	// 타이머 리셋
+	TutorialCameraTimer = 0.f;
+	bTutorialCameraReady = false;
+}
+
+void AHudExampleGameMode::ShowTutorialComic()
+{
+	CurrentGameState = EGameState::Tutorial_Comic;
+
+	// Press Any Key UI 숨기기 (두 번째 위젯)
+	if (PressSpaceBg2)
+		PressSpaceBg2->SetVisibility(ESlateVisibility::Hidden);
+	if (PressSpaceImage2)
+		PressSpaceImage2->SetVisibility(ESlateVisibility::Hidden);
+
+	// 만화 초기화
+	CurrentComicIndex = 0;
+	ComicSceneTimer = 0.f;
+	bComicInputReady = false;  // 입력 준비 안됨 (무시 시간 후 초기화 필요)
+
+	// 첫 번째 만화 장면 표시
+	if (ComicImages.Num() > 0 && ComicImages[0])
+		ComicImages[0]->SetVisibility(ESlateVisibility::Visible);
 }
 
 void AHudExampleGameMode::StartGamePlay()
@@ -493,6 +585,13 @@ void AHudExampleGameMode::StartGamePlay()
 		TitleImage->SetVisibility(ESlateVisibility::Hidden);
 	if (StartButton)
 		StartButton->SetVisibility(ESlateVisibility::Hidden);
+
+	// 만화 이미지들 모두 숨기기
+	for (auto& Comic : ComicImages)
+	{
+		if (Comic)
+			Comic->SetVisibility(ESlateVisibility::Hidden);
+	}
 
 	// 게임 플레이 UI 표시
 	if (ScoreText) ScoreText->SetVisibility(ESlateVisibility::Visible);
@@ -622,10 +721,162 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 
 			if (bAnyKeyPressed)
 			{
-				// 튜토리얼 화면으로 전환
+				// 튜토리얼 카메라로 전환
 				StartCameraCinematic();
 				return;
 			}
+		}
+	}
+
+	// ─────────────────────────────────────────────────
+	// 튜토리얼 카메라 입력 대기
+	// ─────────────────────────────────────────────────
+
+	if (CurrentGameState == EGameState::Tutorial_Camera)
+	{
+		TutorialCameraTimer += DeltaSeconds;
+
+		// 일정 시간 대기 후 입력 대기 준비
+		if (!bTutorialCameraReady && TutorialCameraTimer >= TutorialCameraWaitTime)
+		{
+			bTutorialCameraReady = true;
+
+			// "Press Any Key" 두 번째 위젯 표시 (위치 조정된 버전)
+			if (PressSpaceBg2)
+				PressSpaceBg2->SetVisibility(ESlateVisibility::Visible);
+			if (PressSpaceImage2)
+				PressSpaceImage2->SetVisibility(ESlateVisibility::Visible);
+		}
+
+		// 깜박이는 효과 (튜토리얼 카메라에서는 두 번째 위젯 사용)
+		if (bTutorialCameraReady && PressSpaceImage2)
+		{
+			// sin 함수로 부드러운 깜박임
+			float BlinkSpeed = 2.5f;
+			float Alpha = (std::sin(TutorialCameraTimer * 3.14159f * 2.0f / BlinkSpeed) + 1.0f) * 0.5f;
+
+			// 최소 투명도 0.5, 최대 0.9 사이로 조정
+			float FinalAlpha = 0.5f + (Alpha * 0.4f);
+
+			// 이미지의 투명도 변경
+			PressSpaceImage2->SetOpacity(FinalAlpha);
+		}
+
+		// 입력 대기 준비 완료 후 아무 키나 체크
+		if (bTutorialCameraReady)
+		{
+			bool bAnyKeyPressed = false;
+			for (int key = 0; key < 256; key++)
+			{
+				if (GetAsyncKeyState(key) & 0x8000)
+				{
+					bAnyKeyPressed = true;
+					break;
+				}
+			}
+
+			if (bAnyKeyPressed)
+			{
+				// 만화/컷씬으로 전환
+				ShowTutorialComic();
+				return;
+			}
+		}
+	}
+
+	// ─────────────────────────────────────────────────
+	// 만화/컷씬 진행
+	// ─────────────────────────────────────────────────
+
+	if (CurrentGameState == EGameState::Tutorial_Comic)
+	{
+		ComicSceneTimer += DeltaSeconds;
+
+		// 키 입력 체크 (Space/Enter: 다음 장면, ESC: 전체 스킵)
+		bool bNextScene = false;
+		bool bSkipAll = false;
+
+		// 입력 무시 시간이 지났을 때만 키 체크
+		if (ComicSceneTimer >= ComicInputIgnoreTime)
+		{
+			// 첫 번째 프레임에서 키 상태 초기화 (이전 입력 무시)
+			if (!bComicInputReady)
+			{
+				bComicInputReady = true;
+				bPrevSpacePressed = (GetAsyncKeyState(VK_SPACE) & 0x8000) != 0;
+				bPrevEnterPressed = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
+				bPrevEscPressed = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
+			}
+			else
+			{
+				// 현재 키 상태
+				bool bSpacePressed = (GetAsyncKeyState(VK_SPACE) & 0x8000) != 0;
+				bool bEnterPressed = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
+				bool bEscPressed = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
+
+				// ESC 키 체크 (전체 스킵) - 눌렀다 뗐을 때 (Falling Edge)
+				if (!bEscPressed && bPrevEscPressed)
+				{
+					bSkipAll = true;
+				}
+				// Space 또는 Enter 키 체크 (다음 장면) - 눌렀다 뗐을 때 (Falling Edge)
+				else if ((!bSpacePressed && bPrevSpacePressed) ||
+					(!bEnterPressed && bPrevEnterPressed))
+				{
+					bNextScene = true;
+				}
+
+				// 이전 키 상태 저장
+				bPrevSpacePressed = bSpacePressed;
+				bPrevEnterPressed = bEnterPressed;
+				bPrevEscPressed = bEscPressed;
+			}
+		}
+
+		// 자동 진행 (4초 경과)
+		if (!bNextScene && !bSkipAll && ComicSceneTimer >= ComicSceneWaitTime)
+		{
+			bNextScene = true;
+		}
+
+		// 전체 스킵
+		if (bSkipAll)
+		{
+			// 모든 만화 장면 숨김
+			for (auto& Comic : ComicImages)
+			{
+				if (Comic)
+					Comic->SetVisibility(ESlateVisibility::Hidden);
+			}
+
+			// 게임 플레이로 전환
+			StartGamePlay();
+			return;
+		}
+
+		// 다음 장면으로 이동
+		if (bNextScene)
+		{
+			// 현재 장면 숨기기
+			if (CurrentComicIndex < ComicImages.Num() && ComicImages[CurrentComicIndex])
+				ComicImages[CurrentComicIndex]->SetVisibility(ESlateVisibility::Hidden);
+
+			// 다음 장면 인덱스
+			CurrentComicIndex++;
+
+			// 마지막 장면이었으면 게임 플레이로
+			if (CurrentComicIndex >= TotalComicScenes)
+			{
+				StartGamePlay();
+				return;
+			}
+
+			// 다음 장면 표시
+			if (CurrentComicIndex < ComicImages.Num() && ComicImages[CurrentComicIndex])
+				ComicImages[CurrentComicIndex]->SetVisibility(ESlateVisibility::Visible);
+
+			// 타이머 리셋
+			ComicSceneTimer = 0.f;
 		}
 	}
 

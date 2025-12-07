@@ -26,6 +26,7 @@ enum class EGameState
 {
 	MainMenu,              // 메인 메뉴 (시작 화면)
 	Tutorial_Camera,       // 튜토리얼: 카메라 연출
+	Tutorial_Comic,        // 튜토리얼: 만화/컷씬
 	Playing,               // 게임 플레이 중
 };
 
@@ -76,6 +77,9 @@ public:
 	/** 카메라 시네마틱 시작 */
 	void StartCameraCinematic();
 
+	/** 튜토리얼 만화/컷씬 표시 */
+	void ShowTutorialComic();
+
 	// ────────────────────────────────────────────────
 	// UI 업데이트
 	// ────────────────────────────────────────────────
@@ -98,11 +102,17 @@ protected:
 	/** 타이틀 이미지 */
 	TSharedPtr<SImage> TitleImage;
 
-	/** "Press Space to Continue" 배경 그라데이션 */
+	/** "Press Space to Continue" 배경 그라데이션 (메인 메뉴용) */
 	TSharedPtr<SGradientBox> PressSpaceBg;
 
-	/** "Press Space to Continue" 이미지 */
+	/** "Press Space to Continue" 이미지 (메인 메뉴용) */
 	TSharedPtr<SImage> PressSpaceImage;
+
+	/** "Press Any Key" 배경 그라데이션 (튜토리얼 카메라용) */
+	TSharedPtr<SGradientBox> PressSpaceBg2;
+
+	/** "Press Any Key" 이미지 (튜토리얼 카메라용) */
+	TSharedPtr<SImage> PressSpaceImage2;
 
 	/** 메인 메뉴 타이머 */
 	float MainMenuTimer = 0.f;
@@ -116,6 +126,38 @@ protected:
 	/** 초기 카메라 설정 완료 플래그 */
 	bool bInitialCameraSet = false;
 
+	/** 튜토리얼 카메라 타이머 */
+	float TutorialCameraTimer = 0.f;
+
+	/** 튜토리얼 카메라 대기 시간 (조작법 보여주는 시간) */
+	float TutorialCameraWaitTime = 5.0f;
+
+	/** 튜토리얼 카메라 입력 대기 준비 */
+	bool bTutorialCameraReady = false;
+
+	/** 만화 현재 장면 인덱스 (0~7) */
+	int32 CurrentComicIndex = 0;
+
+	/** 만화 장면 타이머 */
+	float ComicSceneTimer = 0.f;
+
+	/** 만화 각 장면 대기 시간 */
+	float ComicSceneWaitTime = 4.0f;
+
+	/** 만화 총 장면 수 */
+	static constexpr int32 TotalComicScenes = 7;
+
+	/** 만화 시작 후 입력 무시 시간 (키 중복 방지) */
+	float ComicInputIgnoreTime = 0.5f;
+
+	/** 입력 무시 시간 이후 키 상태 초기화 완료 여부 */
+	bool bComicInputReady = false;
+
+	/** 이전 프레임 키 상태 (키 중복 방지) */
+	bool bPrevSpacePressed = false;
+	bool bPrevEnterPressed = false;
+	bool bPrevEscPressed = false;
+
 	// ────────────────────────────────────────────────
 	// 카메라 연출
 	// ────────────────────────────────────────────────
@@ -127,7 +169,7 @@ protected:
 	ACameraActor* TutorialCamera = nullptr;
 
 	/** 카메라 전환 블렌드 시간 */
-	float CameraBlendTime = 2.0f;
+	float CameraBlendTime = 1.0f;
 
 	TSharedPtr<SButton> StartButton;
 
@@ -174,4 +216,11 @@ protected:
 
 	/** 카트 배경 이미지 (좌하단) */
 	TSharedPtr<SImage> CartImage;
+
+	// ────────────────────────────────────────────────
+	// UI 위젯 - 튜토리얼 만화/컷씬
+	// ────────────────────────────────────────────────
+
+	/** 만화/컷씬 전체 화면 이미지 (8장) */
+	TArray<TSharedPtr<SImage>> ComicImages;
 };
