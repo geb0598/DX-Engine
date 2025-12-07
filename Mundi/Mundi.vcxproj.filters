@@ -1355,6 +1355,9 @@
     <ClCompile Include="Source\Slate\GameUI\SImage.cpp">
       <Filter>Source\Slate\GameUI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Slate\GameUI\SGradientBox.cpp">
+      <Filter>Source\Slate\GameUI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Runtime\AssetManagement\LinesBatch.h">
@@ -2947,6 +2950,9 @@
       <Filter>Source\Runtime\Engine\GameFramework</Filter>
     </ClInclude>
     <ClInclude Include="Source\Slate\GameUI\SImage.h">
+      <Filter>Source\Slate\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\GameUI\SGradientBox.h">
       <Filter>Source\Slate\GameUI</Filter>
     </ClInclude>
   </ItemGroup>

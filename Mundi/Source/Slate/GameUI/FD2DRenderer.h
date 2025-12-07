@@ -77,6 +77,9 @@ public:
     /** 선 */
     void DrawLine(const FVector2D& Start, const FVector2D& End, const FSlateColor& Color, float Thickness = 1.0f);
 
+    /** 가로 그라데이션 사각형 (좌우로 페이드) */
+    void DrawHorizontalGradientRect(const FVector2D& Position, const FVector2D& Size, const FSlateColor& CenterColor, float FadeWidth);
+
     // =====================================================
     // 이미지 렌더링
     // =====================================================

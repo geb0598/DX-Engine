@@ -11,6 +11,8 @@
 class SButton;
 class STextBlock;
 class SImage;
+class SGradientBox;
+class SBorderBox;
 
 /**
  * AHudExampleGameMode
@@ -69,4 +71,25 @@ protected:
 
 	/** 박스 개수 텍스트 */
 	TSharedPtr<STextBlock> BoxesCountText;
+
+	/** 테스트용 이미지 위젯 */
+	TSharedPtr<SImage> TestImage;
+
+	/** "REACH HOME" 배경 그라데이션 */
+	TSharedPtr<SGradientBox> ReachHomeBg;
+
+	/** "REACH HOME" 텍스트 이미지 (상단 중앙) */
+	TSharedPtr<SImage> ReachHomeText;
+
+	/** 차량 정보 패널 배경 (왼쪽 하단) */
+	TSharedPtr<SBorderBox> VehicleInfoBg;
+
+	/** 차량 정보: 속도 텍스트 */
+	TSharedPtr<STextBlock> VehicleSpeedText;
+
+	/** 차량 정보: RPM 텍스트 */
+	TSharedPtr<STextBlock> VehicleRpmText;
+
+	/** 차량 정보: 기어 텍스트 */
+	TSharedPtr<STextBlock> VehicleGearText;
 };

@@ -255,6 +255,64 @@ void FD2DRenderer::DrawLine(const FVector2D& Start, const FVector2D& End, const 
     );
 }
 
+void FD2DRenderer::DrawHorizontalGradientRect(const FVector2D& Position, const FVector2D& Size, const FSlateColor& CenterColor, float FadeWidth)
+{
+    if (!bInFrame || !D2DContext) return;
+
+    // 그라데이션 스톱 정의 (중앙은 불투명, 좌우는 투명)
+    D2D1_GRADIENT_STOP GradientStops[3];
+
+    // 왼쪽 끝 (투명)
+    GradientStops[0].position = 0.0f;
+    GradientStops[0].color = D2D1::ColorF(CenterColor.R, CenterColor.G, CenterColor.B, 0.0f);
+
+    // 중앙 (불투명)
+    GradientStops[1].position = 0.5f;
+    GradientStops[1].color = D2D1::ColorF(CenterColor.R, CenterColor.G, CenterColor.B, CenterColor.A);
+
+    // 오른쪽 끝 (투명)
+    GradientStops[2].position = 1.0f;
+    GradientStops[2].color = D2D1::ColorF(CenterColor.R, CenterColor.G, CenterColor.B, 0.0f);
+
+    // 그라데이션 스톱 컬렉션 생성
+    ID2D1GradientStopCollection* GradientStopCollection = nullptr;
+    HRESULT Hr = D2DContext->CreateGradientStopCollection(
+        GradientStops,
+        3,
+        D2D1_GAMMA_2_2,
+        D2D1_EXTEND_MODE_CLAMP,
+        &GradientStopCollection
+    );
+
+    if (FAILED(Hr)) return;
+
+    // 선형 그라데이션 브러시 생성 (좌에서 우로)
+    ID2D1LinearGradientBrush* GradientBrush = nullptr;
+    Hr = D2DContext->CreateLinearGradientBrush(
+        D2D1::LinearGradientBrushProperties(
+            D2D1::Point2F(Position.X, Position.Y + Size.Y * 0.5f),           // 시작점 (왼쪽)
+            D2D1::Point2F(Position.X + Size.X, Position.Y + Size.Y * 0.5f)   // 끝점 (오른쪽)
+        ),
+        GradientStopCollection,
+        &GradientBrush
+    );
+
+    GradientStopCollection->Release();
+
+    if (SUCCEEDED(Hr))
+    {
+        // 사각형 그리기
+        D2D1_RECT_F Rect = D2D1::RectF(
+            Position.X,
+            Position.Y,
+            Position.X + Size.X,
+            Position.Y + Size.Y
+        );
+        D2DContext->FillRectangle(Rect, GradientBrush);
+        GradientBrush->Release();
+    }
+}
+
 void FD2DRenderer::DrawImage(ID2D1Bitmap* Bitmap, const FVector2D& Position, const FVector2D& Size, const FSlateColor& Tint, float Opacity)
 {
     if (!bInFrame || !D2DContext || !Bitmap)

@@ -511,6 +511,8 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\$(Configuration)\*.dll" "$(OutDir
     <ClCompile Include="Source\Runtime\Renderer\SceneView.cpp" />
     <ClCompile Include="Source\Runtime\Renderer\TileLightCuller.cpp" />
     <ClCompile Include="Source\Slate\GameUI\SImage.cpp" />
+    <ClCompile Include="Source\Slate\GameUI\SGradientBox.cpp" />
+    <ClCompile Include="Source\Slate\GameUI\SBorderBox.cpp" />
     <ClCompile Include="Source\Slate\Widgets\ModalDialog.cpp" />
     <ClCompile Include="Source\Slate\Widgets\PhysicsAssetEditor\BodyPropertiesWidget.cpp" />
     <ClCompile Include="Source\Slate\Widgets\PhysicsAssetEditor\ConstraintPropertiesWidget.cpp" />
@@ -1127,6 +1129,8 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\$(Configuration)\*.dll" "$(OutDir
     <ClInclude Include="Source\Runtime\RHI\SwapGuard.h" />
     <ClInclude Include="Source\Runtime\RHI\ConstantBufferType.h" />
     <ClInclude Include="Source\Slate\GameUI\SImage.h" />
+    <ClInclude Include="Source\Slate\GameUI\SGradientBox.h" />
+    <ClInclude Include="Source\Slate\GameUI\SBorderBox.h" />
     <ClInclude Include="Source\Slate\Widgets\ModalDialog.h" />
     <ClInclude Include="Source\Slate\Widgets\PhysicsAssetEditor\BodyPropertiesWidget.h" />
     <ClInclude Include="Source\Slate\Widgets\PhysicsAssetEditor\ConstraintPropertiesWidget.h" />
