@@ -8,6 +8,7 @@
 
 UBodySetup::UBodySetup()
     : BoneName("None")
+	, PhysicalMaterial(nullptr)
 {
 } 
 

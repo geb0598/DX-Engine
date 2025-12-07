@@ -323,6 +323,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\$(Configuration)\*.dll" "$(OutDir
     <ClCompile Include="Source\Runtime\Engine\GameFramework\GameModeBase.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\GameStateBase.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\HudExampleGameMode.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\NPC.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\Pawn.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\PlayerController.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\PlayerGameMode.cpp" />
@@ -792,6 +793,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\$(Configuration)\*.dll" "$(OutDir
     <ClCompile Include="Generated\UCargoComponent.generated.cpp" />
     <ClCompile Include="Generated\FVehicleEngineData.generated.cpp" />
     <ClCompile Include="Generated\ALandmine.generated.cpp" />
+    <ClCompile Include="Generated\ANPC.generated.cpp" />
     <ClCompile Include="Generated\ADumbRiderGameMode.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -1030,6 +1032,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\$(Configuration)\*.dll" "$(OutDir
     <ClInclude Include="Source\Runtime\Engine\GameFramework\GameModeBase.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\GameStateBase.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\HudExampleGameMode.h" />
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\NPC.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\Pawn.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\PlayerCameraManager.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\DirectionalLightActor.h" />
@@ -1426,6 +1429,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\$(Configuration)\*.dll" "$(OutDir
     <ClInclude Include="Generated\UCargoComponent.generated.h" />
     <ClInclude Include="Generated\FVehicleEngineData.generated.h" />
     <ClInclude Include="Generated\ALandmine.generated.h" />
+    <ClInclude Include="Generated\ANPC.generated.h" />
     <ClInclude Include="Generated\ADumbRiderGameMode.generated.h" />
   </ItemGroup>
   <ItemGroup>

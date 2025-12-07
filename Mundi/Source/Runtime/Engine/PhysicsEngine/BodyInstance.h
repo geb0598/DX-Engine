@@ -35,6 +35,12 @@ struct FBodyInstance
     /** 바디 인스턴스에서 사용되는 물리 머티리얼을 가져온다. */
     UPhysicalMaterial* GetSimplePhysicalMaterial() const;
 
+    /** 현재 선형 속도를 가져옵니다. (cm/s) */
+    FVector GetLinearVelocity() const;
+
+    /** 현재 각속도를 가져옵니다. (rad/s) */
+    FVector GetAngularVelocity() const;
+
     /**
      * 물리 바디의 위치를 강제로 설정 (텔레포트)
      * @note 현재는 커맨드 큐가 없기 때문에 SCOPED_SCENE_WRITE_LOCK을 통해서 비동기 연산을 처리한다.

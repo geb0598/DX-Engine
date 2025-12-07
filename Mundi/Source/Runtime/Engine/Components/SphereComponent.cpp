@@ -36,6 +36,13 @@ USphereComponent::~USphereComponent()
 void USphereComponent::DuplicateSubObjects()
 {
 	Super::DuplicateSubObjects();
+	
+	if (SphereBodySetup)
+	{
+		UBodySetup* OldSetup = SphereBodySetup;
+		SphereBodySetup = NewObject<UBodySetup>();
+		SphereBodySetup->AggGeom = OldSetup->AggGeom;
+	}
 }
 
 // ────────────────────────────────────────────────────────────────────────────

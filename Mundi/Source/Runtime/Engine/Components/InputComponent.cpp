@@ -1,4 +1,4 @@
-// ────────────────────────────────────────────────────────────────────────────
+﻿// ────────────────────────────────────────────────────────────────────────────
 // InputComponent.cpp
 // 입력 바인딩 컴포넌트 구현
 // ────────────────────────────────────────────────────────────────────────────
@@ -69,6 +69,11 @@ void UInputComponent::ProcessInput()
 		if (InputManager.IsKeyDown(Binding.KeyCode) && Binding.Callback)
 		{
 			Binding.Callback(Binding.Scale);
+		}
+		else if (Binding.Callback)
+		{
+			float AxisScale = InputManager.GetGamepadAxisValue(Binding.KeyCode);
+			Binding.Callback(AxisScale * Binding.Scale);
 		}
 	}
 }

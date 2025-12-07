@@ -246,6 +246,54 @@ UPhysicalMaterial* FBodyInstance::GetSimplePhysicalMaterial() const
     return nullptr;
 }
 
+FVector FBodyInstance::GetLinearVelocity() const
+{
+    if (!IsValidBodyInstance())
+    {
+        return FVector(0.0f, 0.0f, 0.0f);
+    }
+
+    if (IsDynamic())
+    {
+        if (PhysScene)
+        {
+            SCOPED_SCENE_READ_LOCK(PhysScene->GetPxScene());
+            
+            if (PxRigidDynamic* DynamicActor = RigidActor->is<PxRigidDynamic>())
+            {
+                PxVec3 PVelocity = DynamicActor->getLinearVelocity();
+                return P2UVector(PVelocity); 
+            }
+        }
+    }
+
+    return FVector(0.0f, 0.0f, 0.0f);
+}
+
+FVector FBodyInstance::GetAngularVelocity() const
+{
+    if (!IsValidBodyInstance())
+    {
+        return FVector(0.0f, 0.0f, 0.0f);
+    }
+
+    if (IsDynamic())
+    {
+        if (PhysScene)
+        {
+            SCOPED_SCENE_READ_LOCK(PhysScene->GetPxScene());
+
+            if (PxRigidDynamic* DynamicActor = RigidActor->is<PxRigidDynamic>())
+            {
+                PxVec3 PAngVelocity = DynamicActor->getAngularVelocity();
+                return P2UVector(PAngVelocity);
+            }
+        }
+    }
+
+    return FVector(0.0f, 0.0f, 0.0f);
+}
+
 void FBodyInstance::SetBodyTransform(const FTransform& NewTransform, bool bTeleport)
 {
     if (!IsValidBodyInstance() || !PhysScene) { return; }
