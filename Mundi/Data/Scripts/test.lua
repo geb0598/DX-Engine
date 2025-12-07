@@ -2,7 +2,7 @@ local GameMode = nil
 function BeginPlay()
     print("[BeginPlay] " .. Obj.UUID)
     GameMode = GetOwnerAs(Obj, "AGameModeBase")
-    GameMode.PlayerSpawnLocation = Vector(10,1,10)
+    GameMode.PlayerSpawnLocation = Vector(166.79, 1.3, 3)
 end
 
 function EndPlay()
