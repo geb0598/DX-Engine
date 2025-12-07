@@ -73,6 +73,7 @@ public:
     FQuat GetRelativeRotation() const;
 
     // Euler Angle 접근 (UI 편집용)
+    UFUNCTION(LuaBind, DisplayName = "SetRelativeRotationEuler")
     void SetRelativeRotationEuler(const FVector& EulerDegrees);
     FVector GetRelativeRotationEuler() const;
 
@@ -91,6 +92,7 @@ public:
     void SetWorldTransform(const FTransform& W);
     void SetWorldTransform(const FTransform& W, EUpdateTransformFlags UpdateTransformFlags, ETeleportType Teleport = ETeleportType::None);
 
+    UFUNCTION(LuaBind, DisplayName = "SetWorldLocation")
     void SetWorldLocation(const FVector& L);
     FVector GetWorldLocation() const;
 
@@ -105,6 +107,7 @@ public:
     void AddWorldRotation(const FQuat& DeltaRot);
     void SetWorldLocationAndRotation(const FVector& L, const FQuat& R);
 
+    UFUNCTION(LuaBind, DisplayName = "AddLocalLocation")
     void AddLocalOffset(const FVector& Delta);
     void AddLocalRotation(const FQuat& DeltaRot);
     void SetLocalLocationAndRotation(const FVector& L, const FQuat& R);
@@ -115,7 +118,10 @@ public:
     // Attach/Detach
     // ──────────────────────────────
     void SetupAttachment(USceneComponent* InParent, EAttachmentRule Rule = EAttachmentRule::KeepWorld);
-    void DetachFromParent(bool bKeepWorld = true);
+
+    // 루아때문에 기본값 제거함(true)
+    UFUNCTION(LuaBind, DisplayName = "DetachFromParent")
+    void DetachFromParent(bool bKeepWorld);
 
     // ──────────────────────────────
     // Hierarchy Access

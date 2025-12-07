@@ -43,7 +43,7 @@ FLuaManager::FLuaManager()
         "UUID", &FGameObject::UUID,
         "Tag", sol::property(&FGameObject::GetTag, &FGameObject::SetTag),
         "Location", sol::property(&FGameObject::GetLocation, &FGameObject::SetLocation),
-        "Rotation", sol::property(&FGameObject::GetRotation, &FGameObject::SetRotation), 
+        "Rotation", sol::property(&FGameObject::GetRotation, &FGameObject::SetRotation),
         "Scale", sol::property(&FGameObject::GetScale, &FGameObject::SetScale),
         "bIsActive", sol::property(&FGameObject::GetIsActive, &FGameObject::SetIsActive),
         "Velocity", &FGameObject::Velocity,

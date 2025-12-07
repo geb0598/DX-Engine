@@ -170,6 +170,11 @@ void UCargoComponent::OnUnregister()
 // 화물 설정 및 초기화
 // ====================================================================
 
+int32 UCargoComponent::Lua_ValidCargoCount()
+{
+    return ValidCargoCount;
+}
+
 void UCargoComponent::InitializeCargo(int32 BoxCount)
 {
     static std::random_device RandomDevice;
