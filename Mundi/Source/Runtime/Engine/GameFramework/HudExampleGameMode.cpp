@@ -486,7 +486,7 @@ void AHudExampleGameMode::BeginPlay()
 	SGameHUD::Get().AddWidget(GameOverBg)
 		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
 		.SetPivot(0.5f, 0.5f)   // 중앙 기준
-		.SetOffset(0.f, -80.f)
+		.SetOffset(0.f, -240.f)
 		.SetSize(600.f, 300.f);
 
 	// "MISSION COMPLETE!" 텍스트
@@ -501,7 +501,7 @@ void AHudExampleGameMode::BeginPlay()
 	SGameHUD::Get().AddWidget(GameOverText)
 		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
 		.SetPivot(0.5f, 0.5f)   // 중앙 기준
-		.SetOffset(0.f, -120.f)
+		.SetOffset(0.f, -240.f)
 		.SetSize(500.f, 60.f);
 
 	// 재시작 버튼
@@ -1234,8 +1234,19 @@ void AHudExampleGameMode::EndGame(bool bVictory)
 			int32 Minutes = TotalSeconds / 60;
 			int32 Seconds = TotalSeconds % 60;
 
+			APawn* PlayerPawn = GetPlayerController()->GetPawn();
+			if (!PlayerPawn) return;
+
+			AVehicle* Vehicle = Cast<AVehicle>(PlayerPawn);
+			if (!Vehicle) return;
+
+			UCargoComponent* CargoComp = Cast<UCargoComponent>(Vehicle->GetComponent(UCargoComponent::StaticClass()));
+
+			int32 CargoScore = CargoComp->GetValidCargoCount() * 100;
+			int32 TimeScore = 2000 - TotalSeconds * 10;
+			int32 Score = CargoScore + TimeScore;
 			wchar_t TimeStr[128];
-			swprintf_s(TimeStr, L"MISSION COMPLETE!\n\nTime: %02d:%02d", Minutes, Seconds);
+			swprintf_s(TimeStr, L"MISSION COMPLETE!\n\nTime: %02d:%02d\nScore : %d", Minutes, Seconds, Score);
 			GameOverText->SetText(TimeStr);
 		}
 	}
@@ -1244,7 +1255,7 @@ void AHudExampleGameMode::EndGame(bool bVictory)
 		// 실패 UI
 		if (GameOverText)
 		{
-			GameOverText->SetText(L"MISSION FAILED!");
+			GameOverText->SetText(L"MISSION FAILED!").SetColor(FSlateColor(1.0f,0.0f,0.0f,1.0f));
 		}
 	}
 
