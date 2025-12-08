@@ -1,0 +1,35 @@
+# Blender 4.5.3 LTS MTL File: 'None'
+# www.blender.org
+
+newmtl Cap
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd StreetLamp_Cap_base.png
+map_Bump -bm 1.000000 StreetLamp_Cap_nor.png
+
+newmtl Lamp
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd StreetLamp_Lamp_albedo.png
+map_Ke StreetLamp_Lamp_emission.png
+map_Bump -bm 1.000000 StreetLamp_Lamp_nor.png
+
+newmtl Pillar
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd StreetLamp_Pillar_base.png
+map_Bump -bm 1.000000 StreetLamp_Pillar_nor.png

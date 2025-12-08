@@ -104,7 +104,7 @@ void AGameModeBase::StartGame()
 	// GameState 상태 변경
 	if (GameState)
 	{
-		GameState->SetGameState(EGameState::Playing);
+		GameState->SetGameState(EHudGameState::Playing);
 	}
 
 	// 델리게이트 브로드캐스트
@@ -125,11 +125,11 @@ void AGameModeBase::EndGame(bool bVictory)
 	{
 		if (bVictory)
 		{
-			GameState->SetGameState(EGameState::Victory);
+			GameState->SetGameState(EHudGameState::Victory);
 		}
 		else
 		{
-			GameState->SetGameState(EGameState::GameOver);
+			GameState->SetGameState(EHudGameState::GameOver);
 		}
 	}
 
@@ -143,7 +143,7 @@ void AGameModeBase::RestartGame()
 	// GameState 초기화
 	if (GameState)
 	{
-		GameState->SetGameState(EGameState::NotStarted);
+		GameState->SetGameState(EHudGameState::NotStarted);
 		GameState->SetScore(0);
 		GameState->ResetTimer();
 	}
@@ -169,7 +169,7 @@ void AGameModeBase::PauseGame()
 	// GameState 상태 변경
 	if (GameState)
 	{
-		GameState->SetGameState(EGameState::Paused);
+		GameState->SetGameState(EHudGameState::Paused);
 	}
 
 	// 델리게이트 브로드캐스트
@@ -186,7 +186,7 @@ void AGameModeBase::ResumeGame()
 	// GameState 상태 변경
 	if (GameState)
 	{
-		GameState->SetGameState(EGameState::Playing);
+		GameState->SetGameState(EHudGameState::Playing);
 	}
 
 	// 델리게이트 브로드캐스트
@@ -207,7 +207,11 @@ void AGameModeBase::SetGameState(AGameStateBase* NewGameState)
 
 bool AGameModeBase::IsGameOver() const
 {
-	return GameState->GetGameState() == EGameState::GameOver;
+	if (!GameState)
+		return false;
+
+	EHudGameState State = GameState->GetGameState();
+	return State == EHudGameState::GameOver || State == EHudGameState::Victory;
 }
 // ────────────────────────────────────────────────────────────────────────────
 // 플레이어 관리

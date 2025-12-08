@@ -29,7 +29,8 @@ function Tick(dt)
     
     if GameMode:IsGameOver()
     then
-        if(InputManager:IsKeyPressed('P'))
+        -- 1004 -> START
+        if InputManager:IsKeyPressed('P') or InputManager:IsKeyPressed(1004)
         then
             GameMode:RestartGame()
         end

@@ -1,4 +1,4 @@
-// ────────────────────────────────────────────────────────────────────────────
+﻿// ────────────────────────────────────────────────────────────────────────────
 // CapsuleComponent.cpp
 // Capsule 형태의 충돌 컴포넌트 구현 (Week09 기반, Week12 적응)
 // ────────────────────────────────────────────────────────────────────────────
@@ -18,8 +18,8 @@
 
 UCapsuleComponent::UCapsuleComponent()
 {
-	CapsuleRadius = 50.0f;
-	CapsuleHalfHeight = 100.0f;
+	CapsuleRadius = 0.4f;
+	CapsuleHalfHeight = 0.9f;
 	UpdateBounds();
 
 	CapsuleBodySetup = NewObject<UBodySetup>();

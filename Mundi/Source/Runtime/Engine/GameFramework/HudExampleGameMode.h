@@ -20,11 +20,12 @@ class SProgressBar;
 
 // 전방 선언
 class ACameraActor;
+struct FCanvasSlot;
 
 /**
  * 게임 상태
  */
-enum class EGameState
+enum class EHudGameState
 {
 	MainMenu,              // 메인 메뉴 (시작 화면)
 	Tutorial_Camera,       // 튜토리얼: 카메라 연출
@@ -62,13 +63,15 @@ public:
 	// ────────────────────────────────────────────────
 
 	void StartGame() override;
+	void EndGame(bool bVictory) override;  // 승리/실패 UI 표시
+	void RestartGame() override;  // 튜토리얼 스킵하고 바로 게임 시작
 
 	// ────────────────────────────────────────────────
 	// 게임 상태 관리
 	// ────────────────────────────────────────────────
 
 	/** 현재 게임 상태 */
-	EGameState GetGameState() const { return CurrentGameState; }
+	EHudGameState GetGameState() const { return CurrentGameState; }
 
 	/** 메인 메뉴로 전환 */
 	void ShowMainMenu();
@@ -95,7 +98,7 @@ protected:
 	// ────────────────────────────────────────────────
 
 	/** 현재 게임 상태 */
-	EGameState CurrentGameState = EGameState::MainMenu;
+	EHudGameState CurrentGameState = EHudGameState::MainMenu;
 
 	// ────────────────────────────────────────────────
 	// UI 위젯 - 메인 메뉴
@@ -132,7 +135,7 @@ protected:
 	float TutorialCameraTimer = 0.f;
 
 	/** 튜토리얼 카메라 대기 시간 (조작법 보여주는 시간) */
-	float TutorialCameraWaitTime = 3.0f;
+	float TutorialCameraWaitTime = 1.0f;
 
 	/** 튜토리얼 카메라 입력 대기 준비 */
 	bool bTutorialCameraReady = false;
@@ -147,10 +150,14 @@ protected:
 	float ComicSceneWaitTime = 4.0f;
 
 	/** 만화 총 장면 수 */
-	static constexpr int32 TotalComicScenes = 7;
+	static constexpr int32 TotalComicScenes = 8;
 
 	/** 만화 시작 후 입력 무시 시간 (키 중복 방지) */
 	float ComicInputIgnoreTime = 0.5f;
+
+	float FrameStableTime = 1.0f;
+
+	float FrameStableTimer = 0.0f;
 
 	/** 입력 무시 시간 이후 키 상태 초기화 완료 여부 */
 	bool bComicInputReady = false;
@@ -178,7 +185,8 @@ protected:
 	// ────────────────────────────────────────────────
 	// UI 위젯 - 게임 플레이
 	// ────────────────────────────────────────────────
-	TSharedPtr<STextBlock> ScoreText;
+	TSharedPtr<STextBlock> ScoreText;      // "SCORE" 레이블
+	TSharedPtr<STextBlock> ScoreValueText; // 실제 점수 값
 	TSharedPtr<STextBlock> SpeedText;
 	TSharedPtr<STextBlock> RpmText;
 	TSharedPtr<STextBlock> GearText;
@@ -258,4 +266,71 @@ protected:
 	class UAudioComponent* MainMenuMusicComponent = nullptr;
 
 	class UAudioComponent* BackgroundMusicComponent = nullptr;
+	// 부스터 게이지 UI (좌하단)
+	// ────────────────────────────────────────────────
+
+	/** 부스터 게이지 진행 바 */
+	TSharedPtr<SProgressBar> BoosterProgressBar;
+
+	/** "BOOSTER" 배경 그라데이션 (진행 바 왼쪽) */
+	TSharedPtr<SGradientBox> BoosterTextBg;
+
+	/** "BOOSTER" 텍스트 이미지 (진행 바 왼쪽) */
+	TSharedPtr<SImage> BoosterText;
+
+	/** 현재 부스터 게이지 (0.0 ~ 1.0) */
+	float CurrentBoosterCharge = 0.0f;
+
+	/** 부스터 충전 속도 (초당) */
+	float BoosterChargeRate = 0.5f;  // 2초면 가득 참
+
+	// ────────────────────────────────────────────────
+	// Objective 연출
+	// ────────────────────────────────────────────────
+
+	/** Objective 배경 그라데이션 */
+	TSharedPtr<SGradientBox> ObjectiveBg;
+
+	/** Objective 이미지 */
+	TSharedPtr<SImage> ObjectiveImage;
+
+	/** Objective 배경 슬롯 참조 (위치 조정용) */
+	FCanvasSlot* ObjectiveBgSlot = nullptr;
+
+	/** Objective 이미지 슬롯 참조 (위치 조정용) */
+	FCanvasSlot* ObjectiveImageSlot = nullptr;
+
+	/** Objective 연출 단계 (0: 비활성, 1: 등장, 2: 대기, 3: 상단 이동) */
+	int32 ObjectiveAnimationPhase = 0;
+
+	/** Objective 연출 타이머 */
+	float ObjectiveAnimationTimer = 0.0f;
+
+	/** Objective 등장 애니메이션 시간 */
+	float ObjectiveFadeInDuration = 0.8f;
+
+	/** Objective 대기 시간 (읽는 시간) */
+	float ObjectiveHoldDuration = 1.5f;
+
+	/** Objective 상단 이동 시간 */
+	float ObjectiveMoveUpDuration = 0.8f;
+
+	// ────────────────────────────────────────────────
+	// 게임 오버 UI
+	// ────────────────────────────────────────────────
+
+	/** 게임 오버 배경 그라데이션 */
+	TSharedPtr<SGradientBox> GameOverBg;
+
+	/** "MISSION COMPLETE!" 텍스트 */
+	TSharedPtr<STextBlock> GameOverText;
+
+	/** "Press P to Restart" 텍스트 */
+	TSharedPtr<STextBlock> RestartText;
+
+	/** 게임 오버 플래그 (한 번만 트리거) */
+	bool bGameEndTriggered = false;
+
+	/** 재시작 시 튜토리얼 스킵 플래그 (정적 변수 - RestartPIE 후에도 유지됨) */
+	static bool bSkipTutorialOnRestart;
 };

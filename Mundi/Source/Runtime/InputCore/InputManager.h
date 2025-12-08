@@ -104,6 +104,8 @@ public:
     float GetGamepadAxisValue(int KeyCode) const;
     FStickInput GetRightStickValue() const;
 
+    bool IsAnyGamepadKeyPressed() const;
+
     // 마우스 휠 함수들
     float GetMouseWheelDelta() const { return MouseWheelDelta; }
     // 디버그 로그 토글

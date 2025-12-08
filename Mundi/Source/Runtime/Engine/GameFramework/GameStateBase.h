@@ -8,7 +8,7 @@
 #include "AGameStateBase.generated.h"
 
 // 게임 상태 열거형
-enum class EGameState : uint8
+enum class EHudGameState : uint8
 {
 	NotStarted,  // 게임 시작 전
 	Playing,     // 게임 진행 중
@@ -18,7 +18,7 @@ enum class EGameState : uint8
 };
 
 // 게임 상태 변경 델리게이트 타입 (OldState, NewState)
-DECLARE_DELEGATE_TYPE_TwoParam(FOnGameStateChanged, EGameState, EGameState);
+DECLARE_DELEGATE_TYPE_TwoParam(FOnGameStateChanged, EHudGameState, EHudGameState);
 
 // 스코어 변경 델리게이트 타입 (OldScore, NewScore)
 DECLARE_DELEGATE_TYPE_TwoParam(FOnScoreChanged, int32, int32);
@@ -60,8 +60,8 @@ public:
 	// 게임 상태 관리
 	// ────────────────────────────────────────────────
 
-	EGameState GetGameState() const { return CurrentGameState; }
-	void SetGameState(EGameState NewState);
+	EHudGameState GetGameState() const { return CurrentGameState; }
+	void SetGameState(EHudGameState NewState);
 
 	// ────────────────────────────────────────────────
 	// 스코어 관리
@@ -107,7 +107,7 @@ protected:
 	// ────────────────────────────────────────────────
 
 	// 현재 게임 상태
-	EGameState CurrentGameState;
+	EHudGameState CurrentGameState;
 
 	// 타이머 일시정지 플래그
 	bool bTimerPaused;

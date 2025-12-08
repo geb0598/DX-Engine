@@ -12,7 +12,7 @@
 AGameStateBase::AGameStateBase()
 	: Score(0)
 	, ElapsedTime(0.0f)
-	, CurrentGameState(EGameState::NotStarted)
+	, CurrentGameState(EHudGameState::NotStarted)
 	, bTimerPaused(true)
 {
 	// GameState는 물리/렌더링 대상이 아님 (Info 상속)
@@ -36,7 +36,7 @@ void AGameStateBase::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	// 타이머가 일시정지 상태가 아니고 게임이 진행 중일 때만 시간 증가
-	if (!bTimerPaused && (CurrentGameState == EGameState::Playing))
+	if (!bTimerPaused && (CurrentGameState == EHudGameState::Playing))
 	{
 		ElapsedTime += DeltaTime;
 		OnTimerUpdated.Broadcast(ElapsedTime);
@@ -47,19 +47,19 @@ void AGameStateBase::Tick(float DeltaTime)
 // 게임 상태 관리
 // ────────────────────────────────────────────────────────────────────────────
 
-void AGameStateBase::SetGameState(EGameState NewState)
+void AGameStateBase::SetGameState(EHudGameState NewState)
 {
 	if (CurrentGameState != NewState)
 	{
-		EGameState OldState = CurrentGameState;
+		EHudGameState OldState = CurrentGameState;
 		CurrentGameState = NewState;
 
 		// 게임 상태에 따라 타이머 자동 제어
-		if (NewState == EGameState::Playing)
+		if (NewState == EHudGameState::Playing)
 		{
 			ResumeTimer();
 		}
-		else if (NewState == EGameState::Paused || NewState == EGameState::GameOver || NewState == EGameState::Victory)
+		else if (NewState == EHudGameState::Paused || NewState == EHudGameState::GameOver || NewState == EHudGameState::Victory)
 		{
 			PauseTimer();
 		}
@@ -120,7 +120,7 @@ void AGameStateBase::DuplicateSubObjects()
 	Super::DuplicateSubObjects();
 
 	// GameState는 복제 시 상태 초기화
-	CurrentGameState = EGameState::NotStarted;
+	CurrentGameState = EHudGameState::NotStarted;
 	Score = 0;
 	ElapsedTime = 0.0f;
 	bTimerPaused = true;
