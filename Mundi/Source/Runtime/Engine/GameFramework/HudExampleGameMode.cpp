@@ -21,6 +21,8 @@
 #include "CameraActor.h"
 #include "PlayerCameraManager.h"
 #include "CameraComponent.h"
+#include <chrono>
+#include <ctime>
 
 // ────────────────────────────────────────────────────────────────────────────
 // 생성자
@@ -136,46 +138,30 @@ void AHudExampleGameMode::BeginPlay()
 	StartButton->SetVisibility(ESlateVisibility::Hidden);  // 자동 전환 사용하므로 숨김
 
 	// ─────────────────────────────────────────────────
-	// 게임 플레이 UI (성능 테스트를 위해 일부 주석 처리 가능)
+	// 게임 플레이 UI - 점수판 (좌상단)
 	// ─────────────────────────────────────────────────
 
-	// 점수 텍스트 (좌상단)
-	ScoreText = MakeShared<STextBlock>();
-	ScoreText->SetText(L"점수: 0")
-		.SetFontSize(32.f)
-		.SetColor(FSlateColor::White())
-		.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor::Black());
-
-	// Fade In + Scale 애니메이션 테스트 (더 느리게, 더 명확하게)
-	//TestImage->SetOpacity(0.0f);  // 완전히 투명하게 시작
-	//TestImage->SetScale(FVector2D(0.3f, 0.3f));  // 아주 작게 시작
-	//TestImage->PlayFadeIn(2.0f, EEasingType::EaseOutCubic);  // 2초 동안 Fade In
-	//TestImage->PlayScaleAnimation(FVector2D(1.0f, 1.0f), 2.0f, EEasingType::EaseOutCubic);  // 2초 동안 확대
-
-	SGameHUD::Get().AddWidget(ScoreText)
-		.SetAnchor(0.f, 0.f)
-		.SetOffset(20.f, 20.f)
-		.SetSize(300.f, 50.f);
-
-	// 박스 아이콘 (왼쪽 하단으로 이동)
+	// 박스 아이콘 (좌상단으로 이동)
 	BoxesIcon = MakeShared<SImage>();
-	BoxesIcon->SetTexture(L"Data/Textures/Dumb/Box.png");
-
+	BoxesIcon->SetTexture(L"Data/Textures/Dumb/box.png")
+		.SetHighQualityInterpolation(true);
+		
 	SGameHUD::Get().AddWidget(BoxesIcon)
-		.SetAnchor(0.0f, 1.0f)  // 좌하단
-		.SetPivot(0.0f, 1.0f)   // 좌하단 기준
-		.SetOffset(20.f, -300.f)  // 미니맵, 차량 정보 위
-		.SetSize(80.f, 80.f);
+		.SetAnchor(0.0f, 0.0f)  // 좌상단
+		.SetPivot(0.0f, 0.0f)   // 좌상단 기준
+		.SetOffset(20.f, 20.f)
+		.SetSize(150.f, 150.f);
 
 	// "x BOXES LEFT" 텍스트
 	BoxesLeftText = MakeShared<SImage>();
-	BoxesLeftText->SetTexture(L"Data/Textures/Dumb/Boxesleft.png");
+	BoxesLeftText->SetTexture(L"Data/Textures/Dumb/Boxesleft.png")
+		.SetHighQualityInterpolation(true);
 
 	SGameHUD::Get().AddWidget(BoxesLeftText)
-		.SetAnchor(0.0f, 1.0f)  // 좌하단
-		.SetPivot(0.0f, 1.0f)   // 좌하단 기준
-		.SetOffset(110.f, -320.f)  // 박스 아이콘 오른쪽
-		.SetSize(150.f, 40.f);
+		.SetAnchor(0.0f, 0.0f)  // 좌상단
+		.SetPivot(0.0f, 0.0f)   // 좌상단 기준
+		.SetOffset(50.f, 25.f)  // 박스 아이콘 오른쪽, 수직 중앙
+		.SetSize(140.f, 40.f);
 
 	// 박스 개수 텍스트 (박스 아이콘 중앙)
 	BoxesCountText = MakeShared<STextBlock>();
@@ -187,31 +173,10 @@ void AHudExampleGameMode::BeginPlay()
 		.SetVAlign(ETextVAlign::Center);
 
 	SGameHUD::Get().AddWidget(BoxesCountText)
-		.SetAnchor(0.0f, 1.0f)  // 좌하단
-		.SetPivot(0.0f, 1.0f)   // 좌하단 기준
-		.SetOffset(45.f, -285.f)  // 박스 아이콘 중앙
-		.SetSize(80.f, 80.f);
-
-	// "REACH HOME" 배경 그라데이션 (상단 중앙)
-	ReachHomeBg = MakeShared<SGradientBox>();
-	ReachHomeBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.6f))  // 반투명 검정
-		.SetFadeWidth(150.f);
-
-	SGameHUD::Get().AddWidget(ReachHomeBg)
-		.SetAnchor(0.5f, 0.0f)  // 상단 중앙
-		.SetPivot(0.5f, 0.0f)   // 상단 중앙 기준
-		.SetOffset(0.f, 15.f)   // 위에서 15픽셀 아래
-		.SetSize(400, 40.f);  // 텍스트보다 크게
-
-	// "REACH HOME" 텍스트 (상단 중앙, 배경 중앙에 배치)
-	ReachHomeText = MakeShared<SImage>();
-	ReachHomeText->SetTexture(L"Data/Textures/Dumb/ReachHome.png");
-
-	SGameHUD::Get().AddWidget(ReachHomeText)
-		.SetAnchor(0.5f, 0.0f)  // 상단 중앙
-		.SetPivot(0.5f, 0.5f)   // 이미지 중앙을 기준점으로
-		.SetOffset(0.f, 36.f)   // 배경 중앙에 위치 (15 + 40/2 = 40)
-		.SetSize(160.f, 30.f);  // 크기 증가
+		.SetAnchor(0.0f, 0.0f)  // 좌상단
+		.SetPivot(0.0f, 0.0f)   // 좌상단 기준
+		.SetOffset(100.f, 80.f)  // 박스 아이콘 중앙에 위치하도록 조정
+		.SetSize(90.f, 90.f);
 
 	// ─────────────────────────────────────────────────
 	// 카트 이미지 (좌하단) - 텍스트보다 먼저 그려야 텍스트가 위에 보임
@@ -379,35 +344,69 @@ void AHudExampleGameMode::BeginPlay()
 		.SetSize(180.f, 180.f);   // 정사각형 미니맵
 
 	// ─────────────────────────────────────────────────
-	// 경과 시간 UI (상단 오른쪽)
+	// 날짜 UI (상단 오른쪽)
 	// ─────────────────────────────────────────────────
 
-	// 배경 박스 (반투명 검정)
-	ElapsedTimeBg = MakeShared<SBorderBox>();
-	ElapsedTimeBg->SetBackgroundColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.6f))  // 반투명 검정
-		.SetBorderThickness(2.f)
-		.SetBorderColor(FSlateColor(1.0f, 1.0f, 1.0f, 0.3f));  // 밝은 회색 테두리
+	// 날짜 배경 (time.png - 둥근 네모 테두리)
+	TestImage = MakeShared<SImage>();
+	TestImage->SetTexture(L"Data/Textures/Dumb/time.png")
+		.SetHighQualityInterpolation(true);  // 고품질 보간 적용
 
-	SGameHUD::Get().AddWidget(ElapsedTimeBg)
+	SGameHUD::Get().AddWidget(TestImage)
 		.SetAnchor(1.0f, 0.0f)  // 우상단
 		.SetPivot(1.0f, 0.0f)   // 우상단 기준
-		.SetOffset(-20.f, 20.f)  // 우상단에서 조금 안쪽
-		.SetSize(180.f, 50.f);
+		.SetOffset(-35.f, 25.f)
+		.SetSize(180.f, 100.f);  // 크기 증가
 
-	// 경과 시간 텍스트
-	ElapsedTimeText = MakeShared<STextBlock>();
-	ElapsedTimeText->SetText(L"TIME: 00:00")
-		.SetFontSize(24.f)
+	// 날짜 텍스트 (작은 글씨)                                                                                     
+	//ElapsedTimeText = MakeShared<STextBlock>();                                                                  
+	//ElapsedTimeText->SetText(L"") // Tick에서 업데이트                                                           
+	//    .SetFontSize(14.f) // 글자 크기 감소                                                                     
+	//    .SetColor(FSlateColor::White())                                                                          
+	//    .SetShadow(true, FVector2D(1.f, 1.f), FSlateColor::Black())                                              
+	//    .SetHAlign(ETextHAlign::Center)                                                                          
+	//    .SetVAlign(ETextVAlign::Center);
+
+	//SGameHUD::Get().AddWidget(ElapsedTimeText)                                                                   
+	//    .SetAnchor(1.0f, 0.0f)                                                                                   
+	//    .SetPivot(1.0f, 0.0f)                                                                                    
+	//    .SetOffset(-20.f, 30.f) // 상단에 배치                                                                   
+	//    .SetSize(300.f, 30.f);
+	SGameHUD::Get().AddWidget(ElapsedTimeText)
+		.SetAnchor(0.5f, 0.0f)
+		.SetPivot(0.5f, 0.0f)
+		.SetOffset(0.f, 150.f) // 디버그 정보가 잘 보이도록 위치 조정
+		.SetSize(400.f, 40.f);
+
+	// "ELAPSED TIME" 레이블
+	ScoreText = MakeShared<STextBlock>();
+	ScoreText->SetText(L"ELAPSED TIME")
+		.SetFontSize(16.f)
+		.SetColor(FSlateColor(0.8f, 0.8f, 0.8f, 1.0f))
+		.SetShadow(true, FVector2D(1.f, 1.f), FSlateColor::Black())
+		.SetHAlign(ETextHAlign::Center)
+		.SetVAlign(ETextVAlign::Center);
+
+	SGameHUD::Get().AddWidget(ScoreText)
+		.SetAnchor(1.0f, 0.0f)
+		.SetPivot(1.0f, 0.0f)
+		.SetOffset(-35.f, 38.f)
+		.SetSize(180.f, 30.f);
+
+	// 경과 시간 텍스트 (중간 크기 폰트)
+	ScoreValueText = MakeShared<STextBlock>();
+	ScoreValueText->SetText(L"00:00")
+		.SetFontSize(34.f) // 폰트 크기 조정
 		.SetColor(FSlateColor::White())
 		.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor::Black())
 		.SetHAlign(ETextHAlign::Center)
 		.SetVAlign(ETextVAlign::Center);
 
-	SGameHUD::Get().AddWidget(ElapsedTimeText)
-		.SetAnchor(1.0f, 0.0f)  // 우상단
-		.SetPivot(1.0f, 0.0f)   // 우상단 기준
-		.SetOffset(-20.f, 20.f)  // 배경과 동일한 위치
-		.SetSize(180.f, 50.f);
+	SGameHUD::Get().AddWidget(ScoreValueText)
+		.SetAnchor(1.0f, 0.0f)
+		.SetPivot(1.0f, 0.0f) // 피벗 수정
+		.SetOffset(-35.f, 65.f) // 레이블 아래에 배치
+		.SetSize(180.f, 43.f);
 
 	// ─────────────────────────────────────────────────
 	// Objective 연출 (게임 시작 시 중앙에서 등장)
@@ -544,6 +543,16 @@ void AHudExampleGameMode::EndPlay()
 			SGameHUD::Get().RemoveWidget(ScoreText);
 			ScoreText.Reset();
 		}
+		if (ScoreValueText)
+		{
+			SGameHUD::Get().RemoveWidget(ScoreValueText);
+			ScoreValueText.Reset();
+		}
+		if (TestImage)
+		{
+			SGameHUD::Get().RemoveWidget(TestImage);
+			TestImage.Reset();
+		}
 		if (BoxesIcon)
 		{
 			SGameHUD::Get().RemoveWidget(BoxesIcon);
@@ -558,16 +567,6 @@ void AHudExampleGameMode::EndPlay()
 		{
 			SGameHUD::Get().RemoveWidget(BoxesCountText);
 			BoxesCountText.Reset();
-		}
-		if (ReachHomeBg)
-		{
-			SGameHUD::Get().RemoveWidget(ReachHomeBg);
-			ReachHomeBg.Reset();
-		}
-		if (ReachHomeText)
-		{
-			SGameHUD::Get().RemoveWidget(ReachHomeText);
-			ReachHomeText.Reset();
 		}
 		if (VehicleInfoPanel)
 		{
@@ -625,6 +624,16 @@ void AHudExampleGameMode::EndPlay()
 			SGameHUD::Get().RemoveWidget(ObjectiveImage);
 			ObjectiveImage.Reset();
 		}
+		if (ElapsedTimeBg)
+		{
+			SGameHUD::Get().RemoveWidget(ElapsedTimeBg);
+			ElapsedTimeBg.Reset();
+		}
+		if (ElapsedTimeText)
+		{
+			SGameHUD::Get().RemoveWidget(ElapsedTimeText);
+			ElapsedTimeText.Reset();
+		}
 		if (BoosterProgressBar)
 		{
 			SGameHUD::Get().RemoveWidget(BoosterProgressBar);
@@ -679,12 +688,11 @@ void AHudExampleGameMode::ShowMainMenu()
 
 	// 게임 플레이 UI 숨기기
 	if (ScoreText) ScoreText->SetVisibility(ESlateVisibility::Hidden);
+	if (ScoreValueText) ScoreValueText->SetVisibility(ESlateVisibility::Hidden);
 	if (TestImage) TestImage->SetVisibility(ESlateVisibility::Hidden);
 	if (BoxesIcon) BoxesIcon->SetVisibility(ESlateVisibility::Hidden);
 	if (BoxesLeftText) BoxesLeftText->SetVisibility(ESlateVisibility::Hidden);
 	if (BoxesCountText) BoxesCountText->SetVisibility(ESlateVisibility::Hidden);
-	if (ReachHomeBg) ReachHomeBg->SetVisibility(ESlateVisibility::Hidden);
-	if (ReachHomeText) ReachHomeText->SetVisibility(ESlateVisibility::Hidden);
 	if (CartImage) CartImage->SetVisibility(ESlateVisibility::Hidden);
 	if (VehicleInfoPanel) VehicleInfoPanel->SetVisibility(ESlateVisibility::Hidden);
 	if (Minimap) Minimap->SetVisibility(ESlateVisibility::Hidden);
@@ -696,6 +704,8 @@ void AHudExampleGameMode::ShowMainMenu()
 	if (BoosterProgressBar) BoosterProgressBar->SetVisibility(ESlateVisibility::Hidden);
 	if (BoosterTextBg) BoosterTextBg->SetVisibility(ESlateVisibility::Hidden);
 	if (BoosterText) BoosterText->SetVisibility(ESlateVisibility::Hidden);
+	if (ObjectiveBg) ObjectiveBg->SetVisibility(ESlateVisibility::Hidden);
+	if (ObjectiveImage) ObjectiveImage->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void AHudExampleGameMode::StartCameraCinematic()
@@ -774,14 +784,12 @@ void AHudExampleGameMode::StartGamePlay()
 			Comic->SetVisibility(ESlateVisibility::Hidden);
 	}
 
-	// 게임 플레이 UI 표시
-	if (ScoreText) ScoreText->SetVisibility(ESlateVisibility::Visible);
 	if (TestImage) TestImage->SetVisibility(ESlateVisibility::Visible);
+	if (ScoreText) ScoreText->SetVisibility(ESlateVisibility::Visible);
+	if (ScoreValueText) ScoreValueText->SetVisibility(ESlateVisibility::Visible);
 	if (BoxesIcon) BoxesIcon->SetVisibility(ESlateVisibility::Visible);
 	if (BoxesLeftText) BoxesLeftText->SetVisibility(ESlateVisibility::Visible);
 	if (BoxesCountText) BoxesCountText->SetVisibility(ESlateVisibility::Visible);
-	if (ReachHomeBg) ReachHomeBg->SetVisibility(ESlateVisibility::Visible);
-	if (ReachHomeText) ReachHomeText->SetVisibility(ESlateVisibility::Visible);
 	if (CartImage) CartImage->SetVisibility(ESlateVisibility::Visible);
 	if (VehicleInfoPanel) VehicleInfoPanel->SetVisibility(ESlateVisibility::Visible);
 	if (Minimap) Minimap->SetVisibility(ESlateVisibility::Visible);
@@ -874,9 +882,9 @@ void AHudExampleGameMode::StartGame()
 
 void AHudExampleGameMode::UpdateScoreUI(int32 Score)
 {
-	if (ScoreText)
+	if (ScoreValueText)
 	{
-		ScoreText->SetText(L"점수: " + std::to_wstring(Score));
+		ScoreValueText->SetText(std::to_wstring(Score));
 	}
 }
 
@@ -1186,7 +1194,7 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 				ObjectiveAnimationTimer = 0.0f;
 			}
 		}
-		// Phase 3: 상단으로 이동 (Fade Out 없이 위치만 이동)
+		// Phase 3: 상단으로 이동 (Reach Home 스타일과 일치)
 		else if (ObjectiveAnimationPhase == 3)
 		{
 			float Progress = FMath::Clamp(ObjectiveAnimationTimer / ObjectiveMoveUpDuration, 0.0f, 1.0f);
@@ -1197,32 +1205,31 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 				: 1.0f - std::pow(-2.0f * Progress + 2.0f, 3.0f) / 2.0f;
 
 			// 시작 위치: 화면 중앙 (Y = 0)
-			// 최종 위치: 상단 (Y = -350, 상단 "REACH HOME" 근처)
+			// 최종 위치: 상단 (Y Offset: -505, ReachHome 위치 근사치)
 			float StartY = 0.0f;
-			float EndY = -350.0f;
+			float EndY = -505.0f;
 			float CurrentY = StartY + (EndY - StartY) * EasedProgress;
 
-			// 크기도 약간 줄임 (1.0 → 0.7)
-			float SizeScale = 1.0f - (EasedProgress * 0.3f);
+			// ObjectiveBg 크기: 400x60 -> 400x40 (ReachHomeBg와 일치)
+			float BgSizeX = 400.f;
+			float BgSizeY = 60.f - (20.f * EasedProgress);
+
+			// ObjectiveImage 크기: 600x40 -> 160x30 (ReachHomeText와 일치)
+			float ImageSizeX = 600.f - (440.f * EasedProgress);
+			float ImageSizeY = 40.f - (10.f * EasedProgress);
 
 			// 배경 위젯 업데이트 (슬롯 포인터 사용)
 			if (ObjectiveBgSlot)
 			{
 				ObjectiveBgSlot->Offset.Y = CurrentY;
-
-				// 크기도 조정
-				ObjectiveBgSlot->Size.X = 400.0f * SizeScale;
-				ObjectiveBgSlot->Size.Y = 60.0f * SizeScale;
+				ObjectiveBgSlot->Size = FVector2D(BgSizeX, BgSizeY);
 			}
 
 			// 이미지 위젯 업데이트 (슬롯 포인터 사용)
 			if (ObjectiveImageSlot)
 			{
 				ObjectiveImageSlot->Offset.Y = CurrentY;
-
-				// 크기도 조정
-				ObjectiveImageSlot->Size.X = 300.0f * SizeScale;
-				ObjectiveImageSlot->Size.Y = 40.0f * SizeScale;
+				ObjectiveImageSlot->Size = FVector2D(ImageSizeX, ImageSizeY);
 			}
 
 			// 이동 완료
@@ -1338,21 +1345,17 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	}
 
 	// ─────────────────────────────────────────────────
-	// 경과 시간 업데이트
-	// ─────────────────────────────────────────────────
-
+	// 경과 시간 업데이트 (큰 폰트)
 	ElapsedGameTime += DeltaSeconds;
-
-	if (ElapsedTimeText)
+	if (ScoreValueText)
 	{
-		// 분:초 형식으로 표시 (MM:SS)
 		int32 TotalSeconds = static_cast<int32>(ElapsedGameTime);
 		int32 Minutes = TotalSeconds / 60;
 		int32 Seconds = TotalSeconds % 60;
 
 		wchar_t TimeStr[32];
-		swprintf_s(TimeStr, L"TIME: %02d:%02d", Minutes, Seconds);
-		ElapsedTimeText->SetText(TimeStr);
+		swprintf_s(TimeStr, L"%02d:%02d", Minutes, Seconds);
+		ScoreValueText->SetText(TimeStr);
 	}
 
 	// ─────────────────────────────────────────────────

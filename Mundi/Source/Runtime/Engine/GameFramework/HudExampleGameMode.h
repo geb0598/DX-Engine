@@ -178,7 +178,8 @@ protected:
 	// ────────────────────────────────────────────────
 	// UI 위젯 - 게임 플레이
 	// ────────────────────────────────────────────────
-	TSharedPtr<STextBlock> ScoreText;
+	TSharedPtr<STextBlock> ScoreText;      // "SCORE" 레이블
+	TSharedPtr<STextBlock> ScoreValueText; // 실제 점수 값
 	TSharedPtr<STextBlock> SpeedText;
 	TSharedPtr<STextBlock> RpmText;
 	TSharedPtr<STextBlock> GearText;
