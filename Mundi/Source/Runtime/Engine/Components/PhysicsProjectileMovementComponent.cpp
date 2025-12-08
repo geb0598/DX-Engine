@@ -2,6 +2,7 @@
 #include "PhysicsProjectileMovementComponent.h"
 #include "Actor.h"
 #include "PrimitiveComponent.h"
+#include "ParticleSystemComponent.h"
 #include "BodyInstance.h"
 #include <random>
 
@@ -167,6 +168,20 @@ void UPhysicsProjectileMovementComponent::OnHit(UPrimitiveComponent* HitComp
 	, FVector NormalImpulse
 	, const FHitResult& Hit)
 {
+	if (bUseHitParticle)
+	{
+		if (AActor* Owner = GetOwner())
+		{
+			for (USceneComponent* Comp : Owner->GetSceneComponents())
+			{
+				if (auto* ParticleComp = Cast<UParticleSystemComponent>(Comp))
+				{
+					ParticleComp->ActivateSystem();
+				}
+			}
+		}
+	}
+
 	// 충돌 시 발사체 파괴 트리거
 	DestroyWithDelay(DestroyDelay);
 }

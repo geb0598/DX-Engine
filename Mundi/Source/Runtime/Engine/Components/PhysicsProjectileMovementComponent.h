@@ -35,6 +35,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Projectile Movement")
 	float DestroyDelay = 1.0f; // 충돌 발생 후 이 시간	(초) 후에 발사체를 파괴
 
+	UPROPERTY(EditAnywhere, Category = "Projectile Movement")
+	bool bUseHitParticle = false; // 충돌 시 파티클 이펙트 재생 여부
+
 protected:
 	/** 충돌 시 호출될 콜백 함수 */
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
