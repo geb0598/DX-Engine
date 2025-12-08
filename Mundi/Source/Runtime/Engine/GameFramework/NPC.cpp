@@ -121,3 +121,28 @@ void ANPC::BecomeRagdoll(const FVector& ImpactVelocity)
         FAudioDevice::PlaySound3D(HitSound, GetActorLocation());
     }
 }
+
+void ANPC::Serialize(const bool bInIsLoading, JSON& InOutHandle)
+{
+    Super::Serialize(bInIsLoading, InOutHandle);
+
+    if (bInIsLoading)
+    {
+        // Super Serialize에서 디폴트 컴포넌트 다 Destroy하는데 멤버 변수로 참조하고 있어서 StandAlone에서 댕글링.
+        // 역직렬화 따로 해주고 혹시 모를 상황에 대비해서 nullptr설정
+        MeshComponent = nullptr;
+        CapsuleComponent = nullptr;
+
+        for (UActorComponent* Component : SceneComponents)
+        {
+            if (USkeletalMeshComponent* NewMeshComponent = Cast<USkeletalMeshComponent>(Component))
+            {
+                MeshComponent = NewMeshComponent;
+            }
+            else if (UCapsuleComponent* NewCapsuleComponent = Cast<UCapsuleComponent>(Component))
+            {
+                CapsuleComponent = NewCapsuleComponent;
+            }
+        }
+    }
+}

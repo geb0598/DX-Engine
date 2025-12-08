@@ -168,6 +168,11 @@ void APawn::AddControllerRollInput(float DeltaRoll)
 	// 비행기 등에서 필요 시 오버라이드
 }
 
+void APawn::GameOver(float bVictory)
+{
+	OnGameOver.Broadcast(bVictory);
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // 복제
 // ────────────────────────────────────────────────────────────────────────────

@@ -32,6 +32,8 @@ public:
 
     void StartPIE();
     void EndPIE();
+    void RestartPIE();
+    bool IsRestartPIE();
     bool IsPIEActive() const { return bPIEActive; }
     
     HWND GetHWND() const { return HWnd; }
@@ -70,6 +72,8 @@ private:
     //월드 핸들
     TArray<FWorldContext> WorldContexts;
      
+    // 파이 재시작하는 경우 다른 로직을 적용하기 위함(튜토리얼 스킵..)
+    bool bRestartPie = false;
 
     //틱 상태
     bool bRunning = false;

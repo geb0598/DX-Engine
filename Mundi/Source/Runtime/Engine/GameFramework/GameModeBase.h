@@ -63,6 +63,8 @@ public:
 
 	virtual void StartGame();
 	virtual void EndGame(bool bVictory);
+
+	UFUNCTION(LuaBind, DisplayName = "RestartGame")
 	virtual void RestartGame();
 	virtual void PauseGame();
 	virtual void ResumeGame();
@@ -111,6 +113,9 @@ public:
 
 	AGameStateBase* GetGameState() const { return GameState; }
 	void SetGameState(AGameStateBase* NewGameState);
+
+	UFUNCTION(LuaBind, DisplayName = "IsGameOver")
+	bool IsGameOver() const;
 
 	// ────────────────────────────────────────────────
 	// 델리게이트

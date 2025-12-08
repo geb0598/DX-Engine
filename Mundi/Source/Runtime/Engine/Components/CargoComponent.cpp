@@ -446,6 +446,7 @@ void UCargoComponent::CollapseFrom(int32 StartIndex)
             FVector VehicleUp = VehicleTransform.TransformVector(WorldUp);
             VehicleUp.Normalize();
             Vehicle->EjectDriver(VehicleUp * EjectionImpulse);
+            Vehicle->GameOver(false);
         }
         CurrentState = ECargoState::Collapsed;
     }

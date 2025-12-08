@@ -1,10 +1,11 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Vehicle.h"
 
 #include "AnimStateMachine.h"
 #include "AnimStateMachineInstance.h"
 #include "InputComponent.h"
 #include "Landmine.h"
+#include "GameVictoryVolume.h"
 #include "PhysScene.h"
 #include "SkeletalMeshComponent.h"
 #include "LuaScriptComponent.h"
@@ -65,6 +66,10 @@ AVehicle::AVehicle()
     SpringArm->TargetArmLength = 20.0f;
     SpringArm->SocketOffset = FVector(-4.6f, 0.0f, 4.6f);
     SpringArm->bUsePawnControlRotation = true;
+    SpringArm->bEnableCameraLag = true;
+    SpringArm->bEnableCameraRotationLag = true;
+    SpringArm->CameraLagSpeed = 5.0f;
+    SpringArm->CameraRotationLagSpeed = 5.0f;
 
     Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
     Camera->SetupAttachment(SpringArm);
@@ -449,6 +454,24 @@ void AVehicle::CheckWheelInteractions()
                     FakeHit.Component = ChassisMesh; 
 
                     MineComp->DispatchBlockingHit(this, ChassisMesh, FVector::Zero(), FakeHit);
+                }
+            }
+            else if (AGameVictoryVolume* VictoryVolume = Cast<AGameVictoryVolume>(Hit.Actor.Get()))
+            {
+                // 우선 지정된 TriggerVolume으로 디스패치, 없으면 Hit된 컴포넌트로 fallback 시도.
+                UPrimitiveComponent* VictoryComp = VictoryVolume->TriggerVolume;
+                if (!VictoryComp)
+                {
+                    VictoryComp = Cast<UPrimitiveComponent>(Hit.Component.Get());
+                }
+
+                if (VictoryComp)
+                {
+                    FHitResult FakeHit = Hit;
+                    FakeHit.Actor = this;
+                    FakeHit.Component = ChassisMesh;
+
+                    VictoryComp->DispatchBlockingHit(this, ChassisMesh, FVector::Zero(), FakeHit);
                 }
             }
         }

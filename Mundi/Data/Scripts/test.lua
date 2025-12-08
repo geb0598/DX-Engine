@@ -27,6 +27,13 @@ end
 
 function Tick(dt)
     
+    if GameMode:IsGameOver()
+    then
+        if(InputManager:IsKeyPressed('P'))
+        then
+            GameMode:RestartGame()
+        end
+    end
     --Obj:GetPlayerController()
     --[[Obj:PrintLocation()]]--
     --[[print("[Tick] ")]]--

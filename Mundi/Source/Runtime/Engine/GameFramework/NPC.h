@@ -21,6 +21,7 @@ protected:
     // ====================================================================
     virtual void BeginPlay() override;
     virtual void DuplicateSubObjects() override;
+    virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle);
 
 public:
     // ====================================================================

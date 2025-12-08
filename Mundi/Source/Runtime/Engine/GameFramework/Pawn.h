@@ -108,6 +108,10 @@ public:
 	 */
 	virtual void AddControllerRollInput(float DeltaRoll);
 
+	virtual void GameOver(float bVictory);
+
+	DECLARE_DELEGATE_OneParam(OnGameOver, bool);
+
 protected:
 	// ────────────────────────────────────────────────
 	// 생명주기

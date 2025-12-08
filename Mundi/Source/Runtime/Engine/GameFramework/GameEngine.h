@@ -16,6 +16,12 @@ public:
     void MainLoop();
     void Shutdown();
 
+    // 리스타트시 파이월드 제거 후 새로 만들기 위해 정의
+    void StartPIE();
+    void EndPIE();
+    void RestartPIE();
+    bool IsRestartPIE();
+
     bool IsPlayActive() const { return bPlayActive; }
 
     HWND GetHWND() const { return HWnd; }
@@ -53,6 +59,10 @@ private:
 
     //월드 핸들
     TArray<FWorldContext> WorldContexts;
+
+    bool bEndPieForRestart = false;
+
+    bool bRestartPie = false;
 
     //틱 상태
     bool bRunning = false;
