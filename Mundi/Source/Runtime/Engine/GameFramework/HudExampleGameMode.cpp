@@ -598,6 +598,35 @@ void AHudExampleGameMode::BeginPlay()
 	CreditImage->SetVisibility(ESlateVisibility::Hidden);
 
 	// ─────────────────────────────────────────────────
+	// 조작키 설명서 UI (Tab 키로 토글)
+	// ─────────────────────────────────────────────────
+
+	// 반투명 배경
+	KeyBindingsBackground = MakeShared<SBorderBox>();
+	KeyBindingsBackground->SetBorderColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.6f));  // 검정색 80% 불투명
+
+	SGameHUD::Get().AddWidget(KeyBindingsBackground)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(0.f, 0.f)
+		.SetSize(1920.f, 1080.f);  // 전체 화면
+
+	KeyBindingsBackground->SetVisibility(ESlateVisibility::Hidden);
+
+	// 조작키 설명서 이미지
+	KeyBindingsImage = MakeShared<SImage>();
+	KeyBindingsImage->SetTexture(L"Data/Textures/Dumb/KeyBindings.png")
+		.SetHighQualityInterpolation(true);
+
+	SGameHUD::Get().AddWidget(KeyBindingsImage)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(0.f, 0.f)
+		.SetSize(800.f, 600.f);  // 조작키 설명서 크기 (필요시 조정)
+
+	KeyBindingsImage->SetVisibility(ESlateVisibility::Hidden);
+
+	// ─────────────────────────────────────────────────
 	// 카메라 찾기 (이름으로 검색)
 	// ─────────────────────────────────────────────────
 
@@ -883,6 +912,16 @@ void AHudExampleGameMode::EndPlay()
 			SGameHUD::Get().RemoveWidget(CreditImage);
 			CreditImage.Reset();
 		}
+		if (KeyBindingsBackground)
+		{
+			SGameHUD::Get().RemoveWidget(KeyBindingsBackground);
+			KeyBindingsBackground.Reset();
+		}
+		if (KeyBindingsImage)
+		{
+			SGameHUD::Get().RemoveWidget(KeyBindingsImage);
+			KeyBindingsImage.Reset();
+		}
 	}
 }
 
@@ -985,6 +1024,8 @@ void AHudExampleGameMode::StartCameraCinematic()
 	// 타이머 리셋
 	TutorialCameraTimer = 0.f;
 	bTutorialCameraReady = false;
+
+	// 조작키 설명서는 카메라 블렌드 완료 후에 표시 (Tick에서 처리)
 }
 
 void AHudExampleGameMode::ShowTutorialComic()
@@ -1309,6 +1350,39 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	// ─────────────────────────────────────────────────
+	// Tab 키로 조작키 설명서 토글 (게임 플레이 중에만)
+	// ─────────────────────────────────────────────────
+	bool bTabPressed = (GetAsyncKeyState(VK_TAB) & 0x8000) != 0;
+
+	// 게임 플레이 중에만 Tab 키로 토글
+	if (CurrentGameState == EHudGameState::Playing)
+	{
+		// Tab 키를 새로 눌렀을 때 (이전 프레임에는 안 눌려있었고 현재 눌림)
+		if (bTabPressed && !bPrevTabPressed)
+		{
+			// 토글
+			bShowKeyBindings = !bShowKeyBindings;
+
+			// UI 표시/숨김
+			if (KeyBindingsBackground)
+			{
+				KeyBindingsBackground->SetVisibility(
+					bShowKeyBindings ? ESlateVisibility::Visible : ESlateVisibility::Hidden
+				);
+			}
+			if (KeyBindingsImage)
+			{
+				KeyBindingsImage->SetVisibility(
+					bShowKeyBindings ? ESlateVisibility::Visible : ESlateVisibility::Hidden
+				);
+			}
+		}
+	}
+
+	// 이전 프레임 키 상태 저장
+	bPrevTabPressed = bTabPressed;
+
 	// >= 쓰면 계속 FrameTime 더해줘야함
 	if (FrameStableTimer < FrameStableTime && CurrentGameState == EHudGameState::Playing)
 	{
@@ -1437,6 +1511,13 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	{
 		TutorialCameraTimer += DeltaSeconds;
 
+		// 카메라 블렌드 완료 후 조작키 설명서 표시
+		if (TutorialCameraTimer >= CameraBlendTime + 0.15f && KeyBindingsImage &&
+			KeyBindingsImage->GetVisibility() != ESlateVisibility::Visible)
+		{
+			KeyBindingsImage->SetVisibility(ESlateVisibility::Visible);
+		}
+
 		// 일정 시간 대기 후 입력 대기 준비
 		if (!bTutorialCameraReady && TutorialCameraTimer >= TutorialCameraWaitTime)
 		{
@@ -1487,6 +1568,10 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 
 			if (bAnyKeyPressed)
 			{
+				// 조작키 설명서 숨기기
+				if (KeyBindingsImage)
+					KeyBindingsImage->SetVisibility(ESlateVisibility::Hidden);
+
 				// 만화/컷씬으로 전환
 				ShowTutorialComic();
 				return;

@@ -369,6 +369,22 @@ protected:
 	static bool bSkipTutorialOnRestart;
 
 	// ────────────────────────────────────────────────
+	// 조작키 설명서 UI
+	// ────────────────────────────────────────────────
+
+	/** 조작키 설명서 배경 (반투명 오버레이) */
+	TSharedPtr<SBorderBox> KeyBindingsBackground;
+
+	/** 조작키 설명서 이미지 */
+	TSharedPtr<SImage> KeyBindingsImage;
+
+	/** 조작키 설명서 표시 여부 */
+	bool bShowKeyBindings = false;
+
+	/** 이전 프레임 Tab 키 상태 (키 중복 방지) */
+	bool bPrevTabPressed = false;
+
+	// ────────────────────────────────────────────────
 	// 엔딩 크레딧 UI
 	// ────────────────────────────────────────────────
 
