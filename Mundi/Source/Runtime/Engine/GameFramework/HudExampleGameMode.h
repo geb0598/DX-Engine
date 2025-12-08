@@ -19,6 +19,7 @@ class SProgressBar;
 
 // 전방 선언
 class ACameraActor;
+struct FCanvasSlot;
 
 /**
  * 게임 상태
@@ -250,4 +251,54 @@ protected:
 
 	/** "TO HOME" 텍스트 이미지 (진행 바 왼쪽) */
 	TSharedPtr<SImage> ToHomeText;
+
+	// ────────────────────────────────────────────────
+	// 부스터 게이지 UI (좌하단)
+	// ────────────────────────────────────────────────
+
+	/** 부스터 게이지 진행 바 */
+	TSharedPtr<SProgressBar> BoosterProgressBar;
+
+	/** "BOOSTER" 배경 그라데이션 (진행 바 왼쪽) */
+	TSharedPtr<SGradientBox> BoosterTextBg;
+
+	/** "BOOSTER" 텍스트 이미지 (진행 바 왼쪽) */
+	TSharedPtr<SImage> BoosterText;
+
+	/** 현재 부스터 게이지 (0.0 ~ 1.0) */
+	float CurrentBoosterCharge = 0.0f;
+
+	/** 부스터 충전 속도 (초당) */
+	float BoosterChargeRate = 0.5f;  // 2초면 가득 참
+
+	// ────────────────────────────────────────────────
+	// Objective 연출
+	// ────────────────────────────────────────────────
+
+	/** Objective 배경 그라데이션 */
+	TSharedPtr<SGradientBox> ObjectiveBg;
+
+	/** Objective 이미지 */
+	TSharedPtr<SImage> ObjectiveImage;
+
+	/** Objective 배경 슬롯 참조 (위치 조정용) */
+	FCanvasSlot* ObjectiveBgSlot = nullptr;
+
+	/** Objective 이미지 슬롯 참조 (위치 조정용) */
+	FCanvasSlot* ObjectiveImageSlot = nullptr;
+
+	/** Objective 연출 단계 (0: 비활성, 1: 등장, 2: 대기, 3: 상단 이동) */
+	int32 ObjectiveAnimationPhase = 0;
+
+	/** Objective 연출 타이머 */
+	float ObjectiveAnimationTimer = 0.0f;
+
+	/** Objective 등장 애니메이션 시간 */
+	float ObjectiveFadeInDuration = 0.8f;
+
+	/** Objective 대기 시간 (읽는 시간) */
+	float ObjectiveHoldDuration = 1.5f;
+
+	/** Objective 상단 이동 시간 */
+	float ObjectiveMoveUpDuration = 0.8f;
 };

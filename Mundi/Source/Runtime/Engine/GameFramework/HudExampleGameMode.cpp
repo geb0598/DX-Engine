@@ -146,15 +146,6 @@ void AHudExampleGameMode::BeginPlay()
 		.SetColor(FSlateColor::White())
 		.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor::Black());
 
-	// 테스트용 이미지 (화면 좌상단)
-	TestImage = MakeShared<SImage>();
-	TestImage->SetTexture(L"Data/Textures/Dumb/DumbRider.png");
-
-	SGameHUD::Get().AddWidget(TestImage)
-		.SetAnchor(0.0f, 0.0f)
-		.SetOffset(30.f, 0.f)
-		.SetSize(250.f, 250.f);
-
 	// Fade In + Scale 애니메이션 테스트 (더 느리게, 더 명확하게)
 	//TestImage->SetOpacity(0.0f);  // 완전히 투명하게 시작
 	//TestImage->SetScale(FVector2D(0.3f, 0.3f));  // 아주 작게 시작
@@ -165,8 +156,6 @@ void AHudExampleGameMode::BeginPlay()
 		.SetAnchor(0.f, 0.f)
 		.SetOffset(20.f, 20.f)
 		.SetSize(300.f, 50.f);
-
-	// 우하단 속도/기어/RPM UI는 제거됨 (왼쪽 하단 차량 정보 패널로 대체)
 
 	// 박스 아이콘 (왼쪽 하단으로 이동)
 	BoxesIcon = MakeShared<SImage>();
@@ -294,23 +283,23 @@ void AHudExampleGameMode::BeginPlay()
 
 	ToHomeBg = MakeShared<SGradientBox>();
 	ToHomeBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.6f))  // 반투명 검정
-		.SetFadeWidth(80.f);  // 100 → 80
+		.SetFadeWidth(60.f);  // boost와 동일
 
 	SGameHUD::Get().AddWidget(ToHomeBg)
 		.SetAnchor(1.0f, 1.0f)  // 오른쪽 하단
-		.SetPivot(1.0f, 1.0f)   // 오른쪽 하단 기준 (progress bar와 동일)
-		.SetOffset(-230.f, -37.f)  // 진행 바 중앙에 정렬 (ProgressBar 중앙 -46 + 높이/2 = -46 + 9 = -37)
-		.SetSize(120.f, 18.f);  // 텍스트에 fit하게 (200x20 → 150x16)
+		.SetPivot(1.0f, 1.0f)   // 오른쪽 하단 기준
+		.SetOffset(-230.f, -37.f)  // 진행 바 중앙에 정렬
+		.SetSize(110.f, 18.f);  // boost와 동일 (110x18)
 
-	// "TO HOME" 텍스트 (진행 바 왼쪽, 배경 중앙에 배치)
+	// "TO HOME" 텍스트 (배경 중앙에 배치)
 	ToHomeText = MakeShared<SImage>();
 	ToHomeText->SetTexture(L"Data/Textures/Dumb/tohome.png");
 
 	SGameHUD::Get().AddWidget(ToHomeText)
 		.SetAnchor(1.0f, 1.0f)  // 오른쪽 하단
-		.SetPivot(1.0f, 0.5f)   // 오른쪽 중앙 기준 (세로 중앙 정렬)
-		.SetOffset(-230.f, -46.f)  // 진행 바 중앙에 정렬 (ProgressBar 중앙 Y = -46)
-		.SetSize(80.f, 12.f);  // tohome 텍스트 크기 (100x16 → 80x12)
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준 (중앙 정렬)
+		.SetOffset(-285.f, -46.f)  // 그라데이션 박스 중앙 (-230 - 110/2 = -285)
+		.SetSize(60.f, 12.f);  // boost와 동일
 
 	// ─────────────────────────────────────────────────
 	// 목적지까지 거리 진행 바 (미니맵 하단에 위치, 먼저 그려서 뒤에 렌더링)
@@ -331,6 +320,46 @@ void AHudExampleGameMode::BeginPlay()
 		.SetSize(180.f, 12.f);  // 미니맵과 같은 너비, 세로 12px (얇게)
 
 	// ─────────────────────────────────────────────────
+	// 부스터 게이지 UI (좌하단, 차량 정보 아래)
+	// ─────────────────────────────────────────────────
+
+	// "BOOSTER" 배경 그라데이션 (진행 바 왼쪽)
+	BoosterTextBg = MakeShared<SGradientBox>();
+	BoosterTextBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.6f))  // 반투명 검정
+		.SetFadeWidth(60.f);  // 80 → 60
+
+	SGameHUD::Get().AddWidget(BoosterTextBg)
+		.SetAnchor(0.0f, 1.0f)  // 왼쪽 하단
+		.SetPivot(0.0f, 1.0f)   // 왼쪽 하단 기준
+		.SetOffset(20.f, -37.f)  // 진행 바 중앙에 정렬
+		.SetSize(100.f, 18.f);  // 120 → 100
+
+	// "BOOSTER" 텍스트 이미지
+	BoosterText = MakeShared<SImage>();
+	BoosterText->SetTexture(L"Data/Textures/Dumb/boost.png");
+
+	SGameHUD::Get().AddWidget(BoosterText)
+		.SetAnchor(0.0f, 1.0f)  // 왼쪽 하단
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준 (중앙 정렬)
+		.SetOffset(70.f, -46.f)  // 그라데이션 박스 중앙 (20 + 100/2 = 70)
+		.SetSize(60.f, 12.f);
+
+	// 부스터 게이지 진행 바
+	BoosterProgressBar = MakeShared<SProgressBar>();
+	BoosterProgressBar->SetPercent(0.0f)  // 초기값: 0%
+		.SetBarColor(FSlateColor(255.f/255.f, 200.f/255.f, 100.f/255.f, 1.0f))  // rgb(255, 200, 100) - 불꽃색
+		.SetBackgroundColor(FSlateColor(0.2f, 0.2f, 0.2f, 0.4f))  // 어두운 배경
+		.SetBorderColor(FSlateColor(0.5f, 0.5f, 0.5f, 1.0f))  // 회색 테두리
+		.SetBorderThickness(2.0f)
+		.SetCornerRadius(4.0f);
+
+	SGameHUD::Get().AddWidget(BoosterProgressBar)
+		.SetAnchor(0.0f, 1.0f)  // 왼쪽 하단
+		.SetPivot(0.0f, 1.0f)   // 왼쪽 하단 기준
+		.SetOffset(130.f, -40.f)  // "BOOSTER" 텍스트 오른쪽 (배경 줄어든만큼 왼쪽으로)
+		.SetSize(162.f, 12.f);  // 180 → 162 (10% 감소)
+
+	// ─────────────────────────────────────────────────
 	// 미니맵 (오른쪽 하단, 진행 바 위에 렌더링)
 	// ─────────────────────────────────────────────────
 
@@ -346,7 +375,7 @@ void AHudExampleGameMode::BeginPlay()
 	SGameHUD::Get().AddWidget(Minimap)
 		.SetAnchor(1.0f, 1.0f)  // 오른쪽 하단
 		.SetPivot(1.0f, 1.0f)   // 오른쪽 하단 기준
-		.SetOffset(-40.f, -60.f)  // 위로 올림 (-20 → -60)
+		.SetOffset(-40.f, -65.f)  // 위로 올림 (-20 → -60)
 		.SetSize(180.f, 180.f);   // 정사각형 미니맵
 
 	// ─────────────────────────────────────────────────
@@ -379,6 +408,36 @@ void AHudExampleGameMode::BeginPlay()
 		.SetPivot(1.0f, 0.0f)   // 우상단 기준
 		.SetOffset(-20.f, 20.f)  // 배경과 동일한 위치
 		.SetSize(180.f, 50.f);
+
+	// ─────────────────────────────────────────────────
+	// Objective 연출 (게임 시작 시 중앙에서 등장)
+	// ─────────────────────────────────────────────────
+
+	// Objective 배경 그라데이션
+	ObjectiveBg = MakeShared<SGradientBox>();
+	ObjectiveBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.7f))  // 반투명 검정
+		.SetFadeWidth(200.f);
+
+	ObjectiveBgSlot = &SGameHUD::Get().AddWidget(ObjectiveBg)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(0.f, 0.f)
+		.SetSize(400.f, 60.f);
+
+	// Objective 이미지
+	ObjectiveImage = MakeShared<SImage>();
+	ObjectiveImage->SetTexture(L"Data/Textures/Dumb/objective.png")
+		.SetHighQualityInterpolation(true);
+
+	ObjectiveImageSlot = &SGameHUD::Get().AddWidget(ObjectiveImage)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(0.f, 0.f)
+		.SetSize(600.f, 40.f);
+
+	// 초기에는 숨김 (게임 시작 시 표시)
+	ObjectiveBg->SetVisibility(ESlateVisibility::Hidden);
+	ObjectiveImage->SetVisibility(ESlateVisibility::Hidden);
 
 	// ─────────────────────────────────────────────────
 	// 튜토리얼 만화/컷씬 (전체 화면, 7장)
@@ -556,6 +615,31 @@ void AHudExampleGameMode::EndPlay()
 			SGameHUD::Get().RemoveWidget(DistanceProgressBar);
 			DistanceProgressBar.Reset();
 		}
+		if (ObjectiveBg)
+		{
+			SGameHUD::Get().RemoveWidget(ObjectiveBg);
+			ObjectiveBg.Reset();
+		}
+		if (ObjectiveImage)
+		{
+			SGameHUD::Get().RemoveWidget(ObjectiveImage);
+			ObjectiveImage.Reset();
+		}
+		if (BoosterProgressBar)
+		{
+			SGameHUD::Get().RemoveWidget(BoosterProgressBar);
+			BoosterProgressBar.Reset();
+		}
+		if (BoosterTextBg)
+		{
+			SGameHUD::Get().RemoveWidget(BoosterTextBg);
+			BoosterTextBg.Reset();
+		}
+		if (BoosterText)
+		{
+			SGameHUD::Get().RemoveWidget(BoosterText);
+			BoosterText.Reset();
+		}
 		// 만화 이미지들 정리
 		for (auto& Comic : ComicImages)
 		{
@@ -609,6 +693,9 @@ void AHudExampleGameMode::ShowMainMenu()
 	if (ToHomeBg) ToHomeBg->SetVisibility(ESlateVisibility::Hidden);
 	if (ToHomeText) ToHomeText->SetVisibility(ESlateVisibility::Hidden);
 	if (DistanceProgressBar) DistanceProgressBar->SetVisibility(ESlateVisibility::Hidden);
+	if (BoosterProgressBar) BoosterProgressBar->SetVisibility(ESlateVisibility::Hidden);
+	if (BoosterTextBg) BoosterTextBg->SetVisibility(ESlateVisibility::Hidden);
+	if (BoosterText) BoosterText->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void AHudExampleGameMode::StartCameraCinematic()
@@ -703,9 +790,36 @@ void AHudExampleGameMode::StartGamePlay()
 	if (ToHomeBg) ToHomeBg->SetVisibility(ESlateVisibility::Visible);
 	if (ToHomeText) ToHomeText->SetVisibility(ESlateVisibility::Visible);
 	if (DistanceProgressBar) DistanceProgressBar->SetVisibility(ESlateVisibility::Visible);
+	if (BoosterProgressBar) BoosterProgressBar->SetVisibility(ESlateVisibility::Visible);
+	if (BoosterTextBg) BoosterTextBg->SetVisibility(ESlateVisibility::Visible);
+	if (BoosterText) BoosterText->SetVisibility(ESlateVisibility::Visible);
 
 	// 경과 시간 초기화
 	ElapsedGameTime = 0.f;
+
+	// 부스터 게이지 초기화
+	CurrentBoosterCharge = 0.0f;
+
+	// ─────────────────────────────────────────────────
+	// Objective 연출 시작
+	// ─────────────────────────────────────────────────
+
+	ObjectiveAnimationPhase = 1;  // 등장 단계
+	ObjectiveAnimationTimer = 0.0f;
+
+	// Objective UI 표시 (투명도 0, 작은 크기로 시작)
+	if (ObjectiveBg)
+	{
+		ObjectiveBg->SetVisibility(ESlateVisibility::Visible);
+		// SGradientBox는 SetOpacity가 없으므로 Color의 alpha로 조절
+		ObjectiveBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.0f));  // 완전 투명
+	}
+	if (ObjectiveImage)
+	{
+		ObjectiveImage->SetVisibility(ESlateVisibility::Visible);
+		ObjectiveImage->SetOpacity(0.0f);
+		ObjectiveImage->SetScale(FVector2D(0.5f, 0.5f));  // 50% 크기로 시작
+	}
 
 	// ─────────────────────────────────────────────────
 	// 실제 게임 시작: 플레이어를 시작 지점으로 이동
@@ -1025,6 +1139,101 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	}
 
 	// ─────────────────────────────────────────────────
+	// Objective 연출 애니메이션 (게임 플레이 중에만)
+	// ─────────────────────────────────────────────────
+
+	if (CurrentGameState == EGameState::Playing && ObjectiveAnimationPhase > 0)
+	{
+		ObjectiveAnimationTimer += DeltaSeconds;
+
+		// Phase 1: 등장 애니메이션 (Fade In + Scale Up)
+		if (ObjectiveAnimationPhase == 1)
+		{
+			float Progress = FMath::Clamp(ObjectiveAnimationTimer / ObjectiveFadeInDuration, 0.0f, 1.0f);
+
+			// Ease Out Cubic
+			float EasedProgress = 1.0f - std::pow(1.0f - Progress, 3.0f);
+
+			// 투명도: 0 → 1 (알파 값)
+			float Alpha = EasedProgress;
+
+			// 스케일: 0.5 → 1.0
+			float Scale = 0.5f + (EasedProgress * 0.5f);
+
+			// 배경: Color의 alpha로 투명도 조절
+			if (ObjectiveBg)
+				ObjectiveBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.7f * Alpha));
+
+			if (ObjectiveImage)
+			{
+				ObjectiveImage->SetOpacity(Alpha);
+				ObjectiveImage->SetScale(FVector2D(Scale, Scale));
+			}
+
+			// 등장 완료
+			if (Progress >= 1.0f)
+			{
+				ObjectiveAnimationPhase = 2;  // 대기 단계로
+				ObjectiveAnimationTimer = 0.0f;
+			}
+		}
+		// Phase 2: 대기 (읽는 시간)
+		else if (ObjectiveAnimationPhase == 2)
+		{
+			if (ObjectiveAnimationTimer >= ObjectiveHoldDuration)
+			{
+				ObjectiveAnimationPhase = 3;  // 상단 이동 단계로
+				ObjectiveAnimationTimer = 0.0f;
+			}
+		}
+		// Phase 3: 상단으로 이동 (Fade Out 없이 위치만 이동)
+		else if (ObjectiveAnimationPhase == 3)
+		{
+			float Progress = FMath::Clamp(ObjectiveAnimationTimer / ObjectiveMoveUpDuration, 0.0f, 1.0f);
+
+			// Ease In Out Cubic
+			float EasedProgress = Progress < 0.5f
+				? 4.0f * Progress * Progress * Progress
+				: 1.0f - std::pow(-2.0f * Progress + 2.0f, 3.0f) / 2.0f;
+
+			// 시작 위치: 화면 중앙 (Y = 0)
+			// 최종 위치: 상단 (Y = -350, 상단 "REACH HOME" 근처)
+			float StartY = 0.0f;
+			float EndY = -350.0f;
+			float CurrentY = StartY + (EndY - StartY) * EasedProgress;
+
+			// 크기도 약간 줄임 (1.0 → 0.7)
+			float SizeScale = 1.0f - (EasedProgress * 0.3f);
+
+			// 배경 위젯 업데이트 (슬롯 포인터 사용)
+			if (ObjectiveBgSlot)
+			{
+				ObjectiveBgSlot->Offset.Y = CurrentY;
+
+				// 크기도 조정
+				ObjectiveBgSlot->Size.X = 400.0f * SizeScale;
+				ObjectiveBgSlot->Size.Y = 60.0f * SizeScale;
+			}
+
+			// 이미지 위젯 업데이트 (슬롯 포인터 사용)
+			if (ObjectiveImageSlot)
+			{
+				ObjectiveImageSlot->Offset.Y = CurrentY;
+
+				// 크기도 조정
+				ObjectiveImageSlot->Size.X = 300.0f * SizeScale;
+				ObjectiveImageSlot->Size.Y = 40.0f * SizeScale;
+			}
+
+			// 이동 완료
+			if (Progress >= 1.0f)
+			{
+				ObjectiveAnimationPhase = 0;  // 연출 종료
+			}
+		}
+	}
+
+	// ─────────────────────────────────────────────────
 	// 게임 플레이 중일 때만 업데이트
 	// ─────────────────────────────────────────────────
 
@@ -1087,6 +1296,28 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 			GearStr = L"GEAR: " + std::to_wstring(Gear);
 
 		VehicleGearText->SetText(GearStr);
+	}
+
+	// ─────────────────────────────────────────────────
+	// 부스터 게이지 업데이트
+	// ─────────────────────────────────────────────────
+
+	if (BoosterProgressBar)
+	{
+		// Shift 키를 누르고 있으면 게이지 충전
+		if (Vehicle->IsBoosting())
+		{
+			CurrentBoosterCharge += DeltaSeconds * BoosterChargeRate;
+			CurrentBoosterCharge = FMath::Clamp(CurrentBoosterCharge, 0.0f, 1.0f);
+		}
+		// Shift 키를 떼면 게이지 초기화
+		else
+		{
+			CurrentBoosterCharge = 0.0f;
+		}
+
+		// 진행 바 업데이트
+		BoosterProgressBar->SetPercent(CurrentBoosterCharge);
 	}
 
 	// ─────────────────────────────────────────────────

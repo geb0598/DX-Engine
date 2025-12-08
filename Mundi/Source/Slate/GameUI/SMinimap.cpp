@@ -255,7 +255,7 @@ void SMinimap::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 	}
 
 	// 3. 플레이어 위치 디버그 출력 (미니맵 위에 표시)
-	FWideString PosText = L"Player: (" +
+	/*FWideString PosText = L"Player: (" +
 		std::to_wstring(static_cast<int>(PlayerWorldPos.X)) + L", " +
 		std::to_wstring(static_cast<int>(PlayerWorldPos.Y)) + L", " +
 		std::to_wstring(static_cast<int>(PlayerWorldPos.Z)) + L")";
@@ -268,7 +268,7 @@ void SMinimap::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 		16.f,
 		ETextHAlign::Left,
 		ETextVAlign::Top
-	);
+	);*/
 }
 
 SMinimap& SMinimap::SetMapTexture(const FWideString& InTexturePath)
