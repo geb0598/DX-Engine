@@ -454,7 +454,7 @@ void AHudExampleGameMode::BeginPlay()
 	//	return;
 	//}
 
-	for (int32 i = 0; i < 7; i++)
+	for (int32 i = 0; i < 8; i++)
 	{
 		TSharedPtr<SImage> ComicImage = MakeShared<SImage>();
 

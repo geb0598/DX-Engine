@@ -149,7 +149,7 @@ protected:
 	float ComicSceneWaitTime = 4.0f;
 
 	/** 만화 총 장면 수 */
-	static constexpr int32 TotalComicScenes = 7;
+	static constexpr int32 TotalComicScenes = 8;
 
 	/** 만화 시작 후 입력 무시 시간 (키 중복 방지) */
 	float ComicInputIgnoreTime = 0.5f;
