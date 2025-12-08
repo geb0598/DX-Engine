@@ -441,7 +441,7 @@ void AHudExampleGameMode::BeginPlay()
 		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
 		.SetPivot(0.5f, 0.5f)   // 중앙 기준
 		.SetOffset(0.f, 0.f)
-		.SetSize(400.f, 60.f);
+		.SetSize(600.f, 60.f);
 
 	// Objective 이미지
 	ObjectiveImage = MakeShared<SImage>();
@@ -452,7 +452,7 @@ void AHudExampleGameMode::BeginPlay()
 		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
 		.SetPivot(0.5f, 0.5f)   // 중앙 기준
 		.SetOffset(0.f, 0.f)
-		.SetSize(600.f, 40.f);
+		.SetSize(500.f, 40.f);
 
 	// 초기에는 숨김 (게임 시작 시 표시)
 	ObjectiveBg->SetVisibility(ESlateVisibility::Hidden);
@@ -503,8 +503,8 @@ void AHudExampleGameMode::BeginPlay()
 	SGameHUD::Get().AddWidget(GameOverBg)
 		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
 		.SetPivot(0.5f, 0.5f)   // 중앙 기준
-		.SetOffset(0.f, -50.f)
-		.SetSize(500.f, 80.f);
+		.SetOffset(0.f, -80.f)
+		.SetSize(600.f, 300.f);
 
 	// "MISSION COMPLETE!" 텍스트
 	GameOverText = MakeShared<STextBlock>();
@@ -518,28 +518,101 @@ void AHudExampleGameMode::BeginPlay()
 	SGameHUD::Get().AddWidget(GameOverText)
 		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
 		.SetPivot(0.5f, 0.5f)   // 중앙 기준
-		.SetOffset(0.f, -50.f)
+		.SetOffset(0.f, -120.f)
 		.SetSize(500.f, 60.f);
 
-	// "Press P to Restart" 텍스트
-	RestartText = MakeShared<STextBlock>();
-	RestartText->SetText(L"Press P or START(In GamePad) to Restart")
+	// 재시작 버튼
+	RestartButton = MakeShared<SButton>();
+	RestartButton->SetText(L"Restart Game")
 		.SetFontSize(24.f)
-		.SetColor(FSlateColor::White())
-		.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor::Black())
-		.SetHAlign(ETextHAlign::Center)
-		.SetVAlign(ETextVAlign::Center);
+		.SetTextColor(FSlateColor::White())
+		.SetBackgroundColors(
+			FSlateColor(0.2f, 0.2f, 0.2f, 0.8f),   // Normal
+			FSlateColor(0.4f, 0.4f, 0.4f, 0.9f),   // Hovered
+			FSlateColor(0.1f, 0.1f, 0.1f, 1.0f))   // Pressed
+		.OnClicked([this]() {
+			RestartGame();
+		});
 
-	SGameHUD::Get().AddWidget(RestartText)
-		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
-		.SetPivot(0.5f, 0.5f)   // 중앙 기준
-		.SetOffset(0.f, 30.f)   // GameOverText 아래
-		.SetSize(600.f, 40.f);
+	SGameHUD::Get().AddWidget(RestartButton)
+		.SetAnchor(0.5f, 0.5f)
+		.SetPivot(0.5f, 0.5f)
+		.SetOffset(0.f, -30.f)
+		.SetSize(300.f, 50.f);
+
+	// 엔딩 크레딧 버튼
+	CreditsButton = MakeShared<SButton>();
+	CreditsButton->SetText(L"Ending Credits")
+		.SetFontSize(24.f)
+		.SetTextColor(FSlateColor::White())
+		.SetBackgroundColors(
+			FSlateColor(0.2f, 0.2f, 0.2f, 0.8f),   // Normal
+			FSlateColor(0.4f, 0.4f, 0.4f, 0.9f),   // Hovered
+			FSlateColor(0.1f, 0.1f, 0.1f, 1.0f))   // Pressed
+		.OnClicked([this]() {
+			ShowEndingCredits();
+		});
+
+	SGameHUD::Get().AddWidget(CreditsButton)
+		.SetAnchor(0.5f, 0.5f)
+		.SetPivot(0.5f, 0.5f)
+		.SetOffset(0.f, 30.f)
+		.SetSize(300.f, 50.f);
+
+	// 게임 종료 버튼
+	QuitButton = MakeShared<SButton>();
+	QuitButton->SetText(L"Quit Game")
+		.SetFontSize(24.f)
+		.SetTextColor(FSlateColor::White())
+		.SetBackgroundColors(
+			FSlateColor(0.2f, 0.2f, 0.2f, 0.8f),   // Normal
+			FSlateColor(0.4f, 0.4f, 0.4f, 0.9f),   // Hovered
+			FSlateColor(0.1f, 0.1f, 0.1f, 1.0f))   // Pressed
+		.OnClicked([this]() {
+			PostQuitMessage(0);
+		});
+
+	SGameHUD::Get().AddWidget(QuitButton)
+		.SetAnchor(0.5f, 0.5f)
+		.SetPivot(0.5f, 0.5f)
+		.SetOffset(0.f, 90.f)
+		.SetSize(300.f, 50.f);
 
 	// 초기에는 숨김
 	GameOverBg->SetVisibility(ESlateVisibility::Hidden);
 	GameOverText->SetVisibility(ESlateVisibility::Hidden);
-	RestartText->SetVisibility(ESlateVisibility::Hidden);
+	RestartButton->SetVisibility(ESlateVisibility::Hidden);
+	CreditsButton->SetVisibility(ESlateVisibility::Hidden);
+	QuitButton->SetVisibility(ESlateVisibility::Hidden);
+
+	// ─────────────────────────────────────────────────
+	// 엔딩 크레딧 UI
+	// ─────────────────────────────────────────────────
+
+	// 엔딩 크레딧 배경 (검정색 전체 화면)
+	CreditBackground = MakeShared<SImage>();
+	CreditBackground->SetTint(FSlateColor::Black());
+
+	SGameHUD::Get().AddWidget(CreditBackground)
+		.SetAnchor(0.0f, 0.0f)
+		.SetPivot(0.0f, 0.0f)
+		.SetOffset(0.f, 0.f)
+		.SetRelativeSize(1.0f, 1.0f);  // 전체 화면
+
+	CreditBackground->SetVisibility(ESlateVisibility::Hidden);
+
+	// 엔딩 크레딧 이미지 (세로로 긴 이미지, 스크롤)
+	CreditImage = MakeShared<SImage>();
+	CreditImage->SetTexture(L"Data/Textures/Dumb/endingcredit.png")
+		.SetHighQualityInterpolation(true);
+
+	CreditImageSlot = &SGameHUD::Get().AddWidget(CreditImage)
+		.SetAnchor(0.0f, 0.0f)  // 좌상단 (0, 0)
+		.SetPivot(0.0f, 0.0f)   // 좌상단 기준
+		.SetOffset(0.f, 0.f)
+		.SetSize(100.f, 100.f);  // 임시 크기 (ShowEndingCredits에서 재계산)
+
+	CreditImage->SetVisibility(ESlateVisibility::Hidden);
 
 	// ─────────────────────────────────────────────────
 	// 카메라 찾기 (이름으로 검색)
@@ -762,10 +835,30 @@ void AHudExampleGameMode::EndPlay()
 			SGameHUD::Get().RemoveWidget(GameOverText);
 			GameOverText.Reset();
 		}
-		if (RestartText)
+		if (RestartButton)
 		{
-			SGameHUD::Get().RemoveWidget(RestartText);
-			RestartText.Reset();
+			SGameHUD::Get().RemoveWidget(RestartButton);
+			RestartButton.Reset();
+		}
+		if (CreditsButton)
+		{
+			SGameHUD::Get().RemoveWidget(CreditsButton);
+			CreditsButton.Reset();
+		}
+		if (QuitButton)
+		{
+			SGameHUD::Get().RemoveWidget(QuitButton);
+			QuitButton.Reset();
+		}
+		if (CreditBackground)
+		{
+			SGameHUD::Get().RemoveWidget(CreditBackground);
+			CreditBackground.Reset();
+		}
+		if (CreditImage)
+		{
+			SGameHUD::Get().RemoveWidget(CreditImage);
+			CreditImage.Reset();
 		}
 	}
 }
@@ -880,6 +973,66 @@ void AHudExampleGameMode::ShowTutorialComic()
 	// 첫 번째 만화 장면 표시
 	if (ComicImages.Num() > 0 && ComicImages[0])
 		ComicImages[0]->SetVisibility(ESlateVisibility::Visible);
+}
+
+void AHudExampleGameMode::ShowEndingCredits()
+{
+	CurrentGameState = EHudGameState::EndingCredits;
+
+	// 게임 오버 UI 숨기기
+	if (GameOverBg)
+		GameOverBg->SetVisibility(ESlateVisibility::Hidden);
+	if (GameOverText)
+		GameOverText->SetVisibility(ESlateVisibility::Hidden);
+	if (RestartButton)
+		RestartButton->SetVisibility(ESlateVisibility::Hidden);
+	if (CreditsButton)
+		CreditsButton->SetVisibility(ESlateVisibility::Hidden);
+	if (QuitButton)
+		QuitButton->SetVisibility(ESlateVisibility::Hidden);
+
+	// 엔딩 크레딧 UI 표시
+	if (CreditBackground)
+		CreditBackground->SetVisibility(ESlateVisibility::Visible);
+	if (CreditImage)
+		CreditImage->SetVisibility(ESlateVisibility::Visible);
+
+	// 크레딧 스크롤 초기화
+	CreditScrollTimer = 0.0f;
+	bCreditScrollFinished = false;
+	CreditEndPauseTimer = 0.0f;
+
+	// 크레딧 이미지를 화면 좌상단에 배치하고 뷰포트 가로에 맞춰 균등 스케일
+	if (CreditImageSlot && CreditImage)
+	{
+		// 뷰포트 위치와 크기 가져오기
+		FVector2D ViewportPosition = SGameHUD::Get().GetViewportPosition();
+		FVector2D ViewportSize = SGameHUD::Get().GetViewportSize();
+
+		// 디버그: 값 확인
+		UE_LOG("EndingCredits - ViewportPosition: (%.2f, %.2f), ViewportSize: (%.2f, %.2f)",
+			ViewportPosition.X, ViewportPosition.Y, ViewportSize.X, ViewportSize.Y);
+
+		// 이미지 원본 크기 가져오기
+		FVector2D OriginalImageSize = CreditImage->GetImageSize();
+		UE_LOG("EndingCredits - OriginalImageSize: (%.2f, %.2f)", OriginalImageSize.X, OriginalImageSize.Y);
+
+		// 원본 종횡비 계산
+		float AspectRatio = OriginalImageSize.Y / OriginalImageSize.X;
+
+		// 뷰포트 가로에 맞춰 균등 스케일
+		float ScaledWidth = ViewportSize.X;
+		float ScaledHeight = ScaledWidth * AspectRatio;
+
+		UE_LOG("EndingCredits - ScaledSize: (%.2f, %.2f)", ScaledWidth, ScaledHeight);
+
+		// 이미지 크기 설정
+		CreditImageSlot->SetSize(ScaledWidth, ScaledHeight);
+
+		// 화면 좌상단 (0, 0)에서 시작 (뷰포트 위치가 아닌 절대 좌표)
+		CreditImageSlot->SetOffset(0.f, 0.f);
+		UE_LOG("EndingCredits - Starting at: (0, 0)");
+	}
 }
 
 void AHudExampleGameMode::StartGamePlay()
@@ -1045,8 +1198,12 @@ void AHudExampleGameMode::EndGame(bool bVictory)
 		GameOverBg->SetVisibility(ESlateVisibility::Visible);
 	if (GameOverText)
 		GameOverText->SetVisibility(ESlateVisibility::Visible);
-	if (RestartText)
-		RestartText->SetVisibility(ESlateVisibility::Visible);
+	if (RestartButton)
+		RestartButton->SetVisibility(ESlateVisibility::Visible);
+	if (CreditsButton)
+		CreditsButton->SetVisibility(ESlateVisibility::Visible);
+	if (QuitButton)
+		QuitButton->SetVisibility(ESlateVisibility::Visible);
 }
 
 void AHudExampleGameMode::RestartGame()
@@ -1359,6 +1516,119 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 			// 타이머 리셋
 			ComicSceneTimer = 0.f;
 		}
+	}
+
+	// ─────────────────────────────────────────────────
+	// 엔딩 크레딧 스크롤 애니메이션
+	// ─────────────────────────────────────────────────
+
+	if (CurrentGameState == EHudGameState::EndingCredits)
+	{
+		// ESC 키로 엔딩 크레딧 종료
+		if (UInputManager::GetInstance().IsKeyPressed(VK_ESCAPE))
+		{
+			// 엔딩 크레딧 숨기기
+			if (CreditBackground)
+				CreditBackground->SetVisibility(ESlateVisibility::Hidden);
+			if (CreditImage)
+				CreditImage->SetVisibility(ESlateVisibility::Hidden);
+
+			// 게임 오버 UI 다시 표시
+			if (GameOverBg)
+				GameOverBg->SetVisibility(ESlateVisibility::Visible);
+			if (GameOverText)
+				GameOverText->SetVisibility(ESlateVisibility::Visible);
+			if (RestartButton)
+				RestartButton->SetVisibility(ESlateVisibility::Visible);
+			if (CreditsButton)
+				CreditsButton->SetVisibility(ESlateVisibility::Visible);
+			if (QuitButton)
+				QuitButton->SetVisibility(ESlateVisibility::Visible);
+
+			// 상태 복원 (게임 종료 상태로)
+			CurrentGameState = EHudGameState::Playing;  // 임시로 Playing 상태로
+			return;
+		}
+
+		// 크레딧 스크롤이 끝났으면, 잠시 대기
+		if (bCreditScrollFinished)
+		{
+			CreditEndPauseTimer += DeltaSeconds;
+			if (CreditEndPauseTimer >= CreditEndPauseDuration)
+			{
+				// 엔딩 크레딧 숨기기
+				if (CreditBackground)
+					CreditBackground->SetVisibility(ESlateVisibility::Hidden);
+				if (CreditImage)
+					CreditImage->SetVisibility(ESlateVisibility::Hidden);
+
+				// 게임 오버 UI 다시 표시
+				if (GameOverBg)
+					GameOverBg->SetVisibility(ESlateVisibility::Visible);
+				if (GameOverText)
+					GameOverText->SetVisibility(ESlateVisibility::Visible);
+				if (RestartButton)
+					RestartButton->SetVisibility(ESlateVisibility::Visible);
+				if (CreditsButton)
+					CreditsButton->SetVisibility(ESlateVisibility::Visible);
+				if (QuitButton)
+					QuitButton->SetVisibility(ESlateVisibility::Visible);
+
+				// 상태 복원
+				CurrentGameState = EHudGameState::Playing;  // 임시로 Playing 상태로
+			}
+			return; // 대기 중에는 아래 스크롤 로직 무시
+		}
+
+
+		// 스크롤 타이머 업데이트
+		CreditScrollTimer += DeltaSeconds;
+
+		// 스크롤 애니메이션 (화면 좌상단에서 시작해서 위로 이동)
+		if (CreditImageSlot && CreditImage)
+		{
+			// 뷰포트 크기 (실시간 재계산)
+			FVector2D ViewportSize = SGameHUD::Get().GetViewportSize();
+
+			// 이미지 원본 크기 가져오기
+			FVector2D OriginalImageSize = CreditImage->GetImageSize();
+
+			// 원본 종횡비 계산
+			float AspectRatio = OriginalImageSize.Y / OriginalImageSize.X;
+
+			// 뷰포트 가로에 맞춰 균등 스케일 (실시간 재계산)
+			float ScaledWidth = ViewportSize.X;
+			float ScaledHeight = ScaledWidth * AspectRatio;
+
+			// 이미지 크기 설정 (실시간 업데이트)
+			CreditImageSlot->SetSize(ScaledWidth, ScaledHeight);
+
+			// 전체 이동 거리 = 이미지 높이 - 뷰포트 높이
+			// (이미지 상단이 화면 상단(0,0)에서 시작 -> 이미지 하단이 화면 하단에 닿으면 완료)
+			float TotalDistance = ScaledHeight - ViewportSize.Y;
+
+			// 이미지가 화면보다 작으면 스크롤 불필요
+			if (TotalDistance < 0.0f)
+				TotalDistance = 0.0f;
+
+			// 진행률 (0 ~ 1)
+			float Progress = FMath::Clamp(CreditScrollTimer / CreditScrollDuration, 0.0f, 1.0f);
+
+			// 현재 Y 오프셋 (Anchor가 0.0, 0.0이므로 화면 좌상단(0,0)에서 시작하여 위로 스크롤)
+			// 시작: Y = 0 (이미지 상단이 화면 상단)
+			// 끝: Y = -TotalDistance (이미지 하단이 화면 하단에 정확히 도달)
+			float CurrentOffsetY = -(TotalDistance * Progress);
+
+			CreditImageSlot->SetOffset(0.f, CurrentOffsetY);
+
+			// 스크롤 완료 시
+			if (Progress >= 1.0f)
+			{
+				bCreditScrollFinished = true;
+			}
+		}
+
+		return;  // 엔딩 크레딧 중에는 다른 업데이트 무시
 	}
 
 	// ─────────────────────────────────────────────────

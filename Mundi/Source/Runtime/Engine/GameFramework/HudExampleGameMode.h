@@ -31,6 +31,7 @@ enum class EHudGameState
 	Tutorial_Camera,       // 튜토리얼: 카메라 연출
 	Tutorial_Comic,        // 튜토리얼: 만화/컷씬
 	Playing,               // 게임 플레이 중
+	EndingCredits,         // 엔딩 크레딧
 };
 
 /**
@@ -84,6 +85,9 @@ public:
 
 	/** 튜토리얼 만화/컷씬 표시 */
 	void ShowTutorialComic();
+
+	/** 엔딩 크레딧 표시 */
+	void ShowEndingCredits();
 
 	// ────────────────────────────────────────────────
 	// UI 업데이트
@@ -325,12 +329,47 @@ protected:
 	/** "MISSION COMPLETE!" 텍스트 */
 	TSharedPtr<STextBlock> GameOverText;
 
-	/** "Press P to Restart" 텍스트 */
-	TSharedPtr<STextBlock> RestartText;
+	/** 재시작 버튼 */
+	TSharedPtr<SButton> RestartButton;
+
+	/** 엔딩 크레딧 버튼 */
+	TSharedPtr<SButton> CreditsButton;
+
+	/** 게임 종료 버튼 */
+	TSharedPtr<SButton> QuitButton;
 
 	/** 게임 오버 플래그 (한 번만 트리거) */
 	bool bGameEndTriggered = false;
 
 	/** 재시작 시 튜토리얼 스킵 플래그 (정적 변수 - RestartPIE 후에도 유지됨) */
 	static bool bSkipTutorialOnRestart;
+
+	// ────────────────────────────────────────────────
+	// 엔딩 크레딧 UI
+	// ────────────────────────────────────────────────
+
+	/** 엔딩 크레딧 배경 (검정색 전체 화면) */
+	TSharedPtr<SImage> CreditBackground;
+
+	/** 엔딩 크레딧 이미지 (스크롤) */
+	TSharedPtr<SImage> CreditImage;
+
+	/** 크레딧 이미지 슬롯 참조 (위치 조정용) */
+	FCanvasSlot* CreditImageSlot = nullptr;
+
+	/** 크레딧 스크롤 타이머 */
+	float CreditScrollTimer = 0.0f;
+
+	/** 크레딧 스크롤 속도 (픽셀/초) */
+	float CreditScrollSpeed = 50.0f;
+
+	/** 크레딧 스크롤 총 시간 (초) */
+	float CreditScrollDuration = 30.0f;
+
+	// ────────────────────────────────────────────────
+	// 엔딩 크레딧 후 대기
+	// ────────────────────────────────────────────────
+	bool bCreditScrollFinished = false;
+	float CreditEndPauseTimer = 0.0f;
+	const float CreditEndPauseDuration = 5.0f; // 2초 대기
 };
