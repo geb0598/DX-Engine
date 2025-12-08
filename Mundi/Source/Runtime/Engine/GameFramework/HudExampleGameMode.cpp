@@ -832,10 +832,14 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		{
 			// sin 함수로 부드러운 깜박임 (주기를 3초로 늘림)
 			float BlinkSpeed = 2.5f;  // 2.0 → 3.0 (더 느리게)
-			float Alpha = (std::sin(MainMenuTimer * 3.14159f * 2.0f / BlinkSpeed) + 1.0f) * 0.5f;  // 0~1 사이 값
+			float RawAlpha = (std::sin(MainMenuTimer * 3.14159f * 2.0f / BlinkSpeed) + 1.0f) * 0.5f;  // 0~1 사이 값
 
-			// 최소 투명도 0.5, 최대 0.8 사이로 조정 (너무 밝지 않게)
-			float FinalAlpha = 0.5f + (Alpha * 0.4f);  // 0.5~0.9 사이
+			// 제곱해서 밝은 시간을 더 길게 만듦
+			// 1.0에서 빼서 반전 → 제곱 → 다시 반전 (밝은 쪽으로 치우침)
+			float Alpha = 1.0f - std::pow(1.0f - RawAlpha, 2.0f);
+
+			// 최소 투명도 0.6, 최대 0.9 사이로 조정 (너무 밝지 않게)
+			float FinalAlpha = 0.6f + (Alpha * 0.3f);
 
 			// 이미지의 투명도 변경
 			PressSpaceImage->SetOpacity(FinalAlpha);
@@ -889,10 +893,14 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		{
 			// sin 함수로 부드러운 깜박임
 			float BlinkSpeed = 2.5f;
-			float Alpha = (std::sin(TutorialCameraTimer * 3.14159f * 2.0f / BlinkSpeed) + 1.0f) * 0.5f;
+			float RawAlpha = (std::sin(TutorialCameraTimer * 3.14159f * 2.0f / BlinkSpeed) + 1.0f) * 0.5f;
 
-			// 최소 투명도 0.5, 최대 0.9 사이로 조정
-			float FinalAlpha = 0.5f + (Alpha * 0.4f);
+			// 제곱해서 밝은 시간을 더 길게 만듦
+			// 1.0에서 빼서 반전 → 제곱 → 다시 반전 (밝은 쪽으로 치우침)
+			float Alpha = 1.0f - std::pow(1.0f - RawAlpha, 2.0f);
+
+			// 최소 투명도 0.6, 최대 0.9 사이로 조정
+			float FinalAlpha = 0.6f + (Alpha * 0.3f);
 
 			// 이미지의 투명도 변경
 			PressSpaceImage2->SetOpacity(FinalAlpha);

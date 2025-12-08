@@ -1364,6 +1364,17 @@
     <ClCompile Include="Source\Slate\GameUI\SGradientBox.cpp">
       <Filter>Source\Slate\GameUI</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\Landmine.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\NPC.cpp" />
+    <ClCompile Include="Source\Slate\GameUI\SBorderBox.cpp">
+      <Filter>Source\Slate\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\GameUI\SMinimap.cpp">
+      <Filter>Source\Slate\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Slate\GameUI\SProgressBar.cpp">
+      <Filter>Source\Slate\GameUI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Runtime\AssetManagement\LinesBatch.h">
@@ -2965,6 +2976,17 @@
       <Filter>Source\Slate\GameUI</Filter>
     </ClInclude>
     <ClInclude Include="Source\Slate\GameUI\SGradientBox.h">
+      <Filter>Source\Slate\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\Landmine.h" />
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\NPC.h" />
+    <ClInclude Include="Source\Slate\GameUI\SBorderBox.h">
+      <Filter>Source\Slate\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\GameUI\SMinimap.h">
+      <Filter>Source\Slate\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Slate\GameUI\SProgressBar.h">
       <Filter>Source\Slate\GameUI</Filter>
     </ClInclude>
   </ItemGroup>
