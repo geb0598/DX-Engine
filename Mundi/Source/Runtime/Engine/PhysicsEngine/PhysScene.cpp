@@ -399,7 +399,7 @@ void FPhysScene::DispatchPhysNotifications_AssumesLocked()
                 HitResult0.ImpactPoint  = Notify.ImpactPoint;
                 HitResult0.ImpactNormal = Notify.ImpactNormal;  // Actor0 표면의 법선 
                 HitResult0.bBlockingHit = true;
-                
+
                 FVector Impulse0 = Notify.ImpactNormal * Notify.TotalImpulse;
 
                 Comp0->DispatchBlockingHit(Actor1, Comp1, Impulse0, HitResult0);

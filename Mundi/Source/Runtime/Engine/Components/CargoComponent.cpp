@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "CargoComponent.h"
 
+#include "AudioComponent.h"
 #include "PhysScene.h"
 #include "PlayerCameraManager.h"
 #include "StaticMeshComponent.h"
@@ -431,6 +432,18 @@ void UCargoComponent::CollapseFrom(int32 StartIndex)
             RandomTorque.Normalize();
 
             CurrentCargo->GetBodyInstance()->AddAngularImpulse(RandomTorque * RandomSpinImpulse, false);
+
+            AVehicle* Vehicle = Cast<AVehicle>(GetOwner());
+            if (Vehicle)
+            {
+                if (Vehicle->DropSoundComponent)
+                {
+                    float RandomPitch = 0.9f + FMath::RandRange(0.0f, 0.2f);
+                    Vehicle->DropSoundComponent->Pitch = RandomPitch;
+                    Vehicle->DropSoundComponent->Play(); 
+                    Vehicle->DropSoundComponent->Play();
+                }
+            }
         }
     }
 

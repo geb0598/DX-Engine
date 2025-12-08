@@ -3,6 +3,7 @@
 
 #include "AnimStateMachine.h"
 #include "AnimStateMachineInstance.h"
+#include "AudioComponent.h"
 #include "InputComponent.h"
 #include "Landmine.h"
 #include "GameVictoryVolume.h"
@@ -88,6 +89,40 @@ AVehicle::AVehicle()
     SparkParticleComponent->bAutoActivate = false;
     UParticleSystem* SparkParticle = UResourceManager::GetInstance().Load<UParticleSystem>(GDataDir + "/Particles/Spark.particle");
     SparkParticleComponent->SetTemplate(SparkParticle);
+
+    // ===== Sound =====
+
+    // 주행 사운드
+    DriveSoundComponent = CreateDefaultSubobject<UAudioComponent>("DriveSound");
+    USound* DriveSound = UResourceManager::GetInstance().Load<USound>(GDataDir + "/Audio/engine_heavy_loop.wav");
+    DriveSoundComponent->SetSound(DriveSound);
+    DriveSoundComponent->SetupAttachment(ChassisMesh);
+    DriveSoundComponent->bIsLooping = true;
+    DriveSoundComponent->bAutoPlay = false;
+
+    // 충돌 사운드 (OneShot)
+    HitSoundComponent = CreateDefaultSubobject<UAudioComponent>("HitSound");
+    USound* HitSound = UResourceManager::GetInstance().Load<USound>(GDataDir + "/Audio/car-crash-sound.wav");
+    HitSoundComponent->SetSound(HitSound);
+    HitSoundComponent->SetupAttachment(ChassisMesh);
+    HitSoundComponent->bIsLooping = false;
+    HitSoundComponent->bAutoPlay = false;
+
+    // 운전자 사출 사운드 (OneShot)
+    EjectSoundComponent = CreateDefaultSubobject<UAudioComponent>("EjectSound");
+    USound* EjectSound = UResourceManager::GetInstance().Load<USound>(GDataDir + "/Audio/Die.wav");
+    EjectSoundComponent->SetSound(EjectSound);
+    EjectSoundComponent->SetupAttachment(Driver); 
+    EjectSoundComponent->bIsLooping = false;
+    EjectSoundComponent->bAutoPlay = false;
+
+    // 화물 추락 사운드 
+    DropSoundComponent = CreateDefaultSubobject<UAudioComponent>("DropSound");
+    USound* DropSound = UResourceManager::GetInstance().Load<USound>(GDataDir + "/Audio/box-crash-sound.wav");
+    DropSoundComponent->SetSound(DropSound);
+    DropSoundComponent->SetupAttachment(ChassisMesh);
+    DropSoundComponent->bIsLooping = false;
+    DropSoundComponent->bAutoPlay = false;
 }
 
 AVehicle::~AVehicle()
@@ -126,6 +161,18 @@ void AVehicle::BeginPlay()
             StateId_LeanRight = DriverStateMachine->AddState(StateRight, AnimRight);
 
             DriverStateMachine->SetCurrentState(StateId_Idle, 0.0f);
+        }
+
+        if (DriveSoundComponent)
+        {
+            DriveSoundComponent->Play();
+        }
+
+        if (ChassisMesh)
+        {
+            // @note BeginPlay() 중복 실행 버그로 인해서 일단 임시조치
+            ChassisMesh->OnComponentHit.Clear();
+            ChassisMesh->OnComponentHit.AddDynamic(this, &AVehicle::OnChassisHit);
         }
     }
 }
@@ -211,6 +258,32 @@ void AVehicle::Tick(float DeltaSeconds)
             SparkParticleComponent->FinishSystem();
             bSparkParticleActive = false;
         }
+    }
+
+    if (DriveSoundComponent && VehicleMovement)
+    {
+        float CurrentRPM = VehicleMovement->GetEngineRPM();
+        float MaxRPM = 6000.0f;
+        
+        // 2. RPM을 0.0 ~ 1.0 사이로 정규화 (Normalization)
+        // 엔진은 시동이 켜지면 최소 RPM(아이들링, 약 800~1000)이 있으므로 0부터 시작하지 않음
+        float NormalizedRPM = FMath::Clamp(CurrentRPM / MaxRPM, 0.0f, 1.0f);
+
+        // 3. 피치 계산
+        // 아이들링(낮은 RPM)일 때: 0.6 ~ 0.8
+        // 레드존(최대 RPM)일 때: 1.5 ~ 2.0
+        float BasePitch = 0.6f;
+        float PitchRange = 1.4f; // 0.6 + 1.4 = 2.0
+        
+        float TargetPitch = BasePitch + (NormalizedRPM * PitchRange);
+
+        // 4. 볼륨 계산 (볼륨은 RPM보다는 '부하(Load)'나 'Throttle'에 반응하는 게 좋지만, 일단 RPM+속도 섞어서)
+        // RPM이 높으면 시끄럽게, 하지만 너무 작아지지 않게 기본값 확보
+        float TargetVolume = 0.4f + (NormalizedRPM * 0.6f);
+
+        // 5. 적용
+        DriveSoundComponent->Pitch = TargetPitch;
+        DriveSoundComponent->Volume = FMath::Clamp(TargetVolume, 0.0f, 1.0f);
     }
 
     SyncWheelVisuals();
@@ -303,6 +376,11 @@ void AVehicle::EjectDriver(const FVector& Impulse)
     if (!Impulse.IsZero())
     {
         Driver->AddImpulse(Impulse);
+    }
+
+    if (EjectSoundComponent)
+    {
+        EjectSoundComponent->Play();
     }
 
     bIsDriverEjected = true;
@@ -475,6 +553,20 @@ void AVehicle::CheckWheelInteractions()
                 }
             }
         }
+    }
+}
+
+void AVehicle::OnChassisHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+{
+    if (OtherActor == this) return;
+
+    float ImpactForce = NormalImpulse.Size();
+
+    if (HitSoundComponent)
+    {
+        float RandomPitch = 0.9f + FMath::RandRange(0.0f, 0.2f);
+        HitSoundComponent->Pitch = RandomPitch;
+        HitSoundComponent->Play(); 
     }
 }
 

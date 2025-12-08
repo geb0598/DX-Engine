@@ -3,6 +3,7 @@
 #include "Actor.h"
 #include "ALandmine.generated.h"
 
+class UAudioComponent;
 class UStaticMeshComponent;
 
 UCLASS(DisplayName="지뢰", Description="밟으면 폭발하여 대상을 날려버리는 액터입니다")
@@ -56,4 +57,6 @@ protected:
     UParticleSystemComponent* FlashingEffect;
 
     UParticleSystemComponent* ExplosionEffect;
+
+    UAudioComponent* ExplosionSoundComponent;
 };

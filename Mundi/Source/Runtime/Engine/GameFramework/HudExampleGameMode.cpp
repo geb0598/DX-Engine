@@ -30,6 +30,20 @@ AHudExampleGameMode::AHudExampleGameMode()
 {
 	// DefaultPawnClass = ADancingCharacter::StaticClass();
 	DefaultPawnClass = AVehicle::StaticClass();
+
+	MainMenuMusicComponent = CreateDefaultSubobject<UAudioComponent>("");
+	USound* MainMenuMusic = UResourceManager::GetInstance().Load<USound>(GDataDir + "/Audio/confessin.wav");
+	MainMenuMusicComponent->SetSound(MainMenuMusic);
+	MainMenuMusicComponent->bAutoPlay = false;
+	MainMenuMusicComponent->bIsLooping = true;
+	MainMenuMusicComponent->Volume = 0.2f;
+	
+	BackgroundMusicComponent = CreateDefaultSubobject<UAudioComponent>("");
+	USound* BackgroundMusic = UResourceManager::GetInstance().Load<USound>(GDataDir + "/Audio/confessin.wav");
+	BackgroundMusicComponent->SetSound(BackgroundMusic);
+	BackgroundMusicComponent->bAutoPlay = false;
+	BackgroundMusicComponent->bIsLooping = true;
+	BackgroundMusicComponent->Volume = 0.2f;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -447,6 +461,16 @@ void AHudExampleGameMode::BeginPlay()
 	{
 		PC->SetInputEnabled(false);  // 플레이어 입력 비활성화
 	}
+	
+	// ─────────────────────────────────────────────────
+	// 플레이어 입력 비활성화 (타이틀 화면 동안)
+	// 카메라는 기본 스프링암 카메라 사용
+	// ─────────────────────────────────────────────────
+
+	if (MainMenuMusicComponent)
+	{
+		MainMenuMusicComponent->Play();
+	}
 }
 
 void AHudExampleGameMode::EndPlay()
@@ -749,6 +773,16 @@ void AHudExampleGameMode::StartGamePlay()
 
 	// 게임 시작
 	StartGame();
+
+	if (MainMenuMusicComponent)
+	{
+		MainMenuMusicComponent->Stop();
+	}
+
+	if (BackgroundMusicComponent)
+	{
+		BackgroundMusicComponent->Play();
+	}
 }
 
 // ────────────────────────────────────────────────────────────────────────────

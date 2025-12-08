@@ -1,5 +1,7 @@
 ﻿#include "pch.h"
 #include "NPC.h"
+
+#include "AudioComponent.h"
 #include "CapsuleComponent.h" // 혹은 BoxComponent.h
 #include "SkeletalMeshComponent.h"
 #include "ResourceManager.h"
@@ -29,8 +31,27 @@ ANPC::ANPC()
         MeshComponent->SetPhysicsAsset(DefaultPhysicsAsset);
     }
 
+    HitSoundComponent = CreateDefaultSubobject<UAudioComponent>("HitSound");
+    HitSoundComponent->SetupAttachment(MeshComponent);
+    HitSoundComponent->bAutoPlay = false;
+    HitSoundComponent->bIsLooping = false;
+    
     DefaultAnimPath = GDataDir + "/SillyDancing_mixamo.com";
-    HitSoundPath = GDataDir + "/Audio/Hit.wav";
+    HitSoundPath = GDataDir + "/Audio/Male-hurt-sound-effect.wav";
+
+    // @todo 아직 원인은 파악 못했지만 BeginPlay()에서 SetSound() 호출할 시 크래시 발생, 임시로 이곳에서 초기화함
+    if (!HitSoundPath.empty())
+    {
+        // @todo 임시로 하드코딩된 경로 사용 (씬에 직렬화된 NPC 있어서 현재 크래시 발생함)
+        USound* HitSound = UResourceManager::GetInstance().Load<USound>(GDataDir + "/Audio/Male-hurt-sound-effect.wav");
+        if (HitSound)
+        {
+            if (HitSoundComponent)
+            {
+                HitSoundComponent->SetSound(HitSound);
+            }
+        }
+    }
 }
 
 ANPC::~ANPC()
@@ -48,11 +69,6 @@ void ANPC::BeginPlay()
         {
             MeshComponent->PlayAnimation(IdleAnimation, true); // Loop
         }
-    }
-
-    if (!HitSoundPath.empty())
-    {
-        HitSound = UResourceManager::GetInstance().Load<USound>(HitSoundPath);
     }
 }
 
@@ -74,6 +90,10 @@ void ANPC::DuplicateSubObjects()
         else if (Component->ObjectName == "Mesh")
         {
             MeshComponent = Cast<USkeletalMeshComponent>(Component);
+        }
+        else if (UAudioComponent* NewAudioComponent = Cast<UAudioComponent>(Component))
+        {
+            HitSoundComponent = NewAudioComponent;
         }
     }
 }
@@ -116,9 +136,11 @@ void ANPC::BecomeRagdoll(const FVector& ImpactVelocity)
         MeshComponent->AddImpulse(Impulse); 
     }
 
-    if (HitSound)
+    if (HitSoundComponent)
     {
-        FAudioDevice::PlaySound3D(HitSound, GetActorLocation());
+        float RandomPitch = 0.9f + FMath::RandRange(0.0f, 0.2f);
+        HitSoundComponent->Pitch = RandomPitch;
+        HitSoundComponent->Play();
     }
 }
 
@@ -142,6 +164,10 @@ void ANPC::Serialize(const bool bInIsLoading, JSON& InOutHandle)
             else if (UCapsuleComponent* NewCapsuleComponent = Cast<UCapsuleComponent>(Component))
             {
                 CapsuleComponent = NewCapsuleComponent;
+            }
+            else if (UAudioComponent* NewAudioComponent = Cast<UAudioComponent>(Component))
+            {
+                HitSoundComponent = NewAudioComponent;
             }
         }
     }

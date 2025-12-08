@@ -2,6 +2,7 @@
 #include "Actor.h"
 #include "ANPC.generated.h"
 
+class UAudioComponent;
 class USkeletalMeshComponent;
 class UCapsuleComponent; 
 class USound;
@@ -34,6 +35,9 @@ public:
     /** 비주얼을 담당하는 스켈레탈 메쉬 */
     USkeletalMeshComponent* MeshComponent;
 
+    /** 충돌 시 발생할 소리 컴포넌트 */
+    UAudioComponent* HitSoundComponent;
+
     // ====================================================================
     // 설정
     // ====================================================================
@@ -62,5 +66,4 @@ protected:
 
 private:
     bool bIsRagdoll = false;
-    USound* HitSound = nullptr;
 };

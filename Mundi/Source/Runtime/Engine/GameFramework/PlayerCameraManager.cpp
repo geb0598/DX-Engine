@@ -10,6 +10,7 @@
 #include "CameraActor.h"
 #include "CameraComponent.h"
 #include "Character.h"
+#include "FAudioDevice.h"
 #include "World.h"
 #include "FViewport.h"
 #include "RenderSettings.h"
@@ -251,6 +252,13 @@ void APlayerCameraManager::BuildForFrame(float DeltaTime)
 		CurrentViewInfo.AspectRatio = 1.7777f;
 		CurrentViewInfo.ViewRect = { 0, 0, 1920, 1080 };
 	}
+
+	FTransform WorldTransform = GetRootComponent()->GetWorldTransform();
+	FAudioDevice::SetListenerPosition(
+		WorldTransform.Translation,
+		WorldTransform.Rotation.GetForwardVector(),
+		WorldTransform.Rotation.GetUpVector()
+	);
 }
 
 void APlayerCameraManager::StartCameraShake(float InDuration, float AmpLoc, float AmpRotDeg, float Frequency,

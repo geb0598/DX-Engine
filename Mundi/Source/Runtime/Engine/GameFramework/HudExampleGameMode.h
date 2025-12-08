@@ -6,6 +6,7 @@
 
 #include "GameModeBase.h"
 #include "Source/Runtime/Core/Memory/PointerTypes.h"
+#include "AudioComponent.h"
 #include "AHudExampleGameMode.generated.h"
 
 class SButton;
@@ -250,4 +251,11 @@ protected:
 
 	/** "TO HOME" 텍스트 이미지 (진행 바 왼쪽) */
 	TSharedPtr<SImage> ToHomeText;
+
+	// ────────────────────────────────────────────────
+	// 사운드
+	// ────────────────────────────────────────────────
+	class UAudioComponent* MainMenuMusicComponent = nullptr;
+
+	class UAudioComponent* BackgroundMusicComponent = nullptr;
 };

@@ -6,6 +6,7 @@
 #include "SpringArmComponent.h"
 #include "AVehicle.generated.h"
 
+class UAudioComponent;
 class UAnimStateMachineInstance;
 /**
  * PhysX 기반의 4륜 구동 자동차 액터
@@ -68,7 +69,22 @@ public:
 
     /** 바퀴에서 생성되는 스파크용 파티클 */
     UParticleSystemComponent* SparkParticleComponent;
-    
+
+    // ====================================================================
+    // 사운드 
+    // ====================================================================
+    /** 주행 사운드 */
+    UAudioComponent* DriveSoundComponent;
+
+    /** 충돌 사운드 */
+    UAudioComponent* HitSoundComponent;
+
+    /** 화물 추락 사운드 */
+    UAudioComponent* DropSoundComponent;
+
+    /** 운전자 사출 사운드 */
+    UAudioComponent* EjectSoundComponent;
+
 protected:
     // ====================================================================
     // 입력 핸들러
@@ -99,6 +115,8 @@ protected:
     void BoostReleased();
 
     void CheckWheelInteractions();
+
+    void OnChassisHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
     // ====================================================================
     // 내부 로직

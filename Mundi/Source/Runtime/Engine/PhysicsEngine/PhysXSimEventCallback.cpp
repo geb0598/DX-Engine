@@ -94,6 +94,10 @@ void FPhysXSimEventCallback::onContact(const PxContactPairHeader& pairHeader, co
                     ContactCount++;
                 }
             }
+            if (TotalImpulse > 0.0f)
+            {
+                UE_LOG("Total Impulse %f", TotalImpulse);
+            }
 
             if (ContactCount > 0)
             {

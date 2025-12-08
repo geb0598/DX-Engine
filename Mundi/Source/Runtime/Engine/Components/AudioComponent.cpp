@@ -20,6 +20,7 @@ UAudioComponent::UAudioComponent()
     , bAutoPlay(true)
     , bIsPlaying(false)
 {
+    bCanEverTick = true;
 }
 
 UAudioComponent::~UAudioComponent()
@@ -44,6 +45,9 @@ void UAudioComponent::TickComponent(float DeltaTime)
     {
         FVector CurrentLocation = GetWorldLocation();
         FAudioDevice::UpdateSoundPosition(SourceVoice, CurrentLocation);
+
+        SourceVoice->SetFrequencyRatio(Pitch);
+        SourceVoice->SetVolume(Volume);
 
         if (!bIsLooping)
         {
@@ -97,6 +101,11 @@ void UAudioComponent::PlaySlot(uint32 SlotIndex)
     USound* Selected = Sounds[SlotIndex];
     if (!Selected) return;
     //if (bIsPlaying) return;
+
+    if (SourceVoice)
+    {
+        Stop();
+    }
 
     FVector CurrentLocation = GetWorldLocation();
     SourceVoice = FAudioDevice::PlaySound3D(Selected, CurrentLocation, Volume, bIsLooping);

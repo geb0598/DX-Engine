@@ -197,7 +197,9 @@ void FAudioDevice::SetListenerPosition(const FVector& Position, const FVector& F
     Listener.Position = X3DAUDIO_VECTOR{ Position.X, Position.Y, Position.Z };
     Listener.OrientFront = X3DAUDIO_VECTOR{ ForwardVec.X, ForwardVec.Y, ForwardVec.Z };
     Listener.OrientTop = X3DAUDIO_VECTOR{ UpVec.X, UpVec.Y, UpVec.Z };
-}void FAudioDevice::UpdateSoundPosition(IXAudio2SourceVoice* pSourceVoice, const FVector& EmitterPosition)
+}
+
+void FAudioDevice::UpdateSoundPosition(IXAudio2SourceVoice* pSourceVoice, const FVector& EmitterPosition)
 {
     if (!pSourceVoice || !pMasteringVoice)
     {

@@ -1,6 +1,7 @@
 ﻿#include "pch.h"
 #include "Landmine.h"
 
+#include "AudioComponent.h"
 #include "ParticleSystemComponent.h"
 #include "StaticMeshComponent.h"
 #include "PrimitiveComponent.h"
@@ -39,6 +40,13 @@ ALandmine::ALandmine()
         ExplosionEffect->SetTemplate(ExplosionTemplate);
     }
 
+    ExplosionSoundComponent = CreateDefaultSubobject<UAudioComponent>("");
+    ExplosionSoundComponent->SetupAttachment(RootComponent);
+    USound* ExplosionSound = UResourceManager::GetInstance().Load<USound>(GDataDir + "/Audio/explosion-fx.wav");
+    ExplosionSoundComponent->SetSound(ExplosionSound);
+    ExplosionSoundComponent->bIsLooping = false;
+    ExplosionSoundComponent->bAutoPlay = false;
+
     bIsActive = true;
 }
 
@@ -73,6 +81,13 @@ void ALandmine::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimiti
             {
                 BodyInst->AddImpulse(ExplosionDir * ExplosionImpulse);
                 BodyInst->AddAngularImpulse(TorqueAxis * AngularImpulseStrength);
+            }
+
+            if (ExplosionSoundComponent)
+            {
+                float RandomPitch = 0.9f + FMath::RandRange(0.0f, 0.2f);
+                ExplosionSoundComponent->Pitch = RandomPitch;
+                ExplosionSoundComponent->Play();
             }
 
             Deactivate();
@@ -126,6 +141,10 @@ void ALandmine::DuplicateSubObjects()
             {
                 FlashingEffect = Particle;
             }
+        }
+        else if (UAudioComponent* Audio = Cast<UAudioComponent>(Component))
+        {
+            ExplosionSoundComponent = Audio; 
         }
     }
 }
