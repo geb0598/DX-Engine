@@ -2,6 +2,7 @@
 #include "CargoComponent.h"
 
 #include "PhysScene.h"
+#include "PlayerCameraManager.h"
 #include "StaticMeshComponent.h"
 #include "Vehicle.h"
 
@@ -61,6 +62,28 @@ void UCargoComponent::TickComponent(float DeltaSeconds)
 
     float DotUp = -LocalGravityDir.Z; 
     float LeanAngle = RadiansToDegrees(std::acos(FMath::Clamp(DotUp, -1.0f, 1.0f)));
+
+    // ===== 카메라 연출 =====
+    APlayerCameraManager* PlayerCameraManager = GetWorld()->GetPlayerCameraManager();
+    if (PlayerCameraManager)
+    {
+        float DangerRatio = FMath::Clamp(LeanAngle / CriticalAngle, 0.0f, 1.0f);
+
+        float TargetIntensity = FMath::Lerp(0.0f, 2.0f, DangerRatio);
+        float TargetRadius    = FMath::Lerp(0.6f, 0.2f, DangerRatio);
+        float TargetSoftness  = 0.5f; 
+
+        PlayerCameraManager->AdjustVignette(
+            -1.0f,                                      // Duration
+            TargetRadius,                               // Radius (작을수록 화면 중앙까지 침범)
+            TargetSoftness,                             // Softness (경계 흐림 정도)
+            TargetIntensity,                            // Intensity (어두운 정도)
+            2.0f,                                       // Roundness (원형)
+            FLinearColor(0.6f, 0.0f, 0.0f, 0.8f), // Color
+            10                                          // Priority (높은 우선순위)
+        );
+    }
+    // =====================
 
     if (LeanAngle > CriticalAngle)
     {
@@ -139,8 +162,6 @@ void UCargoComponent::TickComponent(float DeltaSeconds)
     {
         CurrentDangerDuration += DeltaSeconds;
         
-        // "위험해!" UI 연출을 넣기 좋은 타이밍 (화면 붉어짐, 짐 흔들림 소리 등)
-        UE_LOG("위험해!!!");
         if (CurrentDangerDuration > CollapseGraceTime)
         {
             CollapseFrom(FirstCollapseIndex);
@@ -348,6 +369,41 @@ void UCargoComponent::CollapseFrom(int32 StartIndex)
     {
         return;
     }
+
+    int32 DropCount = ValidCargoCount - StartIndex;
+
+    // ===== 카메라 연출 =====
+    APlayerCameraManager* CameraManager = GetWorld()->GetPlayerCameraManager();
+    if (CameraManager && DropCount > 0)
+    {
+        const float BaseDuration = 0.3f;   // 기본 지속 시간
+        const float BaseAmpLoc = 0.1f;     // 기본 위치 흔들림 (cm)
+        const float BaseAmpRot = 0.1f;     // 기본 회전 흔들림 (도)
+        
+        // 개수에 따른 증폭 (박스 1개당 10%~50% 씩 강해지도록 조절)
+        // 많이 떨어질수록 강하게 흔들리지만, 너무 심하지 않게 Clamp 처리
+        float IntensityMult = 1.0f + (float)DropCount * 0.1f; 
+        
+        // 전체 붕괴(StartIndex == 0)인 경우 임팩트를 위해 더 강하게 보정
+        if (StartIndex == 0)
+        {
+            IntensityMult *= 2.0f; 
+        }
+
+        float FinalDuration = FMath::Clamp(BaseDuration + (DropCount * 0.05f), 0.2f, 1.0f);
+        float FinalAmpLoc   = FMath::Clamp(BaseAmpLoc * IntensityMult, 0.1f, 5.0f);
+        float FinalAmpRot   = FMath::Clamp(BaseAmpRot * IntensityMult, 0.5f, 5.0f);
+        float Frequency     = 10.0f; 
+
+        CameraManager->StartCameraShake(
+            FinalDuration, 
+            FinalAmpLoc, 
+            FinalAmpRot, 
+            Frequency, 
+            10 // Priority (높음)
+        );
+    }
+    // ==================
 
     FVector WorldLocation = GetWorldLocation();
     for (int32 i = StartIndex; i < ValidCargoCount; i++)

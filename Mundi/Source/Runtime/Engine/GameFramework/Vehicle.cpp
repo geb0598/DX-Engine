@@ -277,6 +277,15 @@ void AVehicle::EjectDriver(const FVector& Impulse)
         return;
     }
 
+    // ===== 카메라 연출 =====
+    UWorld* World = GetWorld();
+    if (World)
+    {
+        // 0.2배속으로 3초간 진행 (너무 느리면 답답하므로 0.2~0.3 추천)
+        World->RequestSlomo(3.0f, 0.2f);
+    }
+
+    // =====================
     Driver->DetachFromParent(true);
 
     Driver->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
