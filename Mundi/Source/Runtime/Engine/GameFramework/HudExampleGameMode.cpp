@@ -353,11 +353,11 @@ void AHudExampleGameMode::BeginPlay()
 	// ─────────────────────────────────────────────────
 
 	Minimap = MakeShared<SMinimap>();
-	Minimap->SetMapTexture(L"Data/Textures/Dumb/Minimap.png")  // 미니맵 이미지
+	Minimap->SetMapTexture(L"Data/Textures/Dumb/newmap.png")  // 미니맵 이미지
 		.SetPlayerMarkerTexture(L"Data/Textures/Dumb/PlayerMarker.png")  // 플레이어 마커
 		.SetRingTexture(L"Data/Textures/Dumb/MapRing.png")  // 미니맵 테두리 링
 		.SetRingHighQuality(true)  // 링 텍스처 고품질 보간
-		.SetWorldBounds(FVector(-278.5f, -116.5f, 0.f), FVector(278.5f, 116.5f, 0.f))  // 실제 맵 크기 (X: 557, Y: 233)
+		.SetWorldBounds(FVector(-9.5f, -386.0f, 0.f), FVector(224.0f, 172.0f, 0.f))  // 실제 맵 크기 (newmap.png: 1497x627)
 		.SetMarkerSize(18.f)  // 마커 크기
 		.SetZoomLevel(150.f);  // 플레이어 주변 150 유닛 반경 표시 (작을수록 확대됨)
 

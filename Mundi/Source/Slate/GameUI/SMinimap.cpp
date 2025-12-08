@@ -57,19 +57,32 @@ void SMinimap::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 		// 맵 비트맵 크기
 		D2D1_SIZE_F BitmapSize = MapBitmap->GetSize();
 
-		// 현재 플레이어 위치를 UV 좌표로 변환 (0~1)
-		float WorldWidth = WorldMax.X - WorldMin.X;
-		float WorldHeight = WorldMax.Y - WorldMin.Y;
-		if (WorldWidth <= 0.f) WorldWidth = 557.f;
-		if (WorldHeight <= 0.f) WorldHeight = 233.f;
+		// 월드 바운드 (4 꼭짓점 기준)
+		// 이미지 좌하단(0, 627) = 월드 (224, 172)
+		// 이미지 우하단(1497, 627) = 월드 (224, -386)
+		// 이미지 좌상단(0, 0) = 월드 (-9.5, 172)
+		// 이미지 우상단(1497, 0) = 월드 (-9.5, -386)
+		float WorldMinX = -9.5f;
+		float WorldMaxX = 224.0f;
+		float WorldMinY = -386.0f;
+		float WorldMaxY = 172.0f;
 
-		// 맵 이미지에서 X와 Y가 바뀌어 있으므로 스왑
-		float PlayerU = (PlayerWorldPos.Y - WorldMin.Y) / WorldHeight;
-		float PlayerV = 1.0f - (PlayerWorldPos.X - WorldMin.X) / WorldWidth;  // X축 반전
+		float WorldWidth = WorldMaxX - WorldMinX;   // 233.5
+		float WorldHeight = WorldMaxY - WorldMinY;  // 558.0
 
-		// UV를 비트맵 픽셀 좌표로 변환
-		float CenterX = PlayerU * BitmapSize.width;
-		float CenterY = PlayerV * BitmapSize.height;
+		// 플레이어 월드 위치를 정규화 (0~1)
+		float NormalizedX = (PlayerWorldPos.X - WorldMinX) / WorldWidth;
+		float NormalizedY = (PlayerWorldPos.Y - WorldMinY) / WorldHeight;
+
+		// 이미지 좌표계 변환 (이미지 좌상단이 원점 0,0)
+		// 이미지에서: 위쪽 = 월드 -X, 오른쪽 = 월드 -Y
+		// 이미지 X(가로, 0→1497) = 월드 Y가 감소하는 방향 (172→-386)
+		// 이미지 Y(세로, 0→627) = 월드 X가 감소하는 방향 (224→-9.5)
+		float ImageX = (1.0f - NormalizedY) * BitmapSize.width;   // 월드 Y 반전 → 이미지 X
+		float ImageY = NormalizedX * BitmapSize.height;            // 월드 X → 이미지 Y (반전 제거)
+
+		float CenterX = ImageX;
+		float CenterY = ImageY;
 
 		// 정사각형 크롭 크기 (작은 쪽 기준)
 		float CropSize = std::min(BitmapSize.width, BitmapSize.height) * 0.5f;
@@ -172,9 +185,17 @@ void SMinimap::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 				MarkerPos.Y + MarkerSize * 0.5f
 			);
 
-			// 회전 Transform 생성 (플레이어의 forward 방향)
+			// 회전 각도 계산
+			// PlayerRotation: -180° = 월드 -X (이미지 위), 좌회전 시 증가 (-180 → 170 → 20)
+			// 이미지 좌표계: 위쪽 = 월드 -X, 오른쪽 = 월드 -Y
+			// PlayerRotation이 -180일 때 이미지 0도(위쪽)을 향해야 함
+			// 좌회전(PlayerRotation 증가) 시 이미지도 반시계방향으로 회전해야 함
+			// 공식: 이미지 각도 = PlayerRotation + 180°
+			float MarkerAngle = PlayerRotation + 180.0f;
+
+			// 회전 Transform 생성
 			D2D1::Matrix3x2F RotationTransform =
-				D2D1::Matrix3x2F::Rotation(PlayerRotation, MarkerCenter);
+				D2D1::Matrix3x2F::Rotation(MarkerAngle, MarkerCenter);
 
 			// Transform 적용
 			Context->SetTransform(RotationTransform * OldTransform);
@@ -254,21 +275,21 @@ void SMinimap::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 		}
 	}
 
-	// 3. 플레이어 위치 디버그 출력 (미니맵 위에 표시)
-	/*FWideString PosText = L"Player: (" +
+	// 3. 플레이어 위치 및 회전 디버그 출력 (미니맵 위에 표시)
+	FWideString DebugText = L"Pos: (" +
 		std::to_wstring(static_cast<int>(PlayerWorldPos.X)) + L", " +
-		std::to_wstring(static_cast<int>(PlayerWorldPos.Y)) + L", " +
-		std::to_wstring(static_cast<int>(PlayerWorldPos.Z)) + L")";
+		std::to_wstring(static_cast<int>(PlayerWorldPos.Y)) + L") Rot: " +
+		std::to_wstring(static_cast<int>(PlayerRotation)) + L"°";
 
 	Renderer.DrawText(
-		PosText,
+		DebugText,
 		FVector2D(Position.X, Position.Y - 30.f),  // 미니맵 바로 위
 		FVector2D(400.f, 30.f),
 		FSlateColor(1.f, 1.f, 0.f, 1.f),  // 노란색
 		16.f,
 		ETextHAlign::Left,
 		ETextVAlign::Top
-	);*/
+	);
 }
 
 SMinimap& SMinimap::SetMapTexture(const FWideString& InTexturePath)
