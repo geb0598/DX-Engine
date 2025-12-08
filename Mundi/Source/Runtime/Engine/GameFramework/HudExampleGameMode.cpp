@@ -44,6 +44,7 @@ AHudExampleGameMode::AHudExampleGameMode()
 	MainMenuMusicComponent->SetSound(MainMenuMusic);
 	MainMenuMusicComponent->bAutoPlay = false;
 	MainMenuMusicComponent->bIsLooping = true;
+	MainMenuMusicComponent->bIsUISound = true;
 	MainMenuMusicComponent->Volume = 0.2f;
 	
 	BackgroundMusicComponent = CreateDefaultSubobject<UAudioComponent>("");
@@ -51,6 +52,7 @@ AHudExampleGameMode::AHudExampleGameMode()
 	BackgroundMusicComponent->SetSound(BackgroundMusic);
 	BackgroundMusicComponent->bAutoPlay = false;
 	BackgroundMusicComponent->bIsLooping = true;
+	BackgroundMusicComponent->bIsUISound = true;
 	BackgroundMusicComponent->Volume = 0.2f;
 }
 
