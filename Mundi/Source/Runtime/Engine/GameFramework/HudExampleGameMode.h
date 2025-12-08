@@ -223,4 +223,17 @@ protected:
 
 	/** 만화/컷씬 전체 화면 이미지 (8장) */
 	TArray<TSharedPtr<SImage>> ComicImages;
+
+	// ────────────────────────────────────────────────
+	// UI 위젯 - 경과 시간
+	// ────────────────────────────────────────────────
+
+	/** 경과 시간 배경 박스 */
+	TSharedPtr<SBorderBox> ElapsedTimeBg;
+
+	/** 경과 시간 텍스트 */
+	TSharedPtr<STextBlock> ElapsedTimeText;
+
+	/** 게임 시작 후 경과 시간 (초) */
+	float ElapsedGameTime = 0.f;
 };

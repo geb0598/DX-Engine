@@ -307,6 +307,37 @@ void AHudExampleGameMode::BeginPlay()
 		.SetSize(180.f, 180.f);   // 정사각형 미니맵
 
 	// ─────────────────────────────────────────────────
+	// 경과 시간 UI (상단 오른쪽)
+	// ─────────────────────────────────────────────────
+
+	// 배경 박스 (반투명 검정)
+	ElapsedTimeBg = MakeShared<SBorderBox>();
+	ElapsedTimeBg->SetBackgroundColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.6f))  // 반투명 검정
+		.SetBorderThickness(2.f)
+		.SetBorderColor(FSlateColor(1.0f, 1.0f, 1.0f, 0.3f));  // 밝은 회색 테두리
+
+	SGameHUD::Get().AddWidget(ElapsedTimeBg)
+		.SetAnchor(1.0f, 0.0f)  // 우상단
+		.SetPivot(1.0f, 0.0f)   // 우상단 기준
+		.SetOffset(-20.f, 20.f)  // 우상단에서 조금 안쪽
+		.SetSize(180.f, 50.f);
+
+	// 경과 시간 텍스트
+	ElapsedTimeText = MakeShared<STextBlock>();
+	ElapsedTimeText->SetText(L"TIME: 00:00")
+		.SetFontSize(24.f)
+		.SetColor(FSlateColor::White())
+		.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor::Black())
+		.SetHAlign(ETextHAlign::Center)
+		.SetVAlign(ETextVAlign::Center);
+
+	SGameHUD::Get().AddWidget(ElapsedTimeText)
+		.SetAnchor(1.0f, 0.0f)  // 우상단
+		.SetPivot(1.0f, 0.0f)   // 우상단 기준
+		.SetOffset(-20.f, 20.f)  // 배경과 동일한 위치
+		.SetSize(180.f, 50.f);
+
+	// ─────────────────────────────────────────────────
 	// 튜토리얼 만화/컷씬 (전체 화면, 7장)
 	// ─────────────────────────────────────────────────
 
@@ -515,6 +546,8 @@ void AHudExampleGameMode::ShowMainMenu()
 	if (CartImage) CartImage->SetVisibility(ESlateVisibility::Hidden);
 	if (VehicleInfoPanel) VehicleInfoPanel->SetVisibility(ESlateVisibility::Hidden);
 	if (Minimap) Minimap->SetVisibility(ESlateVisibility::Hidden);
+	if (ElapsedTimeBg) ElapsedTimeBg->SetVisibility(ESlateVisibility::Hidden);
+	if (ElapsedTimeText) ElapsedTimeText->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void AHudExampleGameMode::StartCameraCinematic()
@@ -604,6 +637,45 @@ void AHudExampleGameMode::StartGamePlay()
 	if (CartImage) CartImage->SetVisibility(ESlateVisibility::Visible);
 	if (VehicleInfoPanel) VehicleInfoPanel->SetVisibility(ESlateVisibility::Visible);
 	if (Minimap) Minimap->SetVisibility(ESlateVisibility::Visible);
+	if (ElapsedTimeBg) ElapsedTimeBg->SetVisibility(ESlateVisibility::Visible);
+	if (ElapsedTimeText) ElapsedTimeText->SetVisibility(ESlateVisibility::Visible);
+
+	// 경과 시간 초기화
+	ElapsedGameTime = 0.f;
+
+	// ─────────────────────────────────────────────────
+	// 실제 게임 시작: 플레이어를 시작 지점으로 이동
+	// ─────────────────────────────────────────────────
+
+	APlayerController* PC = GetPlayerController();
+	if (PC)
+	{
+		APawn* PlayerPawn = PC->GetPawn();
+		if (PlayerPawn)
+		{
+			// 1. 시작 지점으로 텔레포트 (166.79, 1.3, 3)
+			FVector GameStartLocation(166.79f, 1.3f, 3.0f);
+			FQuat GameStartRotation = FQuat::MakeFromEulerZYX(FVector(0.0f, 0.0f, 180.0f));
+			PlayerPawn->SetActorLocation(GameStartLocation);
+			PlayerPawn->SetActorRotation(GameStartRotation);
+
+			// 2. 플레이어 카메라(SpringArm)로 복귀
+			UCameraComponent* PawnCamera = Cast<UCameraComponent>(
+				PlayerPawn->GetComponent(UCameraComponent::StaticClass())
+			);
+			if (PawnCamera)
+			{
+				APlayerCameraManager* CameraManager = PC->GetPlayerCameraManager();
+				if (CameraManager)
+				{
+					CameraManager->SetViewCamera(PawnCamera);
+				}
+			}
+
+			// 3. 입력 활성화
+			PC->SetInputEnabled(true);
+		}
+	}
 
 	// 게임 시작
 	StartGame();
@@ -960,6 +1032,24 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		FVector EulerAngles = PlayerQuat.ToEulerZYXDeg();
 		float PlayerYaw = EulerAngles.Z;  // Yaw는 Z축 회전
 		Minimap->UpdatePlayerRotation(PlayerYaw);
+	}
+
+	// ─────────────────────────────────────────────────
+	// 경과 시간 업데이트
+	// ─────────────────────────────────────────────────
+
+	ElapsedGameTime += DeltaSeconds;
+
+	if (ElapsedTimeText)
+	{
+		// 분:초 형식으로 표시 (MM:SS)
+		int32 TotalSeconds = static_cast<int32>(ElapsedGameTime);
+		int32 Minutes = TotalSeconds / 60;
+		int32 Seconds = TotalSeconds % 60;
+
+		wchar_t TimeStr[32];
+		swprintf_s(TimeStr, L"TIME: %02d:%02d", Minutes, Seconds);
+		ElapsedTimeText->SetText(TimeStr);
 	}
 
 	// 박스 개수 UI 업데이트
