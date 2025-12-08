@@ -272,14 +272,16 @@ void FPhysScene::TermPhysScene()
 
 void FPhysScene::TickPhysScene(float DeltaTime)
 {
+
     if (!PhysXScene)          { return; }
 
     if (bPhysXSceneExecuting) { return; }
 
     if (DeltaTime <= 0.0f)    { return; }
 
-    DeltaTime = FMath::Min(DeltaTime, 0.016f);
+    DeltaTime = FMath::Min(DeltaTime, MaxDelta);
     PhysXScene->simulate(DeltaTime);
+
     bPhysXSceneExecuting = true;
 }
 

@@ -1,8 +1,10 @@
-#pragma once
+﻿#pragma once
 
 #include <mutex>
 
 #include "PhysXSupport.h"
+
+#define FPS 60.0f
 
 class FPhysXSimEventCallback;
 
@@ -207,6 +209,8 @@ private:
 
     /** 시뮬레이션 중 충돌 정보 큐 접근용 뮤텍스 */
     std::mutex NotifyMutex;
+
+    const float MaxDelta = 1.0f / FPS;
 
     /** PhysX Scene 시뮬레이션 실행 여부 (실행 시점과 동기화 시점 사이) */
     bool bPhysXSceneExecuting;

@@ -116,6 +116,7 @@ public:
 	// 활성화/비활성화
 	void ActivateSystem();
 	void DeactivateSystem();
+	void FinishSystem();
 	void ResetParticles();
 
 	// 시뮬레이션 속도 제어 (에디터용)
@@ -177,6 +178,8 @@ private:
 	void InitializeEmitterInstances();
 	void ClearEmitterInstances();
 	void UpdateRenderData();
+
+	bool bSuppressSpawning = false;
 
 	// === 테스트용 리소스 (디버그 함수에서 생성, Component가 소유) ===
 	float TestTime = 0.0f;
