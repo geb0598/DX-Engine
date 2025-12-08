@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "SGameHUD.h"
 
 #include <dxgi.h>
@@ -127,6 +127,11 @@ void SGameHUD::Render()
 FCanvasSlot& SGameHUD::AddWidget(const TSharedPtr<SWidget>& Widget)
 {
     return RootCanvas->AddChildToCanvas(Widget);
+}
+
+void SGameHUD::ReserveRootCanvasSlots(int32 Num)
+{
+    RootCanvas->GetCanvasSlots().Reserve(Num);
 }
 
 bool SGameHUD::RemoveWidget(const TSharedPtr<SWidget>& Widget)

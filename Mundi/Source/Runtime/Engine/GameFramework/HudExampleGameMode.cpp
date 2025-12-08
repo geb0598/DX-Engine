@@ -44,6 +44,7 @@ AHudExampleGameMode::AHudExampleGameMode()
 	MainMenuMusicComponent->SetSound(MainMenuMusic);
 	MainMenuMusicComponent->bAutoPlay = false;
 	MainMenuMusicComponent->bIsLooping = true;
+	MainMenuMusicComponent->bIsUISound = true;
 	MainMenuMusicComponent->Volume = 0.2f;
 	
 	BackgroundMusicComponent = CreateDefaultSubobject<UAudioComponent>("");
@@ -51,6 +52,7 @@ AHudExampleGameMode::AHudExampleGameMode()
 	BackgroundMusicComponent->SetSound(BackgroundMusic);
 	BackgroundMusicComponent->bAutoPlay = false;
 	BackgroundMusicComponent->bIsLooping = true;
+	BackgroundMusicComponent->bIsUISound = true;
 	BackgroundMusicComponent->Volume = 0.2f;
 }
 
@@ -65,6 +67,7 @@ void AHudExampleGameMode::BeginPlay()
 	if (!SGameHUD::Get().IsInitialized())
 		return;
 
+	SGameHUD::Get().ReserveRootCanvasSlots(50);
 	// 이미 위젯이 생성되어 있으면 중복 생성 방지
 	if (VehicleSpeedText)
 		return;
@@ -72,6 +75,7 @@ void AHudExampleGameMode::BeginPlay()
 	// ─────────────────────────────────────────────────
 	// 메인 메뉴 UI
 	// ─────────────────────────────────────────────────
+	
 
 	// 타이틀 이미지 (화면 중앙, Fade In + Scale 애니메이션)
 	TitleImage = MakeShared<SImage>();

@@ -47,6 +47,9 @@ public:
     UPROPERTY(EditAnywhere, Category="Audio", Tooltip="Auto play on BeginPlay")
     bool  bAutoPlay;
 
+    UPROPERTY(EditAnywhere, Category="Audio", Tooltip="If true, plays as 2D sound (BGM/UI) without spatialization")
+    bool bIsUISound;
+
     // Duplication
     virtual void DuplicateSubObjects() override;
 

@@ -97,6 +97,8 @@ public:
      */
     FCanvasSlot& AddWidget(const TSharedPtr<SWidget>& Widget);
 
+    void ReserveRootCanvasSlots(int32 Num);
+
     /**
      * 위젯 제거
      * @param Widget 제거할 위젯

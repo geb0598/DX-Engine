@@ -253,7 +253,7 @@ void APlayerCameraManager::BuildForFrame(float DeltaTime)
 		CurrentViewInfo.ViewRect = { 0, 0, 1920, 1080 };
 	}
 
-	FTransform WorldTransform = GetRootComponent()->GetWorldTransform();
+	FTransform WorldTransform = CurrentViewCamera->GetWorldTransform();
 	FAudioDevice::SetListenerPosition(
 		WorldTransform.Translation,
 		WorldTransform.Rotation.GetForwardVector(),

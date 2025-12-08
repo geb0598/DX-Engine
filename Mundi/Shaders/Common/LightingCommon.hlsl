@@ -106,7 +106,7 @@ float3 CalculateSpecular(float3 lightDir, float3 normal, float3 viewDir, float4 
 #ifdef USE_BLINN_PHONG
     // Blinn-Phong 방식: Half-vector 기반 (더 빠르고 부드러운 하이라이트)
     float3 halfVec = normalize(lightDir + viewDir);
-    float NdotH = max(dot(normal, halfVec), 0.0f);
+    float NdotH = max(dot(normal, halfVec), 0.0001f);
     float specular = pow(NdotH, specularPower);
     return lightColor.rgb * specularColor * specular;
 #else
