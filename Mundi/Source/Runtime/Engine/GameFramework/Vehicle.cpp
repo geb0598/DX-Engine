@@ -107,6 +107,7 @@ AVehicle::AVehicle()
     HitSoundComponent->SetupAttachment(ChassisMesh);
     HitSoundComponent->bIsLooping = false;
     HitSoundComponent->bAutoPlay = false;
+    HitSoundComponent->Volume = 0.8f;
 
     // 운전자 사출 사운드 (OneShot)
     EjectSoundComponent = CreateDefaultSubobject<UAudioComponent>("EjectSound");
@@ -123,6 +124,7 @@ AVehicle::AVehicle()
     DropSoundComponent->SetupAttachment(ChassisMesh);
     DropSoundComponent->bIsLooping = false;
     DropSoundComponent->bAutoPlay = false;
+    DropSoundComponent->Volume = 0.8f;
 }
 
 AVehicle::~AVehicle()
@@ -279,7 +281,7 @@ void AVehicle::Tick(float DeltaSeconds)
 
         // 4. 볼륨 계산 (볼륨은 RPM보다는 '부하(Load)'나 'Throttle'에 반응하는 게 좋지만, 일단 RPM+속도 섞어서)
         // RPM이 높으면 시끄럽게, 하지만 너무 작아지지 않게 기본값 확보
-        float TargetVolume = 0.4f + (NormalizedRPM * 0.6f);
+        float TargetVolume = 0.2f + (NormalizedRPM * 0.6f);
 
         // 5. 적용
         DriveSoundComponent->Pitch = TargetPitch;

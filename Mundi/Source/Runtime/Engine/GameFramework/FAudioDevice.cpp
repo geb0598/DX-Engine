@@ -119,6 +119,46 @@ void FAudioDevice::Update()
     // For future: process queued commands, streaming, etc.
 }
 
+IXAudio2SourceVoice* FAudioDevice::PlaySound2D(USound* SoundToPlay, float Volume, bool bIsLooping)
+{
+    if (!pXAudio2 || !pMasteringVoice || !SoundToPlay) return nullptr;
+
+    const WAVEFORMATEX& fmt = SoundToPlay->GetWaveFormat();
+    
+    // 1. 보이스 생성 (PlaySound3D와 동일)
+    IXAudio2SourceVoice* voice = nullptr;
+    if (FAILED(pXAudio2->CreateSourceVoice(&voice, &fmt))) return nullptr;
+
+    // 2. 버퍼 제출 (PlaySound3D와 동일)
+    XAUDIO2_BUFFER buf{};
+    buf.pAudioData = SoundToPlay->GetPCMData();
+    buf.AudioBytes = SoundToPlay->GetPCMSize();
+    if (bIsLooping)
+    {
+        buf.LoopCount = XAUDIO2_LOOP_INFINITE;
+    }
+    else
+    {
+        buf.Flags = XAUDIO2_END_OF_STREAM;
+    }
+
+    if (FAILED(voice->SubmitSourceBuffer(&buf)))
+    {
+        voice->DestroyVoice();
+        return nullptr;
+    }
+
+    voice->SetVolume(Volume);
+
+    if (FAILED(voice->Start(0)))
+    {
+        voice->DestroyVoice();
+        return nullptr;
+    }
+
+    return voice;
+}
+
 IXAudio2SourceVoice* FAudioDevice::PlaySound3D(USound* SoundToPlay, const FVector& EmitterPosition, float Volume, bool bIsLooping)
 {
     if (!pXAudio2 || !pMasteringVoice || !SoundToPlay)
@@ -195,6 +235,7 @@ IXAudio2SourceVoice* FAudioDevice::PlaySound3D(USound* SoundToPlay, const FVecto
 void FAudioDevice::SetListenerPosition(const FVector& Position, const FVector& ForwardVec, const FVector& UpVec)
 {
     Listener.Position = X3DAUDIO_VECTOR{ Position.X, Position.Y, Position.Z };
+    UE_LOG("Position: %f %f %f", Listener.Position.x, Listener.Position.y, Listener.Position.z);
     Listener.OrientFront = X3DAUDIO_VECTOR{ ForwardVec.X, ForwardVec.Y, ForwardVec.Z };
     Listener.OrientTop = X3DAUDIO_VECTOR{ UpVec.X, UpVec.Y, UpVec.Z };
 }
