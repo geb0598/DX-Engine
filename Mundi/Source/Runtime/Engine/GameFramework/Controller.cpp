@@ -12,7 +12,7 @@
 
 AController::AController()
 	: PossessedPawn(nullptr)
-	, ControlRotation(FQuat::Identity())
+	, ControlRotation(FQuat::MakeFromEulerZYX(FVector(0,0,180)))
 {
 }
 

@@ -849,7 +849,8 @@ void AHudExampleGameMode::StartGamePlay()
 			FVector GameStartLocation(166.79f, 1.3f, 3.0f);
 			FQuat GameStartRotation = FQuat::MakeFromEulerZYX(FVector(0.0f, 0.0f, 180.0f));
 			PlayerPawn->SetActorLocation(GameStartLocation);
-			PlayerPawn->SetActorRotation(GameStartRotation);
+			PlayerPawn->SetActorRotation(GameStartRotation);     
+	
 
 			// 2. 플레이어 카메라(SpringArm)로 복귀
 			UCameraComponent* PawnCamera = Cast<UCameraComponent>(
@@ -898,6 +899,24 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
+	// >= 쓰면 계속 FrameTime 더해줘야함
+	if (FrameStableTimer < FrameStableTime && CurrentGameState == EGameState::Playing)
+	{
+		FrameStableTimer += DeltaSeconds;
+
+		if (FrameStableTimer >= FrameStableTime)
+		{
+			APlayerController* PC = GetPlayerController();
+			if (PC)
+			{
+				APawn* PlayerPawn = PC->GetPawn();
+				if (PlayerPawn)
+				{
+					PlayerPawn->AddNewComponent(UCargoComponent::StaticClass(), PlayerPawn->RootComponent);
+				}
+			}
+		}
+	}
 	// ─────────────────────────────────────────────────
 	// 첫 프레임: 플레이어 카메라(스프링암)로 명시적 설정
 	// ─────────────────────────────────────────────────

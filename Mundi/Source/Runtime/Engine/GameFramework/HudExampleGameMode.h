@@ -152,6 +152,10 @@ protected:
 	/** 만화 시작 후 입력 무시 시간 (키 중복 방지) */
 	float ComicInputIgnoreTime = 0.5f;
 
+	float FrameStableTime = 2.0f;
+
+	float FrameStableTimer = 0.0f;
+
 	/** 입력 무시 시간 이후 키 상태 초기화 완료 여부 */
 	bool bComicInputReady = false;
 
