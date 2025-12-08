@@ -1378,6 +1378,13 @@
     <ClCompile Include="Generated\AGameVictoryVolume.generated.cpp">
       <Filter>Generated</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\GameVictoryVolume.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\Components\PhysicsProjectileMovementComponent.cpp">
+      <Filter>Source\Runtime\Engine\Components</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\UPhysicsProjectileMovementComponent.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Runtime\AssetManagement\LinesBatch.h">
@@ -2993,6 +3000,13 @@
       <Filter>Source\Slate\GameUI</Filter>
     </ClInclude>
     <ClInclude Include="Generated\AGameVictoryVolume.generated.h">
+      <Filter>Generated</Filter>
+    </ClInclude>
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\GameVictoryVolume.h" />
+    <ClInclude Include="Source\Runtime\Engine\Components\PhysicsProjectileMovementComponent.h">
+      <Filter>Source\Runtime\Engine\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\UPhysicsProjectileMovementComponent.generated.h">
       <Filter>Generated</Filter>
     </ClInclude>
   </ItemGroup>
