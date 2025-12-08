@@ -135,6 +135,7 @@ void AGameModeBase::EndGame(bool bVictory)
 
 	// 델리게이트 브로드캐스트
 	OnGameEnded.Broadcast(bVictory);
+
 }
 
 void AGameModeBase::RestartGame()
@@ -152,8 +153,10 @@ void AGameModeBase::RestartGame()
 	// 델리게이트 브로드캐스트
 	OnGameRestarted.Broadcast();
 
+	GEngine.RestartPIE();
+
 	// 자동으로 게임 시작
-	StartGame();
+	//StartGame();
 }
 
 void AGameModeBase::PauseGame()
@@ -202,6 +205,10 @@ void AGameModeBase::SetGameState(AGameStateBase* NewGameState)
 	}
 }
 
+bool AGameModeBase::IsGameOver() const
+{
+	return GameState->GetGameState() == EGameState::GameOver;
+}
 // ────────────────────────────────────────────────────────────────────────────
 // 플레이어 관리
 // ────────────────────────────────────────────────────────────────────────────
@@ -224,6 +231,8 @@ void AGameModeBase::InitPlayer()
 
 	// 3. Pawn 스폰 및 빙의
 	APawn* SpawnedPawn = SpawnDefaultPawnFor(PlayerController, SpawnTransform);
+
+	SpawnedPawn->OnGameOver.AddDynamic(this, &AGameModeBase::EndGame);
 }
 
 APlayerController* AGameModeBase::SpawnPlayerController()

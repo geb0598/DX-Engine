@@ -206,26 +206,8 @@ bool UGameEngine::Startup(HINSTANCE hInstance)
     // Preload audio assets
     FAudioDevice::Preload();
 
-    ///////////////////////////////////
-    WorldContexts.Add(FWorldContext(NewObject<UWorld>(), EWorldType::Game));
-    GWorld = WorldContexts[0].World;
-    GWorld->Initialize();
-    GWorld->bPie = true;
-    ///////////////////////////////////
+    StartPIE();
 
-    // 시작 scene(level)을 직접 로드
-    const FString StartupScenePath = GDataDir + "/Scenes/DumbRider.scene";
-    if (!GWorld->LoadLevelFromFile(UTF8ToWide(StartupScenePath)))
-    {
-        // 씬 로드 실패 시 경고만 표시하고 빈 월드로 계속 진행
-        UE_LOG("Warning: Failed to load startup scene: %s (continuing with empty world)", StartupScenePath.c_str());
-    }
-
-    // World Settings 기반 GameMode 생성 및 모든 액터 BeginPlay 호출
-    GWorld->BeginPlay();
-
-    bPlayActive = true;
-    bRunning = true;
     return true;
 }
 
@@ -332,6 +314,23 @@ void UGameEngine::MainLoop()
 
         if (!bRunning) break;
 
+        if (bEndPieForRestart)
+        {
+            if (GWorld)
+            {
+                WorldContexts.pop_back();
+                ObjectFactory::DeleteObject(GWorld);
+            }
+            if (SGameHUD::Get().IsInitialized())
+            {
+                SGameHUD::Get().ClearWidgets();
+            }
+
+            GEngine.StartPIE();
+            bEndPieForRestart = false;
+            continue;
+        }
+
         Tick(DeltaSeconds);
         Render();
 
@@ -339,6 +338,48 @@ void UGameEngine::MainLoop()
         // This ensures all GPU commands are submitted before we check for shader updates
         UResourceManager::GetInstance().CheckAndReloadShaders(DeltaSeconds);
     }
+}
+
+void UGameEngine::StartPIE()
+{
+    ///////////////////////////////////
+    WorldContexts.Add(FWorldContext(NewObject<UWorld>(), EWorldType::Game));
+    GWorld = WorldContexts[0].World;
+    GWorld->Initialize();
+    GWorld->bPie = true;
+    ///////////////////////////////////
+
+    // 시작 scene(level)을 직접 로드
+    const FString StartupScenePath = GDataDir + "/Scenes/DumbRider.scene";
+    if (!GWorld->LoadLevelFromFile(UTF8ToWide(StartupScenePath)))
+    {
+        // 씬 로드 실패 시 경고만 표시하고 빈 월드로 계속 진행
+        UE_LOG("Warning: Failed to load startup scene: %s (continuing with empty world)", StartupScenePath.c_str());
+    }
+
+    // World Settings 기반 GameMode 생성 및 모든 액터 BeginPlay 호출
+    GWorld->BeginPlay();
+
+    bPlayActive = true;
+    bRunning = true;
+    bRestartPie = false;
+}
+
+void UGameEngine::EndPIE()
+{
+    bEndPieForRestart = true;
+}
+
+void UGameEngine::RestartPIE()
+{
+    bRestartPie = true;
+
+    EndPIE();
+}
+
+bool UGameEngine::IsRestartPIE()
+{
+    return bRestartPie;
 }
 
 void UGameEngine::Shutdown()

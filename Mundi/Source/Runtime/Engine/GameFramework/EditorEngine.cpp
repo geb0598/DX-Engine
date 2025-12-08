@@ -329,6 +329,13 @@ void UEditorEngine::MainLoop()
                 SGameHUD::Get().ClearWidgets();
             }
 
+            if (GEngine.IsRestartPIE())
+            {
+                GEngine.StartPIE();
+                bChangedPieToEditor = false;
+                continue;
+            }
+
             GWorld = WorldContexts[0].World;
             GWorld->GetSelectionManager()->ClearSelection();
             GWorld->GetLightManager()->SetDirtyFlag();
@@ -407,10 +414,24 @@ void UEditorEngine::StartPIE()
 
     // World Settings 기반 GameMode 생성 및 모든 액터 BeginPlay 호출
     GWorld->BeginPlay();
+
+    bRestartPie = false;
 }
 
 void UEditorEngine::EndPIE()
 {
     // 지연 종료 처리 (UEditorEngine::MainLoop에서 종료 처리됨)
     bChangedPieToEditor = true;
+}
+
+void UEditorEngine::RestartPIE()
+{
+    bRestartPie = true;
+
+    EndPIE();
+}
+
+bool UEditorEngine::IsRestartPIE()
+{
+    return bRestartPie;
 }

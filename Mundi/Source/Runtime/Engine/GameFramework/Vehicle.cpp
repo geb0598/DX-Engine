@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Vehicle.h"
 
 #include "AnimStateMachine.h"
@@ -65,6 +65,10 @@ AVehicle::AVehicle()
     SpringArm->TargetArmLength = 20.0f;
     SpringArm->SocketOffset = FVector(-4.6f, 0.0f, 4.6f);
     SpringArm->bUsePawnControlRotation = true;
+    SpringArm->bEnableCameraLag = true;
+    SpringArm->bEnableCameraRotationLag = true;
+    SpringArm->CameraLagSpeed = 5.0f;
+    SpringArm->CameraRotationLagSpeed = 5.0f;
 
     Camera = CreateDefaultSubobject<UCameraComponent>("Camera");
     Camera->SetupAttachment(SpringArm);

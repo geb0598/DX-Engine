@@ -384,6 +384,12 @@ void AHudExampleGameMode::BeginPlay()
 	// 튜토리얼 만화/컷씬 (전체 화면, 7장)
 	// ─────────────────────────────────────────────────
 
+	//if (GEngine.IsRestartPIE())
+	//{
+	//	CurrentGameState = EGameState::Playing;
+	//	return;
+	//}
+
 	for (int32 i = 0; i < 7; i++)
 	{
 		TSharedPtr<SImage> ComicImage = MakeShared<SImage>();
