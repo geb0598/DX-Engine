@@ -294,10 +294,22 @@ void UGameEngine::MainLoop()
 
     MSG msg;
 
+    const float TargetFrameTime = 1.0f / 120.0f;
     while (bRunning)
     {
         QueryPerformanceCounter(&CurrTime);
         float DeltaSeconds = static_cast<float>((CurrTime.QuadPart - PrevTime.QuadPart) / double(Frequency.QuadPart));
+        if (DeltaSeconds < TargetFrameTime)
+        {
+            DWORD SleepMS = static_cast<DWORD>((TargetFrameTime - DeltaSeconds) * 1000.0f);
+
+            if (SleepMS > 1)
+            {
+                Sleep(SleepMS);
+            }
+            QueryPerformanceCounter(&CurrTime);
+            DeltaSeconds = static_cast<float>((CurrTime.QuadPart - PrevTime.QuadPart) / double(Frequency.QuadPart));
+        }
         PrevTime = CurrTime;
 
         // 처리할 메시지가 더 이상 없을때 까지 수행
