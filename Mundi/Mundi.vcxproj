@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug_StandAlone|x64">
@@ -312,6 +312,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClCompile Include="Source\Runtime\Engine\Components\SpringArmComponent.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Components\TriangleMeshComponent.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Components\VehicleMovementComponent.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\GameFramework\GameVictoryVolume.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\Landmine.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\BoxActor.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\Camera\CamMod_Gamma.cpp" />
@@ -796,6 +797,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClCompile Include="Generated\ALandmine.generated.cpp" />
     <ClCompile Include="Generated\ANPC.generated.cpp" />
     <ClCompile Include="Generated\ADumbRiderGameMode.generated.cpp" />
+    <ClCompile Include="Generated\AGameVictoryVolume.generated.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\Common\LightingBuffers.hlsl">
@@ -1014,6 +1016,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClInclude Include="Source\Runtime\Engine\Components\TestTypes.h" />
     <ClInclude Include="Source\Runtime\Engine\Components\TriangleMeshComponent.h" />
     <ClInclude Include="Source\Runtime\Engine\Components\VehicleMovementComponent.h" />
+    <ClInclude Include="Source\Runtime\Engine\GameFramework\GameVictoryVolume.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\Landmine.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\AmbientLightActor.h" />
     <ClInclude Include="Source\Runtime\Engine\GameFramework\BoxActor.h" />
@@ -1433,6 +1436,7 @@ xcopy /y /d "$(ProjectDir)ThirdParty\lib\Cloth\Release\*.dll" "$(OutDir)"</Comma
     <ClInclude Include="Generated\ALandmine.generated.h" />
     <ClInclude Include="Generated\ANPC.generated.h" />
     <ClInclude Include="Generated\ADumbRiderGameMode.generated.h" />
+    <ClInclude Include="Generated\AGameVictoryVolume.generated.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTools\CodeGenerator\generate.py" />

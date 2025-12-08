@@ -5,6 +5,7 @@
 #include "AnimStateMachineInstance.h"
 #include "InputComponent.h"
 #include "Landmine.h"
+#include "GameVictoryVolume.h"
 #include "PhysScene.h"
 #include "SkeletalMeshComponent.h"
 #include "LuaScriptComponent.h"
@@ -453,6 +454,24 @@ void AVehicle::CheckWheelInteractions()
                     FakeHit.Component = ChassisMesh; 
 
                     MineComp->DispatchBlockingHit(this, ChassisMesh, FVector::Zero(), FakeHit);
+                }
+            }
+            else if (AGameVictoryVolume* VictoryVolume = Cast<AGameVictoryVolume>(Hit.Actor.Get()))
+            {
+                // 우선 지정된 TriggerVolume으로 디스패치, 없으면 Hit된 컴포넌트로 fallback 시도.
+                UPrimitiveComponent* VictoryComp = VictoryVolume->TriggerVolume;
+                if (!VictoryComp)
+                {
+                    VictoryComp = Cast<UPrimitiveComponent>(Hit.Component.Get());
+                }
+
+                if (VictoryComp)
+                {
+                    FHitResult FakeHit = Hit;
+                    FakeHit.Actor = this;
+                    FakeHit.Component = ChassisMesh;
+
+                    VictoryComp->DispatchBlockingHit(this, ChassisMesh, FVector::Zero(), FakeHit);
                 }
             }
         }

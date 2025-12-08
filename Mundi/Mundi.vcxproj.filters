@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <ItemGroup>
     <FxCompile Include="Shaders\Materials\Fireball.hlsl">
@@ -1374,6 +1374,9 @@
     </ClCompile>
     <ClCompile Include="Source\Slate\GameUI\SProgressBar.cpp">
       <Filter>Source\Slate\GameUI</Filter>
+    </ClCompile>
+    <ClCompile Include="Generated\AGameVictoryVolume.generated.cpp">
+      <Filter>Generated</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -2988,6 +2991,9 @@
     </ClInclude>
     <ClInclude Include="Source\Slate\GameUI\SProgressBar.h">
       <Filter>Source\Slate\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\AGameVictoryVolume.generated.h">
+      <Filter>Generated</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
