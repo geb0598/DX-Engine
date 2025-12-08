@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Vehicle.h"
 
 #include "AnimStateMachine.h"
