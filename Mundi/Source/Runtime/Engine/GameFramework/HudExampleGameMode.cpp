@@ -509,7 +509,7 @@ void AHudExampleGameMode::BeginPlay()
 
 	// "Press P to Restart" 텍스트
 	RestartText = MakeShared<STextBlock>();
-	RestartText->SetText(L"Press P to Restart")
+	RestartText->SetText(L"Press P or START(In GamePad) to Restart")
 		.SetFontSize(24.f)
 		.SetColor(FSlateColor::White())
 		.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor::Black())
@@ -520,7 +520,7 @@ void AHudExampleGameMode::BeginPlay()
 		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
 		.SetPivot(0.5f, 0.5f)   // 중앙 기준
 		.SetOffset(0.f, 30.f)   // GameOverText 아래
-		.SetSize(300.f, 40.f);
+		.SetSize(600.f, 40.f);
 
 	// 초기에는 숨김
 	GameOverBg->SetVisibility(ESlateVisibility::Hidden);
@@ -1149,6 +1149,10 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 					break;
 				}
 			}
+			if (UInputManager::GetInstance().IsAnyGamepadKeyPressed())
+			{
+				bAnyKeyPressed = true;
+			}
 
 			if (bAnyKeyPressed)
 			{
@@ -1210,6 +1214,11 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 				}
 			}
 
+			if (UInputManager::GetInstance().IsAnyGamepadKeyPressed())
+			{
+				bAnyKeyPressed = true;
+			}
+
 			if (bAnyKeyPressed)
 			{
 				// 만화/컷씬으로 전환
@@ -1250,13 +1259,16 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 				bool bEscPressed = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
 
 				// ESC 키 체크 (전체 스킵) - 눌렀다 뗐을 때 (Falling Edge)
-				if (!bEscPressed && bPrevEscPressed)
+				// 게임패드 START 키 체크
+				if (!bEscPressed && bPrevEscPressed || UInputManager::GetInstance().IsKeyPressed((int32)EGamepadButton::START))
 				{
 					bSkipAll = true;
 				}
 				// Space 또는 Enter 키 체크 (다음 장면) - 눌렀다 뗐을 때 (Falling Edge)
+				// 게임패드 아무 키 체크
 				else if ((!bSpacePressed && bPrevSpacePressed) ||
-					(!bEnterPressed && bPrevEnterPressed))
+					(!bEnterPressed && bPrevEnterPressed) ||
+					UInputManager::GetInstance().IsAnyGamepadKeyPressed())
 				{
 					bNextScene = true;
 				}

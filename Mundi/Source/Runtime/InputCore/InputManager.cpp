@@ -425,6 +425,15 @@ FStickInput UInputManager::GetRightStickValue() const
     return RightStick;
 }
 
+bool UInputManager::IsAnyGamepadKeyPressed() const
+{
+    return std::any_of(std::begin(GamepadStates), std::end(GamepadStates),
+        [](const auto& State)
+        {
+            return State;
+        });
+}
+
 void UInputManager::UpdateMousePosition(int X, int Y)
 {
     MousePosition.X = static_cast<float>(X);
