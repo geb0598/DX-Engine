@@ -153,12 +153,12 @@ void APlayerController::ProcessMouseInput()
 
 	if (RightStickValue.X != 0.0f)
 	{
-		AddYawInput(RightStickValue.X * MouseSensitivity*2);
+		AddYawInput(RightStickValue.X * MouseSensitivity*3);
 	}
 
 	if (RightStickValue.Y != 0.0f)
 	{
-		AddPitchInput(-RightStickValue.Y * MouseSensitivity*2);
+		AddPitchInput(-RightStickValue.Y * MouseSensitivity*3);
 	}
 	
 }
