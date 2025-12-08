@@ -67,6 +67,7 @@ void AHudExampleGameMode::BeginPlay()
 	if (!SGameHUD::Get().IsInitialized())
 		return;
 
+	SGameHUD::Get().ReserveRootCanvasSlots(50);
 	// 이미 위젯이 생성되어 있으면 중복 생성 방지
 	if (VehicleSpeedText)
 		return;
@@ -74,6 +75,7 @@ void AHudExampleGameMode::BeginPlay()
 	// ─────────────────────────────────────────────────
 	// 메인 메뉴 UI
 	// ─────────────────────────────────────────────────
+	
 
 	// 타이틀 이미지 (화면 중앙, Fade In + Scale 애니메이션)
 	TitleImage = MakeShared<SImage>();
@@ -463,12 +465,6 @@ void AHudExampleGameMode::BeginPlay()
 	// ─────────────────────────────────────────────────
 	// 튜토리얼 만화/컷씬 (전체 화면, 7장)
 	// ─────────────────────────────────────────────────
-
-	//if (GEngine.IsRestartPIE())
-	//{
-	//	CurrentGameState = EGameState::Playing;
-	//	return;
-	//}
 
 	for (int32 i = 0; i < 8; i++)
 	{
