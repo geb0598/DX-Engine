@@ -15,6 +15,7 @@
 #include "GameUI/SBorderBox.h"
 #include "GameUI/SMinimap.h"
 #include "GameUI/SPanel.h"
+#include "GameUI/SProgressBar.h"
 #include "PlayerController.h"
 #include "CargoComponent.h"
 #include "CameraActor.h"
@@ -288,7 +289,49 @@ void AHudExampleGameMode::BeginPlay()
 		.SetSize(200.f, 100.f);  // 3개 텍스트를 담을 크기
 
 	// ─────────────────────────────────────────────────
-	// 미니맵 (오른쪽 하단)
+	// "TO HOME" 배경 그라데이션 (진행 바 왼쪽)
+	// ─────────────────────────────────────────────────
+
+	ToHomeBg = MakeShared<SGradientBox>();
+	ToHomeBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.6f))  // 반투명 검정
+		.SetFadeWidth(80.f);  // 100 → 80
+
+	SGameHUD::Get().AddWidget(ToHomeBg)
+		.SetAnchor(1.0f, 1.0f)  // 오른쪽 하단
+		.SetPivot(1.0f, 1.0f)   // 오른쪽 하단 기준 (progress bar와 동일)
+		.SetOffset(-230.f, -37.f)  // 진행 바 중앙에 정렬 (ProgressBar 중앙 -46 + 높이/2 = -46 + 9 = -37)
+		.SetSize(120.f, 18.f);  // 텍스트에 fit하게 (200x20 → 150x16)
+
+	// "TO HOME" 텍스트 (진행 바 왼쪽, 배경 중앙에 배치)
+	ToHomeText = MakeShared<SImage>();
+	ToHomeText->SetTexture(L"Data/Textures/Dumb/tohome.png");
+
+	SGameHUD::Get().AddWidget(ToHomeText)
+		.SetAnchor(1.0f, 1.0f)  // 오른쪽 하단
+		.SetPivot(1.0f, 0.5f)   // 오른쪽 중앙 기준 (세로 중앙 정렬)
+		.SetOffset(-230.f, -46.f)  // 진행 바 중앙에 정렬 (ProgressBar 중앙 Y = -46)
+		.SetSize(80.f, 12.f);  // tohome 텍스트 크기 (100x16 → 80x12)
+
+	// ─────────────────────────────────────────────────
+	// 목적지까지 거리 진행 바 (미니맵 하단에 위치, 먼저 그려서 뒤에 렌더링)
+	// ─────────────────────────────────────────────────
+
+	DistanceProgressBar = MakeShared<SProgressBar>();
+	DistanceProgressBar->SetPercent(0.7f)  // 예제: 70% 진행
+		.SetBarColor(FSlateColor(146.f/255.f, 254.f/255.f, 131.f/255.f, 1.0f))  // rgb(146, 254, 131)
+		.SetBackgroundColor(FSlateColor(0.2f, 0.2f, 0.2f, 0.4f))  // 어두운 배경 (더 투명하게: 0.8 → 0.4)
+		.SetBorderColor(FSlateColor(0.5f, 0.5f, 0.5f, 1.0f))  // 회색 테두리
+		.SetBorderThickness(2.0f)
+		.SetCornerRadius(4.0f);
+
+	SGameHUD::Get().AddWidget(DistanceProgressBar)
+		.SetAnchor(1.0f, 1.0f)  // 오른쪽 하단 (미니맵과 동일)
+		.SetPivot(1.0f, 1.0f)   // 오른쪽 하단 기준
+		.SetOffset(-40.f, -40.f)  // 미니맵 바로 아래 (미니맵: -60, 미니맵 크기 180 → -60 + 180 = 120, 여기서 위로 조금: -40)
+		.SetSize(180.f, 12.f);  // 미니맵과 같은 너비, 세로 12px (얇게)
+
+	// ─────────────────────────────────────────────────
+	// 미니맵 (오른쪽 하단, 진행 바 위에 렌더링)
 	// ─────────────────────────────────────────────────
 
 	Minimap = MakeShared<SMinimap>();
@@ -498,6 +541,21 @@ void AHudExampleGameMode::EndPlay()
 			SGameHUD::Get().RemoveWidget(CartImage);
 			CartImage.Reset();
 		}
+		if (ToHomeBg)
+		{
+			SGameHUD::Get().RemoveWidget(ToHomeBg);
+			ToHomeBg.Reset();
+		}
+		if (ToHomeText)
+		{
+			SGameHUD::Get().RemoveWidget(ToHomeText);
+			ToHomeText.Reset();
+		}
+		if (DistanceProgressBar)
+		{
+			SGameHUD::Get().RemoveWidget(DistanceProgressBar);
+			DistanceProgressBar.Reset();
+		}
 		// 만화 이미지들 정리
 		for (auto& Comic : ComicImages)
 		{
@@ -548,6 +606,9 @@ void AHudExampleGameMode::ShowMainMenu()
 	if (Minimap) Minimap->SetVisibility(ESlateVisibility::Hidden);
 	if (ElapsedTimeBg) ElapsedTimeBg->SetVisibility(ESlateVisibility::Hidden);
 	if (ElapsedTimeText) ElapsedTimeText->SetVisibility(ESlateVisibility::Hidden);
+	if (ToHomeBg) ToHomeBg->SetVisibility(ESlateVisibility::Hidden);
+	if (ToHomeText) ToHomeText->SetVisibility(ESlateVisibility::Hidden);
+	if (DistanceProgressBar) DistanceProgressBar->SetVisibility(ESlateVisibility::Hidden);
 }
 
 void AHudExampleGameMode::StartCameraCinematic()
@@ -639,6 +700,9 @@ void AHudExampleGameMode::StartGamePlay()
 	if (Minimap) Minimap->SetVisibility(ESlateVisibility::Visible);
 	if (ElapsedTimeBg) ElapsedTimeBg->SetVisibility(ESlateVisibility::Visible);
 	if (ElapsedTimeText) ElapsedTimeText->SetVisibility(ESlateVisibility::Visible);
+	if (ToHomeBg) ToHomeBg->SetVisibility(ESlateVisibility::Visible);
+	if (ToHomeText) ToHomeText->SetVisibility(ESlateVisibility::Visible);
+	if (DistanceProgressBar) DistanceProgressBar->SetVisibility(ESlateVisibility::Visible);
 
 	// 경과 시간 초기화
 	ElapsedGameTime = 0.f;
@@ -1050,6 +1114,37 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		wchar_t TimeStr[32];
 		swprintf_s(TimeStr, L"TIME: %02d:%02d", Minutes, Seconds);
 		ElapsedTimeText->SetText(TimeStr);
+	}
+
+	// ─────────────────────────────────────────────────
+	// 목적지까지 거리 진행 바 업데이트
+	// ─────────────────────────────────────────────────
+
+	if (DistanceProgressBar)
+	{
+		FVector StartPos(166.79f, 1.3f, 3.0f);   // 시작 위치
+		FVector EndPos(53.818f, -270.202f, 3.0f); // 엔딩 위치
+		FVector CurrentPos = Vehicle->GetActorLocation();
+
+		// 시작→엔딩 총 거리 (2D, Z축 무시)
+		FVector StartToEnd = EndPos - StartPos;
+		StartToEnd.Z = 0.0f;  // Z축 무시
+		float TotalDistance = StartToEnd.Size();
+
+		// 현재→엔딩 남은 거리 (2D, Z축 무시)
+		FVector CurrentToEnd = EndPos - CurrentPos;
+		CurrentToEnd.Z = 0.0f;  // Z축 무시
+		float RemainingDistance = CurrentToEnd.Size();
+
+		// 진행률 계산 (0.0 ~ 1.0)
+		float Progress = 0.0f;
+		if (TotalDistance > 0.0f)
+		{
+			Progress = 1.0f - (RemainingDistance / TotalDistance);
+			Progress = FMath::Clamp(Progress, 0.0f, 1.0f);  // 0~1 범위로 제한
+		}
+
+		DistanceProgressBar->SetPercent(Progress);
 	}
 
 	// 박스 개수 UI 업데이트

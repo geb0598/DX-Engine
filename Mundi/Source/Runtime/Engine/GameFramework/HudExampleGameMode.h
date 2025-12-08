@@ -15,6 +15,7 @@ class SGradientBox;
 class SBorderBox;
 class SMinimap;
 class SPanel;
+class SProgressBar;
 
 // 전방 선언
 class ACameraActor;
@@ -130,7 +131,7 @@ protected:
 	float TutorialCameraTimer = 0.f;
 
 	/** 튜토리얼 카메라 대기 시간 (조작법 보여주는 시간) */
-	float TutorialCameraWaitTime = 5.0f;
+	float TutorialCameraWaitTime = 3.0f;
 
 	/** 튜토리얼 카메라 입력 대기 준비 */
 	bool bTutorialCameraReady = false;
@@ -236,4 +237,17 @@ protected:
 
 	/** 게임 시작 후 경과 시간 (초) */
 	float ElapsedGameTime = 0.f;
+
+	// ────────────────────────────────────────────────
+	// UI 위젯 - 진행 바 
+	// ────────────────────────────────────────────────
+
+	/** 목적지까지 거리 진행 바 */
+	TSharedPtr<SProgressBar> DistanceProgressBar;
+
+	/** "TO HOME" 배경 그라데이션 (진행 바 왼쪽) */
+	TSharedPtr<SGradientBox> ToHomeBg;
+
+	/** "TO HOME" 텍스트 이미지 (진행 바 왼쪽) */
+	TSharedPtr<SImage> ToHomeText;
 };
