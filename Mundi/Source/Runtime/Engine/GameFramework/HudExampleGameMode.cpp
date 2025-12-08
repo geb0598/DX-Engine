@@ -618,7 +618,7 @@ void AHudExampleGameMode::BeginPlay()
 	// ─────────────────────────────────────────────────
 	// 초기 상태: 재시작 플래그 확인
 	// ─────────────────────────────────────────────────
-
+	bool bSkipTutorialOnRestartCopy = bSkipTutorialOnRestart;  // 플래그 복사
 	if (bSkipTutorialOnRestart)
 	{
 		// 튜토리얼 스킵하고 바로 게임 시작
@@ -683,7 +683,7 @@ void AHudExampleGameMode::BeginPlay()
 	// 카메라는 기본 스프링암 카메라 사용
 	// ─────────────────────────────────────────────────
 
-	if (MainMenuMusicComponent)
+	if (!bSkipTutorialOnRestartCopy && MainMenuMusicComponent)
 	{
 		MainMenuMusicComponent->Play();
 	}
