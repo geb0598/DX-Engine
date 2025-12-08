@@ -326,6 +326,16 @@ void UInputManager::ProcessMessage(HWND hWnd, UINT message, WPARAM wParam, LPARA
 
 }
 
+void UInputManager::SetGamepadVibration(int32 Index, float LeftVib, float RightVib)
+{
+    XINPUT_VIBRATION Vibration;
+
+    Vibration.wLeftMotorSpeed = static_cast<WORD>(FMath::Clamp(LeftVib, 0.0f, 1.0f) * WORD_MAX);
+    Vibration.wRightMotorSpeed = static_cast<WORD>(FMath::Clamp(RightVib, 0.0f, 1.0f) * WORD_MAX);
+
+    XInputSetState(Index, &Vibration);
+}
+
 bool UInputManager::IsMouseButtonDown(EMouseButton Button) const
 {
     if (Button >= MaxMouseButtons) return false;

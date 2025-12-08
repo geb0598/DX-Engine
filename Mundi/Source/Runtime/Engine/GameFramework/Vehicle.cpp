@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "Vehicle.h"
 
 #include "AnimStateMachine.h"
@@ -183,6 +183,15 @@ void AVehicle::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
 
+
+    if (GamepadVibrationTime > 0.0f)
+    {
+        GamepadVibrationTime -= DeltaSeconds;
+        if (GamepadVibrationTime <= 0.0f)
+        {
+            UInputManager::GetInstance().SetGamepadVibration(0, 0, 0);
+        }
+    }
     if (VehicleMovement)
     {
         VehicleMovement->SetSteeringInput(CurrentSteeringInput);
@@ -560,7 +569,7 @@ void AVehicle::CheckWheelInteractions()
 
 void AVehicle::OnChassisHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
-    if (OtherActor == this) return;
+    if (OtherActor == this || bIsDriverEjected) return;
 
     float ImpactForce = NormalImpulse.Size();
 
@@ -570,6 +579,9 @@ void AVehicle::OnChassisHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UP
         HitSoundComponent->Pitch = RandomPitch;
         HitSoundComponent->Play(); 
     }
+    UInputManager::GetInstance().SetGamepadVibration(0, 1.0f, 0.0f);
+    GamepadVibrationTime = 0.3f;
+    
 }
 
 void AVehicle::SyncWheelVisuals()

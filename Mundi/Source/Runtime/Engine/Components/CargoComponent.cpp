@@ -371,6 +371,7 @@ void UCargoComponent::CollapseFrom(int32 StartIndex)
         return;
     }
 
+    
     int32 DropCount = ValidCargoCount - StartIndex;
 
     // ===== 카메라 연출 =====
@@ -449,9 +450,11 @@ void UCargoComponent::CollapseFrom(int32 StartIndex)
 
     ValidCargoCount = StartIndex;
 
+    AVehicle* Vehicle = Cast<AVehicle>(GetOwner());
+    UInputManager::GetInstance().SetGamepadVibration(0, 1.0f, 0.0f);
+    Vehicle->GamepadVibrationTime = 0.3f;
     if (StartIndex == 0)
     {
-        AVehicle* Vehicle = Cast<AVehicle>(GetOwner());
         if (Vehicle)
         {
             FTransform VehicleTransform = Vehicle->GetRootComponent()->GetWorldTransform();

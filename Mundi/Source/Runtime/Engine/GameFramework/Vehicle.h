@@ -62,6 +62,8 @@ public:
     /** 스파크 파티클이 켜져있는지 여부 */
     bool bSparkParticleActive;
 
+    float GamepadVibrationTime = 0.0f;
+
     /** 운전자 스켈레탈 메쉬 */
     USkeletalMeshComponent* Driver;
 

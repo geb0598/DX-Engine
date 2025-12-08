@@ -93,6 +93,8 @@ public:
 
 	void SetLastMousePosition(const FVector2D& Pos) { PreviousMousePosition = Pos; }
 
+    void SetGamepadVibration(int32 Index, float LeftVib, float RightVib);
+
     bool IsMouseButtonDown(EMouseButton Button) const;
     bool IsMouseButtonPressed(EMouseButton Button) const; // 이번 프레임에 눌림
     bool IsMouseButtonReleased(EMouseButton Button) const; // 이번 프레임에 떼짐
