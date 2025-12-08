@@ -24,7 +24,7 @@ struct FCanvasSlot;
 /**
  * 게임 상태
  */
-enum class EGameState
+enum class EHudGameState
 {
 	MainMenu,              // 메인 메뉴 (시작 화면)
 	Tutorial_Camera,       // 튜토리얼: 카메라 연출
@@ -62,13 +62,15 @@ public:
 	// ────────────────────────────────────────────────
 
 	void StartGame() override;
+	void EndGame(bool bVictory) override;  // 승리/실패 UI 표시
+	void RestartGame() override;  // 튜토리얼 스킵하고 바로 게임 시작
 
 	// ────────────────────────────────────────────────
 	// 게임 상태 관리
 	// ────────────────────────────────────────────────
 
 	/** 현재 게임 상태 */
-	EGameState GetGameState() const { return CurrentGameState; }
+	EHudGameState GetGameState() const { return CurrentGameState; }
 
 	/** 메인 메뉴로 전환 */
 	void ShowMainMenu();
@@ -95,7 +97,7 @@ protected:
 	// ────────────────────────────────────────────────
 
 	/** 현재 게임 상태 */
-	EGameState CurrentGameState = EGameState::MainMenu;
+	EHudGameState CurrentGameState = EHudGameState::MainMenu;
 
 	// ────────────────────────────────────────────────
 	// UI 위젯 - 메인 메뉴
@@ -132,7 +134,7 @@ protected:
 	float TutorialCameraTimer = 0.f;
 
 	/** 튜토리얼 카메라 대기 시간 (조작법 보여주는 시간) */
-	float TutorialCameraWaitTime = 3.0f;
+	float TutorialCameraWaitTime = 1.0f;
 
 	/** 튜토리얼 카메라 입력 대기 준비 */
 	bool bTutorialCameraReady = false;
@@ -152,7 +154,7 @@ protected:
 	/** 만화 시작 후 입력 무시 시간 (키 중복 방지) */
 	float ComicInputIgnoreTime = 0.5f;
 
-	float FrameStableTime = 2.0f;
+	float FrameStableTime = 1.0f;
 
 	float FrameStableTimer = 0.0f;
 
@@ -306,4 +308,23 @@ protected:
 
 	/** Objective 상단 이동 시간 */
 	float ObjectiveMoveUpDuration = 0.8f;
+
+	// ────────────────────────────────────────────────
+	// 게임 오버 UI
+	// ────────────────────────────────────────────────
+
+	/** 게임 오버 배경 그라데이션 */
+	TSharedPtr<SGradientBox> GameOverBg;
+
+	/** "MISSION COMPLETE!" 텍스트 */
+	TSharedPtr<STextBlock> GameOverText;
+
+	/** "Press P to Restart" 텍스트 */
+	TSharedPtr<STextBlock> RestartText;
+
+	/** 게임 오버 플래그 (한 번만 트리거) */
+	bool bGameEndTriggered = false;
+
+	/** 재시작 시 튜토리얼 스킵 플래그 (정적 변수 - RestartPIE 후에도 유지됨) */
+	static bool bSkipTutorialOnRestart;
 };

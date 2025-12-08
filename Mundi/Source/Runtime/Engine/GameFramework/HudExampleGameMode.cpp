@@ -25,6 +25,12 @@
 #include <ctime>
 
 // ────────────────────────────────────────────────────────────────────────────
+// 정적 변수 정의
+// ────────────────────────────────────────────────────────────────────────────
+
+bool AHudExampleGameMode::bSkipTutorialOnRestart = false;
+
+// ────────────────────────────────────────────────────────────────────────────
 // 생성자
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -472,6 +478,56 @@ void AHudExampleGameMode::BeginPlay()
 	}
 
 	// ─────────────────────────────────────────────────
+	// 게임 오버 UI (Mission Complete!)
+	// ─────────────────────────────────────────────────
+
+	// 게임 오버 배경 그라데이션
+	GameOverBg = MakeShared<SGradientBox>();
+	GameOverBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.8f))  // 반투명 검정
+		.SetFadeWidth(150.f);
+
+	SGameHUD::Get().AddWidget(GameOverBg)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(0.f, -50.f)
+		.SetSize(500.f, 80.f);
+
+	// "MISSION COMPLETE!" 텍스트
+	GameOverText = MakeShared<STextBlock>();
+	GameOverText->SetText(L"MISSION COMPLETE!")
+		.SetFontSize(48.f)
+		.SetColor(FSlateColor(146.f / 255.f, 254.f / 255.f, 131.f / 255.f, 1.0f))  // 연두색
+		.SetShadow(true, FVector2D(3.f, 3.f), FSlateColor::Black())
+		.SetHAlign(ETextHAlign::Center)
+		.SetVAlign(ETextVAlign::Center);
+
+	SGameHUD::Get().AddWidget(GameOverText)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(0.f, -50.f)
+		.SetSize(500.f, 60.f);
+
+	// "Press P to Restart" 텍스트
+	RestartText = MakeShared<STextBlock>();
+	RestartText->SetText(L"Press P to Restart")
+		.SetFontSize(24.f)
+		.SetColor(FSlateColor::White())
+		.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor::Black())
+		.SetHAlign(ETextHAlign::Center)
+		.SetVAlign(ETextVAlign::Center);
+
+	SGameHUD::Get().AddWidget(RestartText)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(0.f, 30.f)   // GameOverText 아래
+		.SetSize(300.f, 40.f);
+
+	// 초기에는 숨김
+	GameOverBg->SetVisibility(ESlateVisibility::Hidden);
+	GameOverText->SetVisibility(ESlateVisibility::Hidden);
+	RestartText->SetVisibility(ESlateVisibility::Hidden);
+
+	// ─────────────────────────────────────────────────
 	// 카메라 찾기 (이름으로 검색)
 	// ─────────────────────────────────────────────────
 
@@ -490,20 +546,26 @@ void AHudExampleGameMode::BeginPlay()
 	}
 
 	// ─────────────────────────────────────────────────
-	// 초기 상태: 메인 메뉴 표시
+	// 초기 상태: 재시작 플래그 확인
 	// ─────────────────────────────────────────────────
 
-	ShowMainMenu();
-
-	// ─────────────────────────────────────────────────
-	// 플레이어 입력 비활성화 (타이틀 화면 동안)
-	// 카메라는 기본 스프링암 카메라 사용
-	// ─────────────────────────────────────────────────
-
-	APlayerController* PC = GetPlayerController();
-	if (PC)
+	if (bSkipTutorialOnRestart)
 	{
-		PC->SetInputEnabled(false);  // 플레이어 입력 비활성화
+		// 튜토리얼 스킵하고 바로 게임 시작
+		bSkipTutorialOnRestart = false;  // 플래그 리셋
+		StartGamePlay();
+	}
+	else
+	{
+		// 정상적인 메인 메뉴 표시
+		ShowMainMenu();
+
+		// 플레이어 입력 비활성화 (타이틀 화면 동안)
+		APlayerController* PC = GetPlayerController();
+		if (PC)
+		{
+			PC->SetInputEnabled(false);  // 플레이어 입력 비활성화
+		}
 	}
 }
 
@@ -665,6 +727,22 @@ void AHudExampleGameMode::EndPlay()
 			}
 		}
 		ComicImages.Empty();
+		// 게임 오버 UI 정리
+		if (GameOverBg)
+		{
+			SGameHUD::Get().RemoveWidget(GameOverBg);
+			GameOverBg.Reset();
+		}
+		if (GameOverText)
+		{
+			SGameHUD::Get().RemoveWidget(GameOverText);
+			GameOverText.Reset();
+		}
+		if (RestartText)
+		{
+			SGameHUD::Get().RemoveWidget(RestartText);
+			RestartText.Reset();
+		}
 	}
 }
 
@@ -674,9 +752,16 @@ void AHudExampleGameMode::EndPlay()
 
 void AHudExampleGameMode::ShowMainMenu()
 {
-	CurrentGameState = EGameState::MainMenu;
+	CurrentGameState = EHudGameState::MainMenu;
 	MainMenuTimer = 0.f;  // 타이머 리셋
 	bReadyForInput = false;  // 입력 대기 상태 리셋
+
+	// 메인 메뉴용 카메라 회전 설정 (0, 0, 0)
+	APlayerController* PC = GetPlayerController();
+	if (PC)
+	{
+		PC->SetControlRotation(FQuat::MakeFromEulerZYX(FVector(0.0f, 0.0f, 0.0f)));
+	}
 
 	// 메인 메뉴 UI 표시
 	if (TitleImage)
@@ -716,7 +801,7 @@ void AHudExampleGameMode::ShowMainMenu()
 
 void AHudExampleGameMode::StartCameraCinematic()
 {
-	CurrentGameState = EGameState::Tutorial_Camera;
+	CurrentGameState = EHudGameState::Tutorial_Camera;
 
 	// 타이틀 UI 숨기기
 	if (TitleImage)
@@ -755,7 +840,7 @@ void AHudExampleGameMode::StartCameraCinematic()
 
 void AHudExampleGameMode::ShowTutorialComic()
 {
-	CurrentGameState = EGameState::Tutorial_Comic;
+	CurrentGameState = EHudGameState::Tutorial_Comic;
 
 	// Press Any Key UI 숨기기 (두 번째 위젯)
 	if (PressSpaceBg2)
@@ -775,7 +860,7 @@ void AHudExampleGameMode::ShowTutorialComic()
 
 void AHudExampleGameMode::StartGamePlay()
 {
-	CurrentGameState = EGameState::Playing;
+	CurrentGameState = EHudGameState::Playing;
 
 	// 메인 메뉴 UI 숨기기
 	if (TitleImage)
@@ -849,7 +934,10 @@ void AHudExampleGameMode::StartGamePlay()
 			FVector GameStartLocation(166.79f, 1.3f, 3.0f);
 			FQuat GameStartRotation = FQuat::MakeFromEulerZYX(FVector(0.0f, 0.0f, 180.0f));
 			PlayerPawn->SetActorLocation(GameStartLocation);
-			PlayerPawn->SetActorRotation(GameStartRotation);     
+			PlayerPawn->SetActorRotation(GameStartRotation);
+
+			// 컨트롤러 회전도 180도로 설정 (게임 플레이용)
+			PC->SetControlRotation(FQuat::MakeFromEulerZYX(FVector(0.0f, 0.0f, 180.0f)));     
 	
 
 			// 2. 플레이어 카메라(SpringArm)로 복귀
@@ -883,6 +971,62 @@ void AHudExampleGameMode::StartGame()
 	Super::StartGame();
 }
 
+void AHudExampleGameMode::EndGame(bool bVictory)
+{
+	// 이미 게임 종료 상태면 무시
+	if (bGameEndTriggered)
+		return;
+
+	bGameEndTriggered = true;
+
+	// 부모 클래스 EndGame 호출 (GameState 설정 등)
+	Super::EndGame(bVictory);
+
+	// 승리/실패에 따라 다른 UI 표시
+	if (bVictory)
+	{
+		// 승리 UI - 경과 시간 표시
+		if (GameOverText)
+		{
+			int32 TotalSeconds = static_cast<int32>(ElapsedGameTime);
+			int32 Minutes = TotalSeconds / 60;
+			int32 Seconds = TotalSeconds % 60;
+
+			wchar_t TimeStr[128];
+			swprintf_s(TimeStr, L"MISSION COMPLETE!\n\nTime: %02d:%02d", Minutes, Seconds);
+			GameOverText->SetText(TimeStr);
+		}
+	}
+	else
+	{
+		// 실패 UI
+		if (GameOverText)
+		{
+			GameOverText->SetText(L"MISSION FAILED!");
+		}
+	}
+
+	// 게임 오버 UI 표시
+	if (GameOverBg)
+		GameOverBg->SetVisibility(ESlateVisibility::Visible);
+	if (GameOverText)
+		GameOverText->SetVisibility(ESlateVisibility::Visible);
+	if (RestartText)
+		RestartText->SetVisibility(ESlateVisibility::Visible);
+}
+
+void AHudExampleGameMode::RestartGame()
+{
+	// 튜토리얼 스킵 플래그 설정
+	bSkipTutorialOnRestart = true;
+
+	// 델리게이트 브로드캐스트
+	OnGameRestarted.Broadcast();
+
+	// 전체 재시작 (박스/레벨 상태 포함)
+	GEngine.RestartPIE();
+}
+
 // ────────────────────────────────────────────────────────────────────────────
 // UI 업데이트
 // ────────────────────────────────────────────────────────────────────────────
@@ -900,7 +1044,7 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	Super::Tick(DeltaSeconds);
 
 	// >= 쓰면 계속 FrameTime 더해줘야함
-	if (FrameStableTimer < FrameStableTime && CurrentGameState == EGameState::Playing)
+	if (FrameStableTimer < FrameStableTime && CurrentGameState == EHudGameState::Playing)
 	{
 		FrameStableTimer += DeltaSeconds;
 
@@ -921,7 +1065,7 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	// 첫 프레임: 플레이어 카메라(스프링암)로 명시적 설정
 	// ─────────────────────────────────────────────────
 
-	if (!bInitialCameraSet && CurrentGameState == EGameState::MainMenu)
+	if (!bInitialCameraSet && CurrentGameState == EHudGameState::MainMenu)
 	{
 		APlayerController* PC = GetPlayerController();
 		if (PC)
@@ -958,7 +1102,7 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	// 메인 메뉴 입력 대기 (Space 또는 Enter만)
 	// ─────────────────────────────────────────────────
 
-	if (CurrentGameState == EGameState::MainMenu)
+	if (CurrentGameState == EHudGameState::MainMenu)
 	{
 		MainMenuTimer += DeltaSeconds;
 
@@ -1019,7 +1163,7 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	// 튜토리얼 카메라 입력 대기
 	// ─────────────────────────────────────────────────
 
-	if (CurrentGameState == EGameState::Tutorial_Camera)
+	if (CurrentGameState == EHudGameState::Tutorial_Camera)
 	{
 		TutorialCameraTimer += DeltaSeconds;
 
@@ -1079,7 +1223,7 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	// 만화/컷씬 진행
 	// ─────────────────────────────────────────────────
 
-	if (CurrentGameState == EGameState::Tutorial_Comic)
+	if (CurrentGameState == EHudGameState::Tutorial_Comic)
 	{
 		ComicSceneTimer += DeltaSeconds;
 
@@ -1175,7 +1319,7 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	// Objective 연출 애니메이션 (게임 플레이 중에만)
 	// ─────────────────────────────────────────────────
 
-	if (CurrentGameState == EGameState::Playing && ObjectiveAnimationPhase > 0)
+	if (CurrentGameState == EHudGameState::Playing && ObjectiveAnimationPhase > 0)
 	{
 		ObjectiveAnimationTimer += DeltaSeconds;
 
@@ -1269,7 +1413,7 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	// 게임 플레이 중일 때만 업데이트
 	// ─────────────────────────────────────────────────
 
-	if (CurrentGameState != EGameState::Playing)
+	if (CurrentGameState != EHudGameState::Playing)
 		return;
 
 	if (!GetPlayerController()) return;
