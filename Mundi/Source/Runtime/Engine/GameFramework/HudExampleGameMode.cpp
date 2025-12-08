@@ -937,6 +937,15 @@ void AHudExampleGameMode::ShowMainMenu()
 	if (BoosterText) BoosterText->SetVisibility(ESlateVisibility::Hidden);
 	if (ObjectiveBg) ObjectiveBg->SetVisibility(ESlateVisibility::Hidden);
 	if (ObjectiveImage) ObjectiveImage->SetVisibility(ESlateVisibility::Hidden);
+
+	if (PC)
+	{
+		APlayerCameraManager* CameraManager = PC->GetPlayerCameraManager();
+		if (CameraManager)
+		{
+			CameraManager->StartFade(5.0f, 1.0f, 0.0f, FLinearColor(0.0f, 0.0f, 0.0f), 100);
+		}
+	}
 }
 
 void AHudExampleGameMode::StartCameraCinematic()
