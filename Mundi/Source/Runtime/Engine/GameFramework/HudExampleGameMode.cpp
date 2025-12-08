@@ -1222,6 +1222,8 @@ void AHudExampleGameMode::EndGame(bool bVictory)
 	// 부모 클래스 EndGame 호출 (GameState 설정 등)
 	Super::EndGame(bVictory);
 
+	CurrentGameState = EHudGameState::EndMenu;
+
 	// 승리/실패에 따라 다른 UI 표시
 	if (bVictory)
 	{
@@ -1634,6 +1636,50 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		}
 	}
 
+	if (CurrentGameState == EHudGameState::EndMenu &&
+		RestartButton.IsValid() &&
+		CreditsButton.IsValid() &&
+		QuitButton.IsValid())
+	{
+		SButton* EndMenuButtons[3] = { RestartButton.Get(), CreditsButton.Get(), QuitButton.Get()};
+		const int NumButtons = 3;
+		UInputManager& InputManager = UInputManager::GetInstance();
+		SelectionDelay -= World->GetDeltaTime(EDeltaTime::Unscaled);
+		if (SelectionDelay <= 0.0f)
+		{
+			float LStickYInput = InputManager.GetGamepadAxisValue((int)EGamepadAxis::LSTICK_Y);
+			if (LStickYInput > 0.0f)
+			{
+				if (CurrentEndMenuButtonIndex != -1)
+				{
+					EndMenuButtons[CurrentEndMenuButtonIndex]->OnMouseLeave();
+				}
+				CurrentEndMenuButtonIndex = (CurrentEndMenuButtonIndex <= 0) ? NumButtons - 1 : CurrentEndMenuButtonIndex - 1;
+				EndMenuButtons[CurrentEndMenuButtonIndex]->OnMouseEnter();
+
+				SelectionDelay = 0.25f;
+			}
+			else if (LStickYInput < 0.0f)
+			{
+				if (CurrentEndMenuButtonIndex != -1)
+				{
+					EndMenuButtons[CurrentEndMenuButtonIndex]->OnMouseLeave();
+				}
+				CurrentEndMenuButtonIndex = (CurrentEndMenuButtonIndex >= NumButtons - 1) ? 0 : CurrentEndMenuButtonIndex + 1;
+				EndMenuButtons[CurrentEndMenuButtonIndex]->OnMouseEnter();
+				SelectionDelay = 0.25f;
+			}
+		}
+
+		if (InputManager.IsKeyPressed((int)EGamepadButton::A))
+		{
+			// NumButtons이상일 수가 없지만 방어코드
+			if (CurrentEndMenuButtonIndex >= 0 && CurrentEndMenuButtonIndex < NumButtons)
+			{
+				EndMenuButtons[CurrentEndMenuButtonIndex]->Click();
+			}
+		}
+	}
 	// ─────────────────────────────────────────────────
 	// 엔딩 크레딧 스크롤 애니메이션
 	// ─────────────────────────────────────────────────

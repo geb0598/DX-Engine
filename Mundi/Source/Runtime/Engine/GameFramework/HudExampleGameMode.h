@@ -31,6 +31,7 @@ enum class EHudGameState
 	Tutorial_Camera,       // 튜토리얼: 카메라 연출
 	Tutorial_Comic,        // 튜토리얼: 만화/컷씬
 	Playing,               // 게임 플레이 중
+	EndMenu,			   // 게임 종료 메뉴
 	EndingCredits,         // 엔딩 크레딧
 };
 
@@ -103,6 +104,11 @@ protected:
 
 	/** 현재 게임 상태 */
 	EHudGameState CurrentGameState = EHudGameState::MainMenu;
+	
+	/** EndMenu에서 현재 선택한 버튼 Index */
+	int32 CurrentEndMenuButtonIndex = -1;
+
+	float SelectionDelay = 0.0f;
 
 	// ────────────────────────────────────────────────
 	// UI 위젯 - 메인 메뉴

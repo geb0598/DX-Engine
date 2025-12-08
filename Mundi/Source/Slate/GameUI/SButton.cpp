@@ -1,4 +1,4 @@
-#include "pch.h"
+﻿#include "pch.h"
 #include "SButton.h"
 
 // =====================================================
@@ -101,6 +101,11 @@ void SButton::OnMouseLeave()
 {
     SWidget::OnMouseLeave();
     OnHoveredDelegate.Broadcast(false);
+}
+
+void SButton::Click()
+{
+    OnClickedDelegate.Broadcast();
 }
 
 // =====================================================

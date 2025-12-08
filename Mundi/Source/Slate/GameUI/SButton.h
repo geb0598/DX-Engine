@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 /**
  * @file SButton.h
@@ -38,6 +38,7 @@ public:
     FReply OnMouseButtonUp(const FGeometry& Geometry, const FVector2D& MousePosition) override;
     void OnMouseEnter() override;
     void OnMouseLeave() override;
+    void Click();
 
     // =====================================================
     // 텍스트 설정 (Fluent API)

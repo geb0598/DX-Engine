@@ -129,6 +129,7 @@ AVehicle::AVehicle()
 
 AVehicle::~AVehicle()
 {
+    UInputManager::GetInstance().SetGamepadVibration(0, 0, 0);
 }
 
 void AVehicle::BeginPlay()
