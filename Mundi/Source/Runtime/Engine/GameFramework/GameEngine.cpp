@@ -401,6 +401,8 @@ void UGameEngine::Shutdown()
     // before the global GEngine variable's destructor runs
     FObjManager::Clear();
 
+    TermGamePhys();
+
     // IMPORTANT: Explicitly release Renderer before RHIDevice destructor runs
     // Renderer may hold references to D3D resources
     Renderer.reset();
