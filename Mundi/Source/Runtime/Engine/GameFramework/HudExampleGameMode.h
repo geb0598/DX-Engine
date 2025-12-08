@@ -151,7 +151,7 @@ protected:
 	float ComicSceneTimer = 0.f;
 
 	/** 만화 각 장면 대기 시간 */
-	float ComicSceneWaitTime = 4.0f;
+	float ComicSceneWaitTime = 2.5f;
 
 	/** 만화 총 장면 수 */
 	static constexpr int32 TotalComicScenes = 8;
@@ -198,6 +198,9 @@ protected:
 	/** 박스 아이콘 */
 	TSharedPtr<SImage> BoxesIcon;
 
+	/** "x BOXES LEFT" 배경 그라데이션 */
+	TSharedPtr<SGradientBox> BoxesLeftBg;
+
 	/** "x BOXES LEFT" 텍스트 이미지 */
 	TSharedPtr<SImage> BoxesLeftText;
 
@@ -235,8 +238,23 @@ protected:
 	// UI 위젯 - 튜토리얼 만화/컷씬
 	// ────────────────────────────────────────────────
 
+	/** 만화 배경 (검정색 전체 화면) */
+	TSharedPtr<SBorderBox> ComicBackground;
+
 	/** 만화/컷씬 전체 화면 이미지 (8장) */
 	TArray<TSharedPtr<SImage>> ComicImages;
+
+	/** 만화 이미지 슬롯 참조 (X 오프셋 조정용) */
+	TArray<FCanvasSlot*> ComicImageSlots;
+
+	/** 만화 슬라이드 애니메이션 진행 중 */
+	bool bComicSlideAnimating = false;
+
+	/** 만화 슬라이드 애니메이션 타이머 */
+	float ComicSlideTimer = 0.0f;
+
+	/** 만화 슬라이드 애니메이션 지속 시간 */
+	float ComicSlideDuration = 1.0f;
 
 	// ────────────────────────────────────────────────
 	// UI 위젯 - 경과 시간

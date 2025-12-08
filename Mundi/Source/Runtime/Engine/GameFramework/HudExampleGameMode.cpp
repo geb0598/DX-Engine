@@ -163,7 +163,7 @@ void AHudExampleGameMode::BeginPlay()
 
 	// 박스 아이콘 (좌상단으로 이동)
 	BoxesIcon = MakeShared<SImage>();
-	BoxesIcon->SetTexture(L"Data/Textures/Dumb/box.png")
+	BoxesIcon->SetTexture(L"Data/Textures/Dumb/newbox.png")
 		.SetHighQualityInterpolation(true);
 		
 	SGameHUD::Get().AddWidget(BoxesIcon)
@@ -468,28 +468,7 @@ void AHudExampleGameMode::BeginPlay()
 	//	return;
 	//}
 
-	for (int32 i = 0; i < 8; i++)
-	{
-		TSharedPtr<SImage> ComicImage = MakeShared<SImage>();
-
-		// 파일명: Comic_01.png, Comic_02.png, ...
-		wchar_t FileName[256];
-		swprintf_s(FileName, L"Data/Textures/Dumb/Comic_%02d.png", i + 1);
-
-		ComicImage->SetTexture(FileName);
-
-		// 전체 화면을 채우도록 설정 (상대 크기 사용)
-		SGameHUD::Get().AddWidget(ComicImage)
-			.SetAnchor(0.0f, 0.0f)      // 좌상단 앵커
-			.SetPivot(0.0f, 0.0f)       // 좌상단 피벗
-			.SetOffset(0.f, 0.f)        // 오프셋 없음
-			.SetRelativeSize(1.0f, 1.0f);  // 부모(뷰포트) 크기의 100% (전체 화면)
-
-		// 초기에는 모두 숨김
-		ComicImage->SetVisibility(ESlateVisibility::Hidden);
-
-		ComicImages.Add(ComicImage);
-	}
+	// 만화 UI는 맨 마지막에 추가 (다른 모든 UI 위에 그려지도록)
 
 	// ─────────────────────────────────────────────────
 	// 게임 오버 UI (Mission Complete!)
@@ -655,6 +634,46 @@ void AHudExampleGameMode::BeginPlay()
 		}
 	}
 	
+	// ─────────────────────────────────────────────────
+	// 만화 UI (맨 마지막에 추가하여 최상위 레이어로)
+	// ─────────────────────────────────────────────────
+
+	// 만화 배경 (반투명 검정색 전체 화면)
+	ComicBackground = MakeShared<SBorderBox>();
+	ComicBackground->SetBackgroundColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.7f))  // 70% 불투명도
+		.SetBorderThickness(0.f);  // 테두리 없음
+	SGameHUD::Get().AddWidget(ComicBackground)
+		.SetAnchor(0.0f, 0.0f)
+		.SetPivot(0.0f, 0.0f)
+		.SetOffset(0.f, 0.f)
+		.SetRelativeSize(1.0f, 1.0f);  // 전체 화면
+	ComicBackground->SetVisibility(ESlateVisibility::Hidden);
+
+	// 만화 이미지들 (8장)
+	for (int32 i = 0; i < 8; i++)
+	{
+		TSharedPtr<SImage> ComicImage = MakeShared<SImage>();
+
+		// 파일명: Comic_01.png, Comic_02.png, ...
+		wchar_t FileName[256];
+		swprintf_s(FileName, L"Data/Textures/Dumb/Comic_%02d.png", i + 1);
+
+		ComicImage->SetTexture(FileName);
+
+		// 화면 전체 크기로 설정
+		FCanvasSlot* Slot = &SGameHUD::Get().AddWidget(ComicImage)
+			.SetAnchor(0.0f, 0.0f)      // 좌상단 앵커
+			.SetPivot(0.0f, 0.0f)       // 좌상단 피벗
+			.SetOffset(0.f, 0.f)        // 초기 위치 (ShowTutorialComic에서 설정)
+			.SetRelativeSize(1.0f, 1.0f);  // 뷰포트 크기
+
+		// 초기에는 모두 숨김
+		ComicImage->SetVisibility(ESlateVisibility::Hidden);
+
+		ComicImages.Add(ComicImage);
+		ComicImageSlots.Add(Slot);
+	}
+
 	// ─────────────────────────────────────────────────
 	// 플레이어 입력 비활성화 (타이틀 화면 동안)
 	// 카메라는 기본 스프링암 카메라 사용
@@ -965,14 +984,40 @@ void AHudExampleGameMode::ShowTutorialComic()
 	if (PressSpaceImage2)
 		PressSpaceImage2->SetVisibility(ESlateVisibility::Hidden);
 
+	// 만화 배경 보이기 (검정색 전체 화면)
+	if (ComicBackground)
+		ComicBackground->SetVisibility(ESlateVisibility::Visible);
+
 	// 만화 초기화
 	CurrentComicIndex = 0;
 	ComicSceneTimer = 0.f;
 	bComicInputReady = false;  // 입력 준비 안됨 (무시 시간 후 초기화 필요)
+	bComicSlideAnimating = false;
+	ComicSlideTimer = 0.f;
 
-	// 첫 번째 만화 장면 표시
-	if (ComicImages.Num() > 0 && ComicImages[0])
-		ComicImages[0]->SetVisibility(ESlateVisibility::Visible);
+	// 뷰포트 크기 가져오기
+	FVector2D ViewportSize = SGameHUD::Get().GetViewportSize();
+
+	// 모든 만화 이미지 초기 위치 설정
+	for (int32 i = 0; i < ComicImageSlots.Num(); i++)
+	{
+		if (ComicImageSlots[i])
+		{
+			// 첫 번째 장면(i=0)은 화면 중앙(X=0)
+			// 나머지는 화면 오른쪽 밖(X=ViewportSize.X)
+			float InitialX = (i == 0) ? 0.f : ViewportSize.X;
+			ComicImageSlots[i]->SetOffset(InitialX, 0.f);
+		}
+	}
+
+	// 첫 번째 만화 장면만 표시
+	for (int32 i = 0; i < ComicImages.Num(); i++)
+	{
+		if (ComicImages[i])
+		{
+			ComicImages[i]->SetVisibility((i == 0) ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+		}
+	}
 }
 
 void AHudExampleGameMode::ShowEndingCredits()
@@ -1044,6 +1089,10 @@ void AHudExampleGameMode::StartGamePlay()
 		TitleImage->SetVisibility(ESlateVisibility::Hidden);
 	if (StartButton)
 		StartButton->SetVisibility(ESlateVisibility::Hidden);
+
+	// 만화 배경 숨기기
+	if (ComicBackground)
+		ComicBackground->SetVisibility(ESlateVisibility::Hidden);
 
 	// 만화 이미지들 모두 숨기기
 	for (auto& Comic : ComicImages)
@@ -1425,54 +1474,73 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 
 	if (CurrentGameState == EHudGameState::Tutorial_Comic)
 	{
+		// 슬라이드 애니메이션 처리
+		if (bComicSlideAnimating)
+		{
+			ComicSlideTimer += DeltaSeconds;
+			float Progress = FMath::Clamp(ComicSlideTimer / ComicSlideDuration, 0.0f, 1.0f);
+
+			// Ease Out Cubic
+			float EasedProgress = 1.0f - std::pow(1.0f - Progress, 3.0f);
+
+			// 뷰포트 크기
+			FVector2D ViewportSize = SGameHUD::Get().GetViewportSize();
+
+			// 이전 장면(CurrentComicIndex-1)과 현재 장면(CurrentComicIndex)만 애니메이션
+			int32 PreviousIndex = CurrentComicIndex - 1;
+
+			// 이전 장면: 중앙(0) → 왼쪽(-ViewportSize.X)
+			if (PreviousIndex >= 0 && ComicImageSlots[PreviousIndex] && ComicImages[PreviousIndex] &&
+				ComicImages[PreviousIndex]->GetVisibility() == ESlateVisibility::Visible)
+			{
+				float StartX = 0.f;
+				float EndX = -ViewportSize.X;
+				float CurrentX = StartX + (EndX - StartX) * EasedProgress;
+				ComicImageSlots[PreviousIndex]->SetOffset(CurrentX, 0.f);
+			}
+
+			// 현재 장면: 오른쪽(ViewportSize.X) → 중앙(0)
+			if (ComicImageSlots[CurrentComicIndex] && ComicImages[CurrentComicIndex] &&
+				ComicImages[CurrentComicIndex]->GetVisibility() == ESlateVisibility::Visible)
+			{
+				float StartX = ViewportSize.X;
+				float EndX = 0.f;
+				float CurrentX = StartX + (EndX - StartX) * EasedProgress;
+				ComicImageSlots[CurrentComicIndex]->SetOffset(CurrentX, 0.f);
+			}
+
+			// 애니메이션 완료
+			if (Progress >= 1.0f)
+			{
+				bComicSlideAnimating = false;
+				ComicSceneTimer = 0.f;  // 타이머 리셋
+				bComicInputReady = false;  // 입력 준비 상태도 리셋 (다음 장면을 위해)
+
+				// 이전 장면을 숨김 (더 이상 화면에 보이지 않으므로)
+				if (PreviousIndex >= 0 && ComicImages[PreviousIndex])
+				{
+					ComicImages[PreviousIndex]->SetVisibility(ESlateVisibility::Hidden);
+				}
+			}
+
+			return;  // 애니메이션 중에는 입력 무시
+		}
+
 		ComicSceneTimer += DeltaSeconds;
 
-		// 키 입력 체크 (Space/Enter: 다음 장면, ESC: 전체 스킵)
+		// 입력 체크 (ESC: 전체 스킵만 가능, 자동 진행만 허용)
 		bool bNextScene = false;
 		bool bSkipAll = false;
 
-		// 입력 무시 시간이 지났을 때만 키 체크
-		if (ComicSceneTimer >= ComicInputIgnoreTime)
+		// ESC 키로 전체 스킵 (게임패드 START 키도 스킵)
+		if (UInputManager::GetInstance().IsKeyPressed(VK_ESCAPE) ||
+			UInputManager::GetInstance().IsKeyPressed((int32)EGamepadButton::START))
 		{
-			// 첫 번째 프레임에서 키 상태 초기화 (이전 입력 무시)
-			if (!bComicInputReady)
-			{
-				bComicInputReady = true;
-				bPrevSpacePressed = (GetAsyncKeyState(VK_SPACE) & 0x8000) != 0;
-				bPrevEnterPressed = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
-				bPrevEscPressed = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
-			}
-			else
-			{
-				// 현재 키 상태
-				bool bSpacePressed = (GetAsyncKeyState(VK_SPACE) & 0x8000) != 0;
-				bool bEnterPressed = (GetAsyncKeyState(VK_RETURN) & 0x8000) != 0;
-				bool bEscPressed = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
-
-				// ESC 키 체크 (전체 스킵) - 눌렀다 뗐을 때 (Falling Edge)
-				// 게임패드 START 키 체크
-				if (!bEscPressed && bPrevEscPressed || UInputManager::GetInstance().IsKeyPressed((int32)EGamepadButton::START))
-				{
-					bSkipAll = true;
-				}
-				// Space 또는 Enter 키 체크 (다음 장면) - 눌렀다 뗐을 때 (Falling Edge)
-				// 게임패드 아무 키 체크
-				else if ((!bSpacePressed && bPrevSpacePressed) ||
-					(!bEnterPressed && bPrevEnterPressed) ||
-					UInputManager::GetInstance().IsAnyGamepadKeyPressed())
-				{
-					bNextScene = true;
-				}
-
-				// 이전 키 상태 저장
-				bPrevSpacePressed = bSpacePressed;
-				bPrevEnterPressed = bEnterPressed;
-				bPrevEscPressed = bEscPressed;
-			}
+			bSkipAll = true;
 		}
 
-		// 자동 진행 (4초 경과)
-		if (!bNextScene && !bSkipAll && ComicSceneTimer >= ComicSceneWaitTime)
+		// 자동 진행 (3초 경과)
+		if (!bSkipAll && ComicSceneTimer >= ComicSceneWaitTime)
 		{
 			bNextScene = true;
 		}
@@ -1480,6 +1548,10 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		// 전체 스킵
 		if (bSkipAll)
 		{
+			// 만화 배경 숨김
+			if (ComicBackground)
+				ComicBackground->SetVisibility(ESlateVisibility::Hidden);
+
 			// 모든 만화 장면 숨김
 			for (auto& Comic : ComicImages)
 			{
@@ -1495,26 +1567,66 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		// 다음 장면으로 이동
 		if (bNextScene)
 		{
-			// 현재 장면 숨기기
-			if (CurrentComicIndex < ComicImages.Num() && ComicImages[CurrentComicIndex])
-				ComicImages[CurrentComicIndex]->SetVisibility(ESlateVisibility::Hidden);
-
 			// 다음 장면 인덱스
 			CurrentComicIndex++;
 
 			// 마지막 장면이었으면 게임 플레이로
 			if (CurrentComicIndex >= TotalComicScenes)
 			{
+				// 만화 배경 숨김
+				if (ComicBackground)
+					ComicBackground->SetVisibility(ESlateVisibility::Hidden);
+
+				// 모든 만화 장면 숨김
+				for (auto& Comic : ComicImages)
+				{
+					if (Comic)
+						Comic->SetVisibility(ESlateVisibility::Hidden);
+				}
+
 				StartGamePlay();
 				return;
 			}
 
-			// 다음 장면 표시
-			if (CurrentComicIndex < ComicImages.Num() && ComicImages[CurrentComicIndex])
-				ComicImages[CurrentComicIndex]->SetVisibility(ESlateVisibility::Visible);
+			// 뷰포트 크기
+			FVector2D ViewportSize = SGameHUD::Get().GetViewportSize();
 
-			// 타이머 리셋
-			ComicSceneTimer = 0.f;
+			// 이전 장면(현재 화면 중앙에 있는 장면)을 다시 보이도록 설정
+			// 애니메이션 중에 함께 슬라이드되어야 함
+			int32 PreviousIndex = CurrentComicIndex - 1;
+			if (PreviousIndex >= 0 && PreviousIndex < ComicImages.Num())
+			{
+				if (ComicImages[PreviousIndex])
+				{
+					// 이전 장면을 다시 보이게 함 (애니메이션 끝나고 숨겨졌을 수 있으므로)
+					ComicImages[PreviousIndex]->SetVisibility(ESlateVisibility::Visible);
+				}
+
+				// 이전 장면의 시작 위치를 명시적으로 중앙(0)으로 설정
+				if (ComicImageSlots[PreviousIndex])
+				{
+					ComicImageSlots[PreviousIndex]->SetOffset(0.f, 0.f);
+				}
+			}
+
+			// 다음 장면 표시 (오른쪽 밖에서 시작)
+			if (CurrentComicIndex < ComicImages.Num())
+			{
+				if (ComicImages[CurrentComicIndex])
+				{
+					ComicImages[CurrentComicIndex]->SetVisibility(ESlateVisibility::Visible);
+				}
+
+				// 다음 장면을 오른쪽 밖에 배치
+				if (ComicImageSlots[CurrentComicIndex])
+				{
+					ComicImageSlots[CurrentComicIndex]->SetOffset(ViewportSize.X, 0.f);
+				}
+			}
+
+			// 슬라이드 애니메이션 시작
+			bComicSlideAnimating = true;
+			ComicSlideTimer = 0.f;
 		}
 	}
 
