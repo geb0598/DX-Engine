@@ -2,7 +2,10 @@
 #include "PhysicsProjectileMovementComponent.h"
 #include "Actor.h"
 #include "PrimitiveComponent.h"
+#include "PhysXPublic.h"
 #include "ParticleSystemComponent.h"
+#include "Source/Runtime/Engine/GameFramework/Vehicle.h"
+#include "PhysScene.h"
 #include "BodyInstance.h"
 #include <random>
 
@@ -114,7 +117,61 @@ void UPhysicsProjectileMovementComponent::TickComponent(float DeltaTime)
 	{
 		if (FBodyInstance* BodyInstance = ProjectileBody->GetBodyInstance())
 		{
+			// 질량 오버라이드가 설정되어 있으면 반영
+			if (BodyMass > 0.0f)
+			{
+				BodyInstance->bOverrideMass = true;
+				BodyInstance->MassInKgOverride = BodyMass;
+
+				// 이미 생성된 바디에도 질량을 재적용
+				if (BodyInstance->IsDynamic() && BodyInstance->PhysScene && BodyInstance->RigidActor)
+				{
+					std::weak_ptr<bool> WeakHandle = BodyInstance->LifeHandle;
+					FPhysScene* PhysScene = BodyInstance->PhysScene;
+					PxRigidActor* RigidActor = BodyInstance->RigidActor;
+					const float MassValue = BodyMass;
+
+					PhysScene->EnqueueCommand([RigidActor, MassValue, WeakHandle]()
+					{
+						if (WeakHandle.expired())
+						{
+							return;
+						}
+
+						if (PxRigidDynamic* DynamicActor = RigidActor->is<PxRigidDynamic>())
+						{
+							PxRigidBodyExt::setMassAndUpdateInertia(*DynamicActor, MassValue);
+							DynamicActor->wakeUp();
+						}
+					});
+				}
+			}
+
 			BodyInstance->SetLinearVelocity(PendingVelocityValue);
+
+			// 초기 속도 방향에 맞춰 회전 설정 (Up(0,0,1)과 속도 벡터의 외적을 회전축으로 사용)
+			if (PendingVelocityValue.SizeSquared() > KINDA_SMALL_NUMBER)
+			{
+				const FVector Up(0.0f, 0.0f, 1.0f);
+				FVector Dir = PendingVelocityValue.GetNormalized();
+				FVector Axis = FVector::Cross(Up, Dir);
+				float AxisLen = Axis.Size();
+
+				if (AxisLen > KINDA_SMALL_NUMBER)
+				{
+					Axis.Normalize();
+					float Angle = std::atan2(AxisLen, FVector::Dot(Up, Dir)); // rad
+					FQuat Rot = FQuat::FromAxisAngle(Axis, Angle);
+					ProjectileBody->SetWorldRotation(Rot);
+
+					// 원하는 각속도로 지속 회전하도록 초기 각속도(토크) 부여
+					if (AngularSpeed > 0.0f)
+					{
+						BodyInstance->AddAngularImpulse(Axis * AngularSpeed, true /*bVelChange*/);
+					}
+				}
+			}
+
 			bPendingUpdateVelocity = false;
 			bLoggedMissingBodyInstance = false;
 			UE_LOG("[UPhysicsProjectileMovementComponent] 물리 투사체 초기 속도 설정 완료");
@@ -168,6 +225,29 @@ void UPhysicsProjectileMovementComponent::OnHit(UPrimitiveComponent* HitComp
 	, FVector NormalImpulse
 	, const FHitResult& Hit)
 {
+	// Vehicle에 힘 가하기 (프로젝타일 속도 방향으로)
+	if (AVehicle* Vehicle = Cast<AVehicle>(OtherActor))
+	{
+		if (ProjectileBody)
+		{
+			if (FBodyInstance* MyBody = ProjectileBody->GetBodyInstance())
+			{
+				FVector Vel = MyBody->GetLinearVelocity();
+				if (Vel.SizeSquared() > KINDA_SMALL_NUMBER)
+				{
+					UPrimitiveComponent* TargetPrim = Cast<UPrimitiveComponent>(Vehicle->GetRootComponent());
+					if (TargetPrim)
+					{
+						if (FBodyInstance* TargetBody = TargetPrim->GetBodyInstance())
+						{
+							TargetBody->AddForce(Vel * 120.0f, true /*bAccelChange*/);
+						}
+					}
+				}
+			}
+		}
+	}
+
 	if (bUseHitParticle)
 	{
 		if (AActor* Owner = GetOwner())

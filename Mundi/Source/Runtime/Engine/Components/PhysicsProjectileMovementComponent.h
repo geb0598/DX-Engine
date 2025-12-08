@@ -38,6 +38,12 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Projectile Movement")
 	bool bUseHitParticle = false; // 충돌 시 파티클 이펙트 재생 여부
 
+	UPROPERTY(EditAnywhere, Category = "Projectile Movement")
+	float AngularSpeed = 10.0f; // 초기 속도에 수직인 축으로 회전시킬 각속도(라디안/초), 0이면 회전 안 함
+
+	UPROPERTY(EditAnywhere, Category = "Projectile Movement")
+	float BodyMass = 100.0f; // kg 단위 질량 오버라이드 (0 이하면 무시)
+
 protected:
 	/** 충돌 시 호출될 콜백 함수 */
 	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
