@@ -4,7 +4,7 @@
       "CollisionChannel" : 1,
       "CollisionEnabled" : 3,
       "CollisionMask" : -1,
-      "Id" : 22979,
+      "Id" : 22975,
       "MaterialSlots" : [{
           "AssetPath" : "Material",
           "Type" : "UMaterial"
@@ -12,7 +12,7 @@
       "ObjectName" : "UStaticMeshComponent_359",
       "ParentId" : 0,
       "PhysicalMaterial" : "",
-      "RelativeLocation" : [111.310905, -270.649841, 11.540347],
+      "RelativeLocation" : [111.612923, -272.497864, 11.597593],
       "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
       "RelativeScale" : [0.800000, 0.800000, 0.800000],
       "StaticMesh" : "Data/Model/SpikeBall/spike_ball.obj",
@@ -29,9 +29,9 @@
     }, {
       "AngularSpeed" : 7.000000,
       "BodyMass" : 1500.000000,
-      "DestroyDelay" : 4.000000,
-      "MaxVelocity" : [1.000000, 10.000000, 5.000000],
-      "MinVelocity" : [-1.000000, 40.000000, 8.000000],
+      "DestroyDelay" : 5.000000,
+      "MaxVelocity" : [1.000000, 8.000000, 0.000000],
+      "MinVelocity" : [-1.000000, 12.000000, 0.000000],
       "ObjectName" : "UPhysicsProjectileMovementComponent_2",
       "Type" : "UPhysicsProjectileMovementComponent",
       "bHiddenInGame" : false,
@@ -40,7 +40,7 @@
       "bTickInEditor" : false,
       "bUseHitParticle" : false
     }],
-  "RootComponentId" : 22979,
+  "RootComponentId" : 22975,
   "Tag" : "",
   "Type" : "AStaticMeshActor",
   "bActorHiddenInGame" : false,

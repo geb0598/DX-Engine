@@ -228,14 +228,14 @@ void UPhysicsProjectileMovementComponent::OnHit(UPrimitiveComponent* HitComp
 	// Vehicle에 힘 가하기 (프로젝타일 속도 방향으로)
 	if (AVehicle* Vehicle = Cast<AVehicle>(OtherActor))
 	{
-		if (ProjectileBody)
+		if (ProjectileBody && OtherComp && OtherComp == Vehicle->GetRootComponent())
 		{
 			if (FBodyInstance* MyBody = ProjectileBody->GetBodyInstance())
 			{
 				FVector Vel = MyBody->GetLinearVelocity();
 				if (Vel.SizeSquared() > KINDA_SMALL_NUMBER)
 				{
-					UPrimitiveComponent* TargetPrim = Cast<UPrimitiveComponent>(Vehicle->GetRootComponent());
+					UPrimitiveComponent* TargetPrim = Cast<UPrimitiveComponent>(OtherComp);
 					if (TargetPrim)
 					{
 						if (FBodyInstance* TargetBody = TargetPrim->GetBodyInstance())
