@@ -33,8 +33,8 @@ public:
     void EndPlay() override;
 
 protected:
-	// Overlap 콜백 (ShapeComponent가 브로드캐스트)
-	void OnBeginOverlap(UPrimitiveComponent* MyComp, UPrimitiveComponent* OtherComp);
+	// hit 콜백 (PrimitiveComponent 델리게이트 시그니처)
+	void OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 
 public:
 	// 복제/직렬화
@@ -49,4 +49,7 @@ public:
 	/** 플레이어를 식별할 태그 (기본: "player") */
 	UPROPERTY(EditAnywhere, Category = "VictoryVolume")
 	FString PlayerTag = "player";
+
+	/** 중복 승리 처리를 막기 위한 플래그 */
+	bool bVictoryEventTriggered = false;
 };

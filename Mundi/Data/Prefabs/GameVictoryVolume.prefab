@@ -1,0 +1,100 @@
+{
+  "ObjectName" : "게임 승리 볼륨_0",
+  "OwnedComponents" : [{
+      "AttenuationRadius" : 30.000000,
+      "FalloffExponent" : 2.000000,
+      "Id" : 3689,
+      "InnerConeAngle" : 30.000000,
+      "Intensity" : 45.000000,
+      "LightColor" : [0.572549, 1.000000, 0.513726, 1.000000],
+      "ObjectName" : "USpotLightComponent_33",
+      "OuterConeAngle" : 50.000000,
+      "OverrideCameraLightNum" : 0,
+      "ParentId" : 2868,
+      "RelativeLocation" : [0.000000, 0.000000, 62.600166],
+      "RelativeRotationEuler" : [0.000000, 90.000000, -0.000000],
+      "RelativeScale" : [0.100000, 0.100000, 10.000000],
+      "ShadowBias" : 0.000010,
+      "ShadowResolutionScale" : 1024,
+      "ShadowSharpen" : 0.500000,
+      "ShadowSlopeBias" : 0.000010,
+      "SourceRadius" : 0.000000,
+      "Temperature" : 6500.000000,
+      "Type" : "USpotLightComponent",
+      "bCastShadows" : true,
+      "bHiddenInGame" : false,
+      "bIsActive" : true,
+      "bIsVisible" : true,
+      "bOverrideCameraLightPerspective" : false,
+      "bTickEnabled" : true,
+      "bTickInEditor" : false,
+      "bUseInverseSquareFalloff" : true
+    }, {
+      "BoxExtent" : [0.500000, 0.500000, 0.500000],
+      "CollisionChannel" : 1,
+      "CollisionEnabled" : 1,
+      "CollisionMask" : -1,
+      "Id" : 2868,
+      "ObjectName" : "UBoxComponent_57",
+      "ParentId" : 0,
+      "PhysicalMaterial" : "",
+      "RelativeLocation" : [128.321152, 1.313869, 0.033000],
+      "RelativeRotationEuler" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [10.000000, 10.000000, 0.100000],
+      "Type" : "UBoxComponent",
+      "bBlockComponent" : false,
+      "bGenerateOverlapEvents" : true,
+      "bHiddenInGame" : false,
+      "bIsActive" : true,
+      "bIsVisible" : true,
+      "bShapeHiddenInGame" : true,
+      "bShapeIsVisible" : true,
+      "bSimulatePhysics" : false,
+      "bTickEnabled" : true,
+      "bTickInEditor" : false
+    }, {
+      "CollisionChannel" : 1,
+      "CollisionEnabled" : 0,
+      "CollisionMask" : -1,
+      "Id" : 2871,
+      "MaterialSlots" : [{
+          "Overrides" : {
+            "Scalars" : {
+              "SpecularExponent" : 100.000000
+            },
+            "Textures" : {
+
+            },
+            "Vectors" : {
+              "AmbientColor" : [0.572549, 1.000000, 0.513726, 1.000000],
+              "DiffuseColor" : [0.572549, 1.000000, 0.513726, 1.000000]
+            }
+          },
+          "ParentPath" : "Shaders/Materials/UberLit.hlsl",
+          "Type" : "UMaterialInstanceDynamic"
+        }],
+      "ObjectName" : "UStaticMeshComponent_351",
+      "ParentId" : 2868,
+      "PhysicalMaterial" : "",
+      "RelativeLocation" : [0.000000, 0.000000, -0.100000],
+      "RelativeRotationEuler" : [0.000000, 0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "StaticMesh" : "Data/Model/Cube.obj",
+      "Type" : "UStaticMeshComponent",
+      "bBlockComponent" : false,
+      "bCastShadows" : true,
+      "bGenerateOverlapEvents" : false,
+      "bHiddenInGame" : false,
+      "bIsActive" : true,
+      "bIsVisible" : true,
+      "bSimulatePhysics" : false,
+      "bTickEnabled" : true,
+      "bTickInEditor" : false
+    }],
+  "PlayerTag" : "player",
+  "RootComponentId" : 2868,
+  "Tag" : "",
+  "Type" : "AGameVictoryVolume",
+  "bActorHiddenInGame" : false,
+  "bActorIsActive" : true
+}

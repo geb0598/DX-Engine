@@ -1375,6 +1375,9 @@
     <ClCompile Include="Source\Slate\GameUI\SProgressBar.cpp">
       <Filter>Source\Slate\GameUI</Filter>
     </ClCompile>
+    <ClCompile Include="Generated\AGameVictoryVolume.generated.cpp">
+      <Filter>Generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Runtime\AssetManagement\LinesBatch.h">
@@ -2988,6 +2991,9 @@
     </ClInclude>
     <ClInclude Include="Source\Slate\GameUI\SProgressBar.h">
       <Filter>Source\Slate\GameUI</Filter>
+    </ClInclude>
+    <ClInclude Include="Generated\AGameVictoryVolume.generated.h">
+      <Filter>Generated</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
