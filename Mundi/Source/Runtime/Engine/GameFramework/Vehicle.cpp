@@ -259,6 +259,7 @@ void AVehicle::Tick(float DeltaSeconds)
         if (!bSparkParticleActive)
         {
             SparkParticleComponent->ActivateSystem();
+            UInputManager::GetInstance().SetGamepadVibration(0, 0.0f, 0.5f);
             bSparkParticleActive = true;
         }
     }
@@ -267,6 +268,7 @@ void AVehicle::Tick(float DeltaSeconds)
         if (bSparkParticleActive)
         {
             SparkParticleComponent->FinishSystem();
+            UInputManager::GetInstance().SetGamepadVibration(0, 0.0f, 0.0f);
             bSparkParticleActive = false;
         }
     }
