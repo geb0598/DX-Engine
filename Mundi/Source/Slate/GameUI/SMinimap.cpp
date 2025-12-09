@@ -276,7 +276,7 @@ void SMinimap::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 	}
 
 	// 3. 플레이어 위치 및 회전 디버그 출력 (미니맵 위에 표시)
-	FWideString DebugText = L"Pos: (" +
+	/*FWideString DebugText = L"Pos: (" +
 		std::to_wstring(static_cast<int>(PlayerWorldPos.X)) + L", " +
 		std::to_wstring(static_cast<int>(PlayerWorldPos.Y)) + L") Rot: " +
 		std::to_wstring(static_cast<int>(PlayerRotation)) + L"°";
@@ -289,7 +289,7 @@ void SMinimap::Paint(FD2DRenderer& Renderer, const FGeometry& Geometry)
 		16.f,
 		ETextHAlign::Left,
 		ETextVAlign::Top
-	);
+	);*/
 }
 
 SMinimap& SMinimap::SetMapTexture(const FWideString& InTexturePath)

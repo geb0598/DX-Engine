@@ -1512,7 +1512,7 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		TutorialCameraTimer += DeltaSeconds;
 
 		// 카메라 블렌드 완료 후 조작키 설명서 표시
-		if (TutorialCameraTimer >= CameraBlendTime + 0.15f && KeyBindingsImage &&
+		if (TutorialCameraTimer >= CameraBlendTime + 0.1f && KeyBindingsImage &&
 			KeyBindingsImage->GetVisibility() != ESlateVisibility::Visible)
 		{
 			KeyBindingsImage->SetVisibility(ESlateVisibility::Visible);
