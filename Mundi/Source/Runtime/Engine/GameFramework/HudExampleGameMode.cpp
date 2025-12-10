@@ -1246,7 +1246,7 @@ void AHudExampleGameMode::StartGamePlay()
 		MainMenuMusicComponent->Stop();
 	}
 
-	if (BackgroundMusicComponent)
+	if (BackgroundMusicComponent && bIsBackgroundMusicEnabled)
 	{
 		BackgroundMusicComponent->Play();
 	}
@@ -1382,6 +1382,29 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 
 	// 이전 프레임 키 상태 저장
 	bPrevTabPressed = bTabPressed;
+
+	// 배경 음악 M키 온/오프 토글
+	bool bBackgroundMusicTogglePressed = (GetAsyncKeyState('M') & 0x8000) != 0;
+	if (BackgroundMusicComponent &&
+		(CurrentGameState == EHudGameState::Playing ||
+		 CurrentGameState == EHudGameState::EndMenu ||
+		 CurrentGameState == EHudGameState::EndingCredits))
+	{
+		if (bBackgroundMusicTogglePressed && !bPrevBackgroundMusicTogglePressed)
+		{
+			bIsBackgroundMusicEnabled = !bIsBackgroundMusicEnabled;
+
+			if (bIsBackgroundMusicEnabled)
+			{
+				BackgroundMusicComponent->Play();
+			}
+			else
+			{
+				BackgroundMusicComponent->Stop();
+			}
+		}
+	}
+	bPrevBackgroundMusicTogglePressed = bBackgroundMusicTogglePressed;
 
 	// >= 쓰면 계속 FrameTime 더해줘야함
 	if (FrameStableTimer < FrameStableTime && CurrentGameState == EHudGameState::Playing)

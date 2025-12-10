@@ -294,6 +294,8 @@ protected:
 	class UAudioComponent* MainMenuMusicComponent = nullptr;
 
 	class UAudioComponent* BackgroundMusicComponent = nullptr;
+	bool bIsBackgroundMusicEnabled = true;
+	bool bPrevBackgroundMusicTogglePressed = false;
 	// 부스터 게이지 UI (좌하단)
 	// ────────────────────────────────────────────────
 
