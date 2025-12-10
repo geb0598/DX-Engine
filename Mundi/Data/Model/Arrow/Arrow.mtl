@@ -1,0 +1,14 @@
+# Blender 4.5.3 LTS MTL File: 'None'
+# www.blender.org
+
+newmtl Arrow5
+Ns 20.000006
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 1
+map_Kd textures/Arrow5Albedo.png
+map_Ks textures/Arrow5Rough.png
+map_refl textures/Arrow5Metal.png
+map_Bump -bm 0.300000 textures/Arrow5Normal.png
