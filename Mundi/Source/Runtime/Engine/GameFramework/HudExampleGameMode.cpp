@@ -475,100 +475,6 @@ void AHudExampleGameMode::BeginPlay()
 	// 만화 UI는 맨 마지막에 추가 (다른 모든 UI 위에 그려지도록)
 
 	// ─────────────────────────────────────────────────
-	// 게임 오버 UI (Mission Complete!)
-	// ─────────────────────────────────────────────────
-
-	// 게임 오버 배경 그라데이션
-	GameOverBg = MakeShared<SGradientBox>();
-	GameOverBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.8f))  // 반투명 검정
-		.SetFadeWidth(150.f);
-
-	SGameHUD::Get().AddWidget(GameOverBg)
-		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
-		.SetPivot(0.5f, 0.5f)   // 중앙 기준
-		.SetOffset(0.f, -240.f)
-		.SetSize(600.f, 300.f);
-
-	// "MISSION COMPLETE!" 텍스트
-	GameOverText = MakeShared<STextBlock>();
-	GameOverText->SetText(L"MISSION COMPLETE!")
-		.SetFontSize(48.f)
-		.SetColor(FSlateColor(146.f / 255.f, 254.f / 255.f, 131.f / 255.f, 1.0f))  // 연두색
-		.SetShadow(true, FVector2D(3.f, 3.f), FSlateColor::Black())
-		.SetHAlign(ETextHAlign::Center)
-		.SetVAlign(ETextVAlign::Center);
-
-	SGameHUD::Get().AddWidget(GameOverText)
-		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
-		.SetPivot(0.5f, 0.5f)   // 중앙 기준
-		.SetOffset(0.f, -240.f)
-		.SetSize(500.f, 60.f);
-
-	// 재시작 버튼
-	RestartButton = MakeShared<SButton>();
-	RestartButton->SetText(L"Restart Game")
-		.SetFontSize(24.f)
-		.SetTextColor(FSlateColor::White())
-		.SetBackgroundColors(
-			FSlateColor(0.2f, 0.2f, 0.2f, 0.8f),   // Normal
-			FSlateColor(0.4f, 0.4f, 0.4f, 0.9f),   // Hovered
-			FSlateColor(0.1f, 0.1f, 0.1f, 1.0f))   // Pressed
-		.OnClicked([this]() {
-			RestartGame();
-		});
-
-	SGameHUD::Get().AddWidget(RestartButton)
-		.SetAnchor(0.5f, 0.5f)
-		.SetPivot(0.5f, 0.5f)
-		.SetOffset(0.f, -30.f)
-		.SetSize(300.f, 50.f);
-
-	// 엔딩 크레딧 버튼
-	CreditsButton = MakeShared<SButton>();
-	CreditsButton->SetText(L"Ending Credits")
-		.SetFontSize(24.f)
-		.SetTextColor(FSlateColor::White())
-		.SetBackgroundColors(
-			FSlateColor(0.2f, 0.2f, 0.2f, 0.8f),   // Normal
-			FSlateColor(0.4f, 0.4f, 0.4f, 0.9f),   // Hovered
-			FSlateColor(0.1f, 0.1f, 0.1f, 1.0f))   // Pressed
-		.OnClicked([this]() {
-			ShowEndingCredits();
-		});
-
-	SGameHUD::Get().AddWidget(CreditsButton)
-		.SetAnchor(0.5f, 0.5f)
-		.SetPivot(0.5f, 0.5f)
-		.SetOffset(0.f, 30.f)
-		.SetSize(300.f, 50.f);
-
-	// 게임 종료 버튼
-	QuitButton = MakeShared<SButton>();
-	QuitButton->SetText(L"Quit Game")
-		.SetFontSize(24.f)
-		.SetTextColor(FSlateColor::White())
-		.SetBackgroundColors(
-			FSlateColor(0.2f, 0.2f, 0.2f, 0.8f),   // Normal
-			FSlateColor(0.4f, 0.4f, 0.4f, 0.9f),   // Hovered
-			FSlateColor(0.1f, 0.1f, 0.1f, 1.0f))   // Pressed
-		.OnClicked([this]() {
-			PostQuitMessage(0);
-		});
-
-	SGameHUD::Get().AddWidget(QuitButton)
-		.SetAnchor(0.5f, 0.5f)
-		.SetPivot(0.5f, 0.5f)
-		.SetOffset(0.f, 90.f)
-		.SetSize(300.f, 50.f);
-
-	// 초기에는 숨김
-	GameOverBg->SetVisibility(ESlateVisibility::Hidden);
-	GameOverText->SetVisibility(ESlateVisibility::Hidden);
-	RestartButton->SetVisibility(ESlateVisibility::Hidden);
-	CreditsButton->SetVisibility(ESlateVisibility::Hidden);
-	QuitButton->SetVisibility(ESlateVisibility::Hidden);
-
-	// ─────────────────────────────────────────────────
 	// 엔딩 크레딧 UI
 	// ─────────────────────────────────────────────────
 
@@ -625,6 +531,109 @@ void AHudExampleGameMode::BeginPlay()
 		.SetSize(800.f, 600.f);  // 조작키 설명서 크기 (필요시 조정)
 
 	KeyBindingsImage->SetVisibility(ESlateVisibility::Hidden);
+
+	// ─────────────────────────────────────────────────
+	// 게임 오버 / 일시정지 메뉴 UI (맨 마지막에 생성하여 최상위 렌더링)
+	// ─────────────────────────────────────────────────
+
+	// 게임 오버 배경 그라데이션
+	GameOverBg = MakeShared<SGradientBox>();
+	GameOverBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.8f))  // 반투명 검정
+		.SetFadeWidth(150.f);
+
+	SGameHUD::Get().AddWidget(GameOverBg)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(0.f, -240.f)
+		.SetSize(600.f, 300.f);
+
+	// "MISSION COMPLETE!" 텍스트
+	GameOverText = MakeShared<STextBlock>();
+	GameOverText->SetText(L"MISSION COMPLETE!")
+		.SetFontSize(48.f)
+		.SetColor(FSlateColor(146.f / 255.f, 254.f / 255.f, 131.f / 255.f, 1.0f))  // 연두색
+		.SetShadow(true, FVector2D(3.f, 3.f), FSlateColor::Black())
+		.SetHAlign(ETextHAlign::Center)
+		.SetVAlign(ETextVAlign::Center);
+
+	SGameHUD::Get().AddWidget(GameOverText)
+		.SetAnchor(0.5f, 0.5f)  // 화면 중앙
+		.SetPivot(0.5f, 0.5f)   // 중앙 기준
+		.SetOffset(0.f, -240.f)
+		.SetSize(500.f, 60.f);
+
+	// 재시작 버튼
+	RestartButton = MakeShared<SButton>();
+	RestartButton->SetText(L"Restart Game")
+		.SetFontSize(24.f)
+		.SetTextColor(FSlateColor::White())
+		.SetBackgroundColors(
+			FSlateColor(0.2f, 0.2f, 0.2f, 0.8f),   // Normal
+			FSlateColor(0.4f, 0.4f, 0.4f, 0.9f),   // Hovered
+			FSlateColor(0.1f, 0.1f, 0.1f, 1.0f))   // Pressed
+		.OnClicked([this]() {
+			RestartGame();
+		});
+
+	SGameHUD::Get().AddWidget(RestartButton)
+		.SetAnchor(0.5f, 0.5f)
+		.SetPivot(0.5f, 0.5f)
+		.SetOffset(0.f, -30.f)
+		.SetSize(300.f, 50.f);
+
+	// 엔딩 크레딧 버튼 (일시정지 메뉴에서는 "Resume" 버튼으로 사용)
+	CreditsButton = MakeShared<SButton>();
+	CreditsButton->SetText(L"Ending Credits")
+		.SetFontSize(24.f)
+		.SetTextColor(FSlateColor::White())
+		.SetBackgroundColors(
+			FSlateColor(0.2f, 0.2f, 0.2f, 0.8f),   // Normal
+			FSlateColor(0.4f, 0.4f, 0.4f, 0.9f),   // Hovered
+			FSlateColor(0.1f, 0.1f, 0.1f, 1.0f))   // Pressed
+		.OnClicked([this]() {
+			// 일시정지 상태라면 게임 재개
+			if (CurrentGameState == EHudGameState::Paused)
+			{
+				ResumeGame();
+			}
+			// 엔딩 메뉴 상태라면 크레딧 표시
+			else if (CurrentGameState == EHudGameState::EndMenu)
+			{
+				ShowEndingCredits();
+			}
+		});
+
+	SGameHUD::Get().AddWidget(CreditsButton)
+		.SetAnchor(0.5f, 0.5f)
+		.SetPivot(0.5f, 0.5f)
+		.SetOffset(0.f, 30.f)
+		.SetSize(300.f, 50.f);
+
+	// 게임 종료 버튼
+	QuitButton = MakeShared<SButton>();
+	QuitButton->SetText(L"Quit Game")
+		.SetFontSize(24.f)
+		.SetTextColor(FSlateColor::White())
+		.SetBackgroundColors(
+			FSlateColor(0.2f, 0.2f, 0.2f, 0.8f),   // Normal
+			FSlateColor(0.4f, 0.4f, 0.4f, 0.9f),   // Hovered
+			FSlateColor(0.1f, 0.1f, 0.1f, 1.0f))   // Pressed
+		.OnClicked([this]() {
+			PostQuitMessage(0);
+		});
+
+	SGameHUD::Get().AddWidget(QuitButton)
+		.SetAnchor(0.5f, 0.5f)
+		.SetPivot(0.5f, 0.5f)
+		.SetOffset(0.f, 90.f)
+		.SetSize(300.f, 50.f);
+
+	// 초기에는 숨김
+	GameOverBg->SetVisibility(ESlateVisibility::Hidden);
+	GameOverText->SetVisibility(ESlateVisibility::Hidden);
+	RestartButton->SetVisibility(ESlateVisibility::Hidden);
+	CreditsButton->SetVisibility(ESlateVisibility::Hidden);
+	QuitButton->SetVisibility(ESlateVisibility::Hidden);
 
 	// ─────────────────────────────────────────────────
 	// 카메라 찾기 (이름으로 검색)
@@ -1274,6 +1283,16 @@ void AHudExampleGameMode::EndGame(bool bVictory)
 
 	CurrentGameState = EHudGameState::EndMenu;
 
+	// 조작키 설명서가 열려있으면 닫기
+	if (bShowKeyBindings)
+	{
+		bShowKeyBindings = false;
+		if (KeyBindingsBackground)
+			KeyBindingsBackground->SetVisibility(ESlateVisibility::Hidden);
+		if (KeyBindingsImage)
+			KeyBindingsImage->SetVisibility(ESlateVisibility::Hidden);
+	}
+
 	// 승리/실패에 따라 다른 UI 표시
 	if (bVictory)
 	{
@@ -1314,12 +1333,23 @@ void AHudExampleGameMode::EndGame(bool bVictory)
 		GameOverBg->SetVisibility(ESlateVisibility::Visible);
 	if (GameOverText)
 		GameOverText->SetVisibility(ESlateVisibility::Visible);
+
+	// 버튼 텍스트를 EndMenu 버전으로 설정
 	if (RestartButton)
+	{
+		RestartButton->SetText(L"Restart Game");
 		RestartButton->SetVisibility(ESlateVisibility::Visible);
+	}
 	if (CreditsButton)
+	{
+		CreditsButton->SetText(L"Ending Credits");
 		CreditsButton->SetVisibility(ESlateVisibility::Visible);
+	}
 	if (QuitButton)
+	{
+		QuitButton->SetText(L"Quit Game");
 		QuitButton->SetVisibility(ESlateVisibility::Visible);
+	}
 }
 
 void AHudExampleGameMode::RestartGame()
@@ -1382,6 +1412,31 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 
 	// 이전 프레임 키 상태 저장
 	bPrevTabPressed = bTabPressed;
+
+	// ─────────────────────────────────────────────────
+	// ESC 키로 일시정지 메뉴 토글 (게임 플레이 중 또는 일시정지 중)
+	// ─────────────────────────────────────────────────
+	bool bEscPressed = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
+
+	// 게임 플레이 중일 때 ESC 키를 누르면 일시정지
+	if (CurrentGameState == EHudGameState::Playing)
+	{
+		if (bEscPressed && !bPrevEscPressed)
+		{
+			ShowPauseMenu();
+		}
+	}
+	// 일시정지 중일 때 ESC 키를 누르면 게임 재개
+	else if (CurrentGameState == EHudGameState::Paused)
+	{
+		if (bEscPressed && !bPrevEscPressed)
+		{
+			ResumeGame();
+		}
+	}
+
+	// 이전 프레임 ESC 키 상태 저장
+	bPrevEscPressed = bEscPressed;
 
 	// 배경 음악 M키 온/오프 토글
 	bool bBackgroundMusicTogglePressed = (GetAsyncKeyState('M') & 0x8000) != 0;
@@ -2174,4 +2229,95 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 			BoxesCountText->SetText(std::to_wstring(BoxCount));
 		}
 	}
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 일시정지 메뉴 표시
+// ────────────────────────────────────────────────────────────────────────────
+
+void AHudExampleGameMode::ShowPauseMenu()
+{
+	// 상태를 일시정지로 변경
+	CurrentGameState = EHudGameState::Paused;
+
+	// 게임을 일시정지 (업데이트 멈춤)
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->SetPaused(true);
+	}
+
+	// 조작키 설명서가 열려있으면 닫기
+	if (bShowKeyBindings)
+	{
+		bShowKeyBindings = false;
+		if (KeyBindingsBackground)
+			KeyBindingsBackground->SetVisibility(ESlateVisibility::Hidden);
+		if (KeyBindingsImage)
+			KeyBindingsImage->SetVisibility(ESlateVisibility::Hidden);
+	}
+
+	// 일시정지 메뉴 UI 표시 (기존 EndMenu UI 재활용)
+	if (GameOverBg)
+		GameOverBg->SetVisibility(ESlateVisibility::Visible);
+
+	if (GameOverText)
+	{
+		GameOverText->SetText(L"PAUSED");
+		GameOverText->SetVisibility(ESlateVisibility::Visible);
+	}
+
+	// 재시작 버튼
+	if (RestartButton)
+	{
+		RestartButton->SetText(L"Restart Game");
+		RestartButton->SetVisibility(ESlateVisibility::Visible);
+	}
+
+	// 엔딩 크레딧 버튼
+	if (CreditsButton)
+	{
+		CreditsButton->SetText(L"Resume");
+		CreditsButton->SetVisibility(ESlateVisibility::Visible);
+	}
+
+	// 게임 종료 버튼
+	if (QuitButton)
+	{
+		QuitButton->SetText(L"Quit Game");
+		QuitButton->SetVisibility(ESlateVisibility::Visible);
+	}
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 게임 재개
+// ────────────────────────────────────────────────────────────────────────────
+
+void AHudExampleGameMode::ResumeGame()
+{
+	// 상태를 Playing으로 복원
+	CurrentGameState = EHudGameState::Playing;
+
+	// 게임 재개 (업데이트 재시작)
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		World->SetPaused(false);
+	}
+
+	// 일시정지 메뉴 UI 숨기기
+	if (GameOverBg)
+		GameOverBg->SetVisibility(ESlateVisibility::Hidden);
+
+	if (GameOverText)
+		GameOverText->SetVisibility(ESlateVisibility::Hidden);
+
+	if (RestartButton)
+		RestartButton->SetVisibility(ESlateVisibility::Hidden);
+
+	if (CreditsButton)
+		CreditsButton->SetVisibility(ESlateVisibility::Hidden);
+
+	if (QuitButton)
+		QuitButton->SetVisibility(ESlateVisibility::Hidden);
 }

@@ -156,8 +156,16 @@ public:
     float GetDeltaTime(EDeltaTime type);
 
     // 모든게 정지
-    void RequestHitStop(float Duration ,float Dilation = 0.0f); 
+    void RequestHitStop(float Duration ,float Dilation = 0.0f);
     void RequestSlomo(float Duration, float Dilation = 0.0f);
+
+    // TimeDilation 접근자
+    void SetTimeDilation(float NewDilation) { TimeDilation = NewDilation; }
+    float GetTimeDilation() const { return TimeDilation; }
+
+    // Pause 관리
+    void SetPaused(bool bInPaused) { bIsPaused = bInPaused; }
+    bool IsPaused() const { return bIsPaused; }
 
 private:
     bool DestroyActor(AActor* Actor);   // 즉시 삭제
@@ -250,6 +258,7 @@ private:
     float TimeDuration;
 
     bool bIsTearingDown = false;    // 월드가 파괴 중임을 알리는 플래그
+    bool bIsPaused = false;         // 게임 일시정지 플래그
 
     EWorldType WorldType = EWorldType::Editor;  // Default to editor world
 };

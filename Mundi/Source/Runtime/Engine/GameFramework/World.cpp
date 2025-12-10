@@ -247,7 +247,8 @@ void UWorld::Tick(float DeltaSeconds)
     GameDelta = UnscaledDeltaSeconds * TimeDilation * TimeStopDilation;
 
 	// 물리 시뮬레이션 시작 (비동기)
-	if (PhysScene)
+	// 일시정지 상태가 아닐 때만 물리 업데이트
+	if (PhysScene && !(bIsPaused && bPie))
 	{
 		PhysScene->StartFrame();
 	}
@@ -291,18 +292,27 @@ void UWorld::Tick(float DeltaSeconds)
 
 	if (Level)
 	{
-		// Tick 중에 새로운 actor가 추가될 수도 있어서 복사 후 호출
-		TArray<AActor*> LevelActors = Level->GetActors();
-
-		for (AActor* Actor : LevelActors)
+		// 일시정지 상태면 게임 로직 업데이트 스킵
+		if (bIsPaused && bPie)
 		{
-			if (Actor && Actor->IsActorActive())
+			// Paused 상태에서는 Actor Tick을 호출하지 않음
+			// (UI 업데이트는 별도 처리)
+		}
+		else
+		{
+			// Tick 중에 새로운 actor가 추가될 수도 있어서 복사 후 호출
+			TArray<AActor*> LevelActors = Level->GetActors();
+
+			for (AActor* Actor : LevelActors)
 			{
-				if (Actor->CanEverTick())
+				if (Actor && Actor->IsActorActive())
 				{
-					if (Actor->CanTickInEditor() || bPie || IsPreviewWorld())
+					if (Actor->CanEverTick())
 					{
-						Actor->Tick(GetDeltaTime(EDeltaTime::Game) * Actor->GetCustomTimeDillation());
+						if (Actor->CanTickInEditor() || bPie || IsPreviewWorld())
+						{
+							Actor->Tick(GetDeltaTime(EDeltaTime::Game) * Actor->GetCustomTimeDillation());
+						}
 					}
 				}
 			}

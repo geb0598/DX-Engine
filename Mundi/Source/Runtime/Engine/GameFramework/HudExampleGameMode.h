@@ -31,6 +31,7 @@ enum class EHudGameState
 	Tutorial_Camera,       // 튜토리얼: 카메라 연출
 	Tutorial_Comic,        // 튜토리얼: 만화/컷씬
 	Playing,               // 게임 플레이 중
+	Paused,                // 일시정지 메뉴
 	EndMenu,			   // 게임 종료 메뉴
 	EndingCredits,         // 엔딩 크레딧
 };
@@ -89,6 +90,12 @@ public:
 
 	/** 엔딩 크레딧 표시 */
 	void ShowEndingCredits();
+
+	/** 일시정지 메뉴 표시 */
+	void ShowPauseMenu();
+
+	/** 일시정지 메뉴에서 게임 재개 */
+	void ResumeGame();
 
 	// ────────────────────────────────────────────────
 	// UI 업데이트
