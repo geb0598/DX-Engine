@@ -176,31 +176,42 @@ void AHudExampleGameMode::BeginPlay()
 		.SetOffset(20.f, 20.f)
 		.SetSize(150.f, 150.f);
 
+	// "x BOXES LEFT" 배경 그라데이션 (박스 아이콘 오른쪽 아래)
+	BoxesLeftBg = MakeShared<SGradientBox>();
+	BoxesLeftBg->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.6f))  // 반투명 검정
+		.SetFadeWidth(60.f);
+
+	SGameHUD::Get().AddWidget(BoxesLeftBg)
+		.SetAnchor(0.0f, 0.0f)  // 좌상단
+		.SetPivot(0.0f, 0.0f)   // 좌상단 기준
+		.SetOffset(105.f, 132.f)  // 박스 아이콘 (20+150=170) 오른쪽 (+10), 아래쪽 (20+150-40-5=135)
+		.SetSize(90.f, 20.f);
+
 	// "x BOXES LEFT" 텍스트
 	BoxesLeftText = MakeShared<SImage>();
-	BoxesLeftText->SetTexture(L"Data/Textures/Dumb/Boxesleft.png")
+	BoxesLeftText->SetTexture(L"Data/Textures/Dumb/boxeslefttext.png")
 		.SetHighQualityInterpolation(true);
 
 	SGameHUD::Get().AddWidget(BoxesLeftText)
 		.SetAnchor(0.0f, 0.0f)  // 좌상단
 		.SetPivot(0.0f, 0.0f)   // 좌상단 기준
-		.SetOffset(50.f, 25.f)  // 박스 아이콘 오른쪽, 수직 중앙
-		.SetSize(140.f, 40.f);
+		.SetOffset(120.f, 133.f)  // 배경 중앙 정렬: 105 + (90-60)/2 = 120
+		.SetSize(60.f, 20.f);
 
 	// 박스 개수 텍스트 (박스 아이콘 중앙)
 	BoxesCountText = MakeShared<STextBlock>();
-	BoxesCountText->SetText(L"0")
+	BoxesCountText->SetText(L"x 0")
 		.SetFontSize(27.f)
 		.SetColor(FSlateColor::White())
 		.SetShadow(true, FVector2D(2.f, 2.f), FSlateColor::Black())
-		.SetHAlign(ETextHAlign::Center)
+		.SetHAlign(ETextHAlign::Right)  // 오른쪽 정렬: 숫자가 바뀌어도 오른쪽 끝 고정
 		.SetVAlign(ETextVAlign::Center);
 
 	SGameHUD::Get().AddWidget(BoxesCountText)
 		.SetAnchor(0.0f, 0.0f)  // 좌상단
 		.SetPivot(0.0f, 0.0f)   // 좌상단 기준
-		.SetOffset(100.f, 80.f)  // 박스 아이콘 중앙에 위치하도록 조정
-		.SetSize(90.f, 90.f);
+		.SetOffset(130.f, 88.f)  // 박스 아이콘 중앙에 위치하도록 조정
+		.SetSize(50.f, 50.f);
 
 	// ─────────────────────────────────────────────────
 	// 카트 이미지 (좌하단) - 텍스트보다 먼저 그려야 텍스트가 위에 보임
@@ -628,12 +639,31 @@ void AHudExampleGameMode::BeginPlay()
 		.SetOffset(0.f, 90.f)
 		.SetSize(300.f, 50.f);
 
+	// ─────────────────────────────────────────────────
+	// WASTED 텍스트 (GTA 스타일)
+	// ─────────────────────────────────────────────────
+
+	WastedText = MakeShared<STextBlock>();
+	WastedText->SetText(L"WASTED")
+		.SetFontSize(120.f)  // 매우 큰 폰트
+		.SetColor(FSlateColor(1.0f, 0.0f, 0.0f, 0.0f))  // 초기 투명 (빨간색)
+		.SetShadow(true, FVector2D(5.f, 5.f), FSlateColor::Black())
+		.SetHAlign(ETextHAlign::Center)
+		.SetVAlign(ETextVAlign::Center);
+
+	SGameHUD::Get().AddWidget(WastedText)
+		.SetAnchor(0.5f, 0.5f)
+		.SetPivot(0.5f, 0.5f)
+		.SetOffset(0.f, 0.f)
+		.SetSize(800.f, 150.f);
+
 	// 초기에는 숨김
 	GameOverBg->SetVisibility(ESlateVisibility::Hidden);
 	GameOverText->SetVisibility(ESlateVisibility::Hidden);
 	RestartButton->SetVisibility(ESlateVisibility::Hidden);
 	CreditsButton->SetVisibility(ESlateVisibility::Hidden);
 	QuitButton->SetVisibility(ESlateVisibility::Hidden);
+	WastedText->SetVisibility(ESlateVisibility::Hidden);
 
 	// ─────────────────────────────────────────────────
 	// 카메라 찾기 (이름으로 검색)
@@ -1321,13 +1351,45 @@ void AHudExampleGameMode::EndGame(bool bVictory)
 	}
 	else
 	{
-		// 실패 UI
-		if (GameOverText)
+		// ===== 실패 시: WASTED 애니메이션 시작 =====
+		DeathPhase = EDeathAnimationPhase::WastedFadeIn;
+		PhaseTimer = 0.0f;
+
+		// WASTED 텍스트 표시 준비
+		if (WastedText)
 		{
-			GameOverText->SetText(L"MISSION FAILED!").SetColor(FSlateColor(1.0f,0.0f,0.0f,1.0f));
+			WastedText->SetVisibility(ESlateVisibility::Visible);
+			WastedText->SetColor(FSlateColor(1.0f, 0.0f, 0.0f, 0.0f));  // 투명 상태로 시작
 		}
+
+		// 메뉴 UI는 일단 숨김 (나중에 MenuShow 단계에서 표시)
+		if (GameOverBg)
+			GameOverBg->SetVisibility(ESlateVisibility::Hidden);
+		if (GameOverText)
+			GameOverText->SetVisibility(ESlateVisibility::Hidden);
+		if (RestartButton)
+			RestartButton->SetVisibility(ESlateVisibility::Hidden);
+		if (CreditsButton)
+			CreditsButton->SetVisibility(ESlateVisibility::Hidden);
+		if (QuitButton)
+			QuitButton->SetVisibility(ESlateVisibility::Hidden);
+
+		// 버튼 텍스트는 미리 설정 (나중에 표시될 때 사용)
+		if (RestartButton)
+			RestartButton->SetText(L"Restart Game");
+		if (CreditsButton)
+			CreditsButton->SetText(L"Ending Credits");
+		if (QuitButton)
+			QuitButton->SetText(L"Quit Game");
+
+		// GameOverText 텍스트도 미리 설정
+		if (GameOverText)
+			GameOverText->SetText(L"MISSION FAILED").SetColor(FSlateColor(1.0f, 0.0f, 0.0f, 1.0f));
+
+		return;  // 실패 시에는 여기서 종료 (승리 시 UI만 아래에서 표시)
 	}
 
+	// ===== 승리 시에만 즉시 UI 표시 =====
 	// 게임 오버 UI 표시
 	if (GameOverBg)
 		GameOverBg->SetVisibility(ESlateVisibility::Visible);
@@ -2071,6 +2133,76 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	}
 
 	// ─────────────────────────────────────────────────
+	// WASTED 애니메이션 상태 머신 (게임 상태와 무관하게 실행)
+	// ─────────────────────────────────────────────────
+
+	if (DeathPhase != EDeathAnimationPhase::None)
+	{
+		PhaseTimer += 0.016f;  // 고정 델타타임 (16ms, ~60fps)
+
+		switch (DeathPhase)
+		{
+		case EDeathAnimationPhase::WastedFadeIn:
+			// 0.5초 동안 페이드인
+			{
+				float Alpha = FMath::Clamp(PhaseTimer / 0.5f, 0.0f, 1.0f);
+				if (WastedText)
+					WastedText->SetColor(FSlateColor(1.0f, 0.0f, 0.0f, Alpha));
+
+				if (PhaseTimer >= 0.5f)
+				{
+					DeathPhase = EDeathAnimationPhase::WastedHold;
+					PhaseTimer = 0.0f;
+				}
+			}
+			break;
+
+		case EDeathAnimationPhase::WastedHold:
+			// 2.5초 동안 유지 (총 ~3초)
+			if (PhaseTimer >= 2.5f)
+			{
+				DeathPhase = EDeathAnimationPhase::WastedFadeOut;
+				PhaseTimer = 0.0f;
+			}
+			break;
+
+		case EDeathAnimationPhase::WastedFadeOut:
+			// 0.5초 동안 페이드아웃
+			{
+				float Alpha = 1.0f - FMath::Clamp(PhaseTimer / 0.5f, 0.0f, 1.0f);
+				if (WastedText)
+					WastedText->SetColor(FSlateColor(1.0f, 0.0f, 0.0f, Alpha));
+
+				if (PhaseTimer >= 0.5f)
+				{
+					if (WastedText)
+						WastedText->SetVisibility(ESlateVisibility::Hidden);
+
+					DeathPhase = EDeathAnimationPhase::MenuShow;
+					PhaseTimer = 0.0f;
+				}
+			}
+			break;
+
+		case EDeathAnimationPhase::MenuShow:
+			// 메뉴 표시 (MISSION FAILED + 버튼들)
+			if (GameOverBg)
+				GameOverBg->SetVisibility(ESlateVisibility::Visible);
+			if (GameOverText)
+				GameOverText->SetVisibility(ESlateVisibility::Visible);
+			if (RestartButton)
+				RestartButton->SetVisibility(ESlateVisibility::Visible);
+			if (CreditsButton)
+				CreditsButton->SetVisibility(ESlateVisibility::Visible);
+			if (QuitButton)
+				QuitButton->SetVisibility(ESlateVisibility::Visible);
+
+			DeathPhase = EDeathAnimationPhase::None;  // 완료
+			break;
+		}
+	}
+
+	// ─────────────────────────────────────────────────
 	// 게임 플레이 중일 때만 업데이트
 	// ─────────────────────────────────────────────────
 
@@ -2095,7 +2227,7 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		if (CargoComp)
 		{
 			int32 BoxCount = CargoComp->GetValidCargoCount();
-			BoxesCountText->SetText(std::to_wstring(BoxCount));
+			BoxesCountText->SetText(L"x " + std::to_wstring(BoxCount));
 		}
 	}
 
@@ -2226,7 +2358,7 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		if (CargoComp)
 		{
 			int32 BoxCount = CargoComp->GetValidCargoCount();
-			BoxesCountText->SetText(std::to_wstring(BoxCount));
+			BoxesCountText->SetText(L"x " + std::to_wstring(BoxCount));
 		}
 	}
 }

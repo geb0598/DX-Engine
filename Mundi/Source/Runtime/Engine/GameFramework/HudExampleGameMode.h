@@ -378,6 +378,29 @@ protected:
 	static bool bSkipTutorialOnRestart;
 
 	// ────────────────────────────────────────────────
+	// WASTED 애니메이션 (게임 실패 시)
+	// ────────────────────────────────────────────────
+
+	/** GTA 스타일 죽음 애니메이션 Phase */
+	enum class EDeathAnimationPhase : uint8
+	{
+		None,              // 비활성
+		WastedFadeIn,      // Phase 1: WASTED 페이드인
+		WastedHold,        // Phase 2: WASTED 표시 유지
+		WastedFadeOut,     // Phase 3: WASTED 페이드아웃
+		MenuShow           // Phase 4: 메뉴 표시
+	};
+
+	/** 현재 죽음 애니메이션 단계 */
+	EDeathAnimationPhase DeathPhase = EDeathAnimationPhase::None;
+
+	/** 각 Phase별 경과 시간 */
+	float PhaseTimer = 0.0f;
+
+	/** "WASTED" 대형 텍스트 (GTA 스타일) */
+	TSharedPtr<STextBlock> WastedText;
+
+	// ────────────────────────────────────────────────
 	// 조작키 설명서 UI
 	// ────────────────────────────────────────────────
 
