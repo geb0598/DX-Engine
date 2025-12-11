@@ -397,8 +397,11 @@ protected:
 	/** 각 Phase별 경과 시간 */
 	float PhaseTimer = 0.0f;
 
-	/** "WASTED" 대형 텍스트 (GTA 스타일) */
-	TSharedPtr<STextBlock> WastedText;
+	/** "WASTED" 배경 박스 (그라데이션) */
+	TSharedPtr<SGradientBox> WastedBackground;
+
+	/** "WASTED" 이미지 */
+	TSharedPtr<SImage> WastedImage;
 
 	// ────────────────────────────────────────────────
 	// 조작키 설명서 UI

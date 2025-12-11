@@ -640,22 +640,30 @@ void AHudExampleGameMode::BeginPlay()
 		.SetSize(300.f, 50.f);
 
 	// ─────────────────────────────────────────────────
-	// WASTED 텍스트 (GTA 스타일)
+	// WASTED 연출
 	// ─────────────────────────────────────────────────
 
-	WastedText = MakeShared<STextBlock>();
-	WastedText->SetText(L"WASTED")
-		.SetFontSize(120.f)  // 매우 큰 폰트
-		.SetColor(FSlateColor(1.0f, 0.0f, 0.0f, 0.0f))  // 초기 투명 (빨간색)
-		.SetShadow(true, FVector2D(5.f, 5.f), FSlateColor::Black())
-		.SetHAlign(ETextHAlign::Center)
-		.SetVAlign(ETextVAlign::Center);
+	// 배경 박스 (가로로 긴 그라데이션)
+	WastedBackground = MakeShared<SGradientBox>();
+	WastedBackground->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.0f));  // 투명 (초기)
 
-	SGameHUD::Get().AddWidget(WastedText)
+	SGameHUD::Get().AddWidget(WastedBackground)
 		.SetAnchor(0.5f, 0.5f)
 		.SetPivot(0.5f, 0.5f)
 		.SetOffset(0.f, 0.f)
-		.SetSize(800.f, 150.f);
+		.SetSize(1920.f, 200.f);  // 화면 가로 전체, 높이 200
+
+	// WASTED 이미지
+	WastedImage = MakeShared<SImage>();
+	WastedImage->SetTexture(L"Data/Textures/Dumb/wasted.png")
+		.SetOpacity(0.0f)
+		.SetHighQualityInterpolation(true);
+
+	SGameHUD::Get().AddWidget(WastedImage)
+		.SetAnchor(0.5f, 0.5f)
+		.SetPivot(0.5f, 0.5f)
+		.SetOffset(0.f, 0.f)
+		.SetSize(600.f, 100.f);
 
 	// 초기에는 숨김
 	GameOverBg->SetVisibility(ESlateVisibility::Hidden);
@@ -663,7 +671,8 @@ void AHudExampleGameMode::BeginPlay()
 	RestartButton->SetVisibility(ESlateVisibility::Hidden);
 	CreditsButton->SetVisibility(ESlateVisibility::Hidden);
 	QuitButton->SetVisibility(ESlateVisibility::Hidden);
-	WastedText->SetVisibility(ESlateVisibility::Hidden);
+	WastedBackground->SetVisibility(ESlateVisibility::Hidden);
+	WastedImage->SetVisibility(ESlateVisibility::Hidden);
 
 	// ─────────────────────────────────────────────────
 	// 카메라 찾기 (이름으로 검색)
@@ -1355,11 +1364,16 @@ void AHudExampleGameMode::EndGame(bool bVictory)
 		DeathPhase = EDeathAnimationPhase::WastedFadeIn;
 		PhaseTimer = 0.0f;
 
-		// WASTED 텍스트 표시 준비
-		if (WastedText)
+		// WASTED 배경과 이미지 표시 준비
+		if (WastedBackground)
 		{
-			WastedText->SetVisibility(ESlateVisibility::Visible);
-			WastedText->SetColor(FSlateColor(1.0f, 0.0f, 0.0f, 0.0f));  // 투명 상태로 시작
+			WastedBackground->SetVisibility(ESlateVisibility::Visible);
+			WastedBackground->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, 0.0f));  // 투명 상태로 시작
+		}
+		if (WastedImage)
+		{
+			WastedImage->SetVisibility(ESlateVisibility::Visible);
+			WastedImage->SetOpacity(0.0f);  // 투명 상태로 시작
 		}
 
 		// 메뉴 UI는 일단 숨김 (나중에 MenuShow 단계에서 표시)
@@ -1520,6 +1534,12 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 				ScoreText->SetVisibility(TargetVisibility);
 			if (ScoreValueText)
 				ScoreValueText->SetVisibility(TargetVisibility);
+
+			// 경과 시간 UI
+			if (ElapsedTimeBg)
+				ElapsedTimeBg->SetVisibility(TargetVisibility);
+			if (ElapsedTimeText)
+				ElapsedTimeText->SetVisibility(TargetVisibility);
 
 			// 부스터 게이지 및 텍스트
 			if (BoosterProgressBar)
@@ -2236,11 +2256,17 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 		switch (DeathPhase)
 		{
 		case EDeathAnimationPhase::WastedFadeIn:
-			// 0.5초 동안 페이드인
+			// 0.5초 동안 페이드인 (배경 + 이미지)
 			{
 				float Alpha = FMath::Clamp(PhaseTimer / 0.5f, 0.0f, 1.0f);
-				if (WastedText)
-					WastedText->SetColor(FSlateColor(1.0f, 0.0f, 0.0f, Alpha));
+
+				// 배경 그라데이션 페이드인 (검은색, 중앙이 진하고 좌우가 투명)
+				if (WastedBackground)
+					WastedBackground->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, Alpha * 0.8f));
+
+				// WASTED 이미지 페이드인
+				if (WastedImage)
+					WastedImage->SetOpacity(Alpha);
 
 				if (PhaseTimer >= 0.5f)
 				{
@@ -2260,16 +2286,24 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 			break;
 
 		case EDeathAnimationPhase::WastedFadeOut:
-			// 0.5초 동안 페이드아웃
+			// 0.5초 동안 페이드아웃 (배경 + 이미지)
 			{
 				float Alpha = 1.0f - FMath::Clamp(PhaseTimer / 0.5f, 0.0f, 1.0f);
-				if (WastedText)
-					WastedText->SetColor(FSlateColor(1.0f, 0.0f, 0.0f, Alpha));
+
+				// 배경 그라데이션 페이드아웃
+				if (WastedBackground)
+					WastedBackground->SetColor(FSlateColor(0.0f, 0.0f, 0.0f, Alpha * 0.8f));
+
+				// WASTED 이미지 페이드아웃
+				if (WastedImage)
+					WastedImage->SetOpacity(Alpha);
 
 				if (PhaseTimer >= 0.5f)
 				{
-					if (WastedText)
-						WastedText->SetVisibility(ESlateVisibility::Hidden);
+					if (WastedBackground)
+						WastedBackground->SetVisibility(ESlateVisibility::Hidden);
+					if (WastedImage)
+						WastedImage->SetVisibility(ESlateVisibility::Hidden);
 
 					DeathPhase = EDeathAnimationPhase::MenuShow;
 					PhaseTimer = 0.0f;
