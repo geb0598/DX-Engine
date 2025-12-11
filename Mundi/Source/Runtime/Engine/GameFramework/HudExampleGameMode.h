@@ -7,6 +7,7 @@
 #include "GameModeBase.h"
 #include "Source/Runtime/Core/Memory/PointerTypes.h"
 #include "AudioComponent.h"
+#include "Source/Slate/GameUI/SlateTypes.h"
 #include "AHudExampleGameMode.generated.h"
 
 class SButton;
@@ -103,6 +104,9 @@ public:
 
 	/** 점수 UI 업데이트 */
 	void UpdateScoreUI(int32 Score);
+
+	/** 게임플레이 UI 표시/숨김 (H 키, 게임 오버 등에서 사용) */
+	void SetGameplayUIVisibility(ESlateVisibility Visibility);
 
 protected:
 	// ────────────────────────────────────────────────

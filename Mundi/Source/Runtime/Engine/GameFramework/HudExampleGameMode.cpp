@@ -1364,6 +1364,9 @@ void AHudExampleGameMode::EndGame(bool bVictory)
 		DeathPhase = EDeathAnimationPhase::WastedFadeIn;
 		PhaseTimer = 0.0f;
 
+		// 게임플레이 UI 숨기기 (공통 함수 사용)
+		SetGameplayUIVisibility(ESlateVisibility::Hidden);
+
 		// WASTED 배경과 이미지 표시 준비
 		if (WastedBackground)
 		{
@@ -1404,6 +1407,10 @@ void AHudExampleGameMode::EndGame(bool bVictory)
 	}
 
 	// ===== 승리 시에만 즉시 UI 표시 =====
+
+	// 게임플레이 UI 숨기기 (공통 함수 사용)
+	SetGameplayUIVisibility(ESlateVisibility::Hidden);
+
 	// 게임 오버 UI 표시
 	if (GameOverBg)
 		GameOverBg->SetVisibility(ESlateVisibility::Visible);
@@ -1450,6 +1457,81 @@ void AHudExampleGameMode::UpdateScoreUI(int32 Score)
 	{
 		ScoreValueText->SetText(std::to_wstring(Score));
 	}
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// 게임플레이 UI 표시/숨김
+// ────────────────────────────────────────────────────────────────────────────
+
+void AHudExampleGameMode::SetGameplayUIVisibility(ESlateVisibility Visibility)
+{
+	// 좌측 상단 UI (Reach Home)
+	if (ReachHomeBg)
+		ReachHomeBg->SetVisibility(Visibility);
+	if (ReachHomeText)
+		ReachHomeText->SetVisibility(Visibility);
+
+	// Objective UI
+	if (ObjectiveBg)
+		ObjectiveBg->SetVisibility(Visibility);
+	if (ObjectiveImage)
+		ObjectiveImage->SetVisibility(Visibility);
+
+	// 좌측 하단 차량 정보 패널
+	if (VehicleInfoPanel)
+		VehicleInfoPanel->SetVisibility(Visibility);
+	if (VehicleSpeedText)
+		VehicleSpeedText->SetVisibility(Visibility);
+	if (VehicleRpmText)
+		VehicleRpmText->SetVisibility(Visibility);
+	if (VehicleGearText)
+		VehicleGearText->SetVisibility(Visibility);
+
+	// 우측 상단 타이머/점수
+	if (TestImage)
+		TestImage->SetVisibility(Visibility);
+	if (ScoreText)
+		ScoreText->SetVisibility(Visibility);
+	if (ScoreValueText)
+		ScoreValueText->SetVisibility(Visibility);
+
+	// 경과 시간 UI
+	if (ElapsedTimeBg)
+		ElapsedTimeBg->SetVisibility(Visibility);
+	if (ElapsedTimeText)
+		ElapsedTimeText->SetVisibility(Visibility);
+
+	// 부스터 게이지 및 텍스트
+	if (BoosterProgressBar)
+		BoosterProgressBar->SetVisibility(Visibility);
+	if (BoosterTextBg)
+		BoosterTextBg->SetVisibility(Visibility);
+	if (BoosterText)
+		BoosterText->SetVisibility(Visibility);
+
+	// 미니맵
+	if (Minimap)
+		Minimap->SetVisibility(Visibility);
+
+	// 거리 진행 바
+	if (ToHomeBg)
+		ToHomeBg->SetVisibility(Visibility);
+	if (ToHomeText)
+		ToHomeText->SetVisibility(Visibility);
+	if (DistanceProgressBar)
+		DistanceProgressBar->SetVisibility(Visibility);
+
+	// 박스 개수 UI
+	if (CartImage)
+		CartImage->SetVisibility(Visibility);
+	if (BoxesIcon)
+		BoxesIcon->SetVisibility(Visibility);
+	if (BoxesLeftBg)
+		BoxesLeftBg->SetVisibility(Visibility);
+	if (BoxesLeftText)
+		BoxesLeftText->SetVisibility(Visibility);
+	if (BoxesCountText)
+		BoxesCountText->SetVisibility(Visibility);
 }
 
 void AHudExampleGameMode::Tick(float DeltaSeconds)
@@ -1502,76 +1584,9 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 			// 토글
 			bHideAllUI = !bHideAllUI;
 
-			// 모든 게임플레이 UI 숨김/표시
+			// 모든 게임플레이 UI 숨김/표시 (공통 함수 사용)
 			ESlateVisibility TargetVisibility = bHideAllUI ? ESlateVisibility::Hidden : ESlateVisibility::Visible;
-
-			// 좌측 상단 UI (Reach Home)
-			if (ReachHomeBg)
-				ReachHomeBg->SetVisibility(TargetVisibility);
-			if (ReachHomeText)
-				ReachHomeText->SetVisibility(TargetVisibility);
-
-			// Objective UI
-			if (ObjectiveBg)
-				ObjectiveBg->SetVisibility(TargetVisibility);
-			if (ObjectiveImage)
-				ObjectiveImage->SetVisibility(TargetVisibility);
-
-			// 좌측 하단 차량 정보 패널
-			if (VehicleInfoPanel)
-				VehicleInfoPanel->SetVisibility(TargetVisibility);
-			if (VehicleSpeedText)
-				VehicleSpeedText->SetVisibility(TargetVisibility);
-			if (VehicleRpmText)
-				VehicleRpmText->SetVisibility(TargetVisibility);
-			if (VehicleGearText)
-				VehicleGearText->SetVisibility(TargetVisibility);
-
-			// 우측 상단 타이머/점수
-			if (TestImage)
-				TestImage->SetVisibility(TargetVisibility);
-			if (ScoreText)
-				ScoreText->SetVisibility(TargetVisibility);
-			if (ScoreValueText)
-				ScoreValueText->SetVisibility(TargetVisibility);
-
-			// 경과 시간 UI
-			if (ElapsedTimeBg)
-				ElapsedTimeBg->SetVisibility(TargetVisibility);
-			if (ElapsedTimeText)
-				ElapsedTimeText->SetVisibility(TargetVisibility);
-
-			// 부스터 게이지 및 텍스트
-			if (BoosterProgressBar)
-				BoosterProgressBar->SetVisibility(TargetVisibility);
-			if (BoosterTextBg)
-				BoosterTextBg->SetVisibility(TargetVisibility);
-			if (BoosterText)
-				BoosterText->SetVisibility(TargetVisibility);
-
-			// 미니맵
-			if (Minimap)
-				Minimap->SetVisibility(TargetVisibility);
-
-			// 거리 진행 바
-			if (ToHomeBg)
-				ToHomeBg->SetVisibility(TargetVisibility);
-			if (ToHomeText)
-				ToHomeText->SetVisibility(TargetVisibility);
-			if (DistanceProgressBar)
-				DistanceProgressBar->SetVisibility(TargetVisibility);
-
-			// 박스 개수 UI
-			if (CartImage)
-				CartImage->SetVisibility(TargetVisibility);
-			if (BoxesIcon)
-				BoxesIcon->SetVisibility(TargetVisibility);
-			if (BoxesLeftBg)
-				BoxesLeftBg->SetVisibility(TargetVisibility);
-			if (BoxesLeftText)
-				BoxesLeftText->SetVisibility(TargetVisibility);
-			if (BoxesCountText)
-				BoxesCountText->SetVisibility(TargetVisibility);
+			SetGameplayUIVisibility(TargetVisibility);
 
 			// 조작키 설명서도 숨김
 			if (bHideAllUI)
