@@ -85,8 +85,11 @@ float4 mainPS(PS_INPUT input) : SV_Target
     float MaxColor = Radius + max(Softness, 1e-5);
     float K = saturate(smoothstep(Radius, MaxColor, Distance) * Weight);
     
-    // 가장자리 색 계산
-    float3 EdgeColor = lerp(SceneColor.rgb, VignetteColor.rgb, saturate(Intensity));
+    // 가장자리 색 계산 (Multiplicative Tint)
+    // Intensity가 높을수록 SceneColor에 VignetteColor가 곱해져
+    // 가장자리 영역에 검붉은 톤이 강하게 나타남
+    float3 Tint = lerp(float3(1, 1, 1), VignetteColor.rgb, saturate(Intensity));
+    float3 EdgeColor = SceneColor.rgb * Tint;
     
     float3 OutRgb = lerp(SceneColor.rgb, EdgeColor.rgb, K);
     

@@ -71,7 +71,7 @@ void UCargoComponent::TickComponent(float DeltaSeconds)
         float DangerRatio = FMath::Clamp(LeanAngle / CriticalAngle, 0.0f, 1.0f);
 
         float TargetIntensity = FMath::Lerp(0.0f, 2.0f, DangerRatio);
-        float TargetRadius    = FMath::Lerp(0.6f, 0.2f, DangerRatio);
+        float TargetRadius    = FMath::Lerp(0.6f, 0.1f, DangerRatio);
         float TargetSoftness  = 0.5f; 
 
         PlayerCameraManager->AdjustVignette(
@@ -80,7 +80,7 @@ void UCargoComponent::TickComponent(float DeltaSeconds)
             TargetSoftness,                             // Softness (경계 흐림 정도)
             TargetIntensity,                            // Intensity (어두운 정도)
             2.0f,                                       // Roundness (원형)
-            FLinearColor(0.6f, 0.0f, 0.0f, 0.8f), // Color
+            FLinearColor(0.7f, 0.05f, 0.05f, 0.8f),     // Color
             10                                          // Priority (높은 우선순위)
         );
     }
