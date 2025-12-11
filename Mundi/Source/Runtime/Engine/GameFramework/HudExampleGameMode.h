@@ -416,6 +416,12 @@ protected:
 	/** 이전 프레임 Tab 키 상태 (키 중복 방지) */
 	bool bPrevTabPressed = false;
 
+	/** 모든 UI 숨김 여부 (H키 토글) */
+	bool bHideAllUI = false;
+
+	/** 이전 프레임 H 키 상태 (키 중복 방지) */
+	bool bPrevHideUIPressed = false;
+
 	// ────────────────────────────────────────────────
 	// 엔딩 크레딧 UI
 	// ────────────────────────────────────────────────

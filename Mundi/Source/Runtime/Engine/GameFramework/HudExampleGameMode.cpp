@@ -1476,6 +1476,99 @@ void AHudExampleGameMode::Tick(float DeltaSeconds)
 	bPrevTabPressed = bTabPressed;
 
 	// ─────────────────────────────────────────────────
+	// H 키로 모든 UI 숨김 토글 (게임 플레이 중에만)
+	// ─────────────────────────────────────────────────
+	bool bHideUIPressed = (GetAsyncKeyState('H') & 0x8000) != 0;
+
+	if (CurrentGameState == EHudGameState::Playing)
+	{
+		// H 키를 새로 눌렀을 때
+		if (bHideUIPressed && !bPrevHideUIPressed)
+		{
+			// 토글
+			bHideAllUI = !bHideAllUI;
+
+			// 모든 게임플레이 UI 숨김/표시
+			ESlateVisibility TargetVisibility = bHideAllUI ? ESlateVisibility::Hidden : ESlateVisibility::Visible;
+
+			// 좌측 상단 UI (Reach Home)
+			if (ReachHomeBg)
+				ReachHomeBg->SetVisibility(TargetVisibility);
+			if (ReachHomeText)
+				ReachHomeText->SetVisibility(TargetVisibility);
+
+			// Objective UI
+			if (ObjectiveBg)
+				ObjectiveBg->SetVisibility(TargetVisibility);
+			if (ObjectiveImage)
+				ObjectiveImage->SetVisibility(TargetVisibility);
+
+			// 좌측 하단 차량 정보 패널
+			if (VehicleInfoPanel)
+				VehicleInfoPanel->SetVisibility(TargetVisibility);
+			if (VehicleSpeedText)
+				VehicleSpeedText->SetVisibility(TargetVisibility);
+			if (VehicleRpmText)
+				VehicleRpmText->SetVisibility(TargetVisibility);
+			if (VehicleGearText)
+				VehicleGearText->SetVisibility(TargetVisibility);
+
+			// 우측 상단 타이머/점수
+			if (TestImage)
+				TestImage->SetVisibility(TargetVisibility);
+			if (ScoreText)
+				ScoreText->SetVisibility(TargetVisibility);
+			if (ScoreValueText)
+				ScoreValueText->SetVisibility(TargetVisibility);
+
+			// 부스터 게이지 및 텍스트
+			if (BoosterProgressBar)
+				BoosterProgressBar->SetVisibility(TargetVisibility);
+			if (BoosterTextBg)
+				BoosterTextBg->SetVisibility(TargetVisibility);
+			if (BoosterText)
+				BoosterText->SetVisibility(TargetVisibility);
+
+			// 미니맵
+			if (Minimap)
+				Minimap->SetVisibility(TargetVisibility);
+
+			// 거리 진행 바
+			if (ToHomeBg)
+				ToHomeBg->SetVisibility(TargetVisibility);
+			if (ToHomeText)
+				ToHomeText->SetVisibility(TargetVisibility);
+			if (DistanceProgressBar)
+				DistanceProgressBar->SetVisibility(TargetVisibility);
+
+			// 박스 개수 UI
+			if (CartImage)
+				CartImage->SetVisibility(TargetVisibility);
+			if (BoxesIcon)
+				BoxesIcon->SetVisibility(TargetVisibility);
+			if (BoxesLeftBg)
+				BoxesLeftBg->SetVisibility(TargetVisibility);
+			if (BoxesLeftText)
+				BoxesLeftText->SetVisibility(TargetVisibility);
+			if (BoxesCountText)
+				BoxesCountText->SetVisibility(TargetVisibility);
+
+			// 조작키 설명서도 숨김
+			if (bHideAllUI)
+			{
+				if (KeyBindingsBackground)
+					KeyBindingsBackground->SetVisibility(ESlateVisibility::Hidden);
+				if (KeyBindingsImage)
+					KeyBindingsImage->SetVisibility(ESlateVisibility::Hidden);
+				bShowKeyBindings = false;
+			}
+		}
+	}
+
+	// 이전 프레임 키 상태 저장
+	bPrevHideUIPressed = bHideUIPressed;
+
+	// ─────────────────────────────────────────────────
 	// ESC 키로 일시정지 메뉴 토글 (게임 플레이 중 또는 일시정지 중)
 	// ─────────────────────────────────────────────────
 	bool bEscPressed = (GetAsyncKeyState(VK_ESCAPE) & 0x8000) != 0;
