@@ -21,17 +21,9 @@ FVector::FVector(float InX, float InY, float InZ)
 }
 
 
-/**
- * @brief FVector를 Param으로 넘기는 생성자
- */
-FVector::FVector(const FVector& InOther)
-	: X(InOther.X), Y(InOther.Y), Z(InOther.Z)
+FVector& FVector::operator=(const FVector4& InOther)
 {
-}
-
-void FVector::operator=(const FVector4& InOther)
-{
-	*this = FVector(InOther.X, InOther.Y, InOther.Z);
+	return *this = FVector(InOther.X, InOther.Y, InOther.Z);
 }
 
 
@@ -266,14 +258,6 @@ FVector2::FVector2()
  */
 FVector2::FVector2(float InX, float InY)
 	: X(InX), Y(InY)
-{
-}
-
-/**
- * @brief FVector2를 Param으로 넘기는 생성자
- */
-FVector2::FVector2(const FVector2& InOther)
-	: X(InOther.X), Y(InOther.Y)
 {
 }
 

@@ -64,12 +64,14 @@ public:
 	void CreateDepthStencilState();
 	void CreateDefaultShader();
 	void CreateTextureShader();
+	void CreateDepthShader();
 	void CreateConstantBuffer();
 	void CreateBillboardResources();
 
 	// Release
 	void ReleaseConstantBuffer();
 	void ReleaseDefaultShader();
+	void ReleaseDepthShader();
 	void ReleaseDepthStencilState();
 	void ReleaseRasterizerState();
 	void ReleaseBillboardResources();
@@ -86,6 +88,7 @@ public:
 	void RenderEditorPrimitive(UPipeline& InPipeline, const FEditorPrimitive& InEditorPrimitive, const FRenderState& InRenderState);
 	void RenderEditorPrimitiveIndexed(UPipeline& InPipeline, const FEditorPrimitive& InEditorPrimitive, const FRenderState& InRenderState,
 	                            bool bInUseBaseConstantBuffer, uint32 InStride, uint32 InIndexBufferStride);
+	void RenderDepthPrepass(UCamera* InCurrentCamera, FViewportClient& InViewportClient, ID3D11DepthStencilView* InDepthStencilView, ID3D11DepthStencilState* InDepthStencilState);
 
 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
 
@@ -97,6 +100,7 @@ public:
 	ID3D11Buffer* CreateVertexBuffer(FVector* InVertices, uint32 InByteWidth, bool bCpuAccess) const;
 	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, uint32 InByteWidth) const;
 	void CreatePixelShader(const wstring& InFilePath, ID3D11PixelShader** InPixelShader) const;
+	void CreateComputeShader(const wstring& InFilePath, ID3D11ComputeShader** InComputeShader) const;
 
 	bool UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const;
 	void UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const UPrimitiveComponent* InPrimitive) const;
@@ -135,7 +139,6 @@ private:
 	UPipeline* Pipeline = nullptr;
 	UDeviceResources* DeviceResources = nullptr;
 	UFontRenderer* FontRenderer = nullptr;
-	TArray<UPrimitiveComponent*> PrimitiveComponents;
 
 	ID3D11DepthStencilState* DefaultDepthStencilState = nullptr;
 	ID3D11DepthStencilState* DisabledDepthStencilState = nullptr;
@@ -157,6 +160,9 @@ private:
 	ID3D11Buffer* BillboardVertexBuffer = nullptr;
 	ID3D11Buffer* BillboardIndexBuffer = nullptr;
 	ID3D11BlendState* BillboardBlendState = nullptr;
+
+	ID3D11VertexShader* DepthVertexShader = nullptr;
+	ID3D11InputLayout* DepthInputLayout = nullptr;
 
 	uint32 Stride = 0;
 

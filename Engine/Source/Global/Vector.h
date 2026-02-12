@@ -43,9 +43,11 @@ struct alignas(16) FVector
 	/**
 	 * @brief FVector를 Param으로 넘기는 생성자
 	 */
-	FVector(const FVector& InOther);
+	FVector(const FVector& InOther) = default;
 
-	void operator=(const FVector4& InOther);
+	FVector& operator=(const FVector& InOther) = default;
+
+	FVector& operator=(const FVector4& InOther);
 
 	/**
 	 * @brief 두 벡터를 더한 새로운 벡터를 반환하는 함수
@@ -243,7 +245,9 @@ struct FVector2
 	/**
 	 * @brief FVector2를 Param으로 넘기는 생성자
 	 */
-	FVector2(const FVector2& InOther);
+	FVector2(const FVector2& InOther) = default;
+
+	FVector2& operator=(const FVector2& InOther) = default;
 
 	/**
 	 * @brief 두 벡터를 더한 새로운 벡터를 반환하는 함수

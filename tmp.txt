@@ -1,0 +1,1725 @@
+diff --git a/Engine/Asset/Shader/DepthVS.hlsl b/Engine/Asset/Shader/DepthVS.hlsl
+index 9d03ba6..f1be1e7 100644
+--- a/Engine/Asset/Shader/DepthVS.hlsl
++++ b/Engine/Asset/Shader/DepthVS.hlsl
+@@ -1,21 +1,31 @@
+-cbuffer cbPerObject : register(b0)
++cbuffer WorldMatrixBuffer : register(b0)
+ {
+-    row_major float4x4 WorldViewProj;
++	row_major float4x4 World;
++};
++
++cbuffer ViewProjBuffer : register(b1)
++{
++	row_major float4x4 View;
++	row_major float4x4 Projection;
+ };
+ 
+ struct VS_INPUT
+ {
+-    float3 Pos : POSITION;
++	float4 Position : POSITION;
+ };
+ 
+ struct VS_OUTPUT
+ {
+-    float4 Pos : SV_POSITION;
++	float4 Position : SV_POSITION;
+ };
+ 
+ VS_OUTPUT main(VS_INPUT input)
+ {
+-    VS_OUTPUT output;
+-    output.Pos = mul(float4(input.Pos, 1.0f), WorldViewProj);
+-    return output;
++	VS_OUTPUT Output;
++
++	float4 WorldPos = mul(input.Position, World);
++	float4 ViewPos = mul(WorldPos, View);
++	Output.Position = mul(ViewPos, Projection);
++
++	return Output;
+ }
+diff --git a/Engine/Asset/Shader/HiZCopyDepthCS.hlsl b/Engine/Asset/Shader/HiZCopyDepthCS.hlsl
+deleted file mode 100644
+index 5bfb839..0000000
+--- a/Engine/Asset/Shader/HiZCopyDepthCS.hlsl
++++ /dev/null
+@@ -1,8 +0,0 @@
+-Texture2D<float> g_DepthTexture : register(t0);
+-RWTexture2D<float> g_HiZTextureMip0 : register(u0);
+-
+-[numthreads(16, 16, 1)]
+-void main(uint3 DTid : SV_DispatchThreadID)
+-{
+-    g_HiZTextureMip0[DTid.xy] = g_DepthTexture[DTid.xy];
+-}
+diff --git a/Engine/Asset/Shader/HiZDepthCopyCS.hlsl b/Engine/Asset/Shader/HiZDepthCopyCS.hlsl
+new file mode 100644
+index 0000000..5816e47
+--- /dev/null
++++ b/Engine/Asset/Shader/HiZDepthCopyCS.hlsl
+@@ -0,0 +1,17 @@
++Texture2D<float> DepthTexture : register(t0);
++
++RWTexture2D<float> HiZTexture : register(u0);
++
++[numthreads(16, 16, 1)]
++void mainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
++{
++	uint Width; uint Height;
++	HiZTexture.GetDimensions(Width, Height);
++
++	if (DispatchThreadID.x >= Width || DispatchThreadID.y >= Height)
++	{
++		return;
++	}
++
++	HiZTexture[DispatchThreadID.xy] = DepthTexture.Load(int3(DispatchThreadID.xy, 0));
++}
+diff --git a/Engine/Asset/Shader/HiZDownSampleCS.hlsl b/Engine/Asset/Shader/HiZDownSampleCS.hlsl
+index 365ef95..fb1962e 100644
+--- a/Engine/Asset/Shader/HiZDownSampleCS.hlsl
++++ b/Engine/Asset/Shader/HiZDownSampleCS.hlsl
+@@ -1,44 +1,31 @@
+-cbuffer cb0 : register(b0)
+-{
+-	uint2 g_TextureSize; // Size of the current mip level (output)
+-	uint g_MipLevel; // Current mip level being generated
+-	uint g_Padding;
+-};
+-
+-Texture2D<float> g_InputTexture : register(t0); // Previous mip level (or full texture chain)
+-RWTexture2D<float> g_OutputTexture : register(u0); // Current mip level
++Texture2D<float> InputHiZTexture;
+ 
+-SamplerState Sampler_LinearClamp : register(s0); // Declare a sampler state
++RWTexture2D<float> OutputHiZTexture;
+ 
+ [numthreads(16, 16, 1)]
+-void main(uint3 DTid : SV_DispatchThreadID)
++void mainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
+ {
+-    // 이전 밉 레벨의 크기 (float2)
+-	float2 prevMipSize = (float2) g_TextureSize * 2.0f;
+-
+-    // 이전 밉 레벨의 픽셀 좌표 (2x2 블록의 Top-left 코너)
+-	float2 prevMipCoord = (float2) DTid.xy * 2.0f;
++	uint OutputWidth;
++	uint OutputHeight;
++	OutputHiZTexture.GetDimensions(OutputWidth, OutputHeight);
+ 
+-    // 2x2 블록의 4개 픽셀 중심 좌표를 정규화된 UV로 변환
++	if (DispatchThreadID.x >= OutputWidth || DispatchThreadID.y >= OutputHeight)
++	{
++		return;
++	}
+ 
+-    // Top-Left (TL): prevMipCoord + (0.5, 0.5)
+-	float2 uv0 = (prevMipCoord + float2(0.5f, 0.5f)) / prevMipSize;
+-    // Top-Right (TR): prevMipCoord + (1.5, 0.5)
+-	float2 uv1 = (prevMipCoord + float2(1.5f, 0.5f)) / prevMipSize;
+-    // Bottom-Left (BL): prevMipCoord + (0.5, 1.5)
+-	float2 uv2 = (prevMipCoord + float2(0.5f, 1.5f)) / prevMipSize;
+-    // Bottom-Right (BR): prevMipCoord + (1.5, 1.5)
+-	float2 uv3 = (prevMipCoord + float2(1.5f, 1.5f)) / prevMipSize;
++	uint InputWidth;
++	uint InputHeight;
++	InputHiZTexture.GetDimensions(InputWidth, InputHeight);
+ 
++	uint2 SourceCoord = DispatchThreadID * 2;
+ 
+-    // Sample 4 texels from the previous mip level
+-    // g_MipLevel - 1은 g_InputTexture 내에서 이전 밉 레벨을 지정 (일반적인 밉맵 생성 가정)
+-	float depth0 = g_InputTexture.SampleLevel(Sampler_LinearClamp, uv0, g_MipLevel - 1).r;
+-	float depth1 = g_InputTexture.SampleLevel(Sampler_LinearClamp, uv1, g_MipLevel - 1).r;
+-	float depth2 = g_InputTexture.SampleLevel(Sampler_LinearClamp, uv2, g_MipLevel - 1).r;
+-	float depth3 = g_InputTexture.SampleLevel(Sampler_LinearClamp, uv3, g_MipLevel - 1).r;
++	float Depth0 = InputHiZTexture.Load(int3(SourceCoord + uint2(0, 0), 0));
++	float Depth1 = InputHiZTexture.Load(int3(min(SourceCoord + uint2(1, 0), uint2(InputWidth - 1, InputHeight - 1)), 0));
++	float Depth2 = InputHiZTexture.Load(int3(min(SourceCoord + uint2(0, 1), uint2(InputWidth - 1, InputHeight - 1)), 0));
++	float Depth3 = InputHiZTexture.Load(int3(min(SourceCoord + uint2(1, 1), uint2(InputWidth - 1, InputHeight - 1)), 0));
+ 
+-	float maxDepth = max(max(depth0, depth1), max(depth2, depth3));
++	float MaxDepth = max(max(Depth0, Depth1), max(Depth2, Depth3));
+ 
+-	g_OutputTexture[DTid.xy] = maxDepth;
++	OutputHiZTexture[DispatchThreadID.xy] = MaxDepth;
+ }
+diff --git a/Engine/Asset/Shader/HiZOcclusionCS.hlsl b/Engine/Asset/Shader/HiZOcclusionCS.hlsl
+deleted file mode 100644
+index 6f692a7..0000000
+--- a/Engine/Asset/Shader/HiZOcclusionCS.hlsl
++++ /dev/null
+@@ -1,88 +0,0 @@
+-struct BoundingVolume
+-{
+-	float4 Min; // (x, y, z, -) in clip space
+-	float4 Max; // (x, y, z, -) in clip space
+-};
+-
+-StructuredBuffer<BoundingVolume> BoundingVolumes : register(t0);
+-Texture2D<float> HiZTexture : register(t1);
+-RWStructuredBuffer<uint> VisibilityBuffer : register(u0);
+-
+-cbuffer CullingConstants : register(b0)
+-{
+-	uint NumBoundingVolumes;
+-	float2 ScreenSize;
+-	uint MipLevels;
+-};
+-
+-SamplerState Sampler_LinearClamp : register(s0);
+-
+-// Convert clip space coordinates (-1 to 1) to texture coordinates (0 to 1)
+-float2 ClipToTexCoord(float2 clipPos)
+-{
+-	return float2(clipPos.x * 0.5f + 0.5f, -clipPos.y * 0.5f + 0.5f);
+-}
+-
+-[numthreads(64, 1, 1)]
+-void main(uint3 DispatchThreadID : SV_DispatchThreadID)
+-{
+-	uint volumeIndex = DispatchThreadID.x;
+-	if (volumeIndex >= NumBoundingVolumes)
+-	{
+-		return;
+-	}
+-
+-	BoundingVolume bv = BoundingVolumes[volumeIndex];
+-
+-	float2 minClip = bv.Min.xy;
+-	float2 maxClip = bv.Max.xy;
+-	float minZ = bv.Min.z;
+-
+-    // AABB가 클립 공간 밖에 있으면 무조건 보임
+-	if (minClip.x >= 1.0f || maxClip.x <= -1.0f || minClip.y >= 1.0f || maxClip.y <= -1.0f || minZ >= 1.0f)
+-	{
+-		VisibilityBuffer[volumeIndex] = 1; // Visible
+-		return;
+-	}
+-    
+-    // 클립 공간 크기를 기반으로 적절한 Mip Level 선택
+-	float2 clipSize = maxClip - minClip;
+-	float2 screenPixelSize = clipSize * ScreenSize;
+-	float maxDim = max(screenPixelSize.x, screenPixelSize.y);
+-	float baseMip = log2(max(maxDim, 1.0f));
+-	baseMip = clamp(baseMip, 0, MipLevels - 1);
+-
+-    // 테스트할 Mip 레벨 범위
+-	uint mipStart = (uint) baseMip;
+-	uint mipEnd = min(mipStart + 2, MipLevels - 1);
+-
+-    // AABB의 클립 공간을 6x6 그리드로 나누어 UV 좌표 계산
+-	bool isVisible = false;
+-	for (int y = 0; y <= 5; ++y)
+-	{
+-		for (int x = 0; x <= 5; ++x)
+-		{
+-			float2 t = float2(x / 5.0f, y / 5.0f);
+-			float2 sampleClip = lerp(minClip, maxClip, t);
+-			float2 sampleUV = ClipToTexCoord(sampleClip);
+-
+-			// 여러 Mip 레벨에서 테스트
+-			for (uint mip = mipStart; mip <= mipEnd; ++mip)
+-			{
+-				float occluderZ = HiZTexture.SampleLevel(Sampler_LinearClamp, sampleUV, mip);
+-				if (minZ <= occluderZ)
+-				{
+-					isVisible = true;
+-					break;
+-				}
+-			}
+-
+-			if (isVisible)
+-				break;
+-		}
+-		if (isVisible)
+-			break;
+-	}
+-
+-	VisibilityBuffer[volumeIndex] = isVisible ? 1 : 0;
+-}
+diff --git a/Engine/Asset/Shader/HiZOcclusionCullingCS.hlsl b/Engine/Asset/Shader/HiZOcclusionCullingCS.hlsl
+new file mode 100644
+index 0000000..7cb8c40
+--- /dev/null
++++ b/Engine/Asset/Shader/HiZOcclusionCullingCS.hlsl
+@@ -0,0 +1,68 @@
++struct FAABB
++{
++	float3 Min;
++	float3 Max;
++};
++
++Texture2D<float> HiZTexture : register(t0);
++
++StructuredBuffer<FAABB> NDCAABBs : register(t1);
++
++RWStructuredBuffer<uint> Visibilities : register(u0);
++
++cbuffer OcclusionCullingConstants : register(b0)
++{
++	uint NumAABBs;
++	uint MipLevels;
++	float2 ScreenSize;
++}
++
++SamplerState OcclusionCullingSampler : register(s0);
++
++uint CalculateMipLevel(uint InWidth, uint InHeight)
++{
++	return (int)ceil(log2(max(InWidth, InHeight)));
++}
++
++[numthreads(64, 1, 1)]
++void mainCS(uint3 DispatchThreadID : SV_DispatchThreadID)
++{
++	uint Index = DispatchThreadID.x;
++
++	if (Index >= NumAABBs)
++	{
++		return;
++	}
++
++	float3 MinNDC = NDCAABBs[Index].Min;
++	float3 MaxNDC = NDCAABBs[Index].Max;
++
++	float MinDepth = MinNDC.z;
++
++	float2 MinUV;
++	MinUV.x = MinNDC.x * 0.5f + 0.5f;
++	MinUV.y = MinNDC.y * -0.5f + 0.5f;
++	MinUV = saturate(MinUV);
++
++	float2 MaxUV;
++	MaxUV.x = MaxNDC.x * 0.5f + 0.5f;
++	MaxUV.y = MaxNDC.y * -0.5f + 0.5f;
++	MaxUV = saturate(MaxUV);
++
++	float2 Rect = (MaxUV - MinUV) * ScreenSize;
++
++	uint MipLevel = CalculateMipLevel(Rect.x, Rect.y);
++
++	float HiZDepth0 = HiZTexture.SampleLevel(OcclusionCullingSampler, float2(MinUV.x, MinUV.y), MipLevel);
++	float HiZDepth1 = HiZTexture.SampleLevel(OcclusionCullingSampler, float2(MaxUV.x, MinUV.y), MipLevel);
++	float HiZDepth2 = HiZTexture.SampleLevel(OcclusionCullingSampler, float2(MinUV.x, MaxUV.y), MipLevel);
++	float HiZDepth3 = HiZTexture.SampleLevel(OcclusionCullingSampler, float2(MaxUV.x, MaxUV.y), MipLevel);
++
++	float MaxHiZDepth = max(max(HiZDepth0, HiZDepth1), max(HiZDepth2, HiZDepth3));
++
++	float Bias = 0.0001f;
++
++	bool bIsVisible = MinDepth <= MaxHiZDepth + Bias;
++
++	Visibilities[Index] = bIsVisible;
++}
+diff --git a/Engine/Engine.vcxproj b/Engine/Engine.vcxproj
+index ac3cb95..d48e203 100644
+--- a/Engine/Engine.vcxproj
++++ b/Engine/Engine.vcxproj
+@@ -407,6 +407,7 @@
+     <ClInclude Include="Source\Render\FontRenderer\Public\FontRenderer.h" />
+     <ClInclude Include="Source\Render\Renderer\Public\DeviceResources.h" />
+     <ClInclude Include="Source\Render\Renderer\Public\OcclusionRenderer.h" />
++    <ClInclude Include="Source\Render\Renderer\Public\OcclusionCullingManager.h" />
+     <ClInclude Include="Source\Render\Renderer\Public\Pipeline.h" />
+     <ClInclude Include="Source\Render\Renderer\Public\Renderer.h" />
+     <ClInclude Include="Source\Render\UI\Factory\Public\UIWindowFactory.h" />
+@@ -550,6 +551,7 @@
+     <ClCompile Include="Source\Render\Renderer\Private\Pipeline.cpp" />
+     <ClCompile Include="Source\Render\Renderer\Private\Renderer.cpp" />
+     <ClCompile Include="Source\Render\FontRenderer\Private\FontRenderer.cpp" />
++    <ClCompile Include="Source\Render\Renderer\Public\OcclusionCullingManager.cpp" />
+     <ClCompile Include="Source\Render\UI\Factory\Private\UIWindowFactory.cpp" />
+     <ClCompile Include="Source\Render\UI\ImGui\Private\ImGuiHelper.cpp" />
+     <ClCompile Include="Source\Render\UI\Overlay\Private\StatOverlay.cpp" />
+@@ -612,12 +614,17 @@
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+     </FxCompile>
++    <FxCompile Include="Asset\Shader\HiZDepthCopyCS.hlsl">
++      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_MT|x64'">true</ExcludedFromBuild>
++      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
++      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
++    </FxCompile>
+     <FxCompile Include="Asset\Shader\HiZDownSampleCS.hlsl">
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_MT|x64'">true</ExcludedFromBuild>
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+     </FxCompile>
+-    <FxCompile Include="Asset\Shader\HiZOcclusionCS.hlsl">
++    <FxCompile Include="Asset\Shader\HiZOcclusionCullingCS.hlsl">
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release_MT|x64'">true</ExcludedFromBuild>
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+diff --git a/Engine/Source/Component/Private/PrimitiveComponent.cpp b/Engine/Source/Component/Private/PrimitiveComponent.cpp
+index 7296458..1c7adda 100644
+--- a/Engine/Source/Component/Private/PrimitiveComponent.cpp
++++ b/Engine/Source/Component/Private/PrimitiveComponent.cpp
+@@ -150,9 +150,9 @@ D3D11_PRIMITIVE_TOPOLOGY UPrimitiveComponent::GetTopology() const
+ 	return Topology;
+ }
+ 
+-void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
++bool UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
+ {
+-	if (!BoundingBox)	return;
++	if (!BoundingBox)	return false;
+ 
+ 	if (BoundingBox->GetType() == EBoundingVolumeType::AABB)
+ 	{
+@@ -180,7 +180,11 @@ void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
+ 		}
+ 		OutMin = WorldMin;
+ 		OutMax = WorldMax;
++
++		return true;
+ 	}
++
++	return false;
+ }
+ 
+ /*
+diff --git a/Engine/Source/Component/Public/PrimitiveComponent.h b/Engine/Source/Component/Public/PrimitiveComponent.h
+index 716b3e7..93569d8 100644
+--- a/Engine/Source/Component/Public/PrimitiveComponent.h
++++ b/Engine/Source/Component/Public/PrimitiveComponent.h
+@@ -33,7 +33,7 @@ public:
+ 	void SetColor(const FVector4& InColor) { Color = InColor; }
+ 
+ 	const IBoundingVolume* GetBoundingBox() const { return BoundingBox; }
+-	void GetWorldAABB(FVector& OutMin, FVector& OutMax) const;
++	bool GetWorldAABB(FVector& OutMin, FVector& OutMax) const;
+ 
+ 	EPrimitiveType GetPrimitiveType() const { return Type; }
+ 
+diff --git a/Engine/Source/Editor/Private/BatchLines.cpp b/Engine/Source/Editor/Private/BatchLines.cpp
+index 2f2c80d..88b6a88 100644
+--- a/Engine/Source/Editor/Private/BatchLines.cpp
++++ b/Engine/Source/Editor/Private/BatchLines.cpp
+@@ -25,7 +25,7 @@ UBatchLines::UBatchLines()
+ 	Primitive.Vertexbuffer = Renderer.CreateVertexBuffer(
+ 		Vertices.data(), Primitive.NumVertices * sizeof(FVector), true);
+ 	Primitive.VertexShader = UAssetManager::GetInstance().GetVertexShader(EShaderType::BatchLine);
+-	Primitive.InputLayout = UAssetManager::GetInstance().GetIputLayout(EShaderType::BatchLine);
++	Primitive.InputLayout = UAssetManager::GetInstance().GetInputLayout(EShaderType::BatchLine);
+ 	Primitive.PixelShader = UAssetManager::GetInstance().GetPixelShader(EShaderType::BatchLine);
+ }
+ 
+diff --git a/Engine/Source/Global/Enum.h b/Engine/Source/Global/Enum.h
+index e7f3782..651faab 100644
+--- a/Engine/Source/Global/Enum.h
++++ b/Engine/Source/Global/Enum.h
+@@ -99,7 +99,8 @@ DECLARE_UINT8_ENUM_REFLECTION(ELogType)
+ enum class EShaderType : uint8
+ {
+ 	Default = 0,
+-	BatchLine
++	BatchLine,
++	DepthOnly
+ };
+ 
+ /**
+diff --git a/Engine/Source/Global/Matrix.cpp b/Engine/Source/Global/Matrix.cpp
+index 03530e4..d0383aa 100644
+--- a/Engine/Source/Global/Matrix.cpp
++++ b/Engine/Source/Global/Matrix.cpp
+@@ -73,7 +73,7 @@ FMatrix FMatrix::Identity()
+ /**
+ * @brief 두 행렬곱을 진행한 행렬을 반환하는 연산자 함수
+ */
+-FMatrix FMatrix::operator*(const FMatrix& InOtherMatrix)
++FMatrix FMatrix::operator*(const FMatrix& InOtherMatrix) const
+ {
+ 	FMatrix Result;
+ 
+diff --git a/Engine/Source/Global/Matrix.h b/Engine/Source/Global/Matrix.h
+index 9d25ae8..b5f7649 100644
+--- a/Engine/Source/Global/Matrix.h
++++ b/Engine/Source/Global/Matrix.h
+@@ -41,7 +41,7 @@ struct alignas(16) FMatrix
+ 	/**
+ 	* @brief 두 행렬곱을 진행한 행렬을 반환하는 연산자 함수
+ 	*/
+-	FMatrix operator*(const FMatrix& InOtherMatrix);
++	FMatrix operator*(const FMatrix& InOtherMatrix) const;
+ 	void operator*=(const FMatrix& InOtherMatrix);
+ 	FMatrix operator+(const FMatrix& Other) const;
+ 	FMatrix& operator+=(const FMatrix& Other);
+diff --git a/Engine/Source/Global/Vector.cpp b/Engine/Source/Global/Vector.cpp
+index f136c70..940cfc9 100644
+--- a/Engine/Source/Global/Vector.cpp
++++ b/Engine/Source/Global/Vector.cpp
+@@ -21,17 +21,9 @@ FVector::FVector(float InX, float InY, float InZ)
+ }
+ 
+ 
+-/**
+- * @brief FVector를 Param으로 넘기는 생성자
+- */
+-FVector::FVector(const FVector& InOther)
+-	: X(InOther.X), Y(InOther.Y), Z(InOther.Z)
+-{
+-}
+-
+-void FVector::operator=(const FVector4& InOther)
++FVector& FVector::operator=(const FVector4& InOther)
+ {
+-	*this = FVector(InOther.X, InOther.Y, InOther.Z);
++	return *this = FVector(InOther.X, InOther.Y, InOther.Z);
+ }
+ 
+ 
+@@ -269,14 +261,6 @@ FVector2::FVector2(float InX, float InY)
+ {
+ }
+ 
+-/**
+- * @brief FVector2를 Param으로 넘기는 생성자
+- */
+-FVector2::FVector2(const FVector2& InOther)
+-	: X(InOther.X), Y(InOther.Y)
+-{
+-}
+-
+ /**
+  * @brief 두 벡터를 더한 새로운 벡터를 반환하는 함수
+  */
+diff --git a/Engine/Source/Global/Vector.h b/Engine/Source/Global/Vector.h
+index 1fc9296..c461ae3 100644
+--- a/Engine/Source/Global/Vector.h
++++ b/Engine/Source/Global/Vector.h
+@@ -43,9 +43,11 @@ struct alignas(16) FVector
+ 	/**
+ 	 * @brief FVector를 Param으로 넘기는 생성자
+ 	 */
+-	FVector(const FVector& InOther);
++	FVector(const FVector& InOther) = default;
+ 
+-	void operator=(const FVector4& InOther);
++	FVector& operator=(const FVector& InOther) = default;
++
++	FVector& operator=(const FVector4& InOther);
+ 
+ 	/**
+ 	 * @brief 두 벡터를 더한 새로운 벡터를 반환하는 함수
+@@ -243,7 +245,9 @@ struct FVector2
+ 	/**
+ 	 * @brief FVector2를 Param으로 넘기는 생성자
+ 	 */
+-	FVector2(const FVector2& InOther);
++	FVector2(const FVector2& InOther) = default;
++
++	FVector2& operator=(const FVector2& InOther) = default;
+ 
+ 	/**
+ 	 * @brief 두 벡터를 더한 새로운 벡터를 반환하는 함수
+diff --git a/Engine/Source/Manager/Asset/Private/AssetManager.cpp b/Engine/Source/Manager/Asset/Private/AssetManager.cpp
+index be6913d..7b1697c 100644
+--- a/Engine/Source/Manager/Asset/Private/AssetManager.cpp
++++ b/Engine/Source/Manager/Asset/Private/AssetManager.cpp
+@@ -381,7 +381,7 @@ ID3D11PixelShader* UAssetManager::GetPixelShader(EShaderType Type)
+ 	return PixelShaders[Type];
+ }
+ 
+-ID3D11InputLayout* UAssetManager::GetIputLayout(EShaderType Type)
++ID3D11InputLayout* UAssetManager::GetInputLayout(EShaderType Type)
+ {
+ 	return InputLayouts[Type];
+ }
+diff --git a/Engine/Source/Manager/Asset/Public/AssetManager.h b/Engine/Source/Manager/Asset/Public/AssetManager.h
+index 50307e2..1a68855 100644
+--- a/Engine/Source/Manager/Asset/Public/AssetManager.h
++++ b/Engine/Source/Manager/Asset/Public/AssetManager.h
+@@ -32,7 +32,7 @@ public:
+ 	// Shader 관련 함수들
+ 	ID3D11VertexShader* GetVertexShader(EShaderType Type);
+ 	ID3D11PixelShader* GetPixelShader(EShaderType Type);
+-	ID3D11InputLayout* GetIputLayout(EShaderType Type);
++	ID3D11InputLayout* GetInputLayout(EShaderType Type);
+ 
+ 	// Texture 관련 함수들
+ 	ComPtr<ID3D11ShaderResourceView> LoadTexture(const FName& InFilePath, const FName& InName = FName::GetNone());
+diff --git a/Engine/Source/Render/Renderer/Private/Renderer.cpp b/Engine/Source/Render/Renderer/Private/Renderer.cpp
+index 6a75275..a403609 100644
+--- a/Engine/Source/Render/Renderer/Private/Renderer.cpp
++++ b/Engine/Source/Render/Renderer/Private/Renderer.cpp
+@@ -21,6 +21,7 @@
+ #include "Render/Renderer/Public/OcclusionRenderer.h"
+ 
+ #include "cpp-thread-pool/thread_pool.h"
++#include "Render/Renderer/Public/OcclusionCullingManager.h"
+ 
+ #ifdef _
+ #define PROFILE_SCOPE(name, expr) \
+@@ -55,6 +56,7 @@ void URenderer::Init(HWND InWindowHandle)
+ 	CreateDepthStencilState();
+ 	CreateDefaultShader();
+ 	CreateTextureShader();
++	CreateDepthShader();
+ 	CreateConstantBuffer();
+ 	CreateBillboardResources();
+ 
+@@ -76,7 +78,9 @@ void URenderer::Init(HWND InWindowHandle)
+ 	uint32 Width = ClientRect.right - ClientRect.left;
+ 	uint32 Height = ClientRect.bottom - ClientRect.top;
+ 
+-	UOcclusionRenderer::GetInstance().Initialize(GetDevice(), GetDeviceContext(), Width, Height);
++	// UOcclusionRenderer::GetInstance().Initialize(GetDevice(), GetDeviceContext(), Width, Height);
++
++	FOcclusionCullingManager::GetInstance().Initialize(GetDevice(), GetDeviceContext(), Width, Height);
+ 
+ #ifdef MULTI_THREADING
+ 	// Create deferred contexts and thread-specific constant buffers
+@@ -132,6 +136,7 @@ void URenderer::Release()
+ {
+ 	ReleaseConstantBuffer();
+ 	ReleaseDefaultShader();
++	ReleaseDepthShader();
+ 	ReleaseDepthStencilState();
+ 	ReleaseRasterizerState();
+ 	ReleaseBillboardResources();
+@@ -298,6 +303,30 @@ void URenderer::CreateTextureShader()
+ 	TexturePSBlob->Release();
+ }
+ 
++void URenderer::CreateDepthShader()
++{
++	ID3DBlob* VertexShaderBlob = nullptr;
++	HRESULT hr = D3DCompileFromFile(L"Asset/Shader/DepthVS.hlsl", nullptr, nullptr, "main", "vs_5_0",
++		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &VertexShaderBlob, nullptr);
++
++	if (FAILED(hr))
++	{
++		UE_LOG("Failed to compile DepthVS");
++		return;
++	}
++
++	GetDevice()->CreateVertexShader(VertexShaderBlob->GetBufferPointer(), VertexShaderBlob->GetBufferSize(), nullptr, &DepthVertexShader);
++
++	D3D11_INPUT_ELEMENT_DESC DepthLayout[] =
++	{
++		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
++	};
++
++	GetDevice()->CreateInputLayout(DepthLayout, ARRAYSIZE(DepthLayout), VertexShaderBlob->GetBufferPointer(), VertexShaderBlob->GetBufferSize(), &DepthInputLayout);
++
++	VertexShaderBlob->Release();
++}
++
+ /**
+  * @brief 래스터라이저 상태를 해제하는 함수
+  */
+@@ -358,6 +387,21 @@ void URenderer::ReleaseDefaultShader()
+ 	}
+ }
+ 
++void URenderer::ReleaseDepthShader()
++{
++	if (DepthVertexShader)
++	{
++		DepthVertexShader->Release();
++		DepthVertexShader = nullptr;
++	}
++
++	if (DepthInputLayout)
++	{
++		DepthInputLayout->Release();
++		DepthInputLayout = nullptr;
++	}
++}
++
+ /**
+  * @brief 렌더러에 사용된 모든 리소스를 해제하는 함수
+  */
+@@ -446,10 +490,34 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewpor
+ 
+ 	const auto PrimitiveComponents = GEngine->GetCurrentLevel()->GetVisiblePrimitiveComponents(InCurrentCamera);
+ 
++	FOcclusionCullingManager& OcclusionCullingManager = FOcclusionCullingManager::GetInstance();
++
+ 	// ImGui 창 옆 키고 끌 수 있는 메뉴 넣기
+ 	if (bOcclusionCulling)
+ 	{
+-		PerformOcclusionCulling(InCurrentCamera, PrimitiveComponents);
++		// PerformOcclusionCulling(InCurrentCamera, PrimitiveComponents);
++
++		RenderDepthPrepass(InCurrentCamera, InViewportClient, OcclusionCullingManager.GetDepthStencilView(), OcclusionCullingManager.GetDepthStencilState());
++
++		FViewProjConstants ViewProjConstants = InCurrentCamera->GetFViewProjConstants();
++
++		FMatrix ViewMatrix = ViewProjConstants.View;
++		FMatrix ProjectionMatrix = ViewProjConstants.Projection;
++
++		TArray<UPrimitiveComponent*> RawPrimitiveComponents;
++
++		for (const auto PrimitiveComponent : PrimitiveComponents)
++		{
++			RawPrimitiveComponents.push_back(PrimitiveComponent);
++		}
++
++		PROFILE_SCOPE("UpdateOcclusionCulling",
++			OcclusionCullingManager.UpdateOcclusionCulling(RawPrimitiveComponents, ViewMatrix, ProjectionMatrix);
++		);
++	}
++	else
++	{
++		OcclusionCullingManager.Clear();
+ 	}
+ 
+ #ifdef MULTI_THREADING
+@@ -506,7 +574,8 @@ void URenderer::RenderPrimitiveComponent(UPipeline& InPipeline, UPrimitiveCompon
+ 
+ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportClient& InViewportClient, const TArray<TObjectPtr<UPrimitiveComponent>>& InPrimitiveComponents)
+ {
+-	auto& OcclusionRenderer = UOcclusionRenderer::GetInstance();
++	// auto& OcclusionRenderer = UOcclusionRenderer::GetInstance();
++	FOcclusionCullingManager& OcclusionCullingManager = FOcclusionCullingManager::GetInstance();
+ 	TObjectPtr<UTextRenderComponent> TextRender = nullptr;
+ 	TArray<TObjectPtr<UBillboardComponent>> Billboards;
+ 
+@@ -514,7 +583,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
+ 	{
+ 		auto PrimitiveComponent = InPrimitiveComponents[i];
+ 
+-		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || !OcclusionRenderer.IsPrimitiveVisible(PrimitiveComponent))
++		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || OcclusionCullingManager.QueryOcclusionCulled(PrimitiveComponent))
+ 		{
+ 			continue;
+ 		}
+@@ -594,10 +663,12 @@ void URenderer::RenderLevel_MultiThreaded(UCamera* InCurrentCamera, FViewportCli
+ 			ID3D11Buffer* ThreadCBColors = ThreadConstantBufferColors[i];
+ 			ID3D11Buffer* ThreadCBMaterials = ThreadConstantBufferMaterials[i];
+ 
++			FOcclusionCullingManager& OcclusionCullingManager = FOcclusionCullingManager::GetInstance();
++
+ 			for (size_t j = StartIndex; j < EndIndex; ++j)
+ 			{
+ 				UPrimitiveComponent* PrimitiveComponent = InPrimitiveComponents[j];
+-				if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || !UOcclusionRenderer::GetInstance().IsPrimitiveVisible(PrimitiveComponent))
++				if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || !OcclusionCullingManager.QueryOcclusionCulled(PrimitiveComponent))
+ 				{
+ 					continue;
+ 				}
+@@ -634,12 +705,13 @@ void URenderer::RenderLevel_MultiThreaded(UCamera* InCurrentCamera, FViewportCli
+ 
+ 	TObjectPtr<UTextRenderComponent> TextRender = nullptr;
+ 	TArray<TObjectPtr<UBillboardComponent>> Billboards;
+-	auto& OcclusionRenderer = UOcclusionRenderer::GetInstance();
++	// auto& OcclusionRenderer = UOcclusionRenderer::GetInstance();
++	FOcclusionCullingManager& OcclusionCullingManager = FOcclusionCullingManager::GetInstance();
+ 
+ 	for (size_t i = 0; i < InPrimitiveComponents.size(); ++i)
+ 	{
+ 		UPrimitiveComponent* PrimitiveComponent = InPrimitiveComponents[i];
+-		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || !OcclusionRenderer.IsPrimitiveVisible(PrimitiveComponent))
++		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || OcclusionCullingManager.QueryOcclusionCulled(PrimitiveComponent))
+ 		{
+ 			continue;
+ 		}
+@@ -756,6 +828,116 @@ void URenderer::RenderEditorPrimitiveIndexed(UPipeline& InPipeline, const FEdito
+     InPipeline.SetVertexBuffer(InEditorPrimitive.Vertexbuffer, InStride);
+     InPipeline.DrawIndexed(InEditorPrimitive.NumIndices, 0, 0);
+ }
++
++void URenderer::RenderDepthPrepass(UCamera* InCurrentCamera, FViewportClient& InViewportClient, ID3D11DepthStencilView* InDepthStencilView, ID3D11DepthStencilState* InDepthStencilState)
++{
++	if (!InCurrentCamera || !GEngine->GetCurrentLevel())
++	{
++		return;
++	}
++
++	const auto& PrimitiveComponents = GEngine->GetCurrentLevel()->GetVisiblePrimitiveComponents(InCurrentCamera);
++	if (PrimitiveComponents.empty())
++	{
++		return;
++	}
++
++	ID3D11DeviceContext* DeviceContext = GetDeviceContext();
++
++	ID3D11RenderTargetView* OldRenderTargetView;
++	ID3D11DepthStencilView* OldDepthStencilView;
++	DeviceContext->OMGetRenderTargets(1, &OldRenderTargetView, &OldDepthStencilView);
++
++	ID3D11RenderTargetView* NullRenderTargetView = nullptr;
++	DeviceContext->OMSetRenderTargets(1, &NullRenderTargetView, InDepthStencilView);
++
++	Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
++	UpdateConstant(DeviceContext, ConstantBufferViewProj, InCurrentCamera->GetFViewProjConstants());
++
++	for (const auto& PrimitiveComponent : PrimitiveComponents)
++	{
++		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible())
++		{
++			continue;
++		}
++
++		FRenderState RenderState = PrimitiveComponent->GetRenderState();
++		ID3D11RasterizerState* RasterizerState = GetRasterizerState(RenderState);
++
++		FPipelineInfo PipelineInfo = {
++			DepthInputLayout,
++			DepthVertexShader,
++			RasterizerState,
++			InDepthStencilState,
++			nullptr,
++			nullptr,
++			D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
++		};
++
++		Pipeline->UpdatePipeline(PipelineInfo);
++
++		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
++		UpdateConstant(DeviceContext, ConstantBufferModels, PrimitiveComponent->GetWorldTransformMatrix());
++
++		EPrimitiveType PrimitiveType = PrimitiveComponent->GetPrimitiveType();
++
++		if (PrimitiveType == EPrimitiveType::StaticMesh)
++		{
++			auto MeshComponent = Cast<UStaticMeshComponent>(PrimitiveComponent);
++
++			if (MeshComponent && MeshComponent->GetStaticMesh())
++			{
++				Pipeline->SetVertexBuffer(MeshComponent->GetVertexBuffer(), sizeof(FNormalVertex));
++				Pipeline->SetIndexBuffer(MeshComponent->GetIndexBuffer(), 0);
++
++				FStaticMesh* MeshAsset = MeshComponent->GetStaticMesh()->GetStaticMeshAsset();
++				if (MeshAsset)
++				{
++					if (MeshAsset->MaterialInfo.empty() || MeshComponent->GetStaticMesh()->GetNumMaterials() == 0)
++					{
++						Pipeline->DrawIndexed(MeshAsset->Indices.size(), 0, 0);
++					}
++					else
++					{
++						for (const FMeshSection& Section : MeshAsset->Sections)
++						{
++							Pipeline->DrawIndexed(Section.IndexCount, Section.StartIndex, 0);
++						}
++					}
++				}
++			}
++		}
++		else
++		{
++			Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
++
++			if (PrimitiveComponent->GetIndexBuffer() && PrimitiveComponent->GetIndicesData())
++			{
++				Pipeline->SetIndexBuffer(PrimitiveComponent->GetIndexBuffer(), 0);
++				Pipeline->DrawIndexed(PrimitiveComponent->GetNumIndices(), 0, 0);
++			}
++			else
++			{
++				Pipeline->Draw(static_cast<uint32>(PrimitiveComponent->GetNumVertices()), 0);
++			}
++		}
++
++		DeviceContext->OMSetRenderTargets(1, &OldRenderTargetView, OldDepthStencilView);
++
++		if (OldRenderTargetView)
++		{
++			OldRenderTargetView->Release();
++		}
++
++		if (OldDepthStencilView)
++		{
++			OldDepthStencilView->Release();
++		}
++
++		DeviceResources->UpdateViewport();
++	}
++}
++
+ /**
+  * @brief 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
+  */
+@@ -1095,7 +1277,9 @@ void URenderer::OnResize(uint32 InWidth, uint32 InHeight)
+ 	GetDeviceContext()->OMSetRenderTargets(1, RenderTargetViews, DeviceResources->GetDepthStencilView());
+ 	UStatOverlay::GetInstance().OnResize();
+ 
+-	UOcclusionRenderer::GetInstance().Resize(InWidth, InHeight);
++	// UOcclusionRenderer::GetInstance().Resize(InWidth, InHeight);
++
++	FOcclusionCullingManager::GetInstance().Resize(InWidth, InHeight);
+ 
+ 	bIsFirstPass = true;
+ }
+@@ -1203,6 +1387,28 @@ void URenderer::CreatePixelShader(const wstring& InFilePath, ID3D11PixelShader**
+ 	PixelShaderBlob->Release();
+ }
+ 
++void URenderer::CreateComputeShader(const wstring& InFilePath, ID3D11ComputeShader** OutComputeShader) const
++{
++	ID3DBlob* ComputeShaderBlob = nullptr;
++	ID3DBlob* ErrorBlob = nullptr;
++	HRESULT HResult = D3DCompileFromFile(InFilePath.data(), nullptr, nullptr, "mainCS", "cs_5_0",
++		D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &ComputeShaderBlob, &ErrorBlob);
++
++	if (FAILED(HResult))
++	{
++		if (ErrorBlob)
++		{
++			OutputDebugStringA(static_cast<char*>(ErrorBlob->GetBufferPointer()));
++			ErrorBlob->Release();
++		}
++		return;
++	}
++
++	GetDevice()->CreateComputeShader(ComputeShaderBlob->GetBufferPointer(), ComputeShaderBlob->GetBufferSize(), nullptr, OutComputeShader);
++
++	ComputeShaderBlob->Release();
++}
++
+ /**
+  * @brief 렌더링에 사용될 상수 버퍼들을 생성하는 함수
+  */
+diff --git a/Engine/Source/Render/Renderer/Public/OcclusionCullingManager.cpp b/Engine/Source/Render/Renderer/Public/OcclusionCullingManager.cpp
+new file mode 100644
+index 0000000..fb1d5de
+--- /dev/null
++++ b/Engine/Source/Render/Renderer/Public/OcclusionCullingManager.cpp
+@@ -0,0 +1,656 @@
++﻿#include "pch.h"
++#include "OcclusionCullingManager.h"
++
++#include "Component/Public/PrimitiveComponent.h"
++#include "Manager/Asset/Public/AssetManager.h"
++#include "OcclusionRenderer.h"
++#include "Physics/Public/AABB.h"
++#include "Renderer.h"
++
++void FOcclusionCullingManager::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InDeviceContext, uint32 InWidth, uint32 InHeight)
++{
++	if (IsInitialized())
++	{
++		return;
++	}
++
++	Device = InDevice;
++	DeviceContext = InDeviceContext;
++
++	D3D11_DEPTH_STENCIL_DESC DepthStencilDesc = {};
++	DepthStencilDesc.DepthEnable = true;
++	DepthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
++	DepthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;
++	DepthStencilDesc.StencilEnable = false;
++
++	HRESULT HResult = Device->CreateDepthStencilState(&DepthStencilDesc, &DepthStencilState);
++	if (FAILED(HResult))
++	{
++		return;
++	}
++
++	CreateShader();
++
++	Resize(InWidth, InHeight);
++
++	bIsInitialized = true;
++}
++
++void FOcclusionCullingManager::Resize(uint32 InWidth, uint32 InHeight)
++{
++	if (!Device)
++	{
++		return;
++	}
++
++	if (Width == InWidth && Height == InHeight)
++	{
++		return;
++	}
++
++	Width = InWidth;
++	Height = InHeight;
++
++	ReleaseResources();
++
++	CreateResources();
++}
++
++void FOcclusionCullingManager::Release()
++{
++	ReleaseResources();
++
++	ReleaseShader();
++
++	ReleaseOcclusionCullingBuffer();
++
++	Device = nullptr;
++	DeviceContext = nullptr;
++	bIsInitialized = false;
++}
++
++void FOcclusionCullingManager::Clear()
++{
++	PrimitiveVisibilities.clear();
++}
++
++void FOcclusionCullingManager::UpdateOcclusionCulling(const TArray<UPrimitiveComponent*>& InPrimitiveComponents,  const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix)
++{
++	if (!IsInitialized())
++	{
++		return;
++	}
++
++	Clear();
++
++	BuildNDCAABBs(InPrimitiveComponents, InViewMatrix, InProjectionMatrix);
++
++	if (NDCAABBs.empty())
++	{
++		return;
++	}
++
++	GenerateHiZMipMap();
++
++	ExecuteOcclusionCulling();
++
++	FetchOcclusionCulling();
++}
++
++FOcclusionCullingManager::~FOcclusionCullingManager()
++{
++	Release();
++}
++
++void FOcclusionCullingManager::CreateResources()
++{
++	if (Width == 0 || Height == 0)
++	{
++		return;
++	}
++
++	{
++		D3D11_TEXTURE2D_DESC DepthTextureDesc = {};
++		DepthTextureDesc.Width = Width;
++		DepthTextureDesc.Height = Height;
++		DepthTextureDesc.MipLevels = 1;
++		DepthTextureDesc.ArraySize = 1;
++		DepthTextureDesc.Format = DXGI_FORMAT_R24G8_TYPELESS;
++		DepthTextureDesc.SampleDesc.Count = 1;
++		DepthTextureDesc.Usage = D3D11_USAGE_DEFAULT;
++		DepthTextureDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL | D3D11_BIND_SHADER_RESOURCE;
++
++		if (FAILED(Device->CreateTexture2D(&DepthTextureDesc, nullptr, &DepthTexture)))
++		{
++			return;
++		}
++
++		D3D11_DEPTH_STENCIL_VIEW_DESC DepthStencilViewDesc = {};
++		DepthStencilViewDesc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
++		DepthStencilViewDesc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
++
++		if (FAILED(Device->CreateDepthStencilView(DepthTexture, &DepthStencilViewDesc, &DepthStencilView)))
++		{
++			return;
++		}
++
++		D3D11_SHADER_RESOURCE_VIEW_DESC DepthShaderResourceViewDesc = {};
++		DepthShaderResourceViewDesc.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
++		DepthShaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
++		DepthShaderResourceViewDesc.Texture2D.MipLevels = 1;
++		if (FAILED(Device->CreateShaderResourceView(DepthTexture, &DepthShaderResourceViewDesc, &DepthShaderResourceView)))
++		{
++			return;
++		}
++	}
++
++	{
++		uint32 MipLevels = CalculateMipLevels(Width, Height);
++
++		D3D11_TEXTURE2D_DESC HiZTextureDesc = {};
++		HiZTextureDesc.Width = Width;
++		HiZTextureDesc.Height = Height;
++		HiZTextureDesc.MipLevels = MipLevels;
++		HiZTextureDesc.ArraySize = 1;
++		HiZTextureDesc.Format = DXGI_FORMAT_R32_FLOAT;
++		HiZTextureDesc.SampleDesc.Count = 1;
++		HiZTextureDesc.Usage = D3D11_USAGE_DEFAULT;
++		HiZTextureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
++
++		if (FAILED(Device->CreateTexture2D(&HiZTextureDesc, nullptr, &HiZTexture)))
++		{
++			return;
++		}
++
++		D3D11_SHADER_RESOURCE_VIEW_DESC HiZShaderResourceViewDesc = {};
++		HiZShaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
++		HiZShaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
++		HiZShaderResourceViewDesc.Texture2D.MostDetailedMip = 0;
++		HiZShaderResourceViewDesc.Texture2D.MipLevels = MipLevels;
++
++		if (FAILED(Device->CreateShaderResourceView(HiZTexture, &HiZShaderResourceViewDesc, &HiZShaderResourceView)))
++		{
++			return;
++		}
++
++		HiZShaderResourceViews.resize(MipLevels);
++		HiZUnorderedAccessViews.resize(MipLevels);
++
++		for (uint32 i = 0; i < MipLevels; ++i)
++		{
++			D3D11_SHADER_RESOURCE_VIEW_DESC ShaderResourceViewDesc = {};
++			ShaderResourceViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
++			ShaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
++			ShaderResourceViewDesc.Texture2D.MostDetailedMip = i;
++			ShaderResourceViewDesc.Texture2D.MipLevels = 1;
++
++			if (FAILED(Device->CreateShaderResourceView(HiZTexture, &ShaderResourceViewDesc, &HiZShaderResourceViews[i])))
++			{
++				return;
++			}
++
++			D3D11_UNORDERED_ACCESS_VIEW_DESC UnorderedAccessViewDesc = {};
++			UnorderedAccessViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
++			UnorderedAccessViewDesc.Format = DXGI_FORMAT_R32_FLOAT;
++			UnorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
++
++			if (FAILED(Device->CreateUnorderedAccessView(HiZTexture, &UnorderedAccessViewDesc, &HiZUnorderedAccessViews[i])))
++			{
++				return;
++			}
++		}
++	}
++}
++
++void FOcclusionCullingManager::CreateShader()
++{
++	ReleaseShader();
++
++	URenderer& Renderer = URenderer::GetInstance();
++
++	Renderer.CreateComputeShader(L"Asset/Shader/HiZDepthCopyCS.hlsl", &HiZDepthCopyShader);
++	Renderer.CreateComputeShader(L"Asset/Shader/HiZDownSampleCS.hlsl", &HiZDownSampleShader);
++	Renderer.CreateComputeShader(L"Asset/Shader/HiZOcclusionCullingCS.hlsl", &HiZOcclusionCullingShader);
++
++	D3D11_SAMPLER_DESC HiZSamplerDesc = {};
++	HiZSamplerDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
++	HiZSamplerDesc.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
++	HiZSamplerDesc.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
++	HiZSamplerDesc.AddressW = D3D11_TEXTURE_ADDRESS_CLAMP;
++	HiZSamplerDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
++	HiZSamplerDesc.MinLOD = 0.0f;
++	HiZSamplerDesc.MaxLOD = D3D11_FLOAT32_MAX;
++
++	if (FAILED(Device->CreateSamplerState(&HiZSamplerDesc, &HiZSamplerState)))
++	{
++		return;
++	}
++
++	D3D11_BUFFER_DESC OcclusionCullingConstantBufferDesc = {};
++	OcclusionCullingConstantBufferDesc.ByteWidth = sizeof(FOcclusionCullingConstantsData);
++	OcclusionCullingConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
++	OcclusionCullingConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
++	OcclusionCullingConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
++
++	if (FAILED(Device->CreateBuffer(&OcclusionCullingConstantBufferDesc, nullptr, &OcclusionCullingConstantBuffer)))
++	{
++		return;
++	}
++}
++
++void FOcclusionCullingManager::CreateOcclusionCullingBuffer(uint32 NumAABBs)
++{
++	if (CachedNumAABBs >= NumAABBs)
++	{
++		return;
++	}
++
++	ReleaseOcclusionCullingBuffer();
++
++	CachedNumAABBs = NumAABBs;
++
++	{
++		D3D11_BUFFER_DESC AABBBufferDesc = {};
++		AABBBufferDesc.ByteWidth = sizeof(FAABBProxy) * CachedNumAABBs;
++		AABBBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
++		AABBBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
++		AABBBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
++		AABBBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
++		AABBBufferDesc.StructureByteStride = sizeof(FAABBProxy);
++
++		if (FAILED(Device->CreateBuffer(&AABBBufferDesc, nullptr, &NDCAABBsBuffer)))
++		{
++			return;
++		}
++
++		D3D11_SHADER_RESOURCE_VIEW_DESC AABBShaderResourceViewDesc = {};
++		AABBShaderResourceViewDesc.Format = DXGI_FORMAT_UNKNOWN;
++		AABBShaderResourceViewDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
++		AABBShaderResourceViewDesc.Buffer.FirstElement = 0;
++		AABBShaderResourceViewDesc.Buffer.NumElements = CachedNumAABBs;
++
++		if (FAILED(Device->CreateShaderResourceView(NDCAABBsBuffer, &AABBShaderResourceViewDesc, &NDCAABBsShaderResourceView)))
++		{
++			return;
++		}
++	}
++
++	{
++		D3D11_BUFFER_DESC VisibilitiesBufferDesc = {};
++		VisibilitiesBufferDesc.ByteWidth = sizeof(uint32) * CachedNumAABBs;
++		VisibilitiesBufferDesc.Usage = D3D11_USAGE_DEFAULT;
++		VisibilitiesBufferDesc.BindFlags = D3D11_BIND_UNORDERED_ACCESS;
++		VisibilitiesBufferDesc.CPUAccessFlags = 0;
++		VisibilitiesBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
++		VisibilitiesBufferDesc.StructureByteStride = sizeof(uint32);
++
++		if (FAILED(Device->CreateBuffer(&VisibilitiesBufferDesc, nullptr, &VisibilitiesBuffer)))
++		{
++			return;
++		}
++
++		D3D11_UNORDERED_ACCESS_VIEW_DESC VisibilitiesUnorderedAccessViewDesc = {};
++		VisibilitiesUnorderedAccessViewDesc.Format = DXGI_FORMAT_UNKNOWN;
++		VisibilitiesUnorderedAccessViewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
++		VisibilitiesUnorderedAccessViewDesc.Buffer.FirstElement = 0;
++		VisibilitiesUnorderedAccessViewDesc.Buffer.NumElements = CachedNumAABBs;
++
++		if (Device->CreateUnorderedAccessView(VisibilitiesBuffer, &VisibilitiesUnorderedAccessViewDesc, &VisibilitiesUnorderedAccessView))
++		{
++			return;
++		}
++
++		D3D11_BUFFER_DESC VisibilitiesReadbackBufferDesc = {};
++		VisibilitiesReadbackBufferDesc.ByteWidth = sizeof(uint32) * CachedNumAABBs;
++		VisibilitiesReadbackBufferDesc.Usage = D3D11_USAGE_STAGING;
++		VisibilitiesReadbackBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
++		VisibilitiesReadbackBufferDesc.MiscFlags = 0;
++
++		if (Device->CreateBuffer(&VisibilitiesReadbackBufferDesc, nullptr, &VisibilitiesReadbackBuffer))
++		{
++			return;
++		}
++	}
++}
++
++void FOcclusionCullingManager::ReleaseResources()
++{
++	if (DepthTexture)
++	{
++		DepthTexture->Release();
++		DepthTexture = nullptr;
++	}
++
++	if (DepthStencilView)
++	{
++		DepthStencilView->Release();
++		DepthStencilView = nullptr;
++	}
++
++	if (DepthShaderResourceView)
++	{
++		DepthShaderResourceView->Release();
++		DepthShaderResourceView = nullptr;
++	}
++
++	if (DepthStencilState)
++	{
++		DepthStencilState->Release();
++		DepthStencilState = nullptr;
++	}
++
++	if (HiZTexture)
++	{
++		HiZTexture->Release();
++		HiZTexture = nullptr;
++	}
++
++	if (HiZShaderResourceView)
++	{
++		HiZShaderResourceView->Release();
++		HiZShaderResourceView = nullptr;
++	}
++
++	for (ID3D11ShaderResourceView* ShaderResourceView : HiZShaderResourceViews)
++	{
++		if (ShaderResourceView)
++		{
++			ShaderResourceView->Release();
++			ShaderResourceView = nullptr;
++		}
++	}
++
++	HiZShaderResourceViews.clear();
++
++	for (ID3D11UnorderedAccessView* UnorderedAccessView : HiZUnorderedAccessViews)
++	{
++		if (UnorderedAccessView)
++		{
++			UnorderedAccessView->Release();
++			UnorderedAccessView = nullptr;
++		}
++	}
++
++	HiZUnorderedAccessViews.clear();
++}
++
++void FOcclusionCullingManager::ReleaseShader()
++{
++	if (HiZDepthCopyShader)
++	{
++		HiZDepthCopyShader->Release();
++		HiZDepthCopyShader = nullptr;
++	}
++
++	if (HiZDownSampleShader)
++	{
++		HiZDownSampleShader->Release();
++		HiZDownSampleShader = nullptr;
++	}
++
++	if (HiZOcclusionCullingShader)
++	{
++		HiZOcclusionCullingShader->Release();
++		HiZOcclusionCullingShader = nullptr;
++	}
++
++	if (HiZSamplerState)
++	{
++		HiZSamplerState->Release();
++		HiZSamplerState = nullptr;
++	}
++}
++
++void FOcclusionCullingManager::ReleaseOcclusionCullingBuffer()
++{
++	if (NDCAABBsBuffer)
++	{
++		NDCAABBsBuffer->Release();
++		NDCAABBsBuffer = nullptr;
++	}
++
++	if (NDCAABBsShaderResourceView)
++	{
++		NDCAABBsShaderResourceView->Release();
++		NDCAABBsShaderResourceView = nullptr;
++	}
++
++	if (VisibilitiesBuffer)
++	{
++		VisibilitiesBuffer->Release();
++		VisibilitiesBuffer = nullptr;
++	}
++
++	if (VisibilitiesUnorderedAccessView)
++	{
++		VisibilitiesUnorderedAccessView->Release();
++		VisibilitiesUnorderedAccessView = nullptr;
++	}
++
++	if (VisibilitiesReadbackBuffer)
++	{
++		VisibilitiesReadbackBuffer->Release();
++		VisibilitiesReadbackBuffer = nullptr;
++	}
++}
++
++void FOcclusionCullingManager::BuildNDCAABB(const UPrimitiveComponent* InPrimitiveComponent, const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix)
++{
++	if (!InPrimitiveComponent)
++	{
++		return;
++	}
++
++	if (!InPrimitiveComponent->IsVisible())
++	{
++		PrimitiveVisibilities[InPrimitiveComponent] = false;
++		return;
++	}
++
++	FVector WorldMin;
++	FVector WorldMax;
++	if (!InPrimitiveComponent->GetWorldAABB(WorldMin, WorldMax))
++	{
++		PrimitiveVisibilities[InPrimitiveComponent] = false;
++		return;
++	}
++
++	FVector4 Corners[8] = {
++		{ WorldMin.X, WorldMin.Y, WorldMin.Z, 1.0f },
++		{ WorldMax.X, WorldMin.Y, WorldMin.Z, 1.0f },
++		{ WorldMin.X, WorldMax.Y, WorldMin.Z, 1.0f },
++		{ WorldMin.X, WorldMin.Y, WorldMax.Z, 1.0f },
++		{ WorldMax.X, WorldMax.Y, WorldMin.Z, 1.0f },
++		{ WorldMax.X, WorldMin.Y, WorldMax.Z, 1.0f },
++		{ WorldMin.X, WorldMax.Y, WorldMax.Z, 1.0f },
++		{ WorldMax.X, WorldMax.Y, WorldMax.Z, 1.0f }
++	};
++
++	FMatrix ViewProjMatrix = InViewMatrix * InProjectionMatrix;
++
++	FVector4 NDCMin(FLT_MAX, FLT_MAX, FLT_MAX, 1.0f);
++	FVector4 NDCMax(-FLT_MAX, -FLT_MAX, -FLT_MAX, 1.0f);
++	for (const FVector4& Corner : Corners)
++	{
++		FVector4 ScreenPos = FMatrix::VectorMultiply(Corner, ViewProjMatrix);
++
++		if (ScreenPos.W <= 0.0f)
++		{
++			continue;
++		}
++
++		FVector4 NDCPos(ScreenPos.X / ScreenPos.W, ScreenPos.Y / ScreenPos.W, ScreenPos.Z / ScreenPos.W, 1.0f);
++
++		NDCPos.X = std::clamp(NDCPos.X, -1.0f, 1.0f);
++		NDCPos.Y = std::clamp(NDCPos.Y, -1.0f, 1.0f);
++		NDCPos.Z = std::clamp(NDCPos.Z, 0.0f, 1.0f);
++
++		NDCMin.X = std::min(NDCMin.X, NDCPos.X);
++		NDCMin.Y = std::min(NDCMin.Y, NDCPos.Y);
++		NDCMin.Z = std::min(NDCMin.Z, NDCPos.Z);
++
++		NDCMax.X = std::max(NDCMax.X, NDCPos.X);
++		NDCMax.Y = std::max(NDCMax.Y, NDCPos.Y);
++		NDCMax.Z = std::max(NDCMax.Z, NDCPos.Z);
++	}
++
++	if (NDCMin.X >= FLT_MAX || NDCMin.Y >= FLT_MAX || NDCMax.Z >= FLT_MAX ||
++		NDCMax.X <= -FLT_MAX || NDCMax.Y <= -FLT_MAX || NDCMax.Z <= -FLT_MAX)
++	{
++		PrimitiveVisibilities[InPrimitiveComponent] = false;
++		return;
++	}
++
++	FAABBProxy NDCAABB;
++	NDCAABB.Min = NDCMin;
++	NDCAABB.Max = NDCMax;
++
++	NDCAABBs.push_back(NDCAABB);
++	PrimitiveComponents.push_back(InPrimitiveComponent);
++}
++
++void FOcclusionCullingManager::BuildNDCAABBs(const TArray<UPrimitiveComponent*>& InPrimitiveComponents, const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix)
++{
++	NDCAABBs.clear();
++	NDCAABBs.reserve(InPrimitiveComponents.size());
++
++	PrimitiveComponents.clear();
++	PrimitiveComponents.reserve(InPrimitiveComponents.size());
++
++	for (const auto PrimitiveComponent : InPrimitiveComponents)
++	{
++		if (PrimitiveComponent)
++		{
++			BuildNDCAABB(PrimitiveComponent, InViewMatrix, InProjectionMatrix);
++		}
++	}
++}
++
++void FOcclusionCullingManager::GenerateHiZMipMap()
++{
++	if (!HiZTexture || !DepthShaderResourceView)
++	{
++		return;
++	}
++
++	DeviceContext->CSSetShader(HiZDepthCopyShader, nullptr, 0);
++	DeviceContext->CSSetShaderResources(0, 1, &DepthShaderResourceView);
++	DeviceContext->CSSetUnorderedAccessViews(0, 1, &HiZUnorderedAccessViews[0], nullptr);
++	DeviceContext->Dispatch((Width + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, (Height + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, 1);
++
++	ID3D11ShaderResourceView* NullShaderResourceView = nullptr;
++	ID3D11UnorderedAccessView* NullUnorderedAccessView = nullptr;
++	DeviceContext->CSSetShaderResources(0, 1, &NullShaderResourceView);
++	DeviceContext->CSSetUnorderedAccessViews(0, 1, &NullUnorderedAccessView, nullptr);
++
++	DeviceContext->CSSetShader(HiZDownSampleShader, nullptr, 0);
++	DeviceContext->CSSetSamplers(0, 1, &HiZSamplerState);
++
++	uint32 MipLevels = CalculateMipLevels(Width, Height);
++
++	for (uint32 MipLevel = 1; MipLevel < MipLevels; ++ MipLevel)
++	{
++		uint32 MipWidth = std::max(1u, Width >> MipLevel);
++		uint32 MipHeight = std::max(1u, Height >> MipLevel);
++
++		ID3D11ShaderResourceView* InputShaderResourceView = HiZShaderResourceViews[MipLevel - 1];
++		DeviceContext->CSSetShaderResources(0, 1, &InputShaderResourceView);
++
++		ID3D11UnorderedAccessView* OutputUnorderedAccessView = HiZUnorderedAccessViews[MipLevel];
++		DeviceContext->CSSetUnorderedAccessViews(0, 1, &OutputUnorderedAccessView, nullptr);
++
++		DeviceContext->Dispatch((MipWidth + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, (MipHeight + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, 1);
++
++		DeviceContext->CSSetShaderResources(0, 1, &NullShaderResourceView);
++		DeviceContext->CSSetUnorderedAccessViews(0, 1, &NullUnorderedAccessView, nullptr);
++	}
++
++	DeviceContext->CSSetShader(nullptr, nullptr, 0);
++}
++
++void FOcclusionCullingManager::ExecuteOcclusionCulling()
++{
++	uint32 NumAABBs = NDCAABBs.size();
++
++	CreateOcclusionCullingBuffer(NumAABBs);
++
++	if (NumAABBs == 0)
++	{
++		return;
++	}
++
++	D3D11_MAPPED_SUBRESOURCE MappedSubresource;
++	if (SUCCEEDED(DeviceContext->Map(NDCAABBsBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubresource)))
++	{
++		memcpy(MappedSubresource.pData, NDCAABBs.data(), sizeof(FAABBProxy) * NumAABBs);
++		DeviceContext->Unmap(NDCAABBsBuffer, 0);
++	}
++
++	FOcclusionCullingConstantsData OcclusionCullingConstantsData;
++	OcclusionCullingConstantsData.NumAABBs = NumAABBs;
++	OcclusionCullingConstantsData.MipLevels = CalculateMipLevels(Width, Height);
++	OcclusionCullingConstantsData.ScreenSize = FVector2(Width, Height);
++
++	if (SUCCEEDED(DeviceContext->Map(OcclusionCullingConstantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubresource)))
++	{
++		memcpy(MappedSubresource.pData, &OcclusionCullingConstantsData, sizeof(FOcclusionCullingConstantsData));
++		DeviceContext->Unmap(OcclusionCullingConstantBuffer, 0);
++	}
++
++	DeviceContext->CSSetShader(HiZOcclusionCullingShader, nullptr, 0);
++
++	ID3D11ShaderResourceView* HiZOcclusionCullingShaderResourceViews[] = { HiZShaderResourceView, NDCAABBsShaderResourceView };
++	DeviceContext->CSSetShaderResources(0, 2, HiZOcclusionCullingShaderResourceViews);
++
++	DeviceContext->CSSetUnorderedAccessViews(0, 1, &VisibilitiesUnorderedAccessView, nullptr);
++
++	DeviceContext->CSSetConstantBuffers(0, 1, &OcclusionCullingConstantBuffer);
++	DeviceContext->CSSetSamplers(0, 1, &HiZSamplerState);
++
++	uint32 ThreadGroups = (NumAABBs + OCCLUSION_CULLING_THREAD_GROUP_NUM - 1) / OCCLUSION_CULLING_THREAD_GROUP_NUM;
++	DeviceContext->Dispatch(ThreadGroups, 1, 1);
++
++	ID3D11ShaderResourceView* NullShaderResourceViews[] = { nullptr, nullptr };
++	ID3D11UnorderedAccessView* NullUnorderedAccessView = nullptr;
++	DeviceContext->CSSetShaderResources(0, 2, NullShaderResourceViews);
++	DeviceContext->CSSetUnorderedAccessViews(0, 1, &NullUnorderedAccessView, nullptr);
++	DeviceContext->CSSetShader(nullptr, nullptr, 0);
++}
++
++void FOcclusionCullingManager::FetchOcclusionCulling()
++{
++	uint32 NumAABBs = NDCAABBs.size();
++
++	if (NumAABBs == 0)
++	{
++		return;
++	}
++
++	DeviceContext->CopyResource(VisibilitiesReadbackBuffer, VisibilitiesBuffer);
++
++	D3D11_MAPPED_SUBRESOURCE MappedSubresource;
++
++	if (SUCCEEDED(DeviceContext->Map(VisibilitiesReadbackBuffer, 0, D3D11_MAP_READ, 0, &MappedSubresource)))
++	{
++		uint32* Results = static_cast<uint32*>(MappedSubresource.pData);
++
++		uint32 CulledCount = 0;
++
++		for (uint32 i = 0; i < NumAABBs; ++i)
++		{
++			const UPrimitiveComponent* PrimitiveComponent = PrimitiveComponents[i];
++
++			bool bIsVisible = Results[i] != 0;
++			PrimitiveVisibilities[PrimitiveComponent] = bIsVisible;
++
++			if (!bIsVisible)
++			{
++				++CulledCount;
++			}
++		}
++
++		DeviceContext->Unmap(VisibilitiesReadbackBuffer, 0);
++
++		UE_LOG("[Occlusion Stats] - Input: %u, Culled: %u, Visible: %u", NumAABBs, CulledCount, NumAABBs - CulledCount);
++	}
++}
+diff --git a/Engine/Source/Render/Renderer/Public/OcclusionCullingManager.h b/Engine/Source/Render/Renderer/Public/OcclusionCullingManager.h
+new file mode 100644
+index 0000000..a3c14f8
+--- /dev/null
++++ b/Engine/Source/Render/Renderer/Public/OcclusionCullingManager.h
+@@ -0,0 +1,126 @@
++﻿#pragma once
++#include "Component/Public/PrimitiveComponent.h"
++
++struct FAABB;
++class UCamera;
++class UPrimitiveComponent;
++
++class FOcclusionCullingManager
++{
++public:
++	static FOcclusionCullingManager& GetInstance()
++	{
++		static FOcclusionCullingManager OcclusionCuller;
++		return OcclusionCuller;
++	}
++
++	FOcclusionCullingManager(const FOcclusionCullingManager&) = delete;
++	FOcclusionCullingManager(FOcclusionCullingManager&&)	  = delete;
++
++	FOcclusionCullingManager& operator=(const FOcclusionCullingManager&) = delete;
++	FOcclusionCullingManager& operator=(FOcclusionCullingManager&&)		 = delete;
++
++	void Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InDeviceContext, uint32 InWidth = 0, uint32 InHeight = 0);
++	void Resize(uint32 InWidth, uint32 InHeight);
++	void Release();
++	void Clear();
++
++	bool IsInitialized() const { return bIsInitialized; }
++
++	void UpdateOcclusionCulling(const TArray<UPrimitiveComponent*>& InPrimitiveComponents,  const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix);
++
++	bool QueryOcclusionCulled(const UPrimitiveComponent* PrimitiveComponent) const
++	{
++		auto Iter = PrimitiveVisibilities.find(PrimitiveComponent);
++		if (Iter != PrimitiveVisibilities.end())
++		{
++			return !Iter->second;
++		}
++
++		return false;
++	}
++
++	ID3D11DepthStencilView* GetDepthStencilView() const { return DepthStencilView; }
++	ID3D11DepthStencilState* GetDepthStencilState() const { return DepthStencilState; }
++
++private:
++	static constexpr uint32 DOWN_SAMPLE_THREAD_GROUP_NUM = 16;
++	static constexpr uint32 OCCLUSION_CULLING_THREAD_GROUP_NUM = 64;
++	// POD
++	struct FAABBProxy
++	{
++		FVector Min;
++		FVector Max;
++	};
++
++	struct FOcclusionCullingConstantsData
++	{
++		uint32 NumAABBs;
++		uint32 MipLevels;
++		FVector2 ScreenSize;
++	};
++
++	static uint32 CalculateMipLevels(uint32 InWidth, uint32 InHeight)
++	{
++		return static_cast<uint32>(floor(log2(max(InWidth, InHeight)))) + 1;
++	}
++
++	FOcclusionCullingManager()									= default;
++	~FOcclusionCullingManager();
++
++	void CreateResources();
++	void CreateShader();
++	void CreateOcclusionCullingBuffer(uint32 NumAABBs);
++
++	void ReleaseResources();
++	void ReleaseShader();
++	void ReleaseOcclusionCullingBuffer();
++
++	void BuildNDCAABB(const UPrimitiveComponent* InPrimitiveComponent, const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix);
++	void BuildNDCAABBs(const TArray<UPrimitiveComponent*>& InPrimitiveComponents, const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix);
++
++	void GenerateHiZMipMap();
++	void ExecuteOcclusionCulling();
++	void FetchOcclusionCulling();
++
++	ID3D11Device* Device											= nullptr;
++	ID3D11DeviceContext* DeviceContext								= nullptr;
++
++	ID3D11Texture2D* DepthTexture									= nullptr;
++	ID3D11DepthStencilView* DepthStencilView						= nullptr;
++	ID3D11ShaderResourceView* DepthShaderResourceView				= nullptr;
++	ID3D11DepthStencilState* DepthStencilState						= nullptr;
++
++	ID3D11Texture2D* HiZTexture										= nullptr;
++	ID3D11ShaderResourceView* HiZShaderResourceView					= nullptr;
++	TArray<ID3D11ShaderResourceView*> HiZShaderResourceViews;
++	TArray<ID3D11UnorderedAccessView*> HiZUnorderedAccessViews;
++
++	ID3D11ComputeShader* HiZDepthCopyShader							= nullptr;
++	ID3D11ComputeShader* HiZDownSampleShader						= nullptr;
++	ID3D11ComputeShader* HiZOcclusionCullingShader					= nullptr;
++
++	ID3D11Buffer* NDCAABBsBuffer										= nullptr;
++	ID3D11ShaderResourceView* NDCAABBsShaderResourceView				= nullptr;
++
++	ID3D11Buffer* VisibilitiesBuffer								= nullptr;
++	ID3D11UnorderedAccessView* VisibilitiesUnorderedAccessView		= nullptr;
++
++	ID3D11Buffer* VisibilitiesReadbackBuffer						= nullptr;
++
++	ID3D11Buffer* OcclusionCullingConstantBuffer					= nullptr;
++
++	ID3D11SamplerState* HiZSamplerState								= nullptr;
++
++	TArray<FAABBProxy> NDCAABBs;
++	TArray<const UPrimitiveComponent*> PrimitiveComponents;
++
++	TMap<const UPrimitiveComponent*, bool> PrimitiveVisibilities;
++
++	uint32 Width	= 0;
++	uint32 Height	= 0;
++
++	uint32 CachedNumAABBs = 0;
++
++	bool bIsInitialized = false;
++};
+diff --git a/Engine/Source/Render/Renderer/Public/Renderer.h b/Engine/Source/Render/Renderer/Public/Renderer.h
+index ac1181f..baf6340 100644
+--- a/Engine/Source/Render/Renderer/Public/Renderer.h
++++ b/Engine/Source/Render/Renderer/Public/Renderer.h
+@@ -64,12 +64,14 @@ public:
+ 	void CreateDepthStencilState();
+ 	void CreateDefaultShader();
+ 	void CreateTextureShader();
++	void CreateDepthShader();
+ 	void CreateConstantBuffer();
+ 	void CreateBillboardResources();
+ 
+ 	// Release
+ 	void ReleaseConstantBuffer();
+ 	void ReleaseDefaultShader();
++	void ReleaseDepthShader();
+ 	void ReleaseDepthStencilState();
+ 	void ReleaseRasterizerState();
+ 	void ReleaseBillboardResources();
+@@ -86,6 +88,7 @@ public:
+ 	void RenderEditorPrimitive(UPipeline& InPipeline, const FEditorPrimitive& InEditorPrimitive, const FRenderState& InRenderState);
+ 	void RenderEditorPrimitiveIndexed(UPipeline& InPipeline, const FEditorPrimitive& InEditorPrimitive, const FRenderState& InRenderState,
+ 	                            bool bInUseBaseConstantBuffer, uint32 InStride, uint32 InIndexBufferStride);
++	void RenderDepthPrepass(UCamera* InCurrentCamera, FViewportClient& InViewportClient, ID3D11DepthStencilView* InDepthStencilView, ID3D11DepthStencilState* InDepthStencilState);
+ 
+ 	void OnResize(uint32 Inwidth = 0, uint32 InHeight = 0);
+ 
+@@ -97,6 +100,7 @@ public:
+ 	ID3D11Buffer* CreateVertexBuffer(FVector* InVertices, uint32 InByteWidth, bool bCpuAccess) const;
+ 	ID3D11Buffer* CreateIndexBuffer(const void* InIndices, uint32 InByteWidth) const;
+ 	void CreatePixelShader(const wstring& InFilePath, ID3D11PixelShader** InPixelShader) const;
++	void CreateComputeShader(const wstring& InFilePath, ID3D11ComputeShader** InComputeShader) const;
+ 
+ 	bool UpdateVertexBuffer(ID3D11Buffer* InVertexBuffer, const TArray<FVector>& InVertices) const;
+ 	void UpdateConstant(ID3D11DeviceContext* InDeviceContext, ID3D11Buffer* InConstantBuffer, const UPrimitiveComponent* InPrimitive) const;
+@@ -135,7 +139,6 @@ private:
+ 	UPipeline* Pipeline = nullptr;
+ 	UDeviceResources* DeviceResources = nullptr;
+ 	UFontRenderer* FontRenderer = nullptr;
+-	TArray<UPrimitiveComponent*> PrimitiveComponents;
+ 
+ 	ID3D11DepthStencilState* DefaultDepthStencilState = nullptr;
+ 	ID3D11DepthStencilState* DisabledDepthStencilState = nullptr;
+@@ -158,6 +161,9 @@ private:
+ 	ID3D11Buffer* BillboardIndexBuffer = nullptr;
+ 	ID3D11BlendState* BillboardBlendState = nullptr;
+ 
++	ID3D11VertexShader* DepthVertexShader = nullptr;
++	ID3D11InputLayout* DepthInputLayout = nullptr;
++
+ 	uint32 Stride = 0;
+ 
+ 	FViewport* ViewportClient = nullptr;

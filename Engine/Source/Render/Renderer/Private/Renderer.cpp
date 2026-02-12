@@ -21,6 +21,7 @@
 #include "Render/Renderer/Public/OcclusionRenderer.h"
 
 #include "cpp-thread-pool/thread_pool.h"
+#include "Render/Renderer/Public/OcclusionCullingManager.h"
 
 #ifdef _
 #define PROFILE_SCOPE(name, expr) \
@@ -55,6 +56,7 @@ void URenderer::Init(HWND InWindowHandle)
 	CreateDepthStencilState();
 	CreateDefaultShader();
 	CreateTextureShader();
+	CreateDepthShader();
 	CreateConstantBuffer();
 	CreateBillboardResources();
 
@@ -76,7 +78,9 @@ void URenderer::Init(HWND InWindowHandle)
 	uint32 Width = ClientRect.right - ClientRect.left;
 	uint32 Height = ClientRect.bottom - ClientRect.top;
 
-	UOcclusionRenderer::GetInstance().Initialize(GetDevice(), GetDeviceContext(), Width, Height);
+	// UOcclusionRenderer::GetInstance().Initialize(GetDevice(), GetDeviceContext(), Width, Height);
+
+	FOcclusionCullingManager::GetInstance().Initialize(GetDevice(), GetDeviceContext(), Width, Height);
 
 #ifdef MULTI_THREADING
 	// Create deferred contexts and thread-specific constant buffers
@@ -132,6 +136,7 @@ void URenderer::Release()
 {
 	ReleaseConstantBuffer();
 	ReleaseDefaultShader();
+	ReleaseDepthShader();
 	ReleaseDepthStencilState();
 	ReleaseRasterizerState();
 	ReleaseBillboardResources();
@@ -298,6 +303,30 @@ void URenderer::CreateTextureShader()
 	TexturePSBlob->Release();
 }
 
+void URenderer::CreateDepthShader()
+{
+	ID3DBlob* VertexShaderBlob = nullptr;
+	HRESULT hr = D3DCompileFromFile(L"Asset/Shader/DepthVS.hlsl", nullptr, nullptr, "mainVS", "vs_5_0",
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &VertexShaderBlob, nullptr);
+
+	if (FAILED(hr))
+	{
+		UE_LOG("Failed to compile DepthVS");
+		return;
+	}
+
+	GetDevice()->CreateVertexShader(VertexShaderBlob->GetBufferPointer(), VertexShaderBlob->GetBufferSize(), nullptr, &DepthVertexShader);
+
+	D3D11_INPUT_ELEMENT_DESC DepthLayout[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+	};
+
+	GetDevice()->CreateInputLayout(DepthLayout, ARRAYSIZE(DepthLayout), VertexShaderBlob->GetBufferPointer(), VertexShaderBlob->GetBufferSize(), &DepthInputLayout);
+
+	VertexShaderBlob->Release();
+}
+
 /**
  * @brief 래스터라이저 상태를 해제하는 함수
  */
@@ -355,6 +384,21 @@ void URenderer::ReleaseDefaultShader()
 	{
 		DefaultVertexShader->Release();
 		DefaultVertexShader = nullptr;
+	}
+}
+
+void URenderer::ReleaseDepthShader()
+{
+	if (DepthVertexShader)
+	{
+		DepthVertexShader->Release();
+		DepthVertexShader = nullptr;
+	}
+
+	if (DepthInputLayout)
+	{
+		DepthInputLayout->Release();
+		DepthInputLayout = nullptr;
 	}
 }
 
@@ -446,10 +490,36 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewpor
 
 	const auto PrimitiveComponents = GEngine->GetCurrentLevel()->GetVisiblePrimitiveComponents(InCurrentCamera);
 
+	FOcclusionCullingManager& OcclusionCullingManager = FOcclusionCullingManager::GetInstance();
+
 	// ImGui 창 옆 키고 끌 수 있는 메뉴 넣기
 	if (bOcclusionCulling)
 	{
-		PerformOcclusionCulling(InCurrentCamera, PrimitiveComponents);
+		// PerformOcclusionCulling(InCurrentCamera, PrimitiveComponents);
+
+		RenderDepthPrepass(InCurrentCamera, InViewportClient, OcclusionCullingManager.GetDepthStencilView(), OcclusionCullingManager.GetDepthStencilState());
+
+		FViewProjConstants ViewProjConstants = InCurrentCamera->GetFViewProjConstants();
+
+		FMatrix ViewMatrix = ViewProjConstants.View;
+		FMatrix ProjectionMatrix = ViewProjConstants.Projection;
+
+		TArray<UPrimitiveComponent*> RawPrimitiveComponents;
+
+		for (const auto PrimitiveComponent : PrimitiveComponents)
+		{
+			RawPrimitiveComponents.push_back(PrimitiveComponent);
+		}
+
+		OcclusionCullingManager.UpdateOcclusionCulling(RawPrimitiveComponents, ViewMatrix, ProjectionMatrix);
+
+		// PROFILE_SCOPE("UpdateOcclusionCulling",
+		// 	OcclusionCullingManager.UpdateOcclusionCulling(RawPrimitiveComponents, ViewMatrix, ProjectionMatrix);
+		// );
+	}
+	else
+	{
+		OcclusionCullingManager.Clear();
 	}
 
 #ifdef MULTI_THREADING
@@ -506,7 +576,8 @@ void URenderer::RenderPrimitiveComponent(UPipeline& InPipeline, UPrimitiveCompon
 
 void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportClient& InViewportClient, const TArray<TObjectPtr<UPrimitiveComponent>>& InPrimitiveComponents)
 {
-	auto& OcclusionRenderer = UOcclusionRenderer::GetInstance();
+	// auto& OcclusionRenderer = UOcclusionRenderer::GetInstance();
+	FOcclusionCullingManager& OcclusionCullingManager = FOcclusionCullingManager::GetInstance();
 	TObjectPtr<UTextRenderComponent> TextRender = nullptr;
 	TArray<TObjectPtr<UBillboardComponent>> Billboards;
 
@@ -514,7 +585,7 @@ void URenderer::RenderLevel_SingleThreaded(UCamera* InCurrentCamera, FViewportCl
 	{
 		auto PrimitiveComponent = InPrimitiveComponents[i];
 
-		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || !OcclusionRenderer.IsPrimitiveVisible(PrimitiveComponent))
+		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || OcclusionCullingManager.QueryOcclusionCulled(PrimitiveComponent))
 		{
 			continue;
 		}
@@ -594,10 +665,12 @@ void URenderer::RenderLevel_MultiThreaded(UCamera* InCurrentCamera, FViewportCli
 			ID3D11Buffer* ThreadCBColors = ThreadConstantBufferColors[i];
 			ID3D11Buffer* ThreadCBMaterials = ThreadConstantBufferMaterials[i];
 
+			FOcclusionCullingManager& OcclusionCullingManager = FOcclusionCullingManager::GetInstance();
+
 			for (size_t j = StartIndex; j < EndIndex; ++j)
 			{
 				UPrimitiveComponent* PrimitiveComponent = InPrimitiveComponents[j];
-				if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || !UOcclusionRenderer::GetInstance().IsPrimitiveVisible(PrimitiveComponent))
+				if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || !OcclusionCullingManager.QueryOcclusionCulled(PrimitiveComponent))
 				{
 					continue;
 				}
@@ -634,12 +707,13 @@ void URenderer::RenderLevel_MultiThreaded(UCamera* InCurrentCamera, FViewportCli
 
 	TObjectPtr<UTextRenderComponent> TextRender = nullptr;
 	TArray<TObjectPtr<UBillboardComponent>> Billboards;
-	auto& OcclusionRenderer = UOcclusionRenderer::GetInstance();
+	// auto& OcclusionRenderer = UOcclusionRenderer::GetInstance();
+	FOcclusionCullingManager& OcclusionCullingManager = FOcclusionCullingManager::GetInstance();
 
 	for (size_t i = 0; i < InPrimitiveComponents.size(); ++i)
 	{
 		UPrimitiveComponent* PrimitiveComponent = InPrimitiveComponents[i];
-		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || !OcclusionRenderer.IsPrimitiveVisible(PrimitiveComponent))
+		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible() || OcclusionCullingManager.QueryOcclusionCulled(PrimitiveComponent))
 		{
 			continue;
 		}
@@ -756,6 +830,118 @@ void URenderer::RenderEditorPrimitiveIndexed(UPipeline& InPipeline, const FEdito
     InPipeline.SetVertexBuffer(InEditorPrimitive.Vertexbuffer, InStride);
     InPipeline.DrawIndexed(InEditorPrimitive.NumIndices, 0, 0);
 }
+
+void URenderer::RenderDepthPrepass(UCamera* InCurrentCamera, FViewportClient& InViewportClient, ID3D11DepthStencilView* InDepthStencilView, ID3D11DepthStencilState* InDepthStencilState)
+{
+	if (!InCurrentCamera || !GEngine->GetCurrentLevel())
+	{
+		return;
+	}
+
+	const auto& PrimitiveComponents = GEngine->GetCurrentLevel()->GetVisiblePrimitiveComponents(InCurrentCamera);
+	if (PrimitiveComponents.empty())
+	{
+		return;
+	}
+
+	ID3D11DeviceContext* DeviceContext = GetDeviceContext();
+
+	DeviceContext->ClearDepthStencilView(InDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0);
+
+	ID3D11RenderTargetView* OldRenderTargetView;
+	ID3D11DepthStencilView* OldDepthStencilView;
+	DeviceContext->OMGetRenderTargets(1, &OldRenderTargetView, &OldDepthStencilView);
+
+	ID3D11RenderTargetView* NullRenderTargetView = nullptr;
+	DeviceContext->OMSetRenderTargets(1, &NullRenderTargetView, InDepthStencilView);
+
+	Pipeline->SetConstantBuffer(1, true, ConstantBufferViewProj);
+	UpdateConstant(DeviceContext, ConstantBufferViewProj, InCurrentCamera->GetFViewProjConstants());
+
+	for (const auto& PrimitiveComponent : PrimitiveComponents)
+	{
+		if (!PrimitiveComponent || !PrimitiveComponent->IsVisible())
+		{
+			continue;
+		}
+
+		FRenderState RenderState = PrimitiveComponent->GetRenderState();
+		ID3D11RasterizerState* RasterizerState = GetRasterizerState(RenderState);
+
+		FPipelineInfo PipelineInfo = {
+			DepthInputLayout,
+			DepthVertexShader,
+			RasterizerState,
+			InDepthStencilState,
+			nullptr,
+			nullptr,
+			D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+		};
+
+		Pipeline->UpdatePipeline(PipelineInfo);
+
+		Pipeline->SetConstantBuffer(0, true, ConstantBufferModels);
+		UpdateConstant(DeviceContext, ConstantBufferModels, PrimitiveComponent->GetWorldTransformMatrix());
+
+		EPrimitiveType PrimitiveType = PrimitiveComponent->GetPrimitiveType();
+
+		if (PrimitiveType == EPrimitiveType::StaticMesh)
+		{
+			auto MeshComponent = Cast<UStaticMeshComponent>(PrimitiveComponent);
+
+			if (MeshComponent && MeshComponent->GetStaticMesh())
+			{
+				Pipeline->SetVertexBuffer(MeshComponent->GetVertexBuffer(), sizeof(FNormalVertex));
+				Pipeline->SetIndexBuffer(MeshComponent->GetIndexBuffer(), 0);
+
+				FStaticMesh* MeshAsset = MeshComponent->GetStaticMesh()->GetStaticMeshAsset();
+				if (MeshAsset)
+				{
+					if (MeshAsset->MaterialInfo.empty() || MeshComponent->GetStaticMesh()->GetNumMaterials() == 0)
+					{
+						Pipeline->DrawIndexed(MeshAsset->Indices.size(), 0, 0);
+					}
+					else
+					{
+						for (const FMeshSection& Section : MeshAsset->Sections)
+						{
+							Pipeline->DrawIndexed(Section.IndexCount, Section.StartIndex, 0);
+						}
+					}
+				}
+			}
+		}
+		else
+		{
+			Pipeline->SetVertexBuffer(PrimitiveComponent->GetVertexBuffer(), Stride);
+
+			if (PrimitiveComponent->GetIndexBuffer() && PrimitiveComponent->GetIndicesData())
+			{
+				Pipeline->SetIndexBuffer(PrimitiveComponent->GetIndexBuffer(), 0);
+				Pipeline->DrawIndexed(PrimitiveComponent->GetNumIndices(), 0, 0);
+			}
+			else
+			{
+				Pipeline->Draw(static_cast<uint32>(PrimitiveComponent->GetNumVertices()), 0);
+			}
+		}
+	}
+
+	DeviceContext->OMSetRenderTargets(1, &OldRenderTargetView, OldDepthStencilView);
+
+	if (OldRenderTargetView)
+	{
+		OldRenderTargetView->Release();
+	}
+
+	if (OldDepthStencilView)
+	{
+		OldDepthStencilView->Release();
+	}
+
+	DeviceResources->UpdateViewport();
+}
+
 /**
  * @brief 스왑 체인의 백 버퍼와 프론트 버퍼를 교체하여 화면에 출력
  */
@@ -1095,7 +1281,9 @@ void URenderer::OnResize(uint32 InWidth, uint32 InHeight)
 	GetDeviceContext()->OMSetRenderTargets(1, RenderTargetViews, DeviceResources->GetDepthStencilView());
 	UStatOverlay::GetInstance().OnResize();
 
-	UOcclusionRenderer::GetInstance().Resize(InWidth, InHeight);
+	// UOcclusionRenderer::GetInstance().Resize(InWidth, InHeight);
+
+	FOcclusionCullingManager::GetInstance().Resize(InWidth, InHeight);
 
 	bIsFirstPass = true;
 }
@@ -1201,6 +1389,28 @@ void URenderer::CreatePixelShader(const wstring& InFilePath, ID3D11PixelShader**
 		PixelShaderBlob->GetBufferSize(), nullptr, OutPixelShader);
 
 	PixelShaderBlob->Release();
+}
+
+void URenderer::CreateComputeShader(const wstring& InFilePath, ID3D11ComputeShader** OutComputeShader) const
+{
+	ID3DBlob* ComputeShaderBlob = nullptr;
+	ID3DBlob* ErrorBlob = nullptr;
+	HRESULT HResult = D3DCompileFromFile(InFilePath.data(), nullptr, nullptr, "mainCS", "cs_5_0",
+		D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &ComputeShaderBlob, &ErrorBlob);
+
+	if (FAILED(HResult))
+	{
+		if (ErrorBlob)
+		{
+			OutputDebugStringA(static_cast<char*>(ErrorBlob->GetBufferPointer()));
+			ErrorBlob->Release();
+		}
+		return;
+	}
+
+	GetDevice()->CreateComputeShader(ComputeShaderBlob->GetBufferPointer(), ComputeShaderBlob->GetBufferSize(), nullptr, OutComputeShader);
+
+	ComputeShaderBlob->Release();
 }
 
 /**

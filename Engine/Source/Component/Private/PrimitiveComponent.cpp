@@ -150,9 +150,9 @@ D3D11_PRIMITIVE_TOPOLOGY UPrimitiveComponent::GetTopology() const
 	return Topology;
 }
 
-void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
+bool UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
 {
-	if (!BoundingBox)	return;
+	if (!BoundingBox)	return false;
 
 	if (BoundingBox->GetType() == EBoundingVolumeType::AABB)
 	{
@@ -180,7 +180,11 @@ void UPrimitiveComponent::GetWorldAABB(FVector& OutMin, FVector& OutMax) const
 		}
 		OutMin = WorldMin;
 		OutMax = WorldMax;
+
+		return true;
 	}
+
+	return false;
 }
 
 /*

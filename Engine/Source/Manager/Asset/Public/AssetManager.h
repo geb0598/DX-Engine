@@ -32,7 +32,7 @@ public:
 	// Shader 관련 함수들
 	ID3D11VertexShader* GetVertexShader(EShaderType Type);
 	ID3D11PixelShader* GetPixelShader(EShaderType Type);
-	ID3D11InputLayout* GetIputLayout(EShaderType Type);
+	ID3D11InputLayout* GetInputLayout(EShaderType Type);
 
 	// Texture 관련 함수들
 	ComPtr<ID3D11ShaderResourceView> LoadTexture(const FName& InFilePath, const FName& InName = FName::GetNone());

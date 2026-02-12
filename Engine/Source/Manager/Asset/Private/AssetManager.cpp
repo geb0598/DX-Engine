@@ -381,7 +381,7 @@ ID3D11PixelShader* UAssetManager::GetPixelShader(EShaderType Type)
 	return PixelShaders[Type];
 }
 
-ID3D11InputLayout* UAssetManager::GetIputLayout(EShaderType Type)
+ID3D11InputLayout* UAssetManager::GetInputLayout(EShaderType Type)
 {
 	return InputLayouts[Type];
 }
