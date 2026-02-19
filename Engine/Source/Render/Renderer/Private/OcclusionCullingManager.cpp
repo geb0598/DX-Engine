@@ -1,11 +1,12 @@
 ﻿#include "pch.h"
-#include "OcclusionCullingManager.h"
+#include "Render/Renderer/Public/OcclusionCullingManager.h"
+
+#include <cpp-thread-pool/thread_pool.h>
 
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Asset/Public/AssetManager.h"
-#include "OcclusionRenderer.h"
 #include "Physics/Public/AABB.h"
-#include "Renderer.h"
+#include "Render/Renderer/Public/Renderer.h"
 
 void FOcclusionCullingManager::Initialize(ID3D11Device* InDevice, ID3D11DeviceContext* InDeviceContext, uint32 InWidth, uint32 InHeight)
 {
@@ -34,6 +35,10 @@ void FOcclusionCullingManager::Initialize(ID3D11Device* InDevice, ID3D11DeviceCo
 	Resize(InWidth, InHeight);
 
 	bIsInitialized = true;
+
+	const int32 Concurrency = std::thread::hardware_concurrency();
+	const int32 NumThreads = (Concurrency > 0) ? Concurrency : 4;
+	OcclusionCullingThreadPool = std::make_unique<ThreadPool>(NumThreads);
 }
 
 void FOcclusionCullingManager::Resize(uint32 InWidth, uint32 InHeight)
@@ -73,6 +78,8 @@ void FOcclusionCullingManager::Release()
 	Device = nullptr;
 	DeviceContext = nullptr;
 	bIsInitialized = false;
+
+	OcclusionCullingThreadPool.reset();
 }
 
 void FOcclusionCullingManager::Clear()
@@ -89,18 +96,26 @@ void FOcclusionCullingManager::UpdateOcclusionCulling(const TArray<UPrimitiveCom
 
 	Clear();
 
-	BuildNDCAABBs(InPrimitiveComponents, InViewMatrix, InProjectionMatrix);
+	PROFILE_SCOPE("BuildNDCAABBs",
+		BuildNDCAABBs_MultiThreaded(InPrimitiveComponents, InViewMatrix, InProjectionMatrix);
+	);
 
 	if (NDCAABBs.empty())
 	{
 		return;
 	}
 
-	GenerateHiZMipMap();
+	PROFILE_SCOPE("GenerateHiZMipMap",
+		GenerateHiZMipMap();
+	);
 
-	ExecuteOcclusionCulling();
+	PROFILE_SCOPE("ExecuteOcclusionCulling",
+		ExecuteOcclusionCulling()
+	);
 
-	FetchOcclusionCulling();
+	PROFILE_SCOPE("FetchOcclusionCulling",
+		FetchOcclusionCulling()
+	);
 }
 
 FOcclusionCullingManager::~FOcclusionCullingManager()
@@ -435,25 +450,18 @@ void FOcclusionCullingManager::ReleaseOcclusionCullingBuffer()
 	}
 }
 
-void FOcclusionCullingManager::BuildNDCAABB(const UPrimitiveComponent* InPrimitiveComponent, const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix)
+bool FOcclusionCullingManager::CalculateNDCAABB(const UPrimitiveComponent* InPrimitiveComponent, const FMatrix& InViewProjMatrix, FAABBProxy& OutNDCAABB)
 {
-	if (!InPrimitiveComponent)
+	if (!InPrimitiveComponent || !InPrimitiveComponent->IsVisible())
 	{
-		return;
-	}
-
-	if (!InPrimitiveComponent->IsVisible())
-	{
-		PrimitiveVisibilities[InPrimitiveComponent] = false;
-		return;
+		return false;
 	}
 
 	FVector WorldMin;
 	FVector WorldMax;
 	if (!InPrimitiveComponent->GetWorldAABB(WorldMin, WorldMax))
 	{
-		PrimitiveVisibilities[InPrimitiveComponent] = false;
-		return;
+		return false;
 	}
 
 	FVector4 Corners[8] = {
@@ -467,13 +475,12 @@ void FOcclusionCullingManager::BuildNDCAABB(const UPrimitiveComponent* InPrimiti
 		{ WorldMax.X, WorldMax.Y, WorldMax.Z, 1.0f }
 	};
 
-	FMatrix ViewProjMatrix = InViewMatrix * InProjectionMatrix;
-
 	FVector4 NDCMin(FLT_MAX, FLT_MAX, FLT_MAX, 1.0f);
 	FVector4 NDCMax(-FLT_MAX, -FLT_MAX, -FLT_MAX, 1.0f);
+
 	for (const FVector4& Corner : Corners)
 	{
-		FVector4 ScreenPos = FMatrix::VectorMultiply(Corner, ViewProjMatrix);
+		FVector4 ScreenPos = FMatrix::VectorMultiply(Corner, InViewProjMatrix);
 
 		if (ScreenPos.W <= 0.0f)
 		{
@@ -498,16 +505,13 @@ void FOcclusionCullingManager::BuildNDCAABB(const UPrimitiveComponent* InPrimiti
 	if (NDCMin.X >= FLT_MAX || NDCMin.Y >= FLT_MAX || NDCMax.Z >= FLT_MAX ||
 		NDCMax.X <= -FLT_MAX || NDCMax.Y <= -FLT_MAX || NDCMax.Z <= -FLT_MAX)
 	{
-		PrimitiveVisibilities[InPrimitiveComponent] = false;
-		return;
+		return false;
 	}
 
-	FAABBProxy NDCAABB;
-	NDCAABB.Min = NDCMin;
-	NDCAABB.Max = NDCMax;
+	OutNDCAABB.Min = NDCMin;
+	OutNDCAABB.Max = NDCMax;
 
-	NDCAABBs.push_back(NDCAABB);
-	PrimitiveComponents.push_back(InPrimitiveComponent);
+	return true;
 }
 
 void FOcclusionCullingManager::BuildNDCAABBs(const TArray<UPrimitiveComponent*>& InPrimitiveComponents, const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix)
@@ -518,11 +522,98 @@ void FOcclusionCullingManager::BuildNDCAABBs(const TArray<UPrimitiveComponent*>&
 	PrimitiveComponents.clear();
 	PrimitiveComponents.reserve(InPrimitiveComponents.size());
 
+	FMatrix ViewProjMatrix = InViewMatrix * InProjectionMatrix;
+
 	for (const auto PrimitiveComponent : InPrimitiveComponents)
 	{
-		if (PrimitiveComponent)
+		FAABBProxy NDCAABB;
+		if (CalculateNDCAABB(PrimitiveComponent, ViewProjMatrix, NDCAABB))
 		{
-			BuildNDCAABB(PrimitiveComponent, InViewMatrix, InProjectionMatrix);
+			NDCAABBs.push_back(NDCAABB);
+			PrimitiveComponents.push_back(PrimitiveComponent);
+		}
+		else if (PrimitiveComponent)
+		{
+			PrimitiveVisibilities[PrimitiveComponent] = false;
+		}
+	}
+}
+
+void FOcclusionCullingManager::BuildNDCAABBs_MultiThreaded(const TArray<UPrimitiveComponent*>& InPrimitiveComponents, const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix)
+{
+	NDCAABBs.clear();
+	NDCAABBs.reserve(InPrimitiveComponents.size());
+
+	PrimitiveComponents.clear();
+	PrimitiveComponents.reserve(InPrimitiveComponents.size());
+
+	if (InPrimitiveComponents.size() == 0)
+	{
+		return;
+	}
+
+	if (!OcclusionCullingThreadPool)
+	{
+		BuildNDCAABBs(InPrimitiveComponents, InViewMatrix, InProjectionMatrix);
+		return;
+	}
+
+	const int32 TotalNum = InPrimitiveComponents.size();
+	const int32 Concurrency = std::thread::hardware_concurrency();
+	const int32 NumChunks = (Concurrency > 0) ? Concurrency : 4;
+	const int32 ChunkSize = (TotalNum + NumChunks - 1) / NumChunks;
+
+	std::vector<std::future<FBuildNDCAABBsResult>> Futures;
+	Futures.reserve(NumChunks);
+
+	FMatrix ViewProjMatrix = InViewMatrix * InProjectionMatrix;
+
+	for (int32 ChunkIndex = 0; ChunkIndex < NumChunks; ++ChunkIndex)
+	{
+		const int32 StartIndex = ChunkIndex * ChunkSize;
+		const int32 EndIndex = std::min(StartIndex + ChunkSize, TotalNum);
+
+		if (StartIndex >= EndIndex)
+		{
+			break;
+		}
+
+		Futures.emplace_back(OcclusionCullingThreadPool->Enqueue([this, &InPrimitiveComponents, ViewProjMatrix, StartIndex, EndIndex]() -> FBuildNDCAABBsResult
+		{
+			FBuildNDCAABBsResult LocalResult;
+			LocalResult.AABBs.reserve(EndIndex - StartIndex);
+			LocalResult.Components.reserve(EndIndex - StartIndex);
+
+			for (int32 i = StartIndex; i < EndIndex; ++i)
+			{
+				const UPrimitiveComponent* PrimitiveComponent = InPrimitiveComponents[i];
+				FAABBProxy NDCAABB;
+
+				if (CalculateNDCAABB(PrimitiveComponent, ViewProjMatrix, NDCAABB))
+				{
+					LocalResult.AABBs.push_back(NDCAABB);
+					LocalResult.Components.push_back(PrimitiveComponent);
+				}
+				else if (PrimitiveComponent)
+				{
+					LocalResult.InvisibleComponents.push_back(PrimitiveComponent);
+				}
+			}
+
+			return LocalResult;
+		}));
+	}
+
+	for (auto& Future : Futures)
+	{
+		FBuildNDCAABBsResult Result = Future.get();
+
+		NDCAABBs.insert(NDCAABBs.end(), Result.AABBs.begin(), Result.AABBs.end());
+		PrimitiveComponents.insert(PrimitiveComponents.end(), Result.Components.begin(), Result.Components.end());
+
+		for (const auto PrimitiveComponent : Result.InvisibleComponents)
+		{
+			PrimitiveVisibilities[PrimitiveComponent] = false;
 		}
 	}
 }

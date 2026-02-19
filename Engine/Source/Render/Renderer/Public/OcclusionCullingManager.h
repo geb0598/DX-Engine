@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "Component/Public/PrimitiveComponent.h"
 
-struct FAABB;
+class ThreadPool;
 class UCamera;
 class UPrimitiveComponent;
 
@@ -60,12 +60,21 @@ private:
 		FVector2 ScreenSize;
 	};
 
+	struct FBuildNDCAABBsResult
+	{
+		std::vector<FAABBProxy> AABBs;
+		std::vector<const UPrimitiveComponent*> Components;
+		std::vector<const UPrimitiveComponent*> InvisibleComponents;
+	};
+
 	static uint32 CalculateMipLevels(uint32 InWidth, uint32 InHeight)
 	{
 		return static_cast<uint32>(floor(log2(max(InWidth, InHeight)))) + 1;
 	}
 
-	FOcclusionCullingManager()									= default;
+	static bool CalculateNDCAABB(const UPrimitiveComponent* InPrimitiveComponent, const FMatrix& InViewProjMatrix, FAABBProxy& OutNDCAABB);
+
+	FOcclusionCullingManager()										= default;
 	~FOcclusionCullingManager();
 
 	void CreateResources();
@@ -76,8 +85,8 @@ private:
 	void ReleaseShader();
 	void ReleaseOcclusionCullingBuffer();
 
-	void BuildNDCAABB(const UPrimitiveComponent* InPrimitiveComponent, const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix);
 	void BuildNDCAABBs(const TArray<UPrimitiveComponent*>& InPrimitiveComponents, const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix);
+	void BuildNDCAABBs_MultiThreaded(const TArray<UPrimitiveComponent*>& InPrimitiveComponents, const FMatrix& InViewMatrix, const FMatrix& InProjectionMatrix);
 
 	void GenerateHiZMipMap();
 	void ExecuteOcclusionCulling();
@@ -123,4 +132,6 @@ private:
 	uint32 CachedNumAABBs = 0;
 
 	bool bIsInitialized = false;
+
+	std::unique_ptr<ThreadPool> OcclusionCullingThreadPool;
 };

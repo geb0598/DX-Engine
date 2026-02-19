@@ -23,7 +23,6 @@
 #include "cpp-thread-pool/thread_pool.h"
 #include "Render/Renderer/Public/OcclusionCullingManager.h"
 
-#ifdef _
 #define PROFILE_SCOPE(name, expr) \
     { \
         auto __start = std::chrono::high_resolution_clock::now(); \
@@ -32,12 +31,11 @@
         double __ms = std::chrono::duration<double, std::milli>(__end - __start).count(); \
         UE_LOG("%s took %.3f ms", name, __ms); \
     }
-#endif
 
-#define PROFILE_SCOPE(name, expr) \
-{ \
-	expr; \
-}
+// #define PROFILE_SCOPE(name, expr) \
+// { \
+// 	expr; \
+// }
 
 IMPLEMENT_SINGLETON_CLASS_BASE(URenderer)
 
@@ -497,7 +495,9 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewpor
 	{
 		// PerformOcclusionCulling(InCurrentCamera, PrimitiveComponents);
 
-		RenderDepthPrepass(InCurrentCamera, InViewportClient, OcclusionCullingManager.GetDepthStencilView(), OcclusionCullingManager.GetDepthStencilState());
+		PROFILE_SCOPE("RenderDepthPrepass",
+			RenderDepthPrepass(InCurrentCamera, InViewportClient, OcclusionCullingManager.GetDepthStencilView(), OcclusionCullingManager.GetDepthStencilState());
+		);
 
 		FViewProjConstants ViewProjConstants = InCurrentCamera->GetFViewProjConstants();
 
@@ -511,11 +511,9 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewpor
 			RawPrimitiveComponents.push_back(PrimitiveComponent);
 		}
 
-		OcclusionCullingManager.UpdateOcclusionCulling(RawPrimitiveComponents, ViewMatrix, ProjectionMatrix);
-
-		// PROFILE_SCOPE("UpdateOcclusionCulling",
-		// 	OcclusionCullingManager.UpdateOcclusionCulling(RawPrimitiveComponents, ViewMatrix, ProjectionMatrix);
-		// );
+		PROFILE_SCOPE("UpdateOcclusionCulling",
+			OcclusionCullingManager.UpdateOcclusionCulling(RawPrimitiveComponents, ViewMatrix, ProjectionMatrix);
+		);
 	}
 	else
 	{
