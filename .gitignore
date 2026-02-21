@@ -448,7 +448,6 @@ GEMINI.md
 # Untracked Data Files
 /Mundi/Data/untracked/**
 /Mundi/DerivedDataCache/**
-/Mundi/ThirdParty/**
 
 # imgui-node-editor는 수정이 필요하므로 제외
 !/Mundi/ThirdParty/imgui-node-editor
@@ -464,5 +463,5 @@ GEMINI.md
 # pip 다운로드 파일 제외
 /Mundi/Tools/Python/get-pip.py
 
-!/Mundi/ThirdParty/**/*.dll
-!/Mundi/ThirdParty/**/*.lib
+!/Mundi/ThirdParty/
+!/Mundi/ThirdParty/**
