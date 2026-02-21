@@ -459,3 +459,11 @@ Document/*
 **.dmp
 
 **/[Uu]ntracked/**
+
+!/Mundi/ThirdParty/
+
+!/Mundi/ThirdParty/**/
+
+!/Mundi/ThirdParty/**/*.dll
+!/Mundi/ThirdParty/**/*.lib
+!/Mundi/ThirdParty/**/*.pdb
