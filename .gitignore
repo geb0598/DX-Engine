@@ -451,8 +451,15 @@ GEMINI.md
 /Mundi/DerivedDataCache/**
 
 # ThirdParty
-!/Mundi/ThirdParty/include/**
-/Mundi/ThirdParty/lib/**
+!Mundi/ThirdParty/include/**
+!Mundi/ThirdParty/
+!Mundi/ThirdParty/**/
+!Mundi/ThirdParty/**/*.dll
+!Mundi/ThirdParty/**/*.lib
+!Mundi/ThirdParty/**/*.pdb
+!Mundi/ThirdParty/**/*.h
+!Mundi/ThirdParty/**/*.hpp
+!Mundi/ThirdParty/**/*.inl
 
 # BuildTools
 # Python 캐시와 임시 파일 제외
