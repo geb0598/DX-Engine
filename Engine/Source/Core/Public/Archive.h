@@ -43,9 +43,21 @@ struct FArchive
 			Value.resize(Length);
 		}
 
-		for (T& Element : Value)
+		if (Length == 0)
 		{
-			*this << Element;
+			return *this;
+		}
+
+		if constexpr (std::is_trivially_copyable_v<T>)
+		{
+			Serialize(Value.data(), Length * sizeof(T));
+		}
+		else
+		{
+			for (T& Element : Value)
+			{
+				*this << Element;
+			}
 		}
 
 		return *this;
