@@ -23,20 +23,6 @@
 #include "cpp-thread-pool/thread_pool.h"
 #include "Render/Renderer/Public/OcclusionCullingManager.h"
 
-#define PROFILE_SCOPE(name, expr) \
-    { \
-        auto __start = std::chrono::high_resolution_clock::now(); \
-        expr; \
-        auto __end = std::chrono::high_resolution_clock::now(); \
-        double __ms = std::chrono::duration<double, std::milli>(__end - __start).count(); \
-        UE_LOG("%s took %.3f ms", name, __ms); \
-    }
-
-// #define PROFILE_SCOPE(name, expr) \
-// { \
-// 	expr; \
-// }
-
 IMPLEMENT_SINGLETON_CLASS_BASE(URenderer)
 
 URenderer::URenderer() = default;
