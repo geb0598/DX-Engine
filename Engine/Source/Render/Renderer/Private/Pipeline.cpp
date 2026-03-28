@@ -1,9 +1,5 @@
 #include "pch.h"
 #include "Render/Renderer/Public/Pipeline.h"
-#include "insights/insights.h"
-
-INSIGHTS_DECLARE_STATGROUP("Draw Calls", GDrawCallGroup);
-INSIGHTS_DECLARE_STAT("Draw Call", GDrawCallStat, GDrawCallGroup);
 
 /// @brief 그래픽 파이프라인을 관리하는 클래스
 UPipeline::UPipeline(ID3D11DeviceContext* InDeviceContext)
@@ -93,12 +89,10 @@ void UPipeline::SetSamplerState(uint32 Slot, bool bIsVS, ID3D11SamplerState* Sam
 /// @brief 정점 개수를 기반으로 드로우 호출
 void UPipeline::Draw(uint32 VertexCount, uint32 StartLocation)
 {
-	INSIGHTS_SCOPE(GDrawCallStat);
 	DeviceContext->Draw(VertexCount, StartLocation);
 }
 
 void UPipeline::DrawIndexed(uint32 indexCount, uint32 startIndexLocation, uint32 baseVertexLocation)
 {
-	INSIGHTS_SCOPE(GDrawCallStat);
 	DeviceContext->DrawIndexed(indexCount, startIndexLocation, baseVertexLocation);
 }
