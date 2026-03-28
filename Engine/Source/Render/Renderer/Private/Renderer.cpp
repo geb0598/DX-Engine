@@ -23,6 +23,12 @@
 #include "cpp-thread-pool/thread_pool.h"
 #include "Render/Renderer/Public/OcclusionCullingManager.h"
 
+#include "insights/insights_d3d11.h"
+
+INSIGHTS_DECLARE_STATGROUP("Rendering",    GRenderingGroup);
+INSIGHTS_DECLARE_STAT("Depth Prepass",     GDepthPrepassStat,  GRenderingGroup);
+INSIGHTS_DECLARE_STAT("Main Pass",         GMainPassStat,      GRenderingGroup);
+
 IMPLEMENT_SINGLETON_CLASS_BASE(URenderer)
 
 URenderer::URenderer() = default;
@@ -482,6 +488,7 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewpor
 		// PerformOcclusionCulling(InCurrentCamera, PrimitiveComponents);
 
 		PROFILE_SCOPE("RenderDepthPrepass",
+			INSIGHTS_GPU_SCOPE(GDepthPrepassStat);
 			RenderDepthPrepass(InCurrentCamera, InViewportClient, OcclusionCullingManager.GetDepthStencilView(), OcclusionCullingManager.GetDepthStencilState());
 		);
 
@@ -506,11 +513,14 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewpor
 		OcclusionCullingManager.Clear();
 	}
 
+	{
+		INSIGHTS_GPU_SCOPE(GMainPassStat);
 #ifdef MULTI_THREADING
-	RenderLevel_MultiThreaded(InCurrentCamera, InViewportClient, PrimitiveComponents);
+		RenderLevel_MultiThreaded(InCurrentCamera, InViewportClient, PrimitiveComponents);
 #else
-	RenderLevel_SingleThreaded(InCurrentCamera, InViewportClient, PrimitiveComponents);
+		RenderLevel_SingleThreaded(InCurrentCamera, InViewportClient, PrimitiveComponents);
 #endif
+	}
 }
 
 void URenderer::PerformOcclusionCulling(UCamera* InCurrentCamera, const TArray<TObjectPtr<UPrimitiveComponent>>& InPrimitiveComponents)

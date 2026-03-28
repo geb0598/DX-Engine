@@ -14,6 +14,11 @@
 #include "Render/UI/Window/Public/ConsoleWindow.h"
 #include "Render/UI/Overlay/Public/StatOverlay.h"
 
+#include "insights/insights_d3d11.h"
+
+INSIGHTS_DECLARE_STATGROUP("Engine", GEngineGroup);
+INSIGHTS_DECLARE_STAT("Tick", GTickStat, GEngineGroup);
+
 #ifdef IS_OBJ_VIEWER
 #include "Utility/Public/FileDialog.h"
 #endif
@@ -86,6 +91,10 @@ int FClientApp::InitializeSystem() const
 
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
+
+	// cpp-insights 초기화 (Renderer.Init() 이후 — Device/DeviceContext 확보 후)
+	INSIGHTS_GPU_INIT_D3D11(Renderer.GetDevice(), Renderer.GetDeviceContext());
+	INSIGHTS_INITIALIZE();
 
 	// StatOverlay Initialize
 	auto& StatOverlay = UStatOverlay::GetInstance();
@@ -175,9 +184,16 @@ void FClientApp::MainLoop()
 		// Game System Update
 		else
 		{
+			INSIGHTS_FRAME_BEGIN();
+
 			auto& TimeManager = UTimeManager::GetInstance();
 			TimeManager.UpdateDeltaSeconds();
-			TickSystem(TimeManager.GetDeltaSeconds());
+			{
+				INSIGHTS_SCOPE(GTickStat);
+				TickSystem(TimeManager.GetDeltaSeconds());
+			}
+
+			INSIGHTS_FRAME_END();
 		}
 	}
 }
@@ -188,6 +204,8 @@ void FClientApp::MainLoop()
  */
 void FClientApp::ShutdownSystem() const
 {
+	INSIGHTS_SHUTDOWN();
+
 	UStatOverlay::GetInstance().Release();
 	URenderer::GetInstance().Release();
 	UUIManager::GetInstance().Shutdown();

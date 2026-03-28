@@ -2,6 +2,17 @@
 #include "Render/Renderer/Public/OcclusionCullingManager.h"
 
 #include <cpp-thread-pool/thread_pool.h>
+#include "insights/insights_d3d11.h"
+
+INSIGHTS_DECLARE_STATGROUP("Occlusion Culling", GOcclusionCullingGroup);
+INSIGHTS_DECLARE_STAT("Build NDCAABB",       GBuildNDCAABBsStat,       GOcclusionCullingGroup);
+INSIGHTS_DECLARE_STAT("Generate HiZ Mipmap", GGenerateHiZStat,         GOcclusionCullingGroup);
+INSIGHTS_DECLARE_STAT("Execute Culling",      GExecuteCullingStat,      GOcclusionCullingGroup);
+INSIGHTS_DECLARE_STAT("Fetch Culling",        GFetchCullingStat,        GOcclusionCullingGroup);
+
+INSIGHTS_DECLARE_STAT("HiZ Depth Copy CS",    GHiZCopyStat,       GOcclusionCullingGroup);
+INSIGHTS_DECLARE_STAT("HiZ Downsample CS",    GHiZDownsampleStat, GOcclusionCullingGroup);
+INSIGHTS_DECLARE_STAT("AABB Occlusion CS",    GAABBTestStat,      GOcclusionCullingGroup);
 
 #include "Component/Public/PrimitiveComponent.h"
 #include "Manager/Asset/Public/AssetManager.h"
@@ -97,6 +108,7 @@ void FOcclusionCullingManager::UpdateOcclusionCulling(const TArray<UPrimitiveCom
 	Clear();
 
 	PROFILE_SCOPE("BuildNDCAABBs",
+		INSIGHTS_SCOPE(GBuildNDCAABBsStat);
 		BuildNDCAABBs_MultiThreaded(InPrimitiveComponents, InViewMatrix, InProjectionMatrix);
 	);
 
@@ -106,14 +118,17 @@ void FOcclusionCullingManager::UpdateOcclusionCulling(const TArray<UPrimitiveCom
 	}
 
 	PROFILE_SCOPE("GenerateHiZMipMap",
+		INSIGHTS_SCOPE(GGenerateHiZStat);
 		GenerateHiZMipMap();
 	);
 
 	PROFILE_SCOPE("ExecuteOcclusionCulling",
+		INSIGHTS_SCOPE(GExecuteCullingStat);
 		ExecuteOcclusionCulling()
 	);
 
 	PROFILE_SCOPE("FetchOcclusionCulling",
+		INSIGHTS_SCOPE(GFetchCullingStat);
 		FetchOcclusionCulling()
 	);
 }
@@ -628,7 +643,10 @@ void FOcclusionCullingManager::GenerateHiZMipMap()
 	DeviceContext->CSSetShader(HiZDepthCopyShader, nullptr, 0);
 	DeviceContext->CSSetShaderResources(0, 1, &DepthShaderResourceView);
 	DeviceContext->CSSetUnorderedAccessViews(0, 1, &HiZUnorderedAccessViews[0], nullptr);
-	DeviceContext->Dispatch((Width + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, (Height + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, 1);
+	{
+		INSIGHTS_GPU_SCOPE(GHiZCopyStat);
+		DeviceContext->Dispatch((Width + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, (Height + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, 1);
+	}
 
 	ID3D11ShaderResourceView* NullShaderResourceView = nullptr;
 	ID3D11UnorderedAccessView* NullUnorderedAccessView = nullptr;
@@ -640,21 +658,24 @@ void FOcclusionCullingManager::GenerateHiZMipMap()
 
 	uint32 MipLevels = CalculateMipLevels(Width, Height);
 
-	for (uint32 MipLevel = 1; MipLevel < MipLevels; ++ MipLevel)
 	{
-		uint32 MipWidth = std::max(1u, Width >> MipLevel);
-		uint32 MipHeight = std::max(1u, Height >> MipLevel);
+		INSIGHTS_GPU_SCOPE(GHiZDownsampleStat);
+		for (uint32 MipLevel = 1; MipLevel < MipLevels; ++ MipLevel)
+		{
+			uint32 MipWidth = std::max(1u, Width >> MipLevel);
+			uint32 MipHeight = std::max(1u, Height >> MipLevel);
 
-		ID3D11ShaderResourceView* InputShaderResourceView = HiZShaderResourceViews[MipLevel - 1];
-		DeviceContext->CSSetShaderResources(0, 1, &InputShaderResourceView);
+			ID3D11ShaderResourceView* InputShaderResourceView = HiZShaderResourceViews[MipLevel - 1];
+			DeviceContext->CSSetShaderResources(0, 1, &InputShaderResourceView);
 
-		ID3D11UnorderedAccessView* OutputUnorderedAccessView = HiZUnorderedAccessViews[MipLevel];
-		DeviceContext->CSSetUnorderedAccessViews(0, 1, &OutputUnorderedAccessView, nullptr);
+			ID3D11UnorderedAccessView* OutputUnorderedAccessView = HiZUnorderedAccessViews[MipLevel];
+			DeviceContext->CSSetUnorderedAccessViews(0, 1, &OutputUnorderedAccessView, nullptr);
 
-		DeviceContext->Dispatch((MipWidth + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, (MipHeight + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, 1);
+			DeviceContext->Dispatch((MipWidth + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, (MipHeight + DOWN_SAMPLE_THREAD_GROUP_NUM - 1) / DOWN_SAMPLE_THREAD_GROUP_NUM, 1);
 
-		DeviceContext->CSSetShaderResources(0, 1, &NullShaderResourceView);
-		DeviceContext->CSSetUnorderedAccessViews(0, 1, &NullUnorderedAccessView, nullptr);
+			DeviceContext->CSSetShaderResources(0, 1, &NullShaderResourceView);
+			DeviceContext->CSSetUnorderedAccessViews(0, 1, &NullUnorderedAccessView, nullptr);
+		}
 	}
 
 	DeviceContext->CSSetShader(nullptr, nullptr, 0);
@@ -700,7 +721,10 @@ void FOcclusionCullingManager::ExecuteOcclusionCulling()
 	DeviceContext->CSSetSamplers(0, 1, &HiZSamplerState);
 
 	uint32 ThreadGroups = (NumAABBs + OCCLUSION_CULLING_THREAD_GROUP_NUM - 1) / OCCLUSION_CULLING_THREAD_GROUP_NUM;
-	DeviceContext->Dispatch(ThreadGroups, 1, 1);
+	{
+		INSIGHTS_GPU_SCOPE(GAABBTestStat);
+		DeviceContext->Dispatch(ThreadGroups, 1, 1);
+	}
 
 	ID3D11ShaderResourceView* NullShaderResourceViews[] = { nullptr, nullptr };
 	ID3D11UnorderedAccessView* NullUnorderedAccessView = nullptr;
