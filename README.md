@@ -2,7 +2,7 @@
 
 ![preview](Docs/Images/main.png)
 
-# DX-Engine — Week 05: GPU Occlusion Culling & 엔진 인프라
+# DX-Engine — Week 05
 
 > Hi-Z Occlusion Culling, OBJ/FArchive 파이프라인, PIE 복제 시스템, 커스텀 스레드 풀 라이브러리 구현
 
@@ -226,5 +226,5 @@ C++17 기반의 스레드 풀 라이브러리. `Enqueue`, `ForEach`, `TransformR
 [← Main][link-main] | [Week 06 →][link-week06]
 
 <!-- 링크 레퍼런스 -->
-[link-main]: ../../README.md
-[link-week06]: ../week-06/README.md
+[link-main]: https://github.com/geb0598/DX-Engine
+[link-week06]: https://github.com/geb0598/DX-Engine/tree/week-06
