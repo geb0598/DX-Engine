@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Render/Renderer/Public/OcclusionCullingManager.h"
 
 #include <cpp-thread-pool/thread_pool.h>
@@ -107,30 +107,30 @@ void FOcclusionCullingManager::UpdateOcclusionCulling(const TArray<UPrimitiveCom
 
 	Clear();
 
-	PROFILE_SCOPE("BuildNDCAABBs",
+	{
 		INSIGHTS_SCOPE(GBuildNDCAABBsStat);
 		BuildNDCAABBs_MultiThreaded(InPrimitiveComponents, InViewMatrix, InProjectionMatrix);
-	);
+	}
 
 	if (NDCAABBs.empty())
 	{
 		return;
 	}
 
-	PROFILE_SCOPE("GenerateHiZMipMap",
+	{
 		INSIGHTS_SCOPE(GGenerateHiZStat);
 		GenerateHiZMipMap();
-	);
+	}
 
-	PROFILE_SCOPE("ExecuteOcclusionCulling",
+	{
 		INSIGHTS_SCOPE(GExecuteCullingStat);
-		ExecuteOcclusionCulling()
-	);
+		ExecuteOcclusionCulling();
+	}
 
-	PROFILE_SCOPE("FetchOcclusionCulling",
+	{
 		INSIGHTS_SCOPE(GFetchCullingStat);
-		FetchOcclusionCulling()
-	);
+		FetchOcclusionCulling();
+	}
 }
 
 FOcclusionCullingManager::~FOcclusionCullingManager()

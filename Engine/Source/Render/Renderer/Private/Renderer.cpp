@@ -28,6 +28,7 @@
 INSIGHTS_DECLARE_STATGROUP("Rendering",    GRenderingGroup);
 INSIGHTS_DECLARE_STAT("Depth Prepass",     GDepthPrepassStat,  GRenderingGroup);
 INSIGHTS_DECLARE_STAT("Main Pass",         GMainPassStat,      GRenderingGroup);
+INSIGHTS_DECLARE_STAT("Update Occlusion Culling", GUpdateOcclusionCulling, GRenderingGroup);
 
 IMPLEMENT_SINGLETON_CLASS_BASE(URenderer)
 
@@ -487,10 +488,10 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewpor
 	{
 		// PerformOcclusionCulling(InCurrentCamera, PrimitiveComponents);
 
-		PROFILE_SCOPE("RenderDepthPrepass",
-			INSIGHTS_GPU_SCOPE(GDepthPrepassStat);
+		{
+			// INSIGHTS_GPU_SCOPE(GDepthPrepassStat);
 			RenderDepthPrepass(InCurrentCamera, InViewportClient, OcclusionCullingManager.GetDepthStencilView(), OcclusionCullingManager.GetDepthStencilState());
-		);
+		}
 
 		FViewProjConstants ViewProjConstants = InCurrentCamera->GetFViewProjConstants();
 
@@ -504,9 +505,10 @@ void URenderer::RenderLevel(UCamera* InCurrentCamera, FViewportClient& InViewpor
 			RawPrimitiveComponents.push_back(PrimitiveComponent);
 		}
 
-		PROFILE_SCOPE("UpdateOcclusionCulling",
+		{
+			INSIGHTS_SCOPE(GUpdateOcclusionCulling);
 			OcclusionCullingManager.UpdateOcclusionCulling(RawPrimitiveComponents, ViewMatrix, ProjectionMatrix);
-		);
+		}
 	}
 	else
 	{
