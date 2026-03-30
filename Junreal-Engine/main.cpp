@@ -312,7 +312,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				FVector2D mouseDelta = InputMgr.GetMouseDelta();
 				// char debugMsg[128];
 			}
-			// INSIGHTS_FRAME_END();           // CPU: vsync 포함 전체 프레임 시간 기록 (GPU EndFrame은 no-op)
+			INSIGHTS_FRAME_END();           // CPU: vsync 포함 전체 프레임 시간 기록 (GPU EndFrame은 no-op)
 		}
 
 		delete MultiViewportWindow;
