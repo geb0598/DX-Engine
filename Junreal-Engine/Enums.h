@@ -364,6 +364,9 @@ enum class EEngineShowFlags : uint64
 
     SF_DebugLine = 1ull << 10,
 
+    // Light Culling
+    SF_LogDepthCulling = 1ull << 11,
+
     // Default enabled flags
     SF_DefaultEnabled = SF_Primitives | SF_StaticMeshes | SF_Grid | SF_Decals | SF_BVH | SF_BoundingBoxes | SF_DebugLine,
     

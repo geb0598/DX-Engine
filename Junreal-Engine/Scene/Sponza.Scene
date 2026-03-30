@@ -1,0 +1,80 @@
+{
+  "Version" : 2,
+  "NextUUID" : 702,
+  "PerspectiveCamera" : {
+    "FOV" : [60.000000],
+    "FarClip" : [4000.000000],
+    "Location" : [-34.115143, 16.942308, 26.720581],
+    "NearClip" : [0.100000],
+    "Rotation" : [0.000000, 8.900058, -36.099911]
+  },
+  "Actors" : [
+    {
+      "UUID" : 692,
+      "Type" : "AStaticMeshActor",
+      "Name" : "sponza_0",
+      "RootComponentUUID" : 693
+    },
+    {
+      "UUID" : 697,
+      "Type" : "AActor",
+      "Name" : "Actor_0",
+      "RootComponentUUID" : 698
+    }
+  ],
+  "Components" : [
+    {
+      "UUID" : 693,
+      "OwnerActorUUID" : 692,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [179.999863, -0.000000, 0.000000],
+      "RelativeScale" : [0.100000, 0.100000, 0.100000],
+      "StaticMesh" : "Data/crytek-sponza/sponza.obj"
+    },
+    {
+      "UUID" : 698,
+      "OwnerActorUUID" : 697,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 60.000015, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 699,
+      "OwnerActorUUID" : 697,
+      "ParentComponentUUID" : 698,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
+    },
+    {
+      "UUID" : 701,
+      "OwnerActorUUID" : 697,
+      "ParentComponentUUID" : 700,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/DirectionalLight_64x.dds"
+    },
+    {
+      "UUID" : 700,
+      "OwnerActorUUID" : 697,
+      "ParentComponentUUID" : 698,
+      "Type" : "UDirectionalLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "LightData" : {
+        "Intensity" : 1.000000,
+        "Visible" : true,
+        "Color" : [220, 220, 220, 255]
+      }
+    }
+  ]
+}

@@ -255,9 +255,10 @@ struct FCameraBufferType
 /** @note This buffer is not integrated with cbuffer system, because it is solely used for compute shader. */
 struct FTileBufferType
 {
-    uint32 NumGroupsX; 
+    uint32 NumGroupsX;
     uint32 NumGroupsY;
-    float Padding[2];
+    uint32 UseLogDepth;
+    float Padding[1];
 };
 
 /** @note This buffer is not integrated with cbuffer system, because it is solely used for compute shader. */

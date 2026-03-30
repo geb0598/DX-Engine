@@ -335,7 +335,13 @@ void SViewportWindow::RenderToolbar()
 			bool bHeatmapEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_Heatmap);
 			if (ImGui::Checkbox("Heatmap", &bHeatmapEnabled))
 			{
-				Viewport->ToggleShowFlag(EEngineShowFlags::SF_Heatmap);	
+				Viewport->ToggleShowFlag(EEngineShowFlags::SF_Heatmap);
+			}
+
+			bool bLogDepthEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_LogDepthCulling);
+			if (ImGui::Checkbox("Log Depth Culling", &bLogDepthEnabled))
+			{
+				Viewport->ToggleShowFlag(EEngineShowFlags::SF_LogDepthCulling);
 			}
 			bool bDebugLineEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_DebugLine);
 			if (ImGui::Checkbox("DebugLine", &bDebugLineEnabled))

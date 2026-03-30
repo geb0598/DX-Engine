@@ -128,6 +128,7 @@ private:
 
     uint32 Width;
     uint32 Height;
+    bool bUseLogDepth = false;
 
     // --- Shaders ---
     

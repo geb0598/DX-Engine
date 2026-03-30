@@ -42,6 +42,7 @@ void FTileLightManager::CullLights(UCameraComponent* InCameraComponent, FViewpor
     ID3D11DeviceContext* DeviceContext = Renderer->GetRHIDevice()->GetDeviceContext();
 
     // --- Update Constant Buffers ---
+    bUseLogDepth = InViewport->IsShowFlagEnabled(EEngineShowFlags::SF_LogDepthCulling);
     UpdateConstantBuffer();
     UpdateConstantBuffer(InCameraComponent, InViewport->GetSizeX() / static_cast<float>(InViewport->GetSizeY()));
     UpdateConstantBuffer(InViewport);
@@ -405,6 +406,7 @@ void FTileLightManager::UpdateConstantBuffer()
     FTileBufferType* Tile = static_cast<FTileBufferType*>(MappedResource.pData);
     Tile->NumGroupsX = (Width + TILE_WIDTH - 1) / TILE_WIDTH;
     Tile->NumGroupsY = (Height + TILE_HEIGHT - 1) / TILE_HEIGHT;
+    Tile->UseLogDepth = bUseLogDepth ? 1u : 0u;
     DeviceContext->Unmap(TileConstantBuffer.Get(), 0);
 }
 

@@ -97,6 +97,8 @@ cbuffer Tile : register(b2)
 {
     uint NumGroupsX;
     uint NumGroupsY;
+    uint UseLogDepth;
+    float _Pad_Tile;
 }
 
 cbuffer Lighting : register(b3)
@@ -141,6 +143,25 @@ groupshared uint VisibleLightCount;
 /*-----------------------------------------------------------------------------
     Helper Functions
  -----------------------------------------------------------------------------*/
+
+uint DepthToSliceLinear(float LinearDepth)
+{
+    float Normalized = saturate((LinearDepth - NearClip) / (FarClip - NearClip));
+    return clamp((uint)(floor(Normalized * NUM_SLICES)), 0, NUM_SLICES - 1);
+}
+
+uint DepthToSliceLog(float LinearDepth)
+{
+    float Normalized = saturate(log(max(LinearDepth, NearClip) / NearClip) / log(FarClip / NearClip));
+    return clamp((uint)(floor(Normalized * NUM_SLICES)), 0, NUM_SLICES - 1);
+}
+
+uint DepthToSlice(float LinearDepth)
+{
+    if (UseLogDepth)
+        return DepthToSliceLog(LinearDepth);
+    return DepthToSliceLinear(LinearDepth);
+}
 
 FPlane CreatePlane(float3 Point0, float3 Point1, float3 Point2)
 {
@@ -209,15 +230,11 @@ uint SphereToDepthMask(FSphere SphereVS)
 {
     float SphereMinDepth = SphereVS.Position.z - SphereVS.Radius;
     float SphereMaxDepth = SphereVS.Position.z + SphereVS.Radius;
-    float NormalizedSphereMinDepth = saturate((SphereMinDepth - NearClip) / (FarClip - NearClip));
-    float NormalizedSphereMaxDepth = saturate((SphereMaxDepth - NearClip) / (FarClip - NearClip));
-    float MinSliceIndex = (uint)(floor(NormalizedSphereMinDepth * NUM_SLICES));
-    MinSliceIndex = clamp(MinSliceIndex, 0, NUM_SLICES - 1);
-    float MaxSliceIndex = (uint)(ceil(NormalizedSphereMaxDepth * NUM_SLICES));
-    MaxSliceIndex = clamp(MaxSliceIndex, 0, NUM_SLICES - 1);
-    
+    uint MinSliceIndex = DepthToSlice(max(SphereMinDepth, NearClip));
+    uint MaxSliceIndex = DepthToSlice(max(SphereMaxDepth, NearClip));
+
     uint DepthMask = 0u;
-    for (int i = MinSliceIndex; i <= MaxSliceIndex; ++i)
+    for (uint i = MinSliceIndex; i <= MaxSliceIndex; ++i)
     {
         DepthMask |= (1u << i);
     }
@@ -377,7 +394,7 @@ void VisualizeLightCount(uint InVisibleLightCount, uint2 InPixelCoord, RWTexture
     }
     else
     {
-        const float MAX_LIGHTS_FOR_HEATMAP = 10.0f;
+        const float MAX_LIGHTS_FOR_HEATMAP = 20.0f;
         float HeatIntensity = saturate((float)InVisibleLightCount / MAX_LIGHTS_FOR_HEATMAP);
 
         const float4 ColdColor = float4(0.0f, 0.0f, 1.0f, 1.0f); // Blue
@@ -433,12 +450,8 @@ void mainCS(uint3 GroupID : SV_GroupID, uint3 ThreadID : SV_GroupThreadID, uint3
         if (DepthSample < 1.0f)
         {
             float LinearDepth = (NearClip * FarClip) / (FarClip - DepthSample * (FarClip - NearClip));
+            uint SliceIndex = DepthToSlice(LinearDepth);
 
-            float NormalizedDepth = saturate((LinearDepth - NearClip) / (FarClip - NearClip));
-
-            uint SliceIndex = (uint)(floor(NormalizedDepth * NUM_SLICES));
-            SliceIndex = clamp(SliceIndex, 0, NUM_SLICES - 1);
-            
             InterlockedMin(MinDepth, uint(LinearDepth));
             InterlockedMax(MaxDepth, uint(LinearDepth));
             InterlockedOr(TileDepthMask, 1u << SliceIndex);
