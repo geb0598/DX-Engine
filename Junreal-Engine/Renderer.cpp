@@ -124,7 +124,7 @@ void URenderer::RenderFrame(UWorld* World)
 {
 	INSIGHTS_SCOPE(GStat_RenderFrame);
 	BeginFrame();
-	UUIManager::GetInstance().Render();
+	{ INSIGHTS_SCOPE(GStat_UIRender); UUIManager::GetInstance().Render(); }
 
 	//원래 컴포넌트가 생성되고 레벨에 알아서 등록하고 해제하는게 훨씬 효율적인데 그렇게 하면 지금 구조상 생성자에서 레벨에 등록할 수밖에 없고
 	//그러면 파이월드로 넘어가면서 듀플리케이트 하는 시점이 GWorld가 파이월드가 되기 전이라서 기존의 에디터월드 레벨에 중복으로 등록되고
@@ -606,6 +606,8 @@ void URenderer::RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, c
 
 void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
+	INSIGHTS_SCOPE(GStat_RenderBasePass);
+	INSIGHTS_GPU_SCOPE(GStat_GPU_RenderBasePass);
 	// 씬의 액터들을 렌더링
 	// General Rendering (color + depth)
 	RenderActorsInViewport(World, Camera, Viewport);

@@ -278,7 +278,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 
 			// 입력 업데이트 (이전 프레임 상태 저장)
-			InputMgr.Update();
+			{
+				INSIGHTS_SCOPE(GStat_InputUpdate);
+				InputMgr.Update();
+			}
 
 			// 처리할 메시지가 더 이상 없을때 까지 수행 (새 입력 수집)
 			while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
@@ -294,8 +297,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 			}
 
 			// Tick 및 Render (입력 처리)
-			GetEngine()->Tick(DeltaSeconds);
-			GetEngine()->Render();
+			{ INSIGHTS_SCOPE(GStat_Tick);   GetEngine()->Tick(DeltaSeconds); }
+			{ INSIGHTS_SCOPE(GStat_Render); GetEngine()->Render(); }
 
 			if (InputMgr.IsKeyPressed(VK_ESCAPE))
 			{

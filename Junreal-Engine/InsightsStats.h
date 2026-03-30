@@ -13,8 +13,14 @@ INSIGHTS_DECLARE_STATGROUP("LightCulling", GStatGroup_LightCulling)
     CPU Stats
  -----------------------------------------------------------------------------*/
 
-// Top-level frame
+// Top-level game loop
+INSIGHTS_DECLARE_STAT("InputUpdate",          GStat_InputUpdate,          GStatGroup_Rendering)
+INSIGHTS_DECLARE_STAT("Tick",                 GStat_Tick,                 GStatGroup_Rendering)
+INSIGHTS_DECLARE_STAT("Render",               GStat_Render,               GStatGroup_Rendering)
+
+// Renderer top-level
 INSIGHTS_DECLARE_STAT("RenderFrame",          GStat_RenderFrame,          GStatGroup_Rendering)
+INSIGHTS_DECLARE_STAT("UIRender",             GStat_UIRender,             GStatGroup_Rendering)
 
 // Render passes
 INSIGHTS_DECLARE_STAT("RenderScene",          GStat_RenderScene,          GStatGroup_Rendering)
