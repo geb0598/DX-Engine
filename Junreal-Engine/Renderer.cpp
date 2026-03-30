@@ -29,6 +29,22 @@
 #include "Component/PointLightComponent.h"
 #include "Component/SpotLightComponent.h"
 
+#include "insights/insights_d3d11.h"
+
+INSIGHTS_DECLARE_STATGROUP("Renderer", GRenderGroup);
+
+// CPU Stats
+INSIGHTS_DECLARE_STAT("Component Collect", GComponentCollectStat, GRenderGroup);
+INSIGHTS_DECLARE_STAT("UI Render", GUIRenderStat, GRenderGroup);
+
+// GPU Stats
+INSIGHTS_DECLARE_STAT("Depth Prepass", GDepthPrepassStat, GRenderGroup);
+INSIGHTS_DECLARE_STAT("Light Culling", GLightCullingStat, GRenderGroup);
+INSIGHTS_DECLARE_STAT("Base Pass", GBasePassStat, GRenderGroup);
+INSIGHTS_DECLARE_STAT("Fog Pass", GFogPassStat, GRenderGroup);
+INSIGHTS_DECLARE_STAT("FXAA Pass", GFXAAPassStat, GRenderGroup);
+INSIGHTS_DECLARE_STAT("Editor Pass", GEditorPassStat, GRenderGroup);
+
 URenderer::URenderer(URHIDevice* InDevice) : RHIDevice(InDevice)
 {
     FTileLightManager::GetInstance().Initialize(this);
@@ -118,17 +134,26 @@ void URenderer::RSSetDefaultState()
 void URenderer::RenderFrame(UWorld* World)
 {
 	BeginFrame();
-	UUIManager::GetInstance().Render();
+	{
+		INSIGHTS_SCOPE(GUIRenderStat); 
+		UUIManager::GetInstance().Render();
+	}
 
 	//원래 컴포넌트가 생성되고 레벨에 알아서 등록하고 해제하는게 훨씬 효율적인데 그렇게 하면 지금 구조상 생성자에서 레벨에 등록할 수밖에 없고
 	//그러면 파이월드로 넘어가면서 듀플리케이트 하는 시점이 GWorld가 파이월드가 되기 전이라서 기존의 에디터월드 레벨에 중복으로 등록되고
 	//파이월드에는 컴포넌트 등록 안되어있어서 터짐. 파이월드에 등록하는건 beingplay에서 하면 된다지만 생성자가 아닌 곳에서 생성이후 렌더링 전 레벨에 등록할
 	//방안이 떠오르지 않아서 일단 급한대로 매프레임 컴포넌트 수집하는 형태로 작성함
-	World->GetLevel()->CollectComponentsToRender();
+	{
+		INSIGHTS_SCOPE(GComponentCollectStat);
+		World->GetLevel()->CollectComponentsToRender();
+	}
 
 	RenderViewPorts(World);
 
-	UUIManager::GetInstance().EndFrame();
+	{
+		INSIGHTS_SCOPE(GUIRenderStat);
+		UUIManager::GetInstance().EndFrame();
+	}
 	EndFrame();
 }
 
@@ -485,6 +510,7 @@ void URenderer::SetViewModeType(EViewModeIndex ViewModeIndex)
 
 void URenderer::EndFrame()
 {
+	INSIGHTS_FRAME_END();
 	// 렌더링 통계 수집 종료
 	URenderingStatsCollector& StatsCollector = URenderingStatsCollector::GetInstance();
 	StatsCollector.EndFrame();
@@ -523,6 +549,7 @@ void URenderer::RenderViewPorts(UWorld* World)
 
 void URenderer::RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, const FMatrix& ProjectionMatrix)
 {
+	INSIGHTS_GPU_SCOPE(GDepthPrepassStat);
 	// +-+ Set Render State +-+
 	RHIDevice->OMSetDepthOnlyTarget();     // DSV binding
 	RHIDevice->OMSetBlendState(false);     // color write mask = 0
@@ -598,6 +625,7 @@ void URenderer::RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, c
 
 void URenderer::RenderBasePass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
+	INSIGHTS_GPU_SCOPE(GBasePassStat);
 	// 씬의 액터들을 렌더링
 	// General Rendering (color + depth)
 	RenderActorsInViewport(World, Camera, Viewport);
@@ -668,15 +696,18 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 		// --- Temporary Light Cull Test ---
 		RenderSceneDepthPass(World, ViewMatrix, ProjectionMatrix);
 			
-		GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::None);
-		FTileLightManager::GetInstance().CullLights(Camera->GetCameraComponent(), Viewport, LightingCBufferData);
-		ID3D11Buffer* ConstantBuffers[] = {
-			FTileLightManager::GetInstance().GetViewportConstantBuffer(),
-			FTileLightManager::GetInstance().GetTileConstantBuffer()
-		};
-		GetRHIDevice()->GetDeviceContext()->PSSetConstantBuffers(12, 2, ConstantBuffers);
-		ID3D11ShaderResourceView* PointLightMaskSRV[] = { FTileLightManager::GetInstance().GetPointLightMaskBufferSRV(), FTileLightManager::GetInstance().GetSpotLightMaskBufferSRV()  };
-		GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 2, PointLightMaskSRV);
+		{
+			INSIGHTS_GPU_SCOPE(GEditorPassStat);
+			GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::None);
+			FTileLightManager::GetInstance().CullLights(Camera->GetCameraComponent(), Viewport, LightingCBufferData);
+			ID3D11Buffer* ConstantBuffers[] = {
+				FTileLightManager::GetInstance().GetViewportConstantBuffer(),
+				FTileLightManager::GetInstance().GetTileConstantBuffer()
+			};
+			GetRHIDevice()->GetDeviceContext()->PSSetConstantBuffers(12, 2, ConstantBuffers);
+			ID3D11ShaderResourceView* PointLightMaskSRV[] = { FTileLightManager::GetInstance().GetPointLightMaskBufferSRV(), FTileLightManager::GetInstance().GetSpotLightMaskBufferSRV() };
+			GetRHIDevice()->GetDeviceContext()->PSSetShaderResources(4, 2, PointLightMaskSRV);
+		}
 
 		GetRHIDevice()->OMSetRenderTargets(ERenderTargetType::Frame | ERenderTargetType::ID);
 			
@@ -722,6 +753,8 @@ void URenderer::RenderScene(UWorld* World, ACameraActor* Camera, FViewport* View
 
 void URenderer::RenderEditorPass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
+	INSIGHTS_GPU_SCOPE(GEditorPassStat);
+
 	// 뷰포트의 실제 크기로 aspect ratio 계산
 	float ViewportAspectRatio = static_cast<float>(Viewport->GetSizeX()) / static_cast<float>(Viewport->GetSizeY());
 	if (Viewport->GetSizeY() == 0)
@@ -1235,7 +1268,7 @@ void URenderer::RenderPostProcessing(UShader* Shader)
 
 void URenderer::RenderFogPass(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
-
+	INSIGHTS_GPU_SCOPE(GFogPassStat);
 	for (UExponentialHeightFogComponent* FogComponent : World->GetLevel()->GetComponentList<UExponentialHeightFogComponent>())
 	{
 		if (FogComponent->IsRender())
@@ -1249,6 +1282,7 @@ void URenderer::RenderFogPass(UWorld* World, ACameraActor* Camera, FViewport* Vi
 }
 void URenderer::RenderFXAAPaxx(UWorld* World, ACameraActor* Camera, FViewport* Viewport)
 {
+	INSIGHTS_GPU_SCOPE(GFXAAPassStat);
 	UpdateSetCBuffer(FGammaBufferType(Gamma));
 	RenderPostProcessing(UResourceManager::GetInstance().Load<UShader>("Gamma.hlsl"));
 	for (UFXAAComponent* FXAAComponent : World->GetLevel()->GetComponentList<UFXAAComponent>())

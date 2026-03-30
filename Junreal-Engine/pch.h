@@ -61,6 +61,9 @@
 // nlohmann
 #include "nlohmann/json.hpp"
 
+// cpp-insights profiling
+#include "insights/insights_d3d11.h"
+
 //Manager
 #include "Renderer.h"
 #include "InputManager.h"

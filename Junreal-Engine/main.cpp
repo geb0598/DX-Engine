@@ -1,4 +1,5 @@
 ﻿#include "pch.h"
+#include "InsightsStats.h"
 #include <fstream>
 #include "FViewport.h"
 #include "FViewportClient.h"
@@ -198,6 +199,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		d3d11RHI.Initialize(hWnd);
 		URenderer renderer(&d3d11RHI); //렌더러 생성이 가장 먼저 되어야 합니다.
 
+		INSIGHTS_GPU_INIT_D3D11(d3d11RHI.GetDevice(), d3d11RHI.GetDeviceContext());
+		INSIGHTS_INITIALIZE();
+
 		//UResourceManager::GetInstance().Initialize(d3d11RHI.GetDevice(),d3d11RHI.GetDeviceContext()); //리소스매니저 이니셜라이즈
 		// UI Manager Initialize
 		UUIManager::GetInstance().Initialize(hWnd, d3d11RHI.GetDevice(), d3d11RHI.GetDeviceContext()); //유아이매니저 이니셜라이즈
@@ -261,6 +265,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		bool bIsExit = false;
 		while (bIsExit == false)
 		{
+			INSIGHTS_FRAME_BEGIN();
 			MSG msg;
 
 			QueryPerformanceCounter(&CurrTime);
@@ -307,6 +312,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				FVector2D mouseDelta = InputMgr.GetMouseDelta();
 				// char debugMsg[128];
 			}
+			// INSIGHTS_FRAME_END();           // CPU: vsync 포함 전체 프레임 시간 기록 (GPU EndFrame은 no-op)
 		}
 
 		delete MultiViewportWindow;
@@ -319,8 +325,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		UUIManager::GetInstance().Release();
 		ObjectFactory::DeleteAll(true);
+
 	}
 	SaveIniFile();
+
+	INSIGHTS_SHUTDOWN();
 
 	return 0;
 }
