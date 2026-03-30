@@ -1,128 +1,187 @@
-# Week7 Team5(이준용, 국동희, 정찬호, 정석영) 기술문서
+[← Week 05][link-week05] | [Week 07 →][link-week07]
 
-## 1. 개요
+![preview](Docs/Images/main.gif)
 
-본 문서는 KTL 엔진에 구현된 데칼 렌더링 시스템의 기술적 사양과 아키텍처를 설명합니다.
+# DX-Engine — Week 06
 
-데칼 시스템은 씬(Scene) 내의 물체 표면에 텍스처를 투영(Projection)하여 총알 자국, 혈흔, 특정 문양 등 다양한 시각 효과를 표현하는 기능입니다. 본 엔진의 데칼 시스템은 포워드 렌더링(Forward Rendering) 파이프라인 내의 커스텀 렌더링 패스(Custom Rendering Pass)를 통해 구현되었습니다.
+> SAT 기반 OBB 충돌 감지, 하이브리드 디퍼드 라이팅, Octree 디버깅 & 시각화, 노이즈 텍스쳐 기반 데칼 페이드 인/아웃
 
----
-## 2. 핵심 아키텍처
-
-데칼 시스템은 아래의 주요 클래스들 간의 상호작용을 통해 동작합니다.
-
--   **`ADecalActor`**: 레벨에 배치할 수 있는 액터(Actor)입니다. 데칼의 위치, 회전, 크기를 나타내는 컨테이너 역할을 합니다.
--   **`UDecalComponent`**: `ADecalActor`의 루트 컴포넌트(Root Component)로, 데칼의 모든 핵심 데이터와 로직을 포함합니다. 투영할 텍스처, 페이드 효과, 프로젝션 설정 등을 관리합니다.
--   **`FDecalPass`**: 렌더링 파이프라인의 한 단계로, 매 프레임 씬에 있는 모든 `UDecalComponent`를 찾아 대상 물체에 데칼을 그리는 모든 실제 작업을 수행합니다.
+![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
+![DirectX 11](https://img.shields.io/badge/DirectX-11-0078D4?logo=microsoft&logoColor=white)
+![HLSL](https://img.shields.io/badge/HLSL-SM_5.0-5C2D91)
+![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)
 
 ---
-## 3. 컴포넌트 및 액터 구현
 
-### 3.1. `UDecalComponent`
+## Features
 
--   데칼의 모든 속성을 정의하는 핵심 컴포넌트입니다.
--   멤버 변수로 `DecalTexture`와 `FadeTexture`를 가져 텍스처 정보를 관리합니다.
--   직렬화(Serialization) 로직을 오버라이드하여, 텍스처 파일의 경로를 레벨 파일에 저장하고 로드합니다.
-
-### 3.2. `ADecalActor`
-
--   `UDecalComponent`를 루트 컴포넌트로 사용하는 간단한 액터입니다.
--   에디터에서 사용자가 데칼을 시각적으로 확인하고 배치할 수 있도록, 식별용 아이콘을 표시하는 `UBillboardComponent`를 자식으로 가집니다. (`InitializeComponents` 함수에서 생성)
--   별도의 `Serialize` 함수 없이 부모인 `AActor`의 직렬화 로직을 상속받아, `OwnedComponents` 배열에 있는 모든 컴포넌트(데칼, 빌보드)의 정보를 재귀적으로 저장하고 로드합니다.
+- **SAT 기반 OBB 충돌 감지** — SAT를 활용한 OBB간 충돌 판정 자체 구현
+- **하이브리드 디퍼드 포인트 라이팅** — 기존 Forward Rendering 파이프라인을 최대한 유지하며 라이팅 실험
+- **Octree 디버깅 & 시각화** — 와이어프레임 시각화 도구로 타인 코드의 버그 탐색 및 수정
+- **데칼 페이드 인/아웃** — 노이즈 텍스쳐 셰이더 기반 비선형 페이드 효과
 
 ---
-## 4. 렌더링 파이프라인 (`FDecalPass`)
 
-`FDecalPass`는 포워드 렌더링 루프에서 데칼을 그리는 책임을 가집니다.
+## Key Systems
 
-### 4.1. Show Flag 검사
-`RenderingContext`에 포함된 `ShowFlags`를 확인하여, `EEngineShowFlags::SF_Decal` 플래그가 켜져 있을 때만 렌더링을 수행합니다. 이를 통해 에디터에서 데칼 표시 여부를 토글할 수 있습니다.
+### SAT 기반 OBB 충돌 감지
 
-### 4.2. 대상 객체 선정 (Culling)
--   모든 데칼 컴포넌트를 순회하며, 씬의 모든 물체를 대상으로 데칼을 그리는 것은 매우 비효율적입니다.
--   따라서, **Octree**를 사용하여 데칼의 바운딩 박스(OBB)와 겹칠 가능성이 있는 물체들만 1차적으로 선별합니다.
--   선별된 물체들에 한해, **분리 축 이론(SAT)**을 구현한 `Intersects(OBB, AABB)` 함수로 더욱 정밀한 충돌 검사를 수행하여, 데칼을 다시 그려야 할 최종 대상 목록을 확정합니다.
+데칼 프로젝션, 피킹, 물리 판정 등 엔진 전반의 공간 쿼리에서 임의 회전된 박스끼리의 교차 여부를 판정하는 핵심 충돌 감지 알고리즘.
+최대 15개의 분리축을 순차적으로 검사하며, 하나의 축에서라도 분리가 확인되면 즉시 종료하는 Early Exit 패턴을 적용한다.
 
-### 4.3. 재-렌더링 (Re-Rendering) 및 Z-파이팅 해결
--   `FDecalPass`는 선별된 대상 객체들을 **`DecalShader.hlsl`이라는 전용 셰이더를 사용해서 한 번 더 그립니다.**
--   이때 동일한 위치에 지오메트리를 다시 그리면서 발생하는 Z-파이팅(표면이 겹쳐 지지직거리는 현상)을 방지하기 위해, 데칼 전용으로 생성된 **`DepthStencilState`**를 사용합니다.
--   이 상태는 뎁스 테스트는 정상적으로 수행(`DepthEnable = TRUE`, `DepthFunc = D3D11_COMPARISON_LESS_EQUAL`)하되, 뎁스 버퍼에 새로운 값을 쓰지는 않도록(`DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO`) 설정되어 있습니다. 이를 통해 데칼이 기존 지오메트리 위에 올바르게 그려지면서도 뎁스 값의 충돌을 회피합니다.
-    ```cpp
-    // Decal Depth Stencil (Depth Read, Stencil X)
-    D3D11_DEPTH_STENCIL_DESC DecalDescription = {};
-    DecalDescription.DepthEnable = TRUE;
-    DecalDescription.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ZERO;
-    DecalDescription.DepthFunc = D3D11_COMPARISON_LESS_EQUAL;
-    
-    Device->CreateDepthStencilState(&DecalDescription, &DecalDepthStencilState);
-    ```
--   알파 블렌딩(Alpha Blending)을 활성화하여, 기존에 그려진 물체 표면 위에 데칼 텍스처가 자연스럽게 덧입혀지도록 합니다.
-
-### 4.4. 통계(Stat) 수집
--   패스 실행 시 렌더링된 데칼의 총 개수, 충돌 검사를 수행한 컴포넌트의 수 등을 카운트합니다.
--   수집된 정보는 `UStatOverlay::GetInstance().RecordDecalStats()`를 통해 에디터의 통계 오버레이에 전달되어 렌더링 성능을 모니터링하는 데 사용됩니다.
-
----
-## 5. 데칼 투영 및 셰이더 (`DecalShader.hlsl`)
-
-### 5.1. 투영 방향 및 행렬 계산
-
--   **투영 방향**: 데칼은 `UDecalComponent`의 **로컬 X축을 Forward Vector**로 간주하고, 이 방향으로 텍스처를 투영합니다.
--   **행렬 계산**:
-    -   **`DecalViewProjection`**: `FDecalPass`에서 계산되며, 월드 좌표계의 점을 데칼의 로컬 직육면체 공간으로 변환하는 행렬입니다. (`데칼의 World 역행렬 * 데칼의 Projection 행렬`)
-    -   **`ConstantBufferViewProj`**: 렌더링 대상 물체를 화면에 올바르게 그리기 위해 필요한 **메인 카메라**의 View/Projection 행렬입니다.
-
-### 5.2. 버텍스 셰이더 (`mainVS`)
-
-버텍스 셰이더는 대상 물체의 정점을 최종 화면 위치로 변환하는 표준적인 역할을 수행합니다. 메인 카메라의 `View`와 `Projection` 행렬을 사용하여 MVP(Model-View-Projection) 변환을 계산하고, 픽셀 셰이더에 필요한 월드 좌표 등의 정보를 전달합니다.
-
-```hlsl
-PS_INPUT mainVS(VS_INPUT Input)
+```cpp
+bool FOBB::Intersects(const FOBB& Other) const
 {
-    PS_INPUT Output;
+    // 두 OBB의 로컬 축 추출
+    const FVector AxisLhs[] = { /* ScaleRotation 행렬의 행 벡터 3개 */ };
+    const FVector AxisRhs[] = { /* Other.ScaleRotation 행렬의 행 벡터 3개 */ };
 
-    float4 Pos = mul(float4(Input.Position, 1.0f), World);
-    Output.Position = mul(mul(Pos, View), Projection);
-    Output.WorldPos = Pos;
-    Output.Normal = normalize(mul(float4(Input.Normal, 0.0f), WorldInverseTranspose));
-    Output.Tex = Input.Tex;
+    FVector TestAxis[15];
+    size_t Count = 0;
 
-    return Output;
+    // 1. 면 법선 6개
+    TestAxis[Count++] = AxisLhs[0]; TestAxis[Count++] = AxisLhs[1]; TestAxis[Count++] = AxisLhs[2];
+    TestAxis[Count++] = AxisRhs[0]; TestAxis[Count++] = AxisRhs[1]; TestAxis[Count++] = AxisRhs[2];
+
+    // 2. Edge 교차축 최대 9개 (영벡터 제외)
+    for (size_t i = 0; i < 3; ++i)
+        for (size_t j = 0; j < 3; ++j)
+        {
+            TestAxis[Count] = AxisLhs[i].Cross(AxisRhs[j]);
+            if (TestAxis[Count].LengthSquared() > DBL_EPSILON)
+                ++Count;
+        }
+
+    const FVector Diff = Other.Center - Center;
+
+    for (size_t i = 0; i < Count; ++i)
+    {
+        float ProjectedDist = abs(Diff.Dot(TestAxis[i]));
+
+        float RadiusLhs =
+            Extents.X * abs(AxisLhs[0].Dot(TestAxis[i])) +
+            Extents.Y * abs(AxisLhs[1].Dot(TestAxis[i])) +
+            Extents.Z * abs(AxisLhs[2].Dot(TestAxis[i]));
+
+        float RadiusRhs =
+            Other.Extents.X * abs(AxisRhs[0].Dot(TestAxis[i])) +
+            Other.Extents.Y * abs(AxisRhs[1].Dot(TestAxis[i])) +
+            Other.Extents.Z * abs(AxisRhs[2].Dot(TestAxis[i]));
+
+        if (ProjectedDist > RadiusLhs + RadiusRhs)
+            return false;  // 분리축 발견 → 즉시 종료
+    }
+
+    return true;  // 모든 축 통과 → 교차
 }
 ```
 
-### 5.3. 픽셀 셰이더 (`mainPS`)
+OBB-AABB 교차는 AABB를 Identity 회전의 OBB로 변환해 OBB-OBB 경로로 위임한다.
 
-픽셀 셰이더는 실제 데칼 텍스처를 픽셀에 적용하는 핵심 로직을 담고 있습니다.
+<details>
+<summary><b>Technical Details — 클릭해서 펼치기</b></summary>
 
-1.  **수동 클리핑 (Manual Clipping)**:
-    -   버텍스 셰이더에서 전달받은 픽셀의 월드 좌표를 `DecalViewProjection` 행렬로 변환하여 데칼의 로컬 좌표를 얻습니다.
-    -   이 좌표가 데칼의 직육면체 볼륨(예: x, y, z가 모두 -1.01 ~ 1.01 사이)을 벗어나는 경우, `discard` 명령으로 해당 픽셀의 렌더링을 즉시 중단합니다.
-    -   경계 값에 `0.01f`와 같은 허용 오차(Tolerance)를 두어, 가장자리에서 발생하는 아티팩트를 방지합니다.
+<br>
 
-2.  **UV 좌표 계산**: 픽셀이 볼륨 안에 있다면, 로컬 좌표의 Y, Z 값을 변환하여 데칼 텍스처를 샘플링할 UV 좌표로 사용합니다.
+**SAT → Octree 공간 쿼리 즉시 연계**
 
-3.  **페이드 효과 적용**: `FadeProgress` 값과 노이즈 텍스처인 `FadeTexture`를 사용하여 픽셀의 최종 알파(투명도) 값을 계산합니다. 이를 통해 텍스처의 어두운 부분부터 먼저 사라지는 등 유기적인 페이드 아웃 효과를 구현합니다.
-    ```hlsl
-    DecalColor.a *= 1.0f - saturate(FadeProgress / (FadeValue + 1e-6));
-    ```
+구현 완료 후 DecalPass의 프리미티브 탐색에 바로 활용했다.
+기존에는 씬 전체 프리미티브를 순회했지만(`O(N)`), 데칼의 OBB와 교차하지 않는 Octree 서브트리는 통째로 스킵하도록 교체했다.
+
+```cpp
+void FDecalPass::Query(FOctree* InOctree, UDecalComponent* InDecal,
+                        TArray<UPrimitiveComponent*>& OutPrimitives)
+{
+    auto BoundingBox = static_cast<const FOBB*>(InDecal->GetBoundingBox());
+    if (!BoundingBox->Intersects(InOctree->GetBoundingBox()))
+        return;  // OBB-AABB 교차 없으면 서브트리 전체 스킵
+
+    InOctree->GetAllPrimitives(OutPrimitives);
+
+    if (!InOctree->IsLeafNode())
+        for (auto Child : InOctree->GetChildren())
+            Query(Child, InDecal, OutPrimitives);
+}
+```
+
+</details>
 
 ---
-## 6. 응용: 가짜 스포트라이트 구현 (Application: Fake Spot Light)
 
-본 엔진에 구현된 `UDecalComponent`와 `UBillboardComponent`를 조합하여, 동적 조명 계산 없이 효율적으로 스포트라이트 효과를 모방할 수 있습니다.
+### 하이브리드 디퍼드 포인트 라이팅
 
-### 6.1. 개요
+![lighting](Docs/Images/hybrid-lighting.gif)
 
-가짜 스포트라이트는 실제 광원을 계산하는 대신, 빛이 비치는 부분과 광원 자체를 각각 데칼과 빌보드로 그려서 표현하는 기법입니다. 저렴한 비용으로 준수한 퀄리티의 스포트라이트 효과를 낼 수 있어 씬의 분위기를 연출하는 데 효과적입니다.
+부트캠프 일정상 week-06 주차에 라이팅 구현은 예정되어 있지 않았다. 기존 파이프라인은 포워드 렌더링만 사용했고, 별도의 라이팅 패스가 없었다. 개인적으로 라이팅을 한번 시험해보고 싶어서 추가했는데, 기존 팀 작업물에 영향을 최소화해야 했으므로 기존 포워드 패스는 그대로 두고 필요한 정보(노말)만 추가로 기록한 뒤, 포워드 렌더링이 끝난 후 라이팅을 가산하는 하이브리드 방식을 선택했다.
 
-### 6.2. 구성 요소
+```
+기존 포워드 파이프라인 (변경 없음)
+StaticMeshPass → SceneColor RTV
 
--   **광원 표현 (`UBillboardComponent`):**
-    -   스포트라이트의 램프나 빛이 시작되는 지점의 '광원(light source)' 자체를 표현하는 데 사용됩니다.
-    -   항상 카메라를 바라보는 빌보드의 특성을 이용하여, 렌즈 플레어나 빛 번짐(Glow) 텍스처를 렌더링하면 어느 각도에서나 광원이 자연스럽게 보이도록 할 수 있습니다.
+추가된 라이팅 패스
+StaticMeshPass → SceneColor(t0) + NormalBuffer(t1)  [MRT만 추가]
+PointLightPass → G-buffer 샘플링 → 월드 좌표 역투영 → Blinn-Phong → Additive Blend
+```
 
--   **빛 투사 (`UDecalComponent`):**
-    -   스포트라이트의 핵심인 '빛이 표면에 닿아 밝혀지는 효과'를 구현합니다.
-    -   **텍스처:** 중앙은 밝고 가장자리로 갈수록 부드럽게 어두워지는 원형 그라데이션(gradient) 텍스처를 사용합니다.
-    -   **투영:** 데칼의 투영 볼륨(Projection Volume)이 스포트라이트의 원뿔(Cone) 역할을 합니다. 원근 투영(Perspective Projection)을 사용하는 것이 원뿔 형태를 표현하는 데 더 적합합니다.
+<details>
+<summary><b>Technical Details — 클릭해서 펼치기</b></summary>
+
+<br>
+
+**월드 좌표 역투영**
+
+깊이 버퍼와 InvProjection/InvView 행렬로 픽셀의 월드 좌표를 복원한다.
+ImGui 패널이 있는 분할 뷰포트 환경에서도 정확하도록 `SV_Position` 기반 화면 좌표에 viewport offset 보정을 적용했다.
+
+```hlsl
+float2 ViewportUV = (ScreenPosition - Viewport.xy) / Viewport.zw;
+float2 ClipPos = ViewportUV * 2.0 - 1.0;
+ClipPos.y *= -1.0;  // DirectX Y축 반전
+float4 ViewPos = mul(float4(ClipPos, Depth, 1.0f), InvProjection);
+ViewPos /= ViewPos.w;
+float3 WorldPosition = mul(ViewPos, InvView).xyz;
+```
+
+</details>
+
+---
+
+### Octree 디버깅 & 시각화
+
+![octree](Docs/Images/octree.gif)
+
+팀원의 Octree 구현에서 버그가 발생해 동작이 올바르지 않았다. 문제를 특정하기 위해 Octree 구조를 에디터에서 실시간으로 확인할 수 있는 와이어프레임 시각화 도구를 먼저 제작했고, 이를 통해 버그를 찾아 수정했다.
+
+**시각화 구조**: `SF_Octree` ShowFlag → `TraverseOctree()` DFS → 각 노드의 AABB를 `UBoundingBoxLines`로 변환 → BatchLines 동적 버퍼에 합산 → MainBar "Octree 표시" 메뉴로 토글
+
+**발견한 버그**: 비리프 노드의 프리미티브를 수집하지 않는 문제와 `Remove()` 시 비리프 노드의 Primitives를 확인하지 않는 문제를 swap-and-pop 방식으로 수정했다.
+
+---
+
+### 데칼 페이드 인/아웃
+
+초기에는 단순 선형 alpha 감소로 구현했다가, 노이즈 텍스처를 마스크로 활용하는 Threshold Dissolve 방식으로 업그레이드했다. FadeTexture의 픽셀 그레이스케일 값이 임계값 역할을 해서, FadeProgress가 해당 픽셀의 밝기를 넘어서는 순간 그 픽셀이 먼저 소멸한다. 어두운 픽셀일수록 먼저 사라지는 비선형 효과로, 단순 alpha fade보다 시각적으로 풍부한 연출을 텍스처 한 장으로 달성한다.
+
+```hlsl
+// Before: 단순 선형 alpha
+DecalColor.a *= (1.0f - FadeProgress);
+
+// After: Threshold Dissolve — 픽셀마다 사라지는 타이밍이 다름
+float FadeValue = FadeTexture.Sample(FadeSampler, DecalUV).r;
+DecalColor.a *= 1.0f - saturate(FadeProgress / (FadeValue + 1e-6));  // 1e-6: divide-by-zero 방지
+if (DecalColor.a < 0.001f) { discard; }
+```
+
+Perlin Noise, Voronoi, Gabor, Techno 등 11종의 노이즈 텍스처를 마스크로 지원해 연출 목적에 따라 다양한 Dissolve 패턴을 선택할 수 있다.
+
+![fade-in-out](Docs/Images/fade-in-out.gif)
+
+페이드 완료 시 `bIsPendingDestroy` 플래그로 지연 삭제해 틱 중 iterator 무효화를 방지한다.
+
+---
+
+[← Week 05][link-week05] | [Week 07 →][link-week07]
+
+<!-- 링크 레퍼런스 -->
+[link-week05]: https://github.com/geb0598/DX-Engine/tree/week-05
+[link-week07]: https://github.com/geb0598/DX-Engine/tree/week-07
