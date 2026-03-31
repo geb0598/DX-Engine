@@ -431,6 +431,8 @@ void VisualizeLightCount(uint InVisibleLightCount, uint2 InPixelCoord, RWTexture
 [numthreads(TILE_WIDTH, TILE_HEIGHT, 1)]
 void mainCS(uint3 GroupID : SV_GroupID, uint3 ThreadID : SV_GroupThreadID, uint3 DispatchID : SV_DispatchThreadID)
 {
+    uint ThreadIndex = ThreadID.y * TILE_WIDTH + ThreadID.x;
+
     if (ThreadID.x == 0 && ThreadID.y == 0)
     {
         TileDepthMask = 0;
@@ -459,36 +461,32 @@ void mainCS(uint3 GroupID : SV_GroupID, uint3 ThreadID : SV_GroupThreadID, uint3
     }
     GroupMemoryBarrierWithGroupSync();
 
-    if (ThreadID.x == 0 && ThreadID.y == 0)
-    {
-        uint FlatTileIndex = GroupID.x + GroupID.y * NumGroupsX;
-        float2 TileMin = GroupID.xy * float2(TILE_WIDTH, TILE_HEIGHT);
-        float2 TileMax = TileMin + float2(TILE_WIDTH, TILE_HEIGHT);
-    
-        FFrustum Frustum = CreateViewFrustum(TileMin, TileMax, ViewportRect);
-        for (uint i = 0; i < NumPointLights; ++i)
-        {
-            FSphere Sphere;
-            Sphere.Position = mul(float4(PointLights[i].Position, 1.0f), ViewMatrix);
-            Sphere.Radius = PointLights[i].AttenuationRadius;
-    
-            CullPointLight(i, FlatTileIndex, Sphere, Frustum);
-        }
+    uint TileIndex = GroupID.x + GroupID.y * NumGroupsX;
+    float2 TileMin = GroupID.xy * float2(TILE_WIDTH, TILE_HEIGHT);
+    float2 TileMax = TileMin + float2(TILE_WIDTH, TILE_HEIGHT);
+    FFrustum Frustum = CreateViewFrustum(TileMin, TileMax, ViewportRect);
 
-        for (uint i = 0; i < NumSpotLights; ++i)
-        {
-            FSphere Sphere;
-            Sphere.Position = mul(float4(SpotLights[i].Position, 1.0f), ViewMatrix);
-            Sphere.Radius = SpotLights[i].AttenuationRadius;
-            CullSpotLight(i, FlatTileIndex, Sphere, Frustum);
-        }
+    const uint NumThreads = TILE_WIDTH * TILE_HEIGHT;
+
+    for (uint i = ThreadIndex; i < NumPointLights; i += NumThreads) {
+        FSphere Sphere;
+        Sphere.Position = mul(float4(PointLights[i].Position, 1.0f), ViewMatrix);
+        Sphere.Radius = PointLights[i].AttenuationRadius;
+        CullPointLight(i, TileIndex, Sphere, Frustum);
+    }
+
+    for (uint i = ThreadIndex; i < NumSpotLights; i += NumThreads) {
+        FSphere Sphere;
+        Sphere.Position = mul(float4(SpotLights[i].Position, 1.0f), ViewMatrix);
+        Sphere.Radius = SpotLights[i].AttenuationRadius;
+        CullSpotLight(i, TileIndex, Sphere, Frustum);
     }
 
     // --- Depth Clustering Test ---
     // VisualizeDepthSlices(TileDepthMask, PixelCoord, HeatmapTexture);
 
     GroupMemoryBarrierWithGroupSync();
-    
+
     // --- Light Count Heatmap Visualization ---
     VisualizeLightCount(VisibleLightCount, PixelCoord, HeatmapTexture);
 }
