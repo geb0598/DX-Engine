@@ -1,0 +1,592 @@
+{
+  "Version" : 2,
+  "NextUUID" : 1278,
+  "PerspectiveCamera" : {
+    "FOV" : [60.000000],
+    "FarClip" : [4000.000000],
+    "Location" : [-84.770988, -98.711792, 50.475872],
+    "NearClip" : [0.100000],
+    "Rotation" : [0.000000, 16.100298, 39.299374]
+  },
+  "Actors" : [
+    {
+      "UUID" : 1059,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_0",
+      "RootComponentUUID" : 1060
+    },
+    {
+      "UUID" : 1067,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_4",
+      "RootComponentUUID" : 1068
+    },
+    {
+      "UUID" : 1061,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_1",
+      "RootComponentUUID" : 1062
+    },
+    {
+      "UUID" : 1069,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_5",
+      "RootComponentUUID" : 1070
+    },
+    {
+      "UUID" : 1127,
+      "Type" : "AActor",
+      "Name" : "Actor_1",
+      "RootComponentUUID" : 1128
+    },
+    {
+      "UUID" : 1063,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_2",
+      "RootComponentUUID" : 1064
+    },
+    {
+      "UUID" : 1071,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_6",
+      "RootComponentUUID" : 1072
+    },
+    {
+      "UUID" : 1073,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_7",
+      "RootComponentUUID" : 1074
+    },
+    {
+      "UUID" : 1065,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_3",
+      "RootComponentUUID" : 1066
+    },
+    {
+      "UUID" : 1075,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_8",
+      "RootComponentUUID" : 1076
+    },
+    {
+      "UUID" : 1077,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_9",
+      "RootComponentUUID" : 1078
+    },
+    {
+      "UUID" : 1079,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_10",
+      "RootComponentUUID" : 1080
+    },
+    {
+      "UUID" : 1081,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_11",
+      "RootComponentUUID" : 1082
+    },
+    {
+      "UUID" : 1083,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_12",
+      "RootComponentUUID" : 1084
+    },
+    {
+      "UUID" : 1085,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_13",
+      "RootComponentUUID" : 1086
+    },
+    {
+      "UUID" : 1087,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_14",
+      "RootComponentUUID" : 1088
+    },
+    {
+      "UUID" : 1089,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_15",
+      "RootComponentUUID" : 1090
+    },
+    {
+      "UUID" : 1091,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_16",
+      "RootComponentUUID" : 1092
+    },
+    {
+      "UUID" : 1093,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_17",
+      "RootComponentUUID" : 1094
+    },
+    {
+      "UUID" : 1095,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_18",
+      "RootComponentUUID" : 1096
+    },
+    {
+      "UUID" : 1097,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_19",
+      "RootComponentUUID" : 1098
+    },
+    {
+      "UUID" : 1099,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_20",
+      "RootComponentUUID" : 1100
+    },
+    {
+      "UUID" : 1101,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_21",
+      "RootComponentUUID" : 1102
+    },
+    {
+      "UUID" : 1103,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_22",
+      "RootComponentUUID" : 1104
+    },
+    {
+      "UUID" : 1105,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_23",
+      "RootComponentUUID" : 1106
+    },
+    {
+      "UUID" : 1107,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_24",
+      "RootComponentUUID" : 1108
+    },
+    {
+      "UUID" : 1109,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_25",
+      "RootComponentUUID" : 1110
+    },
+    {
+      "UUID" : 1111,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_26",
+      "RootComponentUUID" : 1112
+    },
+    {
+      "UUID" : 1113,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_27",
+      "RootComponentUUID" : 1114
+    },
+    {
+      "UUID" : 1115,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_28",
+      "RootComponentUUID" : 1116
+    },
+    {
+      "UUID" : 1117,
+      "Type" : "AStaticMeshActor",
+      "Name" : "E 45 Aircraft_obj_29",
+      "RootComponentUUID" : 1118
+    },
+    {
+      "UUID" : 1200,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Cube_1",
+      "RootComponentUUID" : 1201
+    },
+    {
+      "UUID" : 1202,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Cube_2",
+      "RootComponentUUID" : 1203
+    },
+    {
+      "UUID" : 1204,
+      "Type" : "AStaticMeshActor",
+      "Name" : "Cube_3",
+      "RootComponentUUID" : 1205
+    }
+  ],
+  "Components" : [
+    {
+      "UUID" : 1060,
+      "OwnerActorUUID" : 1059,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [34.472183, 4.145939, -12.547684],
+      "RelativeRotation" : [14.193756, -0.792808, 88.463188],
+      "RelativeScale" : [4.938902, 4.938902, 4.938902],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1068,
+      "OwnerActorUUID" : 1067,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-15.535446, -30.510880, 14.769432],
+      "RelativeRotation" : [-6.895696, 43.321926, 36.574760],
+      "RelativeScale" : [4.332133, 4.332133, 4.332133],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1062,
+      "OwnerActorUUID" : 1061,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-34.310432, 40.734581, 4.771568],
+      "RelativeRotation" : [76.306374, -53.395432, 91.570770],
+      "RelativeScale" : [4.068514, 4.068514, 4.068514],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1070,
+      "OwnerActorUUID" : 1069,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [31.167030, 39.867851, -17.000336],
+      "RelativeRotation" : [-87.817108, 17.274334, 93.592094],
+      "RelativeScale" : [4.129032, 4.129032, 4.129032],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1131,
+      "OwnerActorUUID" : 1127,
+      "ParentComponentUUID" : 1130,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/DirectionalLight_64x.dds"
+    },
+    {
+      "UUID" : 1128,
+      "OwnerActorUUID" : 1127,
+      "ParentComponentUUID" : 0,
+      "Type" : "USceneComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, 53.857998, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000]
+    },
+    {
+      "UUID" : 1130,
+      "OwnerActorUUID" : 1127,
+      "ParentComponentUUID" : 1128,
+      "Type" : "UDirectionalLightComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "LightData" : {
+        "Intensity" : 0.200000,
+        "Visible" : true,
+        "Color" : [220, 220, 220, 255]
+      }
+    },
+    {
+      "UUID" : 1129,
+      "OwnerActorUUID" : 1127,
+      "ParentComponentUUID" : 1128,
+      "Type" : "UBillboardComponent",
+      "RelativeLocation" : [0.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 1.000000, 1.000000],
+      "TexturePath" : "Editor/Icon/EmptyActor.dds"
+    },
+    {
+      "UUID" : 1064,
+      "OwnerActorUUID" : 1063,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [42.260506, -42.922756, -9.733879],
+      "RelativeRotation" : [121.521042, 57.736660, -40.475147],
+      "RelativeScale" : [4.118259, 4.118259, 4.118259],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1072,
+      "OwnerActorUUID" : 1071,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [46.752831, -4.203926, -42.812893],
+      "RelativeRotation" : [41.223965, 47.558338, -43.256012],
+      "RelativeScale" : [4.649770, 4.649770, 4.649770],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1074,
+      "OwnerActorUUID" : 1073,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [28.807945, 20.397041, -35.702080],
+      "RelativeRotation" : [-97.343765, -39.927120, 48.904240],
+      "RelativeScale" : [4.568865, 4.568865, 4.568865],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1066,
+      "OwnerActorUUID" : 1065,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [49.011200, -26.204720, -26.799829],
+      "RelativeRotation" : [-13.138755, -46.453426, 179.192215],
+      "RelativeScale" : [4.855312, 4.855312, 4.855312],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1076,
+      "OwnerActorUUID" : 1075,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-10.737938, -17.342144, 40.032654],
+      "RelativeRotation" : [-95.077660, -3.904970, -118.945366],
+      "RelativeScale" : [4.078799, 4.078799, 4.078799],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1078,
+      "OwnerActorUUID" : 1077,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [3.312786, 34.020508, -28.298288],
+      "RelativeRotation" : [84.823730, -46.048656, 127.200020],
+      "RelativeScale" : [4.272500, 4.272500, 4.272500],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1080,
+      "OwnerActorUUID" : 1079,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-48.098698, -28.502762, 49.389633],
+      "RelativeRotation" : [32.842293, 56.841183, 30.606384],
+      "RelativeScale" : [4.326090, 4.326090, 4.326090],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1082,
+      "OwnerActorUUID" : 1081,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [16.490677, 17.427597, -2.540665],
+      "RelativeRotation" : [-131.245712, 12.625228, -163.004822],
+      "RelativeScale" : [4.410291, 4.410291, 4.410291],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1084,
+      "OwnerActorUUID" : 1083,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-15.739922, 30.196541, -24.565876],
+      "RelativeRotation" : [108.775085, 34.824718, -91.816605],
+      "RelativeScale" : [4.776696, 4.776696, 4.776696],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1086,
+      "OwnerActorUUID" : 1085,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-0.975067, 33.779411, 5.281227],
+      "RelativeRotation" : [-2.190337, 18.139837, 135.240311],
+      "RelativeScale" : [4.727042, 4.727042, 4.727042],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1088,
+      "OwnerActorUUID" : 1087,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-38.106937, 3.825497, -38.613544],
+      "RelativeRotation" : [15.745827, 27.183086, -129.642227],
+      "RelativeScale" : [4.942472, 4.942472, 4.942472],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1090,
+      "OwnerActorUUID" : 1089,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [31.087677, -14.903717, 30.190437],
+      "RelativeRotation" : [90.229553, -56.808460, -90.729668],
+      "RelativeScale" : [4.653554, 4.653554, 4.653554],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1092,
+      "OwnerActorUUID" : 1091,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [35.268715, 20.662560, 27.285072],
+      "RelativeRotation" : [91.329330, 29.749846, 123.868332],
+      "RelativeScale" : [4.149816, 4.149816, 4.149816],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1094,
+      "OwnerActorUUID" : 1093,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-20.616779, -28.905605, -7.673882],
+      "RelativeRotation" : [-135.415176, -36.898579, -113.885193],
+      "RelativeScale" : [4.847590, 4.847590, 4.847590],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1096,
+      "OwnerActorUUID" : 1095,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [40.517899, 40.624710, -17.952515],
+      "RelativeRotation" : [-174.070374, 36.756783, 5.817180],
+      "RelativeScale" : [4.362895, 4.362895, 4.362895],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1098,
+      "OwnerActorUUID" : 1097,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-3.282269, -49.005096, 29.854736],
+      "RelativeRotation" : [96.022644, 22.544952, 144.765656],
+      "RelativeScale" : [4.336253, 4.336253, 4.336253],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1100,
+      "OwnerActorUUID" : 1099,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-4.606770, -48.480179, -17.180397],
+      "RelativeRotation" : [65.754822, 27.185978, -45.788548],
+      "RelativeScale" : [4.899259, 4.899259, 4.899259],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1102,
+      "OwnerActorUUID" : 1101,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [31.859795, 40.145576, 30.550552],
+      "RelativeRotation" : [68.916321, -70.678215, -64.334557],
+      "RelativeScale" : [4.708457, 4.708457, 4.708457],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1104,
+      "OwnerActorUUID" : 1103,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [20.876190, -33.700066, -43.099766],
+      "RelativeRotation" : [-93.076630, -43.451065, 89.354729],
+      "RelativeScale" : [4.516953, 4.516953, 4.516953],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1106,
+      "OwnerActorUUID" : 1105,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-18.846706, 21.926025, -4.277168],
+      "RelativeRotation" : [-47.719135, -57.205082, -96.482872],
+      "RelativeScale" : [4.626850, 4.626850, 4.626850],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1108,
+      "OwnerActorUUID" : 1107,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-17.580189, 14.497818, -18.330944],
+      "RelativeRotation" : [-86.116287, -28.066101, 70.960732],
+      "RelativeScale" : [4.056093, 4.056093, 4.056093],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1110,
+      "OwnerActorUUID" : 1109,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [1.954712, -10.072632, -33.562729],
+      "RelativeRotation" : [13.595818, -2.291358, -60.998978],
+      "RelativeScale" : [4.924680, 4.924680, 4.924680],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1112,
+      "OwnerActorUUID" : 1111,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [46.548355, 15.901665, 33.516953],
+      "RelativeRotation" : [26.722046, 55.666637, -166.561264],
+      "RelativeScale" : [4.632465, 4.632465, 4.632465],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1114,
+      "OwnerActorUUID" : 1113,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-36.526077, -31.597338, 42.959381],
+      "RelativeRotation" : [74.315292, 62.973961, 89.667862],
+      "RelativeScale" : [4.341990, 4.341990, 4.341990],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1116,
+      "OwnerActorUUID" : 1115,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [11.070591, 36.284981, -18.797874],
+      "RelativeRotation" : [70.390541, 81.541382, 60.454517],
+      "RelativeScale" : [4.430159, 4.430159, 4.430159],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1118,
+      "OwnerActorUUID" : 1117,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [-3.895687, 3.032017, -3.480637],
+      "RelativeRotation" : [53.824135, 73.606995, 68.911575],
+      "RelativeScale" : [4.170293, 4.170293, 4.170293],
+      "StaticMesh" : "Data/ship/E-45-Aircraft/E 45 Aircraft_obj.obj"
+    },
+    {
+      "UUID" : 1201,
+      "OwnerActorUUID" : 1200,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 0.000000, -200.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [400.000000, 400.000000, 1.000000],
+      "StaticMesh" : "Data/Cube.obj"
+    },
+    {
+      "UUID" : 1203,
+      "OwnerActorUUID" : 1202,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [200.000000, 0.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [1.000000, 400.000000, 400.000000],
+      "StaticMesh" : "Data/Cube.obj"
+    },
+    {
+      "UUID" : 1205,
+      "OwnerActorUUID" : 1204,
+      "ParentComponentUUID" : 0,
+      "Type" : "UStaticMeshComponent",
+      "RelativeLocation" : [0.000000, 200.000000, 0.000000],
+      "RelativeRotation" : [0.000000, -0.000000, 0.000000],
+      "RelativeScale" : [400.000000, 1.000000, 400.000000],
+      "StaticMesh" : "Data/Cube.obj"
+    }
+  ]
+}

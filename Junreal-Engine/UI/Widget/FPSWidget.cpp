@@ -2,6 +2,7 @@
 #include "FPSWidget.h"
 #include "../../ImGui/imgui.h"
 #include "../UIManager.h"
+#include "../StatsOverlayD2D.h"
 #include <algorithm>
 #include <string>
 
@@ -111,6 +112,19 @@ void UFPSWidget::RenderWidget()
 			}
 		}
 	}
+
+	// Screen Overlay 토글
+	UStatsOverlayD2D& Overlay = UStatsOverlayD2D::Get();
+	bool bFPS    = Overlay.IsFPSVisible();
+	bool bMem    = Overlay.IsMemoryVisible();
+	bool bRender = Overlay.IsRenderStatsVisible();
+
+	ImGui::Text("Screen Overlay:");
+	if (ImGui::Checkbox("FPS##Overlay",          &bFPS))    Overlay.SetShowFPS(bFPS);
+	ImGui::SameLine();
+	if (ImGui::Checkbox("Memory##Overlay",       &bMem))    Overlay.SetShowMemory(bMem);
+	ImGui::SameLine();
+	if (ImGui::Checkbox("Render Stats##Overlay", &bRender)) Overlay.SetShowRenderStats(bRender);
 
 	ImGui::Separator();
 }

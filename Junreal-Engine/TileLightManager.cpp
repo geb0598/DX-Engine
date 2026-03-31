@@ -41,6 +41,15 @@ void FTileLightManager::CullLights(UCameraComponent* InCameraComponent, FViewpor
 
     ID3D11DeviceContext* DeviceContext = Renderer->GetRHIDevice()->GetDeviceContext();
 
+    // --- Light Culling disabled: fill mask with all 1s (all lights pass) and skip dispatch ---
+    if (!InViewport->IsShowFlagEnabled(EEngineShowFlags::SF_LightCulling))
+    {
+        const UINT AllVisible[4] = { 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF };
+        DeviceContext->ClearUnorderedAccessViewUint(PointLightMaskBufferUAV.Get(), AllVisible);
+        DeviceContext->ClearUnorderedAccessViewUint(SpotLightMaskBufferUAV.Get(), AllVisible);
+        return;
+    }
+
     // --- Update Constant Buffers ---
     bUseLogDepth = InViewport->IsShowFlagEnabled(EEngineShowFlags::SF_LogDepthCulling);
     UpdateConstantBuffer();

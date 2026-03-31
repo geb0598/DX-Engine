@@ -100,27 +100,7 @@ int CalculateFlatTileIndex(float ScreenX, float ScreenY)
     return FlatTileIndex;
 }
 
-bool IsPointLightCulled(uint Index, float ScreenX, float ScreenY)
-{
-    uint BUCKET_SIZE = 32;
-    
-    uint FlatTileIndex = CalculateFlatTileIndex(ScreenX, ScreenY);
-    uint BucketIndex = Index / BUCKET_SIZE;
-    uint BitIndex = Index % BUCKET_SIZE;
 
-    return !(PointLightMask[FlatTileIndex * BUCKET_SIZE + BucketIndex] & (1u << BitIndex));
-}
-
-bool IsSpotLightCulled(uint Index, float ScreenX, float ScreenY)
-{
-    uint BUCKET_SIZE = 32;
-    
-    uint FlatTileIndex = CalculateFlatTileIndex(ScreenX, ScreenY);
-    uint BucketIndex = Index / BUCKET_SIZE;
-    uint BitIndex = Index % BUCKET_SIZE;
-
-    return !(SpotLightMask[FlatTileIndex * BUCKET_SIZE + BucketIndex] & (1u << BitIndex));
-}
 
 float3 CalculateAmbientLight(FAmbientLightInfo info)
 {
@@ -380,29 +360,32 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     CalculateDirectionalLight(Directional, N, V, shininess, diffuseTemp, specularTemp);
     diffuseRaw += diffuseTemp;
     
-    // Point
-    for (uint i = 0; i < NumPointLights; ++i)
+    uint flatIdx = CalculateFlatTileIndex(Input.Position.x, Input.Position.y);
+    for (uint bucket = 0; bucket < 32u; ++bucket)
     {
-        if (IsPointLightCulled(i, Input.Position.x, Input.Position.y))
+        uint pmask = PointLightMask[flatIdx * 32u + bucket];
+        while (pmask != 0u)
         {
-            continue;
+            uint li = bucket * 32u + firstbitlow(pmask);
+            CalculatePointLight(PointLights[li], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
+            diffuseRaw += diffuseTemp;
+            pmask &= pmask - 1u;
         }
-        CalculatePointLight(PointLights[i], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
-        diffuseRaw += diffuseTemp;
     }
-    // Spot
-    for (uint j = 0; j < NumSpotLights; ++j)
+    for (uint sbucket = 0; sbucket < 32u; ++sbucket)
     {
-        if (IsSpotLightCulled(j, Input.Position.x, Input.Position.y))
+        uint smask = SpotLightMask[flatIdx * 32u + sbucket];
+        while (smask != 0u)
         {
-            continue;
+            uint li = sbucket * 32u + firstbitlow(smask);
+            CalculateSpotLight(SpotLights[li], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
+            diffuseRaw += diffuseTemp;
+            smask &= smask - 1u;
         }
-        CalculateSpotLight(SpotLights[j], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
-        diffuseRaw += diffuseTemp;
     }
     float3 ambientTerm = ambientRaw * k_a;
     float3 diffuseTerm = diffuseRaw * k_d * albedoTexture;
-    
+
     float3 finalLighting = ambientTerm + diffuseTerm + k_e;
     FinalPixel = float4(finalLighting, 1.0f);
 #elif defined(LIGHTING_MODEL_PHONG)
@@ -419,27 +402,30 @@ PS_OUTPUT Uber_PS(VS_OUTPUT Input) : SV_Target
     diffuseRaw += diffuseTemp;
     specularRaw += specularTemp;
     
-    // Point
-    for (uint i = 0; i < NumPointLights; ++i)
+    uint flatIdx = CalculateFlatTileIndex(Input.Position.x, Input.Position.y);
+    for (uint bucket = 0; bucket < 32u; ++bucket)
     {
-        if (IsPointLightCulled(i, Input.Position.x, Input.Position.y))
+        uint pmask = PointLightMask[flatIdx * 32u + bucket];
+        while (pmask != 0u)
         {
-            continue;
+            uint li = bucket * 32u + firstbitlow(pmask);
+            CalculatePointLight(PointLights[li], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
+            diffuseRaw += diffuseTemp;
+            specularRaw += specularTemp;
+            pmask &= pmask - 1u;
         }
-        CalculatePointLight(PointLights[i], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
-        diffuseRaw += diffuseTemp;
-        specularRaw += specularTemp;
     }
-    // Spot
-    for (uint j = 0; j < NumSpotLights; ++j)
+    for (uint sbucket = 0; sbucket < 32u; ++sbucket)
     {
-        if (IsSpotLightCulled(j, Input.Position.x, Input.Position.y))
+        uint smask = SpotLightMask[flatIdx * 32u + sbucket];
+        while (smask != 0u)
         {
-            continue;
+            uint li = sbucket * 32u + firstbitlow(smask);
+            CalculateSpotLight(SpotLights[li], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
+            diffuseRaw += diffuseTemp;
+            specularRaw += specularTemp;
+            smask &= smask - 1u;
         }
-        CalculateSpotLight(SpotLights[j], Input.WorldPosition, N, V, shininess, diffuseTemp, specularTemp);
-        diffuseRaw += diffuseTemp;
-        specularRaw += specularTemp;
     }
     float3 ambientTerm = ambientRaw * k_a;
     float3 diffuseTerm = diffuseRaw * k_d * albedoTexture;

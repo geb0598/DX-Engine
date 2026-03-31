@@ -338,6 +338,11 @@ void SViewportWindow::RenderToolbar()
 				Viewport->ToggleShowFlag(EEngineShowFlags::SF_Heatmap);
 			}
 
+			bool bLightCullingEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_LightCulling);
+			if (ImGui::Checkbox("Light Culling", &bLightCullingEnabled))
+			{
+				Viewport->ToggleShowFlag(EEngineShowFlags::SF_LightCulling);
+			}
 			bool bLogDepthEnabled = Viewport->IsShowFlagEnabled(EEngineShowFlags::SF_LogDepthCulling);
 			if (ImGui::Checkbox("Log Depth Culling", &bLogDepthEnabled))
 			{

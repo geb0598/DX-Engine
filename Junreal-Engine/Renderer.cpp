@@ -544,58 +544,48 @@ void URenderer::RenderSceneDepthPass(UWorld* World, const FMatrix& ViewMatrix, c
 	UpdateSetCBuffer(ViewProjBufferType(ViewMatrix, ProjectionMatrix));
 
 	// +-+ Iterate and Draw Renderable Actors +-+
-	const TArray<AActor*>& LevelActors = World->GetLevel()->GetActors();
-	for (AActor* Actor : LevelActors)
+	for (UPrimitiveComponent* Primitive : World->GetLevel()->GetComponentList<UPrimitiveComponent>())
 	{
-		if (!Actor || Actor->GetActorHiddenInGame())
+		if (!Primitive || !Primitive->IsActive())
 			continue;
 
-		for (UActorComponent* ActorComp : Actor->GetComponents())
+		UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(Primitive);
+		if (!MeshComp)
+			continue;
+
+		UStaticMesh* Mesh = MeshComp->GetStaticMesh();
+		if (!Mesh)
+			continue;
+
+		const FMatrix& WorldMatrix = Primitive->GetWorldMatrix();
+		UpdateSetCBuffer(ModelBufferType(WorldMatrix));
+
+		ID3D11Buffer* VertexBuffer = Mesh->GetVertexBuffer();
+		ID3D11Buffer* IndexBuffer = Mesh->GetIndexBuffer();
+
+		UINT Stride = sizeof(FVertexDynamic);
+		switch (Mesh->GetVertexType())
 		{
-			if (UPrimitiveComponent* Primitive = Cast<UPrimitiveComponent>(ActorComp))
-			{
-				if (!Primitive->IsActive())
-					continue;
-
-				if (UStaticMeshComponent* MeshComp = Cast<UStaticMeshComponent>(Primitive))
-				{
-					UStaticMesh* Mesh = MeshComp->GetStaticMesh();
-					if (!Mesh)  continue;
-
-					const FMatrix& WorldMatrix = Primitive->GetWorldMatrix();
-					UpdateSetCBuffer(ModelBufferType(WorldMatrix));
-
-					ID3D11Buffer* VertexBuffer = Mesh->GetVertexBuffer();
-					ID3D11Buffer* IndexBuffer = Mesh->GetIndexBuffer();
-
-					UINT Stride = sizeof(FVertexDynamic);
-					switch (Mesh->GetVertexType())
-					{
-					case EVertexLayoutType::PositionColor:
-						Stride = sizeof(FVertexSimple);
-						break;
-					case EVertexLayoutType::PositionColorTexturNormal:
-						Stride = sizeof(FVertexDynamic);
-						break;
-					case EVertexLayoutType::PositionBillBoard:
-						Stride = sizeof(FBillboardVertexInfo_GPU);
-						break;
-					case EVertexLayoutType::PositionUV:
-						Stride = sizeof(FVertexUV);
-					default:
-						// Handle unknown or unsupported vertex types
-						assert(false && "Unknown vertex type!");
-						return; // or log an error
-					}
-					UINT Offset = 0;
-					RHIDevice->GetDeviceContext()->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
-					RHIDevice->GetDeviceContext()->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
-
-					RHIDevice->GetDeviceContext()->DrawIndexed(Mesh->GetIndexCount(), 0, 0);
-					URenderingStatsCollector::GetInstance().IncrementDrawCalls();
-				}
-			}
+		case EVertexLayoutType::PositionColor:
+			Stride = sizeof(FVertexSimple);
+			break;
+		case EVertexLayoutType::PositionColorTexturNormal:
+			Stride = sizeof(FVertexDynamic);
+			break;
+		case EVertexLayoutType::PositionBillBoard:
+			Stride = sizeof(FBillboardVertexInfo_GPU);
+			break;
+		case EVertexLayoutType::PositionUV:
+			Stride = sizeof(FVertexUV);
+			break;
+		default:
+			continue;
 		}
+		UINT Offset = 0;
+		RHIDevice->GetDeviceContext()->IASetVertexBuffers(0, 1, &VertexBuffer, &Stride, &Offset);
+		RHIDevice->GetDeviceContext()->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
+		RHIDevice->GetDeviceContext()->DrawIndexed(Mesh->GetIndexCount(), 0, 0);
+		URenderingStatsCollector::GetInstance().IncrementDrawCalls();
 	}
 
 	// +-+ Restore Render State +-+
