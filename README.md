@@ -215,7 +215,7 @@ C++17 기반의 스레드 풀 라이브러리. `Enqueue`, `ForEach`, `TransformR
 - **Hi-Z Occlusion Culling — NDCAABB 병렬 빌드**
   오브젝트 목록을 `hardware_concurrency()` 기준으로 청크 분할해 NDC 변환을 병렬 처리.
   각 워커 스레드가 로컬 구조체에만 쓰고 메인 스레드에서 병합하는 lock-free fork-join 패턴 적용.
-  단일 스레드 대비 약 6배 개선 (6.0~6.5ms → 0.7~0.9ms, 28코어 기준).
+  단일 스레드 대비 약 6배 개선 (6.0 → 0.7, 28코어 기준).
 
 - **오브젝트 피킹 — TransformReduce**
   `TransformReduce` API로 레이-AABB 교차 테스트를 병렬화해 최단 거리 오브젝트를 탐색.
