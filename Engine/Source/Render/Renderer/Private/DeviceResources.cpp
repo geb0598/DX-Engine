@@ -60,8 +60,13 @@ void UDeviceResources::CreateDeviceAndSwapChain(HWND InWindowHandle)
 	SwapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD; // 스왑 방식
 
 	// Direct3D 장치와 스왑 체인을 생성
+	constexpr UINT DeviceFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT
+#ifdef _DEBUG
+	    | D3D11_CREATE_DEVICE_DEBUG
+#endif
+	    ;
 	HRESULT hr = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
-	                                           D3D11_CREATE_DEVICE_BGRA_SUPPORT | D3D11_CREATE_DEVICE_DEBUG ,
+	                                           DeviceFlags,
 	                                           featurelevels, ARRAYSIZE(featurelevels), D3D11_SDK_VERSION,
 	                                           &SwapChainDescription, &SwapChain, &Device, nullptr, &DeviceContext);
 

@@ -4,6 +4,9 @@
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 #include "Render/Renderer/Public/DeviceResources.h"
 
+INSIGHTS_DECLARE_STATGROUP("Render", GStatGroupRender)
+INSIGHTS_DECLARE_STAT("FXAA Pass", GStatFXAAPass, GStatGroupRender)
+
 struct FFullscreenVertex
 {
     FVector2 Position;
@@ -30,7 +33,8 @@ FFXAAPass::~FFXAAPass()
 
 void FFXAAPass::Execute(FRenderingContext& Context)
 {
-    ID3D11ShaderResourceView* SceneSRV = DeviceResources->GetSceneColorShaderResourceView(); // 오프스크린 컬러입력
+	INSIGHTS_GPU_SCOPE(GStatFXAAPass);
+    ID3D11ShaderResourceView* SceneSRV = DeviceResources->GetSceneColorShaderResourceView(); // ?�프?�크�?컬러?�력
     if (!SceneSRV)
     {
         return;
@@ -59,7 +63,7 @@ void FFXAAPass::Execute(FRenderingContext& Context)
 
     Pipeline->DrawIndexed(FullscreenIndexCount, 0, 0);
 
-    // 정리
+    // ?�리
     Pipeline->SetShaderResourceView(0, EShaderType::PS, nullptr);
 }
 
@@ -111,7 +115,7 @@ void FFXAAPass::UpdateConstants()
     const D3D11_VIEWPORT& VP = DeviceResources->GetViewportInfo();
     FXAAParams.InvResolution = FVector2(1.0f / VP.Width, 1.0f / VP.Height);
 
-    // FXAA 품질 설정값을 명시적으로 업데이트                                           
+    // FXAA ?�질 ?�정값을 명시?�으�??�데?�트                                           
     FXAAParams.FXAASpanMax = 8.0f;                                        
     FXAAParams.FXAAReduceMul = 1.0f / 8.0f;                               
     FXAAParams.FXAAReduceMin = 1.0f / 128.0f;
@@ -121,7 +125,7 @@ void FFXAAPass::UpdateConstants()
 
 void FFXAAPass::SetRenderTargets()
 {
-    ID3D11RenderTargetView* RTV = DeviceResources->GetRenderTargetView(); // 스왑체인 RTV
+    ID3D11RenderTargetView* RTV = DeviceResources->GetRenderTargetView(); // ?�왑체인 RTV
     DeviceResources->GetDeviceContext()->OMSetRenderTargets(1, &RTV, nullptr);
 
     const D3D11_VIEWPORT& VP = DeviceResources->GetViewportInfo();

@@ -18,6 +18,9 @@
 #include <dwrite.h>
 #include <dxgi1_3.h>
 
+// Profiler
+#include "insights/insights_d3d11.h"
+
 // Standard Library
 #include <cmath>
 #include <cassert>

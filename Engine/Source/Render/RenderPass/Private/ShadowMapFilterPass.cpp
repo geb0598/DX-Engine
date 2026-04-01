@@ -1,10 +1,13 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/RenderPass/Public/ShadowMapPass.h"
 #include "Render/RenderPass/Public/ShadowMapFilterPass.h"
 #include "Component/Public/DirectionalLightComponent.h"
 #include "Component/Public/SpotLightComponent.h"
 #include "Component/Public/PointLightComponent.h"
+
+INSIGHTS_DECLARE_STATGROUP("Shadow", GStatGroupShadow)
+INSIGHTS_DECLARE_STAT("Shadow Filter Pass", GStatShadowFilterPass, GStatGroupShadow)
 
 FShadowMapFilterPass::FShadowMapFilterPass(FShadowMapPass* InShadowMapPass, UPipeline* InPipeline)
     : FRenderPass(InPipeline), ShadowMapPass(InShadowMapPass)
@@ -16,12 +19,13 @@ FShadowMapFilterPass::FShadowMapFilterPass(FShadowMapPass* InShadowMapPass, UPip
 
 FShadowMapFilterPass::~FShadowMapFilterPass()
 {
-	// TODO: 소멸자에서 가상 함수 호출하지 말아야 함, 다른 렌더패스 확인 필요
+	// TODO: �Ҹ��ڿ��� ���� �Լ� ȣ������ ���ƾ� ��, �ٸ� �����н� Ȯ�� �ʿ�
     // Release();
 }
 
 void FShadowMapFilterPass::Execute(FRenderingContext& Context)
 {
+	INSIGHTS_GPU_SCOPE(GStatShadowFilterPass);
 	// --- 1. Directional Lights ---
 	for (uint32 i = 0; i < Context.DirectionalLights.size(); ++i)
 	{
@@ -140,7 +144,7 @@ void FShadowMapFilterPass::FilterShadowMap(const ULightComponent* LightComponent
 			break;
 		}
 	default:
-		// 필터링 없음
+		// ���͸� ����
 		break;
 	}
 }
@@ -195,7 +199,7 @@ void FShadowMapFilterPass::FilterShadowAtlasMap(const ULightComponent* LightComp
 			break;
 		}
 	default:
-		// 필터링 없음
+		// ���͸� ����
 		break;
 	}	
 }

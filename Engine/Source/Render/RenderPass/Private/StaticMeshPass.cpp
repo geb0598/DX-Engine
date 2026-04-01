@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Render/RenderPass/Public/StaticMeshPass.h"
 #include "Component/Mesh/Public/StaticMeshComponent.h"
 #include "Render/Renderer/Public/Pipeline.h"
@@ -11,6 +11,9 @@
 #include "Texture/Public/ShadowMapResources.h"
 #include "Render/RenderPass/Public/ShadowData.h"
 
+INSIGHTS_DECLARE_STATGROUP("Render", GStatGroupRender)
+INSIGHTS_DECLARE_STAT("Static Mesh Pass", GStatStaticMeshPass, GStatGroupRender)
+
 FStaticMeshPass::FStaticMeshPass(UPipeline* InPipeline, ID3D11Buffer* InConstantBufferCamera, ID3D11Buffer* InConstantBufferModel,
 	ID3D11VertexShader* InVS, ID3D11PixelShader* InPS, ID3D11InputLayout* InLayout, ID3D11DepthStencilState* InDS)
 	: FRenderPass(InPipeline, InConstantBufferCamera, InConstantBufferModel), VS(InVS), PS(InPS), InputLayout(InLayout), DS(InDS)
@@ -20,6 +23,7 @@ FStaticMeshPass::FStaticMeshPass(UPipeline* InPipeline, ID3D11Buffer* InConstant
 
 void FStaticMeshPass::Execute(FRenderingContext& Context)
 {
+	INSIGHTS_GPU_SCOPE(GStatStaticMeshPass);
 	const auto& Renderer = URenderer::GetInstance();
 	FRenderState RenderState = UStaticMeshComponent::GetClassDefaultRenderState();
 	if (Context.ViewMode == EViewModeIndex::VMI_Wireframe)
@@ -60,7 +64,7 @@ void FStaticMeshPass::Execute(FRenderingContext& Context)
 		}
 	}
 
-	// Spot Light ViewProj 구조체 버퍼 업데이트
+	// Spot Light ViewProj ����ü ���� ������Ʈ
 	Pipeline->SetConstantBuffer(0, EShaderType::VS, ConstantBufferModel);
 	Pipeline->SetConstantBuffer(1, EShaderType::VS | EShaderType::PS, ConstantBufferCamera);
 
@@ -175,9 +179,9 @@ void FStaticMeshPass::Execute(FRenderingContext& Context)
 					Pipeline->SetShaderResourceView(4, EShaderType::PS, AlphaTexture->GetTextureSRV());
 				}
 				if (UTexture* BumpTexture = Material->GetBumpTexture()) 
-				{ // 범프 텍스처 추가 그러나 범프 텍스처 사용하지 않아서 없을 것임. 무시 ㄱㄱ
+				{ // ���� �ؽ�ó �߰� �׷��� ���� �ؽ�ó ������� �ʾƼ� ���� ����. ���� ����
 					Pipeline->SetShaderResourceView(5, EShaderType::PS, BumpTexture->GetTextureSRV());
-					// 필요한 경우 샘플러 지정
+					// �ʿ��� ��� ���÷� ����
 					// Pipeline->SetSamplerState(5, false, BumpTexture->GetTextureSampler());
 				}
 				CurrentMaterial = Material;

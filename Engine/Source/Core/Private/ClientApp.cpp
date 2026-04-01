@@ -18,6 +18,12 @@
 #include "Utility/Public/ScopeCycleCounter.h"
 #include "Manager/UI/Public/ViewportManager.h"
 
+INSIGHTS_DECLARE_STATGROUP("CPU", GStatGroupCPU)
+INSIGHTS_DECLARE_STAT("Editor Tick",      GStatEditorTick,      GStatGroupCPU)
+INSIGHTS_DECLARE_STAT("Input Update",     GStatInputUpdate,     GStatGroupCPU)
+INSIGHTS_DECLARE_STAT("UI Update",        GStatUIUpdate,        GStatGroupCPU)
+INSIGHTS_DECLARE_STAT("Renderer Update",  GStatRendererUpdate,  GStatGroupCPU)
+
 #ifdef IS_OBJ_VIEWER
 #include "Utility/Public/FileDialog.h"
 #endif
@@ -91,6 +97,10 @@ int FClientApp::InitializeSystem() const
 	auto& Renderer = URenderer::GetInstance();
 	Renderer.Init(Window->GetWindowHandle());
 
+	// cpp-insights profiler initialization
+	INSIGHTS_GPU_INIT_D3D11(Renderer.GetDevice(), Renderer.GetDeviceContext());
+	INSIGHTS_INITIALIZE();
+
 	UAssetManager::GetInstance().Initialize();
 
 	// StatOverlay Initialize
@@ -125,6 +135,7 @@ void FClientApp::UpdateSystem() const
 		TimeManager.Update();
 	}
 	{
+		INSIGHTS_SCOPE(GStatInputUpdate);
 		TIME_PROFILE(InputManager)
 		InputManager.Update(Window);
 	}
@@ -133,14 +144,17 @@ void FClientApp::UpdateSystem() const
 		UViewportManager::GetInstance().Update();
 	}
 	{
+		INSIGHTS_SCOPE(GStatEditorTick);
 		TIME_PROFILE(GEditor)
 		GEditor->Tick(DT);
 	}
 	{
+		INSIGHTS_SCOPE(GStatUIUpdate);
 		TIME_PROFILE(UIManager)
 		UIManager.Update();
-	}	
+	}
 	{
+		INSIGHTS_SCOPE(GStatRendererUpdate);
 		TIME_PROFILE(Renderer)
 		Renderer.Update();
 	}
@@ -169,6 +183,8 @@ void FClientApp::MainLoop()
 	bool bIsExit = false;
 	while (!bIsExit)
 	{
+		INSIGHTS_FRAME_BEGIN();
+
 		TStatId StatId("DeltaTime");
 		FScopeCycleCounter CycleCounter(StatId);
 		// Async Message Process
@@ -191,6 +207,7 @@ void FClientApp::MainLoop()
 		UpdateSystem();
 
 		UTimeManager::GetInstance().SetDeltaTime(static_cast<float>(CycleCounter.Finish()) / 1000.0f);
+		INSIGHTS_FRAME_END();
 	}
 }
 
@@ -200,6 +217,8 @@ void FClientApp::MainLoop()
  */
 void FClientApp::ShutdownSystem() const
 {
+	INSIGHTS_SHUTDOWN();
+
 	delete GEditor;
 	delete Window;
 	

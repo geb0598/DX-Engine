@@ -5,6 +5,9 @@
 #include "Render/Renderer/Public/Renderer.h"
 #include "Render/Renderer/Public/RenderResourceFactory.h"
 
+INSIGHTS_DECLARE_STATGROUP("Render", GStatGroupRender)
+INSIGHTS_DECLARE_STAT("Point Light Pass", GStatPointLightPass, GStatGroupRender)
+
 FPointLightPass::FPointLightPass(UPipeline* InPipeline,
     ID3D11VertexShader* InVS, ID3D11PixelShader* InPS, ID3D11InputLayout* InLayout,
     ID3D11DepthStencilState* InDS, ID3D11BlendState* InBS)
@@ -23,6 +26,7 @@ FPointLightPass::FPointLightPass(UPipeline* InPipeline,
 
 void FPointLightPass::Execute(FRenderingContext& Context)
 {
+	INSIGHTS_GPU_SCOPE(GStatPointLightPass);
     if (Context.ViewMode == EViewModeIndex::VMI_Unlit || Context.ViewMode == EViewModeIndex::VMI_Wireframe || Context.ViewMode == EViewModeIndex::VMI_SceneDepth)
     {
         return;
