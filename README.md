@@ -1,6 +1,6 @@
 [← Week 06][link-week06] | [Week 08 →][link-week08]
 
-[2.5D Culling for Forward+](https://youtu.be/hzabsv2XB2U)
+[![2.5D Culling for Forward+][img-thumbnail]][link-youtube]
 
 # DX-Engine — Week 07: Forward+ 타일 기반 라이트 컬링
 
@@ -147,6 +147,7 @@ LastModificationTime = std::filesystem::last_write_time(ShaderFilePath);
 [← Week 06][link-week06] | [Week 08 →][link-week08]
 
 <!-- 이미지 레퍼런스 -->
+[img-thumbnail]:   Docs/Images/thumbnail-youtube.png
 [img-pipeline]:    Docs/Images/Forward+pipeline.png
 [img-performance]: Docs/Images/Forward+performance.png
 
