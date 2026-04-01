@@ -1,358 +1,156 @@
-# 📘 KRAFTON TechLab Week03 – Unreal Engine Style 3D Editor & Rendering System
-📌 프로젝트 개요
+[← Week 06][link-week06] | [Week 08 →][link-week08]
 
-### 프로젝트명: Unreal Engine Style 3D Editor & Rendering System
+[2.5D Culling for Forward+](https://youtu.be/hzabsv2XB2U)
 
-#### 개발 기간: 1 week
+# DX-Engine — Week 07: Forward+ 타일 기반 라이트 컬링
 
-#### 개발 환경: Visual Studio, DirectX 11, Windows 10/11
+> Compute Shader 기반 2.5D 라이트 컬링 파이프라인 E2E 구현 및 런타임 셰이더 핫 리로드
 
-## 아키텍처: C++ 기반 Actor-Component 시스템
-<img width="1911" height="1104" alt="image" src="https://github.com/user-attachments/assets/2aa029db-2fca-451d-aeaf-607d3256ccee" />
+![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
+![DirectX 11](https://img.shields.io/badge/DirectX-11-0078D4?logo=microsoft&logoColor=white)
+![HLSL](https://img.shields.io/badge/HLSL-SM_5.0-5C2D91)
+![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)
 
-https://drive.google.com/file/d/1bAa-ZufdUz7_mbSy236LDdI_DdKsFZ1b/view?usp=drive_link
+---
 
-## 🚀 구현 완료 사항
-### 🎨 1. Editor & Rendering System (눈에 보이는 세상)
-#### 1.1 실시간 텍스트 렌더링 시스템
+## Features
 
-파일: TextBillboard.hlsl, Week02/UI/
+- **Forward+ 2.5D 라이트 컬링** — 화면을 32×32 픽셀 타일로 분할, Compute Shader에서 프러스텀 + 깊이 마스크 2단계 컬링으로 픽셀 셰이더가 평가하는 라이트 수를 대폭 축소
+- **HLSL 런타임 핫 리로드** — 파일 수정 시간 감시 기반 자동 재컴파일, Temp ComPtr 트랜잭션으로 컴파일 실패 시 이전 셰이더 유지
 
-기능
+---
 
-ASCII 문자 → 텍스처 아틀라스 베이킹
+## Key Systems
 
-UV 좌표 조작을 통한 임의 문자열 생성
+### Forward+ 타일 기반 2.5D 라이트 컬링
 
-Billboard 효과 (항상 카메라를 향함)
+1,000개 포인트 라이트 씬에서 모든 픽셀이 모든 라이트를 평가하면 연산량이 `픽셀 수 × 라이트 수`로 폭발적으로 증가한다.
+화면을 타일로 나누고 Compute Shader가 각 타일에 영향을 주는 라이트만 추린 뒤 비트마스크로 PS에 전달한다.
+AMD의 SIGGRAPH 2012 Forward+ 발표자료를 바탕으로, 타일의 깊이 분포를 32비트 마스크로 압축해 화면 XY상으로는 겹쳐 보여도 깊이 범위가 맞지 않는 라이트를 추가로 기각하는 **2.5D 컬링**을 구현했다.
 
-월드 공간의 UObject UUID 실시간 표시
+![pipeline][img-pipeline]
 
-기술
+<details>
+<summary><b>구현 상세 — 클릭해서 펼치기</b></summary>
 
-ViewInverse 행렬을 이용한 카메라 정렬
+<br>
 
-Alpha Testing 기반 텍스트 윤곽 처리
+**Phase 0 — Depth Prepass**
 
-#### 1.2 Batch Line 렌더링 시스템
+Base Pass 전에 씬을 한 번 그려 Depth Buffer를 채운다. CS는 이 버퍼에서 타일 내 픽셀들의 실제 깊이 분포를 읽는다.
 
+**Phase 1 — TileDepthMask 구축**
 
-파일: ShaderLine.hlsl
+스레드 그룹 하나(32×32 = 1024 스레드)가 타일 하나를 담당한다.
+각 스레드가 자기 픽셀의 NDC 깊이를 선형 깊이로 역변환한 뒤, Near~Far를 32등분한 슬라이스 중 해당 인덱스에 비트를 원자적으로 기록한다.
 
-기능
+```hlsl
+float LinearDepth = (NearClip * FarClip) / (FarClip - DepthSample * (FarClip - NearClip));
+float NormalizedDepth = saturate((LinearDepth - NearClip) / (FarClip - NearClip));
+uint SliceIndex = clamp((uint)(NormalizedDepth * NUM_SLICES), 0, NUM_SLICES - 1);
+InterlockedOr(TileDepthMask, 1u << SliceIndex);
+```
 
-모든 Line을 하나의 Vertex/Index Buffer로 관리
+결과: TileDepthMask는 타일 내 실제 픽셀이 존재하는 깊이 슬라이스만 비트가 켜진 32비트 값.
 
-D3D11_PRIMITIVE_TOPOLOGY_LINELIST 기반
+**Phase 2 — 2단계 라이트 컬링**
 
-World Grid, Bounding Box 시각화
+Thread(0,0)이 타일의 뷰 프러스텀을 생성한 뒤, 각 라이트에 대해 두 단계로 기각한다.
 
-성능 최적화
+- **1차 — 프러스텀 컬링**: 라이트 어테뉴에이션 반경을 구(Sphere)로 추상화해 6-평면 교차 판정. 프러스텀 밖이면 기각.
+- **2차 — 깊이 마스크 컬링**: 라이트 Z 범위를 동일한 32비트 슬라이스로 변환(`SphereToDepthMask()`) 후 `TileDepthMask`와 AND. 겹치는 슬라이스가 없으면 기각.
 
-단일 Draw Call 처리
+```hlsl
+void CullPointLight(uint Index, uint FlatTileIndex, FSphere SphereVS, FFrustum Frustum) {
+    if (!IsSphereInsideFrustum(SphereVS, Frustum)) return;       // 1차: 프러스텀 밖
+    if (!(TileDepthMask & SphereToDepthMask(SphereVS))) return;  // 2차: 실제 픽셀 없는 깊이
+    uint BucketIndex = Index / BUCKET_SIZE;
+    InterlockedOr(PointLightMask[FlatTileIndex * BUCKET_SIZE + BucketIndex], 1u << (Index % BUCKET_SIZE));
+}
+```
 
-동적 버퍼 업데이트 지원
+**Phase 3 — PS 비트마스크 조회**
 
-#### 1.3 좌표계 변환 시스템
+픽셀 셰이더는 화면 좌표 → 타일 인덱스를 계산해 `PointLightMask`에서 비트마스크를 읽고, `firstbitlow()` 로 켜진 비트만 순회해 가시 라이트만 연산한다.
 
-DirectX 좌표계 (Y-Up, Z-Depth) → UE 좌표계 (Z-Up, X-Depth) 변환
+```hlsl
+uint flatIdx = CalculateFlatTileIndex(Input.Position.x, Input.Position.y);
+for (uint bucket = 0; bucket < NUM_BUCKETS; ++bucket) {
+    uint mask = PointLightMask[flatIdx * NUM_BUCKETS + bucket];
+    while (mask != 0u) {
+        uint li = bucket * BUCKET_SIZE + firstbitlow(mask);
+        CalculatePointLight(PointLights[li], ...);
+        mask &= mask - 1u;
+    }
+}
+```
 
-카메라, 트랜스폼, 렌더링 파이프라인 전반에 적용
+**히트맵 디버그 시각화**
 
-#### 1.4 동적 윈도우 리사이징
+`SF_Heatmap` ShowFlag로 토글되는 디버그 패스를 구현했다.
+타일당 라이트 수를 Blue → Cyan → Green → Yellow → Red 그라디언트로 시각화해 컬링 분포를 실시간 확인한다.
 
-RTV/DSV 해제 → SwapChain Resize → ImGui DisplaySize 갱신 → RTV/DSV 재생성
+▶ [히트맵 데모 영상][link-youtube]
 
-#### 1.5 View Mode 시스템
+</details>
 
-Lit / Unlit / Wireframe 모드 지원
+**성능 측정** — 1,000 Point Lights, GPU RenderScene 기준
 
-#### 1.6 Show Flag 시스템
+![performance][img-performance]
 
-비트 플래그 기반 토글 기능
+| | Culling OFF | Culling ON |
+|---|---|---|
+| RenderScene (GPU) | 66.7 ms | 15.8 ms |
+| Cull Pass (GPU) | — | 0.817 ms |
+| **개선** | | **4.2× (76% 감소)** |
 
-예: Primitive 표시, UUID 텍스트, Bounding Box, Grid 등
+---
 
-ImGui 연동으로 실시간 제어
+### HLSL 런타임 핫 리로드
 
-⚙️ 2. Engine Core System (눈에 안 보이는 세상)
-#### 2.1 FName 시스템
+엔진 실행 중 `.hlsl` 파일을 수정하면 자동으로 재컴파일해 즉시 반영한다.
+라이팅·포스트 프로세싱 셰이더 이터레이션 속도를 크게 단축하는 개발 도구다.
 
-문자열 → Pool 관리, 인덱스로 비교
-
-strcmp() 대신 정수 비교 (O(n) → O(1))
-
-대소문자 구분 없는 비교 ("Test" == "test")
-
-메모리 절약 + 성능 최적화
-
-#### 2.2 UObject 시스템 & RTTI
-
-구현: Object.h
-
-특징
-
-UUID, FName 기반 이름 관리
-
-컴파일 타임 타입 정보 생성 (DECLARE_CLASS)
-
-안전한 런타임 타입 검사 & 캐스팅
-
-ObjectFactory와 연동된 메모리 관리
-
-#### 2.3 메모리 관리 시스템
-
-UObject 전용 Allocator / Deallocator
-
-중앙 집중식 객체 관리
-
-자동 정리로 메모리 누수 방지
-
-#### 2.4 Selection Manager
-
-선택된 Actor 관리
-
-안전성 강화 (CleanupInvalidActors)
-
-## 🏗 아키텍처 및 설계 패턴
-
-싱글톤 패턴: UUIManager, USelectionManager, UInputManager
-
-컴포넌트 시스템: Actor-Component 구조 (Camera, Cube, Gizmo 등)
-
-팩토리 패턴: ObjectFactory + NewObject<T>() 템플릿
-
-Observer 패턴: Show Flag 시스템과 UI/렌더링 간 느슨한 결합
-
-## 🖥 렌더링 파이프라인
-
-World Grid (Show Flag)
-
-Primitive Geometry (Lit/Unlit/Wireframe)
-
-Bounding Boxes (Show Flag)
-
-Billboard Text (UUID) (Show Flag)
-
-Gizmo (선택된 객체)
-
-셰이더 구성
-
-Primitive.hlsl: 기본 메시
-
-ShaderLine.hlsl: 라인/그리드
-
-TextBillboard.hlsl: 빌보드 텍스트
-
-## ⚡ 안전성 및 성능 최적화
-
-배치 렌더링: Draw Call 최소화
-
-텍스처 아틀라스: 폰트 통합 관리
-
-Show Flag: 불필요한 렌더링 제거
-
-FName 시스템: 문자열 비교 최적화
-
-## 🏆 기술적 성취
-
-언리얼 스타일 아키텍처 구현
-
-UObject 시스템, RTTI, FName 최적화
-
-Actor-Component 패러다임 적용
-
-고급 렌더링 기술
-
-Billboard 텍스트
-
-Batch Line 렌더링
-
-멀티 셰이더 파이프라인 관리
-
-실용적인 에디터 도구
-
-Show Flag 실시간 제어
-
-다중 View Mode 지원
-
-동적 윈도우 리사이징
-
-
-# Week04 프로젝트 보고서
-
-# Week04 프로젝트 - UE 스타일 3D 에디터 구현
-https://drive.google.com/file/d/1bAa-ZufdUz7_mbSy236LDdI_DdKsFZ1b/view?usp=drive_link
-## 개요
-
-이 프로젝트는 Unreal Engine 4의 에디터 구조를 모방하여 구현한 3D 렌더링 엔진 및 에디터입니다. DirectX 11을 기반으로 하며, 정적 메시 렌더링, 다중 뷰포트, 오브젝트 관리 시스템 등의 핵심 기능들을 구현했습니다.
-![Adobe Express - 제목 없는 비디오 - Clipchamp로 제작 (2)](https://github.com/user-attachments/assets/1af2b319-b0ae-41eb-9b94-4a9697a79b8b)
-## 주요 특징
-
-### 🎮 정적 메시 (Static Mesh) 시스템
-
-- **OBJ 파일 로딩**: Wavefront OBJ 파일을 파싱하여 3D 모델 로드
-- **바이너리 캐싱**: OBJ 파일을 바이너리 형식으로 변환하여 성능 최적화
-- **다중 재질 지원**: 여러 Material Section을 지원하는 머티리얼 시스템
-- **UV 스크롤링**: 텍스처 애니메이션 효과 지원
-
-### 🖼️ 다중 뷰포트 시스템
-
-- **4분할 뷰포트**: Perspective, Front, Side, Top 뷰 동시 렌더링
-- **동적 크기 조절**: 드래그 가능한 스플리터로 뷰포트 크기 조절
-- **UE 스타일 구조**: `FViewport`와 `FViewportClient` 클래스로 관리
-- **설정 저장**: Editor.ini 파일에 스플리터 상태 저장/복원
-
-### 🎯 오브젝트 관리 시스템
-
-- **TObjectIterator**: 타입 안전하게 특정 타입에 대해서 순회 가능한 반복자
-- **Scene Manager**: 월드 아웃라이너와 유사한 오브젝트 관리 UI
-- **선택 시스템**: 3D 뷰포트와 연동된 오브젝트 선택
-- **직렬화**: StaticMeshComponent 정보, UUID 정보, 카메라 정보 등을 씬 파일에 직렬화
-
-## 핵심 구현 내용
-
-### 📁 아키텍처 구조
-
-### 1. 오브젝트 시스템 (`ObjectIterator.h`)
+**자동 감지** — `ResourceManager::Load<UShader>()`를 템플릿 특수화로 구현해, 기존 캐싱 인터페이스를 변경하지 않고 파일 수정 시간 비교 로직을 셰이더에만 주입한다.
 
 ```cpp
-template<typename TObject>
-class TObjectIterator
-{
-    // UE4와 동일한 방식의 타입 안전한 오브젝트 순회
-    // GUObjectArray에서 특정 타입의 오브젝트만 필터링
-};
+template<>
+inline UShader* UResourceManager::Load(const FString& InCommandString) {
+    if (Iter != Resources[TypeIndex].end()) {
+        auto Shader = static_cast<UShader*>(Iter->second);
+        FString ShaderPath; std::istringstream(InCommandString) >> ShaderPath;
+        if (Shader->GetLastModificationTime() < std::filesystem::last_write_time(ShaderPath))
+            Shader->Load(InCommandString, Device);  // 변경 감지 → 재컴파일
+        return Shader;
+    }
+}
 ```
 
-### 2. 정적 메시 관리 (`ObjManager.cpp`)
-
-- **Preload()**: Data 폴더의 모든 OBJ 파일을 스캔하여 미리 로드
-- **Binary Caching**: `.obj` → `.bin` + `Mat.bin` 변환으로 로딩 속도 향상
-- **Resource Management**: 중복 로딩 방지 및 리소스 중앙 관리를 위한 캐싱 시스템
-
-### 3. 뷰포트 시스템 (`FViewport.h`)
+**트랜잭션 안전 컴파일** — Temp `ComPtr`에 먼저 컴파일하고, 성공 시에만 기존 셰이더와 교체한다. 컴파일 실패 시 이전 셰이더가 유지되어 런타임 크래시나 검은 화면을 방지한다.
 
 ```cpp
-class FViewport
-{
-    // D3D11 렌더 타겟 관리
-    // 마우스/키보드 입력 처리
-    // 뷰포트별 독립적인 렌더링
-};
+ComPtr<ID3D11VertexShader> TempVS;
+// ... D3DCompileFromFile → 성공 시에만 교체
+if (VertexShader) { VertexShader->Release(); VertexShader = nullptr; }
+VertexShader = TempVS.Detach();
+LastModificationTime = std::filesystem::last_write_time(ShaderFilePath);
 ```
 
-### 4. SWindow(SWindow`.h`)
+---
 
-```cpp
-class SWindow
-{
+## References
 
- Direct3D11 렌더 타겟(Render Target)을 보유/관리
- 자신이 차지하는 Rect 영역에 대한 마우스/키보드 입력 처리
- 자식 위젯들을 가질 수 있으며, 공통된 창(Window) 기능 제공
- 뷰포트, 패널, 스플리터 등 모든 UI 요소의 기반 클래스
+- Harada et al., **Forward+: Bringing Deferred Lighting to the Next Level**, SIGGRAPH 2012
 
-*};
+---
 
-class SSplitter
-{*
- 영역을 분할하는 윈도우 (수직/수평)
+[← Week 06][link-week06] | [Week 08 →][link-week08]
 
- SWindow를 상속하여 좌/우 혹은 상/하로 화면을 나누는 역할
- D3D11 렌더 타겟은 자식 윈도우(SWindow, SViewportWindow 등)로 전달
- 마우스 드래그로 분할 비율을 조정 가능
- 입력 처리 후 자식에게 이벤트를 위임 
- 뷰포트와 패널들을 배치하는 레이아웃 관리의 핵심
+<!-- 이미지 레퍼런스 -->
+[img-pipeline]:    Docs/Images/Forward+pipeline.png
+[img-performance]: Docs/Images/Forward+performance.png
 
-*};
-
-class SViewportWindow
-{*
-
- 실제 게임/에디터 씬을 그려주는 뷰포트 윈도우
- D3D11 렌더 타겟을 직접 생성하고, Scene/World를 렌더링
- 카메라, 조명, 오브젝트를 포함한 3D 씬 표현
- 마우스 입력을 받아 카메라 이동/회전, 오브젝트 선택(Picking) 등 처리
- 각 뷰포트는 독립적인 카메라 상태를 가짐
- 에디터에서 여러 개(4분할 등)로 배치 가능
-};
-```
-
-### 4. 직렬화 시스템 (`Archive.h`)
-
-```cpp
-class FArchive
-{
-    // 바이너리 데이터 읽기/쓰기 추상화
-    // 문자열, 배열 직렬화 헬퍼 함수
-};
-```
-
-### 🎨 렌더링 시스템
-
-### HLSL 셰이더 (`StaticMeshShader.hlsl`)
-
-- **Vertex Shader**: 월드-뷰-프로젝션 변환
-- **Pixel Shader**: 텍스처 샘플링, 머티리얼 적용용
-- **하이라이트 시스템**: 선택된 오브젝트 시각적 표시
-- **기즈모 렌더링**: X(빨강), Y(초록), Z(파랑) 축별 색상 구분
-
-### 다중 뷰포트 렌더링
-
-- **Orthogonal Views**: Front, Side, Top 직교 투영
-- **Perspective View**: 자유로운 카메라 시점
-- **동기화된 선택**: 모든 뷰포트에서 동일한 오브젝트 상태 유지
-
-### 💾 파일 시스템
-
-### OBJ 파일 처리
-
-1. **파싱**: Wavefront OBJ 형식 지원 (정점, 법선, UV, 머티리얼)
-2. **최적화**: 바이너리 캐싱으로 재로딩 성능 향상
-3. **머티리얼**: MTL 파일 파싱으로 다중 재질 지원
-
-### 씬 저장/로드
-
-- **FPrimitiveData**: 오브젝트 정보 직렬화 구조체
-- **카메라 상태**: Perspective 뷰의 카메라 위치/회전 저장
-- **스플리터 설정**: UI 레이아웃 상태 유지
-
-## 🔧 사용 방법
-
-### 오브젝트 생성
-
-1. Scene Manager에서 Primitive Type, 사용할 Static Mesh를 지정한 후 Spawn Actor 클릭
-2. 자동으로 씬에 추가되고 기즈모 표시
-
-### 뷰포트 조작
-
-- **마우스 드래그**: 뷰포트 경계에서 크기 조절
-- **오브젝트 선택**: 3D 뷰포트 또는 Scene Manager에서 클릭
-- **카메라 이동**: WASD 키와 마우스로 자유 시점 이동
-
-### 씬 관리
-
-- **저장**: File → Save Scene
-- **로드**: File → Load Scene
-- **검색**: Scene Manager의 Search Bar로 오브젝트 필터링
-
-## 📊 성능 최적화
-
-### 바이너리 캐싱
-
-```
-.obj 파일 (텍스트) → .bin 파일 (바이너리)
-- 파싱 시간 단축
-- 메모리 사용량 감소
-- 로딩 속도 향상
-```
-
-### 오브젝트 풀링
-
-- TObjectIterator로 메모리 효율적인 오브젝트 순회
-- 중복 로딩 방지를 위한 리소스 캐싱
-
-### 렌더링 최적화
-
-- 뷰포트별 독립적인 렌더 타겟
+<!-- 링크 레퍼런스 -->
+[link-youtube]: https://youtu.be/hzabsv2XB2U
+[link-week06]:  https://github.com/geb0598/DX-Engine/tree/week-06
+[link-week08]:  https://github.com/geb0598/DX-Engine/tree/week-08
