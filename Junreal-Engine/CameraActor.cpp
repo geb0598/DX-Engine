@@ -41,18 +41,75 @@ void ACameraActor::SetPerspectiveCameraInput(bool InPerspectiveCameraInput) {
 }
 void ACameraActor::Tick(float DeltaSeconds)
 {
-    //if (PerspectiveCameraInput) {
-       // ProcessEditorCameraInput(DeltaSeconds);
-
-    //}
-    // 우클릭 드래그 종료시 UI와 동기화
     UInputManager& InputManager = UInputManager::GetInstance();
-    if (InputManager.IsMouseButtonReleased(RightButton))
+
+    // F5: 카메라 애니메이션 시작 / Done 상태에서 재실행 가능
+    if (InputManager.IsKeyPressed(VK_F5) &&
+        (AnimState == ECameraAnimState::Idle || AnimState == ECameraAnimState::Done))
+    {
+        StartCameraAnimation();
+    }
+
+    TickCameraAnimation(DeltaSeconds);
+
+    // 우클릭 드래그 종료시 UI와 동기화 (애니메이션 중에는 건너뜀)
+    if (!IsAnimating() && InputManager.IsMouseButtonReleased(RightButton))
     {
         UUIManager& UIManager = UUIManager::GetInstance();
         FVector UICameraDeg = UIManager.GetTempCameraRotation();
         CameraYawDeg = UICameraDeg.Y;
         CameraPitchDeg = UICameraDeg.X;
+    }
+}
+
+void ACameraActor::StartCameraAnimation()
+{
+    SetActorLocation(FVector(-100.0f, 0.0f, 50.0f));
+    SetAnglesImmediate(0.0f, 0.0f);
+
+    AnimTargetYaw = 180.0f;
+    AnimState = ECameraAnimState::Moving;
+
+    UUIManager& UIManager = UUIManager::GetInstance();
+    UIManager.UpdateMouseRotation(0.0f, 0.0f);
+}
+
+void ACameraActor::TickCameraAnimation(float DeltaSeconds)
+{
+    if (AnimState == ECameraAnimState::Idle || AnimState == ECameraAnimState::Done)
+        return;
+
+    UUIManager& UIManager = UUIManager::GetInstance();
+
+    if (AnimState == ECameraAnimState::Moving)
+    {
+        FVector Pos = GetActorLocation();
+        const float Step = AnimMoveSpeed * DeltaSeconds;
+
+        if (Pos.X + Step >= 75.0f)
+        {
+            SetActorLocation(FVector(75.0f, 0.0f, 50.0f));
+            AnimState = ECameraAnimState::Rotating;
+        }
+        else
+        {
+            Pos.X += Step;
+            SetActorLocation(Pos);
+        }
+    }
+    else if (AnimState == ECameraAnimState::Rotating)
+    {
+        const float Step = AnimRotateSpeed * DeltaSeconds;
+        CameraYawDeg += Step;
+
+        if (CameraYawDeg >= AnimTargetYaw)
+        {
+            CameraYawDeg = AnimTargetYaw;
+            AnimState = ECameraAnimState::Done;
+        }
+
+        SetAnglesImmediate(CameraPitchDeg, CameraYawDeg);
+        UIManager.UpdateMouseRotation(CameraPitchDeg, CameraYawDeg);
     }
 }
 

@@ -59,22 +59,32 @@ public:
     void SetCameraSpeed(float InSpeed) { CameraMoveSpeed = InSpeed; EditorINI["CameraSpeed"] = std::to_string(CameraMoveSpeed); }
 
     void ProcessEditorCameraInput(float DeltaSeconds);
+
+    void StartCameraAnimation();
+    bool IsAnimating() const { return AnimState != ECameraAnimState::Idle; }
+
 private:
     UCameraComponent* CameraComponent = nullptr;
-    
+
     // Camera control parameters
     float MouseSensitivity = 0.1f;  // 기존 World에서 사용하던 값으로 조정
     float CameraMoveSpeed = 10.0f;
-    
+
     // Camera rotation state (cumulative)
     float CameraYawDeg = 0.0f;   // World Up(Y) based Yaw (unlimited accumulation)
     float CameraPitchDeg = 0.0f; // Local Right based Pitch (limited)
 
     bool PerspectiveCameraInput = false;
-    
-   // ECameraProjectionMode ProjectionMode = ECameraProjectionMode::Perspective;
 
-    // Camera input processing methods
+    // Camera animation state machine
+    enum class ECameraAnimState { Idle, Moving, Rotating, Done };
+    ECameraAnimState AnimState = ECameraAnimState::Idle;
+    float AnimTargetYaw = 0.0f;
+
+    static constexpr float AnimMoveSpeed   = 35.0f;   // units/sec
+    static constexpr float AnimRotateSpeed = 90.0f;   // degrees/sec
+
+    void TickCameraAnimation(float DeltaSeconds);
 
     void ProcessCameraRotation(float DeltaSeconds);
     void ProcessCameraMovement(float DeltaSeconds);
