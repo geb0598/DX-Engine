@@ -49,8 +49,11 @@ private:
 
     // @todo: 쉐도우 맵 크기 동적조정 기능 추가전까지 사용
     static constexpr uint32 TEXTURE_WIDTH = 1024;
-    
+
     static constexpr uint32 TEXTURE_HEIGHT = 1024;
+
+    // SAT 빌드 시 DownsampleFactor로 전달되는 값. 현재 1 고정 (원본 해상도 사용).
+    static constexpr uint32 SAVSM_RESOLUTION_DIVISOR = 1;
     
     // 컴퓨트 셰이더의 스레드 그룹 차원(X) 크기.
     // @note HLSL의 [numthreads(X, Y, Z)] 지시자에서 X 값과 반드시 일치해야 한다.

@@ -707,3 +707,231 @@ Pipeline->DispatchCS(ViewClusterCS, ThreadGroupCount, 1, 1);
 | Cluster Z Slices | 32 | > 0 | 깊이 분할 수 (로그 스케일) |
 | Max Lights Per Cluster | 32 | > 0 | Cluster당 최대 광원 수 |
 -->
+
+### 배경 및 개요
+
+Week-08에서 소프트 섀도우 시스템을 단계적으로 구축했습니다. 각 단계는 이전 기법의 구체적인 한계를 직접 해결하는 방식으로 설계됐습니다.
+
+```
+PCF                →  VSM                    →  SAVSM
+단순 비교 샘플링      체비쇼프 부등식 기반        Summed-Area Table
+하드 엣지             수학적 soft shadow          O(1) 쿼리 (필터 크기 무관)
+커널 ∝ 비용           블러 후 경계 불안정          병렬 prefix scan
+```
+
+DirectionalLight, SpotLight, PointLight + Shadow Atlas 전체를 지원하며, 에디터에서 라이트마다 모드를 실시간으로 전환할 수 있습니다.
+
+---
+
+### 1. VSM — 체비쇼프 부등식과 Analytic Variance Bias
+
+#### 1.1 그림자 인자 계산
+
+VSM은 깊이 값의 1차·2차 통계적 모멘트(M1, M2)를 텍스쳐에 저장하고, 픽셀 셰이더에서 체비쇼프 부등식으로 그림자 확률을 계산합니다.
+
+```hlsl
+// UberLit.hlsl — 체비쇼프 부등식
+float CalculateChebyshevShadowFactor(float t, float2 Moments)
+{
+    float M1       = Moments.x;
+    float M2       = Moments.y;
+    float Variance = max(0.00001f, M2 - M1 * M1);   // Var[X] = E[X²] - E[X]²
+    float d        = t - M1;
+    return Variance / (Variance + d * d);             // P(x >= t) 상한
+}
+```
+
+- `t` : 현재 픽셀의 라이트 공간 깊이
+- PCF가 주변 텍셀을 다중 샘플링하는 것과 달리, 두 채널 샘플링 한 번으로 soft shadow를 얻습니다.
+
+#### 1.2 Analytic Variance Bias (ddx/ddy)
+
+깊이 불연속면(물체 실루엣)에서 M1과 M2 사이의 분산이 0에 수렴하면 체비쇼프 항이 수치적으로 불안정해집니다. 이를 픽셀 셰이더 미분으로 선제적으로 억제합니다.
+
+```hlsl
+// DepthOnlyVS.hlsl — 모멘트 저장 PS
+float2 mainPS(PS_INPUT Input) : SV_Target0
+{
+    float Depth = Input.Position.z;
+
+    float dx = ddx(Depth);
+    float dy = ddy(Depth);
+    float AnalyticVarianceBias = 0.25f * (dx * dx + dy * dy);
+
+    float M1 = Depth;
+    float M2 = Depth * Depth + AnalyticVarianceBias;
+    return float2(M1, M2);
+}
+```
+
+`ddx/ddy`는 인접 픽셀 간 깊이 기울기를 추정합니다. 기울기가 가파를수록(불연속면) 분산을 더 크게 부풀려서 "빛이 닿을 확률"을 보수적으로 계산하고 아티팩트를 억제합니다. 단순한 상수 bias offset보다 기하학적 상황에 적응적입니다.
+
+---
+
+### 2. SAVSM — Hillis-Steele Parallel Prefix Scan
+
+#### 2.1 동기
+
+VSM에 가우시안/박스 블러를 적용하면 커널 반지름에 비례해 비용이 증가합니다. SAVSM은 **Summed-Area Table(SAT/적분 이미지)** 을 미리 계산해 임의 크기 직사각형 영역의 평균 모멘트를 상수 시간에 조회합니다.
+
+```
+VSM + Blur:   O(kernel_radius) per pixel
+SAVSM:        O(1) per pixel  (SAT 구축은 O(n log n), 프레임당 1회)
+```
+
+#### 2.2 Hillis-Steele 알고리즘 구현
+
+1024개 스레드 그룹이 텍스쳐의 한 행(Row) 또는 열(Column)을 `groupshared` 메모리에 올린 뒤, stride를 1→2→4→…→512로 배증하며 inclusive prefix sum을 계산합니다.
+
+```hlsl
+// SummedAreaTextureFilter.hlsl
+groupshared float2 SharedMemory[THREAD_BLOCK_SIZE]; // THREAD_BLOCK_SIZE = 1024
+
+[numthreads(THREAD_BLOCK_SIZE, 1, 1)]
+void mainCS(uint3 GroupThreadID : SV_GroupThreadID, uint3 GroupID : SV_GroupID)
+{
+    uint ThreadIndex = GroupThreadID.x;
+
+#ifdef SCAN_DIRECTION_COLUMN
+    uint Column = GroupID.x;
+    uint Row    = ThreadIndex;
+    SharedMemory[ThreadIndex] = InputTexture[uint2(Column, Row)];
+#else
+    uint Row    = GroupID.x;
+    uint Column = ThreadIndex;
+    SharedMemory[ThreadIndex] = InputTexture[uint2(Column, Row)];
+#endif
+    GroupMemoryBarrierWithGroupSync();
+
+    // Hillis-Steele: stride 배증 누적합
+    for (uint Stride = 1; Stride < THREAD_BLOCK_SIZE; Stride <<= 1)
+    {
+        float2 NeighborValue = (ThreadIndex >= Stride)
+            ? SharedMemory[ThreadIndex - Stride]
+            : float2(0.0f, 0.0f);
+        GroupMemoryBarrierWithGroupSync();
+        SharedMemory[ThreadIndex] += NeighborValue;
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+#ifdef SCAN_DIRECTION_COLUMN
+    OutputTexture[uint2(Column, Row)] = SharedMemory[ThreadIndex];
+#else
+    OutputTexture[uint2(Column, Row)] = SharedMemory[ThreadIndex];
+#endif
+}
+```
+
+- Row 패스 → Column 패스 2회로 2D SAT를 완성합니다.
+- `SCAN_DIRECTION_COLUMN` 매크로 하나로 Row/Column을 단일 셰이더 파일에서 분기합니다.
+
+**트레이드오프**: Hillis-Steele은 Work-inefficient(총 연산 O(n log n))이지만 GPU의 massively parallel 특성 덕분에 O(log n) 스텝에 완료됩니다. 1024 해상도 기준으로 스레드 그룹 하나가 정확히 한 행/열을 처리하도록 설계했습니다. 1024를 초과하는 해상도에서는 다중 그룹 확장 전략이 필요한 트레이드오프가 있습니다.
+
+#### 2.3 SAT 조회
+
+```hlsl
+// UberLit.hlsl — SAVSM 쿼리 (O(1))
+float2 CalculateSATMoments(Texture2D SATTexture, SamplerState Sampler,
+                           float2 Center, float HalfWidth, float HalfHeight)
+{
+    // 직사각형 4-corner 조회로 영역 평균 계산
+    float2 A = SATTexture.Sample(Sampler, Center + float2(-HalfWidth, -HalfHeight));
+    float2 B = SATTexture.Sample(Sampler, Center + float2( HalfWidth, -HalfHeight));
+    float2 C = SATTexture.Sample(Sampler, Center + float2(-HalfWidth,  HalfHeight));
+    float2 D = SATTexture.Sample(Sampler, Center + float2( HalfWidth,  HalfHeight));
+    float Area = (2.0f * HalfWidth) * (2.0f * HalfHeight) * TextureSize.x * TextureSize.y;
+    return (D - B - C + A) / Area;
+}
+```
+
+---
+
+### 3. 아키텍처 — FTextureFilter & 전략 패턴
+
+#### 3.1 FTextureFilter
+
+2-pass 분리 가능(separable) 컴퓨트 필터를 캡슐화합니다. 생성 시 하나의 `.hlsl` 파일에서 Row CS와 Column CS를 각각 컴파일하고, 더블 버퍼링용 임시 텍스쳐를 내부에서 관리합니다.
+
+```cpp
+class FTextureFilter {
+    ComPtr<ID3D11ComputeShader> ComputeShaderRow;
+    ComPtr<ID3D11ComputeShader> ComputeShaderColumn;
+    ComPtr<ID3D11Texture2D>     TemporaryTexture;    // Row 결과 임시 저장
+    ComPtr<ID3D11ShaderResourceView>  TemporarySRV;
+    ComPtr<ID3D11UnorderedAccessView> TemporaryUAV;
+
+    // 입력 텍스쳐 크기 변경 시 자동 재생성
+    void ResizeTexture(uint32 Width, uint32 Height);
+
+    // Row pass → TemporaryTexture, Column pass → Output UAV
+    void FilterTexture(ID3D11ShaderResourceView* In,
+                       ID3D11UnorderedAccessView* Out,
+                       uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 Z);
+};
+```
+
+#### 3.2 FShadowMapFilterPass — 전략(Strategy) 패턴
+
+라이트별 `ShadowModeIndex`에 따라 적합한 필터 전략을 선택합니다.
+
+```cpp
+// 초기화
+TMap<EShadowModeIndex, std::unique_ptr<FTextureFilter>> TextureFilterMap;
+TextureFilterMap[SMI_VSM_BOX]      = make_unique<FTextureFilter>("BoxTextureFilter.hlsl");
+TextureFilterMap[SMI_VSM_GAUSSIAN] = make_unique<FTextureFilter>("GaussianTextureFilter.hlsl");
+TextureFilterMap[SMI_SAVSM]        = make_unique<FTextureFilter>("SummedAreaTextureFilter.hlsl");
+
+// 실행 (ShadowModeIndex에 따라 자동 선택)
+if (auto* Filter = TextureFilterMap.Find(Light->ShadowModeIndex))
+    Filter->FilterTexture(VarianceSRV, FilteredUAV, Region);
+```
+
+#### 3.3 Shadow Atlas Region-based 필터링
+
+Shadow Atlas는 여러 라이트의 섀도우 맵을 하나의 텍스쳐에 타일로 배치합니다. 블러를 전체 아틀라스에 적용하면 인접 타일이 오염됩니다. 각 필터 셰이더에 `RegionStart/Size` cbuffer를 추가해 샘플링 범위를 해당 타일 내부로 한정합니다.
+
+```hlsl
+// BoxTextureFilter.hlsl / GaussianTextureFilter.hlsl
+cbuffer RegionData : register(b1)
+{
+    uint RegionStartX, RegionStartY;
+    uint RegionWidth,  RegionHeight;
+};
+
+// 타일 경계 밖은 "빛이 통과"(=1) 기본값으로 처리
+int SampleRow = (int)PixelCoord.y + Offset;
+if (SampleRow >= (int)RegionStartY && SampleRow < (int)(RegionStartY + RegionHeight))
+    AccumulatedValue += InputTexture[uint2(PixelCoord.x, SampleRow)] * Weight;
+else
+    AccumulatedValue += float2(1.0f, 1.0f) * Weight;  // out-of-region default
+```
+
+---
+
+### 4. 데이터 흐름 요약
+
+```
+ShadowMapPass
+  │  DepthOnlyPS: float2(M1, M2 + AnalyticVarianceBias) → VarianceShadowRTV
+  ▼
+ShadowMapFilterPass  (ShadowModeIndex에 따라 분기)
+  ├─ SMI_VSM          : 필터 없음, VarianceShadowSRV 직접 사용
+  ├─ SMI_VSM_BOX      : FTextureFilter(Box)      → Row → Col → FilteredUAV
+  ├─ SMI_VSM_GAUSSIAN : FTextureFilter(Gaussian) → Row → Col → FilteredUAV
+  └─ SMI_SAVSM        : FTextureFilter(SAT)      → Row → Col → SAT UAV
+  ▼
+UberLit.hlsl (StaticMeshPass)
+  ├─ VSM 계열  : Moments = Sample(FilteredSRV),    CalculateChebyshevShadowFactor(t, Moments)
+  └─ SAVSM     : Moments = QuerySAT(4-corner),     CalculateChebyshevShadowFactor(t, Moments)
+```
+
+---
+
+### 5. 구현 결과
+
+| 모드 | 쿼리 비용 | 특성 |
+|------|-----------|------|
+| PCF | O(kernel²) | 하드 엣지, 커널 크기 ∝ 비용 |
+| VSM | O(1) | Soft shadow, 깊이 불연속면 light bleeding |
+| VSM + Box/Gaussian | O(1) | 블러로 경계 개선, 커널 고정 비용 |
+| SAVSM | O(1) | 임의 필터 크기 상수 비용, 가장 부드러운 경계 |

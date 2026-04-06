@@ -53,6 +53,8 @@ void FTextureFilter::FilterTexture(
     TextureInfo.RegionHeight = RegionHeight;
     TextureInfo.TextureWidth = Desc.Width;
     TextureInfo.TextureHeight = Desc.Height;
+    TextureInfo.DownsampleFactor = 1; // Box/Gaussian 필터는 다운샘플링 없음
+    TextureInfo.Padding = 0;
 
     FRenderResourceFactory::UpdateConstantBufferData(TextureInfoConstantBuffer.Get(), TextureInfo);
     Pipeline.SetConstantBuffer(0, EShaderType::CS, TextureInfoConstantBuffer.Get());
@@ -90,6 +92,7 @@ void FTextureFilter::FilterTexture(
     uint32 RegionStartY,
     uint32 RegionWidth,
     uint32 RegionHeight,
+    uint32 DownsampleFactor,
     float FilterStrength
     )
 {
@@ -117,10 +120,12 @@ void FTextureFilter::FilterTexture(
     TextureInfo.RegionHeight = RegionHeight;
     TextureInfo.TextureWidth = Desc.Width;
     TextureInfo.TextureHeight = Desc.Height;
+    TextureInfo.DownsampleFactor = (DownsampleFactor > 0) ? DownsampleFactor : 1;
+    TextureInfo.Padding = 0;
 
     FRenderResourceFactory::UpdateConstantBufferData(TextureInfoConstantBuffer.Get(), TextureInfo);
     Pipeline.SetConstantBuffer(0, EShaderType::CS, TextureInfoConstantBuffer.Get());
-    
+
     FFilterInfo FilterInfo = {};
     FilterInfo.FilterStrength = FilterStrength;
 

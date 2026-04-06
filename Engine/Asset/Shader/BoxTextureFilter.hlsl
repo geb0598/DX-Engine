@@ -113,6 +113,6 @@ void mainCS(
     }
     else
     {
-        OutputTexture[PixelCoord] = float2(1.0f, 1.0f);
+        OutputTexture[PixelCoord] = float2(1.0f, 1.0f); // max depth (no shadow)
     }
 }

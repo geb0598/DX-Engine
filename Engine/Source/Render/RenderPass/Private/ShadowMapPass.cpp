@@ -238,6 +238,7 @@ void FShadowMapPass::Execute(FRenderingContext& Context)
 	DeviceContext->PSSetShaderResources(10, 4, NullSRVs);  // Unbind t10-t14
 
 	
+	// 미렌더링 영역: M1=1.0(far plane) → CurrentDepth <= M1 → 완전 밝음(그림자 없음)
 	const float ClearColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	DeviceContext->ClearRenderTargetView(ShadowAtlas.VarianceShadowRTV.Get(), ClearColor);
 	DeviceContext->ClearDepthStencilView(ShadowAtlas.ShadowDSV.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0);
@@ -587,8 +588,8 @@ void FShadowMapPass::RenderPointShadowMap(
 
 		static const float Y_START = SHADOW_MAP_RESOLUTION * 2.0f;
 
-		ShadowViewport.Width = Light->GetShadowResolutionScale();;
-		ShadowViewport.Height = Light->GetShadowResolutionScale();;
+		ShadowViewport.Width = Light->GetShadowResolutionScale();
+		ShadowViewport.Height = Light->GetShadowResolutionScale();
 		ShadowViewport.MinDepth = 0.0f;
 		ShadowViewport.MaxDepth = 1.0f;
 		ShadowViewport.TopLeftX = X_OFFSET * AtlasIndex;

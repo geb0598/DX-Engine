@@ -682,37 +682,31 @@ float CalculatePointPCFFactor(
 // --- VSM 헬퍼 함수 ---
 
 /**
- * @brief VSM/SAVSM 공통 계산: 체비쇼프 부등식을 사용하여 그림자 인자를 계산합니다.
- * @param CurrentDepth 픽셀의 현재 깊이 
- * @param Moments 샘플링된 모멘트 (float2(E(X), E(X^2)))
- * @return float ShadowFactor (0.0 = shadowed, 1.0 = lit)
+ * @brief VSM/SAVSM 공통: 체비쇼프 부등식으로 그림자 인자를 계산한다.
+ * @param BleedingReduction  Light bleeding 억제 linstep 임계값 [0, 1).
+ *   값이 클수록 bleeding 감소, 반그림자 영역이 날카로워진다.
  */
-float CalculateChebyshevShadowFactor(float CurrentDepth, float2 Moments)
+float CalculateChebyshevShadowFactor(float CurrentDepth, float2 Moments,
+    float MinVariance = 0.00001f, float BleedingReduction = 0.0f)
 {
-    // First Moment: E(X)
     float M1 = Moments.x;
-
-    // Second Moment: E(X^2)
     float M2 = Moments.y;
 
-    // Variance (max for numerical stability)
-    float Variance = max(0.00001f, M2 - M1 * M1);
+    float Variance = max(MinVariance, M2 - M1 * M1);
 
-    // If current depth is smaller than first moment, return 1.0f (Light Bleeding 방지)
     if (CurrentDepth <= M1)
     {
         return 1.0f;
     }
 
-    // Chebyshev's Inequality
-    // P(X > t) <= P_max = Var(X) / (Var(X) + (t - E(X))^2)
     float Difference = CurrentDepth - M1;
-
-    // P_max
     float ShadowFactor = Variance / (Variance + Difference * Difference);
 
+    // Light bleeding 감소: [BleedingReduction, 1] → [0, 1] linstep 리매핑
+    ShadowFactor = saturate((ShadowFactor - BleedingReduction) / (1.0f - BleedingReduction));
+
     float ShadowExponent = 4.0f;
-    return pow(saturate(ShadowFactor), ShadowExponent); 
+    return pow(ShadowFactor, ShadowExponent);
 }
 
 /**
@@ -750,8 +744,7 @@ float CalculateVSMFactor(
     float CurrentDepth = LightSpacePos.z;
 
     // --- 4. VSM 샘플링 및 체비쇼프 부등식 계산 ---
-    float2 Moments = AtlasTexture.Sample(VarianceShadowSampler, AtlasTexCoord);
-
+    float2 Moments = AtlasTexture.Sample(VarianceShadowSampler, AtlasTexCoord).xy;
     return CalculateChebyshevShadowFactor(CurrentDepth, Moments);
 }
 
@@ -855,7 +848,7 @@ float CalculateSpotVSMFactor(
     float2 AtlasTexCoord = AtlasTileOrigin + (ShadowTexCoord * GET_TILE_SIZE(LightInfo.Resolution));
 
     // --- 4. VSM 샘플링 ---
-    float2 Moments = VarianceShadowAtlas.Sample(VarianceShadowSampler, AtlasTexCoord);
+    float2 Moments = VarianceShadowAtlas.Sample(VarianceShadowSampler, AtlasTexCoord).xy;
 
     // --- 5. 공통 체비셰프 계산 (선형 깊이[CurrentDepth] 사용) ---
     return CalculateChebyshevShadowFactor(CurrentDepth, Moments);    
@@ -890,8 +883,7 @@ float CalculatePointVSMFactor(
     float2 AtlasTexCoord = GetPointLightShadowMapUVWithDirection(SampleDir, LightIndex, LightInfo.Resolution);
 
     // --- 5. VSM 모멘트 샘플링 및 체비쇼프 부등식 계산 ---
-    float2 Moments = VarianceShadowAtlas.Sample(PointShadowSampler, AtlasTexCoord);
-
+    float2 Moments = VarianceShadowAtlas.Sample(PointShadowSampler, AtlasTexCoord).xy;
     return CalculateChebyshevShadowFactor(CurrentDepth, Moments);
 }
 
@@ -901,14 +893,48 @@ float CalculatePointVSMFactor(
 
 // --- SAVSM 헬퍼 함수 ---
 
+// SAT 인코딩 스케일: SummedAreaTextureFilter.hlsl의 DEPTH_SCALE과 반드시 일치해야 한다.
+// 조건: N² × DEPTH_SCALE < 2^32 (N = 타일 해상도, 최대 1024 지원)
+#define SAT_DEPTH_SCALE 4095.0f
+
 /**
- * @brief Summed Area Table(SAT)을 쿼리하여 사각 영역의 평균 모멘트를 계산합니다.
- * @param AtlasTexture 쿼리할 Summed Area Variance Shadow Map
- * @param AtlasUV Atlas의 인덱스 (UV 좌표 아님) 
- * @param CenterUV 필터링할 영역의 중심 UV 좌표
- * @param FilterRadiusUV 필터링할 영역의 반지름 (UV 공간)
- * @param Resolution 필터링할 텍스쳐 영역의 해상도
- * @return float2(Average E(X), Average E(X^2))
+ * @brief SAT 단일 4-corner 쿼리(D - B - C + A)로 영역 평균 모멘트를 반환한다.
+ * @note  uint 산술을 사용하므로 float32 cancellation 오차가 없다.
+ */
+float2 QuerySATRegion(
+    Texture2D AtlasTexture,
+    int2 TileOrigin,
+    int2 Center,
+    int2 Radius,
+    int iResolution
+    )
+{
+    int2 RegionMin = max(Center - Radius, int2(0, 0));
+    int2 RegionMax = min(Center + Radius, int2(iResolution - 1, iResolution - 1));
+    float Area = max(float((RegionMax.x - RegionMin.x + 1) * (RegionMax.y - RegionMin.y + 1)), 1.0f);
+
+    // asuint()로 float 텍스처에 저장된 uint SAT 비트 패턴을 복원
+    uint2 D = asuint(AtlasTexture.Load(int3(TileOrigin + RegionMax, 0)).xy);
+
+    uint2 B = (RegionMin.y > 0)
+        ? asuint(AtlasTexture.Load(int3(TileOrigin + int2(RegionMax.x, RegionMin.y - 1), 0)).xy)
+        : uint2(0u, 0u);
+
+    uint2 C = (RegionMin.x > 0)
+        ? asuint(AtlasTexture.Load(int3(TileOrigin + int2(RegionMin.x - 1, RegionMax.y), 0)).xy)
+        : uint2(0u, 0u);
+
+    uint2 A = (RegionMin.x > 0 && RegionMin.y > 0)
+        ? asuint(AtlasTexture.Load(int3(TileOrigin + int2(RegionMin.x - 1, RegionMin.y - 1), 0)).xy)
+        : uint2(0u, 0u);
+
+    return float2(D - B - C + A) / (Area * SAT_DEPTH_SCALE);
+}
+
+/**
+ * @brief SAT 영역 평균 모멘트를 sub-texel bilinear 블렌딩으로 반환한다.
+ * @details 픽셀 중심의 소수부를 이용해 인접한 4개의 정수 격자 중심에서 SAT 쿼리를 수행하고
+ * bilinear 보간하여 경계에서 픽셀 아트처럼 끊기는 현상을 제거한다.
  */
 float2 SampleSummedAreaVarianceShadowMap(
     Texture2D AtlasTexture,
@@ -918,46 +944,24 @@ float2 SampleSummedAreaVarianceShadowMap(
     float Resolution
     )
 {
-    // --- 1. 필터링할 영역의 사각 경계(UV)를 계산 ---
-    float2 UV_TopRight = CenterUV + FilterRadiusUV;
-    float2 UV_BottomLeft = CenterUV - FilterRadiusUV;
+    int iResolution = int(Resolution);
+    int2 TileOrigin = int2(AtlasUV) * int(ATLASSIZE / ATLASTILECOUNT);
+    int2 Radius     = int2(FilterRadiusUV * Resolution);
 
-    // 텍스처 크기 및 텍셀 크기 계산
-    float2 TexelSize = float2(1.0f / Resolution, 1.0f / Resolution);
-    
-    // --- 2. SAT(Summed Area Table) 쿼리를 위해서 4개의 샘플링 좌표를 계산 ---
-    // SAT(x, y) = [0, 0]부터 [x, y]까지의 합
-    float2 UV_A = float2(UV_BottomLeft.x - TexelSize.x, UV_BottomLeft.y - TexelSize.y); // A = (x1 -1, y1 -1)
-    float2 UV_B = float2(UV_TopRight.x, UV_BottomLeft.y - TexelSize.y);                 // B = (x2, y1 - 1)
-    float2 UV_C = float2(UV_BottomLeft.x - TexelSize.x, UV_TopRight.y);                 // C = (x1 - 1, y2)
-    float2 UV_D = float2(UV_TopRight.x, UV_TopRight.y);                                 // D = (x2, y2)
+    // Sub-texel 보간: 픽셀 중심의 소수부를 bilinear 가중치로 사용
+    float2 CenterF = CenterUV * Resolution;
+    int2 C00 = int2(CenterF);               // floor
+    int2 C10 = C00 + int2(1, 0);
+    int2 C01 = C00 + int2(0, 1);
+    int2 C11 = C00 + int2(1, 1);
+    float2 Frac = frac(CenterF);
 
-    float2 AtlasUV_A = UV_A * GET_TILE_SIZE(Resolution) + AtlasUV * ATLASGRIDSIZE;
-    float2 AtlasUV_B = UV_B * GET_TILE_SIZE(Resolution) + AtlasUV * ATLASGRIDSIZE;
-    float2 AtlasUV_C = UV_C * GET_TILE_SIZE(Resolution) + AtlasUV * ATLASGRIDSIZE;
-    float2 AtlasUV_D = UV_D * GET_TILE_SIZE(Resolution) + AtlasUV * ATLASGRIDSIZE;
+    float2 M00 = QuerySATRegion(AtlasTexture, TileOrigin, C00, Radius, iResolution);
+    float2 M10 = QuerySATRegion(AtlasTexture, TileOrigin, C10, Radius, iResolution);
+    float2 M01 = QuerySATRegion(AtlasTexture, TileOrigin, C01, Radius, iResolution);
+    float2 M11 = QuerySATRegion(AtlasTexture, TileOrigin, C11, Radius, iResolution);
 
-    // --- 3. SAT 텍스쳐 샘플링 ---
-    float2 Moments_A = AtlasTexture.SampleLevel(VarianceShadowSampler, AtlasUV_A, 0);
-    float2 Moments_B = AtlasTexture.SampleLevel(VarianceShadowSampler, AtlasUV_B, 0);
-    float2 Moments_C = AtlasTexture.SampleLevel(VarianceShadowSampler, AtlasUV_C, 0);
-    float2 Moments_D = AtlasTexture.SampleLevel(VarianceShadowSampler, AtlasUV_D, 0);
-
-    // --- 4. 포함-배제 원칙 (Inclusion-Exclusion) ---
-    float2 SummedMoments = Moments_D - Moments_B - Moments_C + Moments_A;
-
-    // --- 5. 필터 영역의 넓이를 계산 (UV 공간 -> 픽셀 공간) ---
-    // 필터 반경 R인 커널은 (2R+1) x (2R+1) 크기를 가짐
-    float2 SideLengths = (FilterRadiusUV / TexelSize) * 2.0f + 1.0f;
-    float FilterArea = SideLengths.x * SideLengths.y;
-
-    if (FilterArea < 1.0f)
-    {
-        FilterArea = 1.0f; // 0으로 나누는 것을 방지
-    }
-
-    // --- 6. 합계를 넓이로 나누어 평균 모멘트 계산 ---
-    return SummedMoments / FilterArea;
+    return lerp(lerp(M00, M10, Frac.x), lerp(M01, M11, Frac.x), Frac.y);
 }
 
 /**
@@ -993,20 +997,22 @@ float CalculateSAVSMFactor(
     float CurrentDepth = LightSpacePos.z;
 
     // --- 4. SAVSM 샘플링 및 체비쇼프 부등식 계산 ---
-    
-    // 텍셀 크기 및 필터 반경(UV) 계산
     float2 TexelSize = float2(1.0f / Resolution, 1.0f / Resolution);
     float2 FilterRadiusUV = FilterRadiusPixels * TexelSize;
 
     float2 AverageMoments = SampleSummedAreaVarianceShadowMap(
         AtlasTexture,
         AtlasUV,
-        ShadowTexCoord, 
+        ShadowTexCoord,
         FilterRadiusUV,
         Resolution
     );
 
-    return CalculateChebyshevShadowFactor(CurrentDepth, AverageMoments); 
+    // BleedingReduction: light bleeding 억제 파라미터.
+    // 물체가 지면 근처에 있을 때 줄무늬(light leaking) 발생 시 값을 높인다.
+    // 0.0 = 억제 없음, 0.2 = 권장 시작값, 0.4 = 강한 억제 (반그림자 일부 소실).
+    static const float SAVSM_BLEEDING_REDUCTION = 0.2f;
+    return CalculateChebyshevShadowFactor(CurrentDepth, AverageMoments, 0.00001f, SAVSM_BLEEDING_REDUCTION);
 }
 
 // --- SAVSM Directional Light ---
@@ -1022,7 +1028,7 @@ float CalculateDirectionalSAVSMFactor(
     {
         return 1.0f;
     }
-    
+
     float CameraViewZ = GetCameraViewZ(WorldPos);
     uint SubFrustumNum = GetCascadeSubFrustumNum(CameraViewZ);
 
@@ -1113,15 +1119,15 @@ float CalculateSpotSAVSMFactor(
     uint2 AtlasUV = ShadowAtlasSpotLightTilePos[LightIndex].UV;
 
     float2 AverageMoments = SampleSummedAreaVarianceShadowMap(
-        VarianceShadowAtlas, 
+        VarianceShadowAtlas,
         AtlasUV,
         ShadowTexCoord,
         FilterRadiusUV,
         LightInfo.Resolution
     );
 
-    // --- 5. 공통 체비쇼프 계산 (선형 깊이 사용) ---
-    return CalculateChebyshevShadowFactor(CurrentDepth, AverageMoments);
+    static const float SAVSM_BLEEDING_REDUCTION = 0.2f;
+    return CalculateChebyshevShadowFactor(CurrentDepth, AverageMoments, 0.00001f, SAVSM_BLEEDING_REDUCTION);
 }
 
 /*-----------------------------------------------------------------------------
@@ -1160,8 +1166,9 @@ FIllumination CalculateDirectionalLight(FDirectionalLightInfo Info, float3 World
     }
     else if (Info.ShadowModeIndex == SMI_SAVSM)
     {
-        // [1x1] - [21x21] 커널 크기 
-        float FilterRadiusPixels = lerp(0.0f, 10.0f, 1.0f - Info.ShadowSharpen);
+        // Two-Sum 정밀 SAT: float32 cancellation 오차가 충분히 작아 hard shadow 가능.
+        // [5x5] - [17x17] SAT 커널 (Sharpen: 1.0 → 0.0)
+        float FilterRadiusPixels = lerp(2.0f, 8.0f, 1.0f - Info.ShadowSharpen);
         ShadowFactor = CalculateDirectionalSAVSMFactor(Info, WorldPos, FilterRadiusPixels);
     }
 
@@ -1281,8 +1288,9 @@ FIllumination CalculateSpotLight(FSpotLightInfo Info, uint LightIndex, float3 Wo
     }
     else if (Info.ShadowModeIndex == SMI_SAVSM)
     {
-        // [1x1] - [21x21] 커널 크기 
-        float FilterRadiusPixels = lerp(0.0f, 10.0f, 1.0f - Info.ShadowSharpen);
+        // Two-Sum 정밀 SAT: float32 cancellation 오차가 충분히 작아 hard shadow 가능.
+        // [5x5] - [17x17] SAT 커널 (Sharpen: 1.0 → 0.0)
+        float FilterRadiusPixels = lerp(2.0f, 8.0f, 1.0f - Info.ShadowSharpen);
         ShadowFactor = CalculateSpotSAVSMFactor(Info, LightIndex, WorldPos, FilterRadiusPixels);
     }
 

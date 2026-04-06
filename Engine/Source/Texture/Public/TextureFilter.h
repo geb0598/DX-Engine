@@ -96,6 +96,7 @@ public:
         uint32 RegionStartY,
         uint32 RegionWidth,
         uint32 RegionHeight,
+        uint32 DownsampleFactor = 1,
         float FilterStrength = 1.0f
     );
 
@@ -139,6 +140,10 @@ private:
         uint32 RegionHeight;
         uint32 TextureWidth;
         uint32 TextureHeight;
+        // SAT 해상도 축소 배율 (1 = 원본 해상도, 4 = 1/4 해상도 SAT)
+        // HLSL cbuffer 의 DownsampleFactor 필드와 매핑된다.
+        uint32 DownsampleFactor;
+        uint32 Padding; // cbuffer 16-byte alignment
     };
     Microsoft::WRL::ComPtr<ID3D11Buffer> TextureInfoConstantBuffer;
     struct FFilterInfo

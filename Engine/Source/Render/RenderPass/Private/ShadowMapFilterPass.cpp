@@ -7,7 +7,10 @@
 #include "Component/Public/PointLightComponent.h"
 
 INSIGHTS_DECLARE_STATGROUP("Shadow", GStatGroupShadow)
-INSIGHTS_DECLARE_STAT("Shadow Filter Pass", GStatShadowFilterPass, GStatGroupShadow)
+INSIGHTS_DECLARE_STAT("Shadow Filter Pass",          GStatShadowFilterPass,         GStatGroupShadow)
+INSIGHTS_DECLARE_STAT("Shadow Filter Pass (Box)",    GStatShadowFilterBox,          GStatGroupShadow)
+INSIGHTS_DECLARE_STAT("Shadow Filter Pass (Gauss)",  GStatShadowFilterGaussian,     GStatGroupShadow)
+INSIGHTS_DECLARE_STAT("Shadow Filter Pass (SAT)",    GStatShadowFilterSAT,          GStatGroupShadow)
 
 FShadowMapFilterPass::FShadowMapFilterPass(FShadowMapPass* InShadowMapPass, UPipeline* InPipeline)
     : FRenderPass(InPipeline), ShadowMapPass(InShadowMapPass)
@@ -134,12 +137,15 @@ void FShadowMapFilterPass::FilterShadowMap(const ULightComponent* LightComponent
 		}
 	case EShadowModeIndex::SMI_SAVSM:
 		{
-			uint32 NumGroups = ShadowMap->Resolution;
+			// SAT 해상도 축소: SAVSM_RESOLUTION_DIVISOR=4 → 1024→256 SAT
+			// float32 최대누적합이 (1/N)^2 배로 감소 → 4-corner 캔슬레이션 오차 16배 감소
+			uint32 SATSize = ShadowMap->Resolution / SAVSM_RESOLUTION_DIVISOR;
 			TextureFilterMap[EShadowModeIndex::SMI_SAVSM]->FilterTexture(
 				ShadowMap->VarianceShadowSRV.Get(),
 				ShadowMap->VarianceShadowUAV.Get(),
-				NumGroups,
-				0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT
+				SATSize,
+				0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT,
+				SAVSM_RESOLUTION_DIVISOR
 			);
 			break;
 		}
@@ -161,6 +167,7 @@ void FShadowMapFilterPass::FilterShadowAtlasMap(const ULightComponent* LightComp
 	{
 	case EShadowModeIndex::SMI_VSM_BOX:
 		{
+			INSIGHTS_GPU_SCOPE(GStatShadowFilterBox);
 			uint32 NumGroupsX = (RegionWidth + THREAD_BLOCK_SIZE_X - 1) / THREAD_BLOCK_SIZE_X;
 			uint32 NumGroupsY = (RegionHeight + THREAD_BLOCK_SIZE_Y - 1) / THREAD_BLOCK_SIZE_Y;
 			uint32 NumGroupsZ = 1;
@@ -175,6 +182,7 @@ void FShadowMapFilterPass::FilterShadowAtlasMap(const ULightComponent* LightComp
 		}
 	case EShadowModeIndex::SMI_VSM_GAUSSIAN:
 		{
+			INSIGHTS_GPU_SCOPE(GStatShadowFilterGaussian);
 			uint32 NumGroupsX = (RegionWidth + THREAD_BLOCK_SIZE_X - 1) / THREAD_BLOCK_SIZE_X;
 			uint32 NumGroupsY = (RegionHeight + THREAD_BLOCK_SIZE_Y - 1) / THREAD_BLOCK_SIZE_Y;
 			uint32 NumGroupsZ = 1;
@@ -189,12 +197,14 @@ void FShadowMapFilterPass::FilterShadowAtlasMap(const ULightComponent* LightComp
 		}
 	case EShadowModeIndex::SMI_SAVSM:
 		{
-			uint32 NumGroups = RegionWidth;
+			INSIGHTS_GPU_SCOPE(GStatShadowFilterSAT);
+			uint32 SATWidth = RegionWidth / SAVSM_RESOLUTION_DIVISOR;
 			TextureFilterMap[EShadowModeIndex::SMI_SAVSM]->FilterTexture(
 				ShadowMap->VarianceShadowSRV.Get(),
 				ShadowMap->VarianceShadowUAV.Get(),
-				NumGroups,
-				RegionStartX, RegionStartY, RegionWidth, RegionHeight
+				SATWidth,
+				RegionStartX, RegionStartY, RegionWidth, RegionHeight,
+				SAVSM_RESOLUTION_DIVISOR
 			);
 			break;
 		}
