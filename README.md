@@ -134,39 +134,6 @@ SAVSM:       샘플 수 = O(1)           — 필터 크기와 무관
 
 SAT 구축에는 2D 텍스쳐 전체의 행·열 방향 누적합이 필요하다. 이를 Compute Shader에서 **Hillis-Steele parallel prefix scan**으로 구현했다.
 
-**트러블슈팅: Catastrophic Cancellation**
-
-초기 구현은 float SAT로 작성했으나, 그림자 영역에 노이즈 패턴 같은 불규칙한 아티팩트가 발생했다.
-
-![savsm-artifact][img-savsm-artifact]
-
-원인은 SAT 4-corner 연산 `D - B - C + A`에서의 Catastrophic Cancellation이었다. D, B, C, A는 모두 텍스쳐 전체 누적합에 가까운 큰 값이고, 이 값들의 차이인 실제 영역 합은 훨씬 작을 수 있다. 1024×1024 해상도에서 SAT 값은 최대 ~10⁶ 규모까지 커지는데, float32는 유효숫자가 약 7자리이므로 이 규모의 숫자에서 수십 단위 차이를 구하면 의미 있는 비트가 전혀 남지 않는다.
-
-```
-// float SAT — Catastrophic Cancellation 발생
-float D = 524287.73f;
-float B = 524277.81f;
-float C = 524261.45f;
-float A = 524251.53f;
-float Result = D - B - C + A; // 기댓값: 0.00, 실제: 노이즈
-```
-
-**해결**: float [0,1] 깊이 값을 정수로 스케일링해 SAT를 정수로 구성하고, D-B-C+A를 정수 연산으로 수행한다. 정수 뺄셈은 Cancellation이 없어 결과가 정확하다.
-
-```hlsl
-// 인코딩 (SummedAreaTextureFilter.hlsl): float [0,1] → uint
-uint EncodedValue = uint(round(FloatDepth * float(DEPTH_SCALE)));
-
-// 디코딩 + 차분 (UberLit.hlsl): uint 비트 패턴으로 복원 후 정수 연산
-uint2 D = asuint(SATTexture.Load(...).xy);
-uint2 B = asuint(SATTexture.Load(...).xy);
-uint2 C = asuint(SATTexture.Load(...).xy);
-uint2 A = asuint(SATTexture.Load(...).xy);
-float2 Moments = float2(D - B - C + A) / (Area * SAT_DEPTH_SCALE); // 마지막에만 float 변환
-```
-
-`asfloat(uint)` / `asuint(float)`로 float 텍스쳐에 uint 비트 패턴을 저장·복원하고, 차분 연산만 uint로 수행해 정밀도 손실 없이 정확한 모멘트를 얻는다.
-
 <details>
 <summary><b>구현 상세 — 클릭해서 펼치기</b></summary>
 
@@ -225,6 +192,43 @@ return CalculateChebyshevShadowFactor(CurrentDepth, Moments);
 ```
 
 </details>
+
+---
+
+## Troubleshooting
+
+### Catastrophic Cancellation in Float SAT
+
+초기 구현은 float SAT로 작성했으나, 그림자 영역에 노이즈 패턴 같은 불규칙한 아티팩트가 발생했다.
+
+![savsm-artifact][img-savsm-artifact]
+
+원인은 SAT 4-corner 연산 `D - B - C + A`에서의 Catastrophic Cancellation이었다. D, B, C, A는 모두 텍스쳐 전체 누적합에 가까운 큰 값이고, 이 값들의 차이인 실제 영역 합은 훨씬 작을 수 있다. 1024×1024 해상도에서 SAT 값은 최대 ~10⁶ 규모까지 커지는데, float32는 유효숫자가 약 7자리이므로 이 규모의 숫자에서 수십 단위 차이를 구하면 의미 있는 비트가 전혀 남지 않는다.
+
+```
+// float SAT — Catastrophic Cancellation 발생
+float D = 524287.73f;
+float B = 524277.81f;
+float C = 524261.45f;
+float A = 524251.53f;
+float Result = D - B - C + A; // 기댓값: 0.00, 실제: 노이즈
+```
+
+**해결**: float [0,1] 깊이 값을 정수로 스케일링해 SAT를 정수로 구성하고, D-B-C+A를 정수 연산으로 수행한다. 정수 뺄셈은 Cancellation이 없어 결과가 정확하다.
+
+```hlsl
+// 인코딩 (SummedAreaTextureFilter.hlsl): float [0,1] → uint
+uint EncodedValue = uint(round(FloatDepth * float(DEPTH_SCALE)));
+
+// 디코딩 + 차분 (UberLit.hlsl): uint 비트 패턴으로 복원 후 정수 연산
+uint2 D = asuint(SATTexture.Load(...).xy);
+uint2 B = asuint(SATTexture.Load(...).xy);
+uint2 C = asuint(SATTexture.Load(...).xy);
+uint2 A = asuint(SATTexture.Load(...).xy);
+float2 Moments = float2(D - B - C + A) / (Area * SAT_DEPTH_SCALE); // 마지막에만 float 변환
+```
+
+`asfloat(uint)` / `asuint(float)`로 float 텍스쳐에 uint 비트 패턴을 저장·복원하고, 차분 연산만 uint로 수행해 정밀도 손실 없이 정확한 모멘트를 얻는다.
 
 ---
 
