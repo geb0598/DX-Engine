@@ -1,809 +1,188 @@
-# Week8 Team5 (김희준, 이준용, 허준, 홍신화) 기술문서
+[← Week 07][link-week07] | [Week 09 →][link-week09]
 
-<!--
-## 1. 개요
+![preview][img-preview]
 
-본 문서는 KTL 엔진에 구현된 조명(Lighting) 시스템의 기술적 사양과 아키텍처를 설명합니다.
+# DX-Engine — Week 08: Shadow Map Filtering
 
-조명 시스템은 씬(Scene) 내의 물체에 현실적인 명암을 부여하여 깊이감과 입체감을 표현하는 핵심 기능입니다. 본 엔진의 조명 시스템은 다양한 셰이딩 모델(Gouraud, Lambert, Blinn-Phong)을 지원하며, Tile-Based Light Culling을 통해 효율적인 다중 광원 처리가 가능합니다.
+> Shadow Map 기반 그림자 필터링 기법 3종(PCF · VSM · SAVSM)을 DirectX 11과 HLSL Compute Shader로 구현
 
----
-## 2. 핵심 아키텍처
-
-조명 시스템은 아래의 주요 클래스들 간의 상호작용을 통해 동작합니다.
-
--   **Light Components**: 씬에 배치되는 다양한 광원 타입을 정의합니다.
-    -   `UAmbientLightComponent`: 전역 환경광
-    -   `UDirectionalLightComponent`: 방향성 광원 (태양광)
-    -   `UPointLightComponent`: 점 광원
-    -   `USpotLightComponent`: 스포트라이트
-    
--   **Light Actors**: Light Component를 포함하는 배치 가능한 액터입니다.
-    -   `AAmbientLight`, `ADirectionalLight`, `APointLight`, `ASpotLight`
-    
--   **`FLightPass`**: 렌더링 파이프라인의 한 단계로, Tile-Based Light Culling을 수행하고 조명 정보를 GPU에 전달합니다.
-
--   **`UberLit.hlsl`**: 다양한 셰이딩 모델을 하나의 셰이더에서 처리하는 Uber Shader입니다.
+![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
+![DirectX 11](https://img.shields.io/badge/DirectX-11-0078D4?logo=microsoft&logoColor=white)
+![HLSL](https://img.shields.io/badge/HLSL-SM_5.0-5C2D91)
+![Windows](https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white)
 
 ---
-## 3. Light Component 및 Actor 구현
 
-### 3.1. Light Component 계층 구조
+## Features
 
-```
-ULightComponentBase (추상 베이스)
-  ├─ ULightComponent (공통 기능)
-  │   ├─ UAmbientLightComponent
-  │   ├─ UDirectionalLightComponent
-  │   ├─ UPointLightComponent
-  │   │   └─ USpotLightComponent
-```
-
-#### 3.1.1. `ULightComponentBase`
-- 모든 광원의 공통 속성을 정의하는 추상 베이스 클래스입니다.
-- 주요 속성:
-  - `Intensity`: 광원의 세기 (0.0 ~ 20.0)
-  - `LightColor`: 광원의 색상
-  - `bVisible`: 가시성 플래그
-  - `bLightEnabled`: 조명 계산 포함 여부
-
-#### 3.1.2. `ULightComponent`
-- 시각화를 위한 `UBillboardComponent`를 관리합니다.
-- `UpdateVisualizationBillboardTint()`: 광원의 색상과 강도를 빌보드에 반영하여 에디터에서 직관적으로 확인할 수 있습니다.
-
-#### 3.1.3. `UDirectionalLightComponent`
-- 무한히 먼 곳에서 일정한 방향으로 빛을 발산하는 광원입니다.
-- 태양광 표현에 적합합니다.
-- 주요 기능:
-  - `GetForwardVector()`: 광원의 방향 벡터 반환
-  - `GetDirectionalLightInfo()`: 셰이더 전달용 구조체 반환
-
-#### 3.1.4. `UPointLightComponent`
-- 한 점에서 모든 방향으로 빛을 발산하는 광원입니다.
-- 주요 속성:
-  - `AttenuationRadius`: 광원의 유효 범위
-  - `DistanceFalloffExponent`: 거리에 따른 감쇠 지수 (2.0 ~ 16.0)
-- 감쇠 공식: `(1 - distance/range)^exponent`
-
-#### 3.1.5. `USpotLightComponent`
-- `UPointLightComponent`를 상속받아 원뿔 형태로 빛을 발산합니다.
-- 주요 속성:
-  - `InnerConeAngle`: 내부 원뿔 각도 (완전한 조명)
-  - `OuterConeAngle`: 외부 원뿔 각도 (조명 시작)
-  - `AngleFalloffExponent`: 각도에 따른 감쇠 지수
-
-### 3.2. Light Actor
-
-각 Light Component에 대응하는 Actor 클래스가 존재하며, `GetDefaultRootComponent()`를 통해 해당 컴포넌트를 루트로 설정합니다.
-
-```cpp
-UClass* APointLight::GetDefaultRootComponent()
-{
-    return UPointLightComponent::StaticClass();
-}
-```
+- **PCF (Percentage Closer Filtering)** — 주변 텍셀을 다중 샘플링해 그림자 경계 앨리어싱을 완화하는 기본 필터링 기법
+- **VSM (Variance Shadow Maps)** — 깊이 1·2차 모멘트를 저장하고 체비쇼프 부등식으로 그림자 인자를 수학적으로 계산. ddx/ddy Analytic Variance Bias로 실루엣 아티팩트 억제
+- **SAVSM (Summed-Area VSM)** — Hillis-Steele parallel prefix scan을 Compute Shader로 구현해 필터 크기에 무관한 O(1) 그림자 쿼리 실현
+- **런타임 Shadow Mode 전환** — 라이트별 PCF / VSM / VSM+Box / VSM+Gaussian / SAVSM을 에디터에서 실시간 선택
 
 ---
-## 4. 셰이딩 모델 구현 (`UberLit.hlsl`)
 
-### 4.1. Uber Shader 개념
-
-`UberLit.hlsl`은 컴파일 타임 매크로를 사용하여 하나의 셰이더 파일에서 여러 셰이딩 모델을 지원합니다.
-
-#### 셰이딩 모델 매크로:
-- `LIGHTING_MODEL_GOURAUD`: Gouraud Shading (정점 셰이더에서 조명 계산)
-- `LIGHTING_MODEL_LAMBERT`: Lambert Shading (픽셀 셰이더, Diffuse만)
-- `LIGHTING_MODEL_BLINNPHONG`: Blinn-Phong Shading (픽셀 셰이더, Diffuse + Specular)
-- `LIGHTING_MODEL_NORMAL`: World Normal 시각화 모드
-
-### 4.2. 법선 변환 (Normal Transformation)
-
-비균일 스케일에서도 올바른 법선 변환을 위해 `(M^-1)^T` 공식을 사용합니다.
-
-```hlsl
-float3x3 World3x3 = (float3x3) World;
-float3x3 InvTransWorld = transpose(Inverse3x3(World3x3));
-Output.WorldNormal = SafeNormalize3(mul(Input.Normal, InvTransWorld));
-```
-
-#### Determinant 검사:
-스케일이 0인 경우 (행렬식이 0) 메시가 납작해지므로 정점을 discard합니다:
-
-```hlsl
-if (abs(GetDeterminant3x3(WorldMatrix3x3)) < 1e-8)
-{
-    discard;
-}
-```
-
-### 4.3. 조명 계산
-
-#### 4.3.1. Ambient Light
-```hlsl
-float4 CalculateAmbientLight(FAmbientLightInfo info)
-{
-    return info.Color * info.Intensity;
-}
-```
-
-#### 4.3.2. Directional Light (Blinn-Phong)
-```hlsl
-FIllumination CalculateDirectionalLight(...)
-{
-    float3 LightDir = SafeNormalize3(-Info.Direction);
-    float NdotL = saturate(dot(WorldNormal, LightDir));
-    
-    // Diffuse
-    Result.Diffuse = Info.Color * Info.Intensity * NdotL;
-    
-    // Specular (Blinn-Phong)
-    float3 H = SafeNormalize3(LightDir + ViewDir);
-    float CosTheta = saturate(dot(WorldNormal, H));
-    float Spec = ((Ns + 8.0f) / (8.0f * PI)) * pow(CosTheta, Ns);
-    Result.Specular = Info.Color * Info.Intensity * Spec;
-}
-```
-
-정규화 상수 `(Ns + 8) / (8π)`는 에너지 보존을 위한 항입니다.
-
-#### 4.3.3. Point Light
-Directional Light와 동일한 계산에 거리 감쇠를 추가합니다:
-
-```hlsl
-float Attenuation = pow(saturate(1.0f - Distance / Info.Range), Info.DistanceFalloffExponent);
-Result.Diffuse = Info.Color * Info.Intensity * NdotL * Attenuation;
-```
-
-#### 4.3.4. Spot Light
-Point Light에 각도 감쇠를 추가합니다:
-
-```hlsl
-float CosAngle = dot(-LightDir, SpotDir);
-float AttenuationAngle = pow(saturate((CosAngle - CosOuter) / (CosInner - CosOuter)), AngleFalloffExponent);
-Result.Diffuse = ... * AttenuationDistance * AttenuationAngle;
-```
-
-### 4.4. Gouraud vs Per-Pixel Shading
-
-#### Gouraud Shading:
-- **Vertex Shader**에서 조명을 계산하고 보간하여 전달합니다.
-- 성능은 좋지만 정점이 적으면 품질 저하가 발생합니다.
-
-```hlsl
-#if LIGHTING_MODEL_GOURAUD
-    // VS에서 모든 조명 계산
-    Output.AmbientLight = Illumination.Ambient;
-    Output.DiffuseLight = Illumination.Diffuse;
-    Output.SpecularLight = Illumination.Specular;
-#endif
-```
-
-#### Per-Pixel Shading (Lambert, Blinn-Phong):
-- **Pixel Shader**에서 조명을 계산합니다.
-- 픽셀 단위로 계산하여 높은 품질을 보장합니다.
-
-```hlsl
-#elif LIGHTING_MODEL_LAMBERT || LIGHTING_MODEL_BLINNPHONG
-    FIllumination Illumination = (FIllumination)0;
-    float3 N = ShadedWorldNormal;
-    
-    Illumination.Ambient = CalculateAmbientLight(Ambient);
-    ADD_ILLUM(Illumination, CalculateDirectionalLight(...));
-    // Point & Spot lights...
-#endif
-```
-
-### 4.5. Safe Normalization
-
-HLSL의 `normalize()` 함수는 영벡터 입력 시 NaN을 발생시킬 수 있으므로, 안전한 정규화 함수를 사용합니다:
-
-```hlsl
-float3 SafeNormalize3(float3 v)
-{
-    float Len2 = dot(v, v);
-    return Len2 > 1e-12f ? v / sqrt(Len2) : float3(0.0f, 0.0f, 0.0f);
-}
-```
+![shadow-comparison][img-comparison]
 
 ---
-## 5. Normal Mapping
 
-### 5.1. Tangent Space 계산
+## Pipeline Overview
 
-OBJ 로더에서 각 정점의 Tangent 벡터를 계산합니다 (`ComputeTangents` 함수):
-
-1. **면 단위 Tangent 계산**: 삼각형의 UV 좌표와 위치 벡터로부터 Tangent와 Bitangent를 계산합니다.
-   
-2. **정점 단위 누적**: 각 정점이 공유하는 모든 면의 Tangent를 누적합니다.
-
-3. **Gram-Schmidt 직교화**: 법선 벡터와 Tangent를 직교화합니다.
-   ```cpp
-   Tangent = Tangent - Normal * Dot(Normal, Tangent);
-   ```
-
-4. **Handedness 계산**: TBN 좌표계의 좌우손성을 결정합니다.
-   ```cpp
-   float Handedness = (Dot(Cross(Normal, Tangent), Bitangent) < 0.0f) ? -1.0f : 1.0f;
-   Vertices[V].Tangent = FVector4(Tangent.X, Tangent.Y, Tangent.Z, Handedness);
-   ```
-
-### 5.2. Normal Map 적용 (Pixel Shader)
-
-```hlsl
-float3 ComputeNormalMappedWorldNormal(float2 UV, float3 WorldNormal, float4 WorldTangent)
-{
-    float3 BaseNormal = SafeNormalize3(WorldNormal);
-    
-    // Tangent가 유효하지 않으면 메시 노말 사용
-    if (dot(WorldTangent.xyz, WorldTangent.xyz) <= 1e-8f)
-        return BaseNormal;
-    
-    // 노말 맵 샘플링 [0,1] -> [-1,1]
-    float3 TangentSpaceNormal = SafeNormalize3(NormalTexture.Sample(...).xyz * 2.0f - 1.0f);
-    
-    // TBN 행렬 구성
-    float3 T = SafeNormalize3(WorldTangent.xyz);
-    float3 B = SafeNormalize3(cross(BaseNormal, T) * WorldTangent.w);
-    float3x3 TBN = float3x3(T, B, BaseNormal);
-    
-    // 탄젠트 공간 -> 월드 공간
-    return SafeNormalize3(mul(TangentSpaceNormal, TBN));
-}
-```
-
-### 5.3. World Normal View Mode
-
-디버깅 목적으로 월드 공간 법선 벡터를 RGB 색상으로 시각화합니다:
-
-```hlsl
-#elif LIGHTING_MODEL_NORMAL
-    float3 EncodedWorldNormal = ShadedWorldNormal * 0.5f + 0.5f;
-    finalPixel.rgb = EncodedWorldNormal;
-#endif
-```
-
-- `[-1, 1]` 범위의 법선을 `[0, 1]` 범위로 인코딩
-- 결과: 빨강(+X), 초록(+Y), 파랑(+Z) 방향으로 표현
+![pipeline][img-pipeline]
 
 ---
-## 6. Clustered Light Culling
 
-다수의 광원을 효율적으로 처리하기 위해 Clustered Rendering을 구현했습니다.
+## Key Systems
 
-### 6.1. 개요
+### 1. PCF - Percentage Closer Filtering
 
-화면을 작은 타일(Cluster)로 분할하고, 각 타일과 교차하는 광원만 선별하여 처리함으로써 조명 계산 비용을 크게 절감합니다.
+기본 Shadow Map은 라이트 공간 깊이를 단순 비교해 픽셀이 그림자에 있는지 판단한다. 텍셀 해상도에 의해 경계가 계단 현상(앨리어싱 아티팩트) 형태로 나타난다.
 
-### 6.2. Cluster 구성
-
-#### 6.2.1. 화면 분할
-- **X/Y 축**: 화면 공간을 균등하게 분할 (예: 24×16)
-- **Z 축**: View 공간의 깊이를 로그 스케일로 분할 (32 슬라이스)
-
-```cpp
-uint GetDepthSliceIdx(float ViewZ)
-{
-    float BottomValue = 1 / log(FarClip / NearClip);
-    ViewZ = clamp(ViewZ, NearClip, FarClip);
-    return uint(floor(log(ViewZ) * ClusterSliceNumZ * BottomValue 
-                      - ClusterSliceNumZ * log(NearClip) * BottomValue));
-}
-```
-
-로그 스케일 사용 이유:
-- 가까운 곳에서는 세밀하게 분할 (높은 정밀도)
-- 먼 곳에서는 성글게 분할 (효율성)
-
-#### 6.2.2. Cluster AABB 생성 (`ViewClusterCS.hlsl`)
-
-각 Cluster의 AABB(Axis-Aligned Bounding Box)를 View 공간에서 계산합니다:
+PCF는 주변 N×N 텍셀을 샘플링해 그림자 여부를 평균 내는 방식으로 경계를 완화한다.
 
 ```hlsl
-[numthreads(THREAD_NUM, 1, 1)]
-void main(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
-{
-    uint ThreadIdx = GetThreadIdx(GroupID.x, GroupThreadID.x);
-    uint3 ClusterID = GetClusterID(ThreadIdx);
-    
-    // NDC 좌표 계산
-    float2 NDCMin = float2(ClusterID.xy) / float2(ClusterXSliceNum, ClusterYSliceNum) * 2.0f - 1.0f;
-    float2 NDCMax = float2(ClusterID.xy + 1) / float2(ClusterXSliceNum, ClusterYSliceNum) * 2.0f - 1.0f;
-    
-    // 깊이 범위
-    float ZNear = GetSliceDepth(ClusterID.z);
-    float ZFar = GetSliceDepth(ClusterID.z + 1);
-    
-    // 8개 코너를 View 공간으로 변환
-    // ... AABB 계산
-    
-    ClusterAABB[ThreadIdx] = ResultAABB;
-}
-```
-
-### 6.3. Light Culling (`ClusteredLightCullingCS.hlsl`)
-
-각 Cluster와 교차하는 광원을 찾아 인덱스 버퍼에 기록합니다.
-
-#### 6.3.1. Point Light Culling (구-AABB 교차 검사)
-
-```hlsl
-bool IntersectAABBSphere(float3 AABBMin, float3 AABBMax, 
-                         float3 SphereCenter, float SphereRadius)
-{
-    float3 BoxCenter = (AABBMin + AABBMax) * 0.5f;
-    float3 BoxHalfSize = (AABBMax - AABBMin) * 0.5f;
-    float3 ExtensionSize = BoxHalfSize + float3(SphereRadius, SphereRadius, SphereRadius);
-    float3 B2L = SphereCenter - BoxCenter;
-    float3 AbsB2L = abs(B2L);
-    
-    // 1. AABB 확장 테스트
-    if (AbsB2L.x > ExtensionSize.x || 
-        AbsB2L.y > ExtensionSize.y || 
-        AbsB2L.z > ExtensionSize.z)
-        return false;
-    
-    // 2. Over Axis 계산
-    int3 OverAxis = int3(AbsB2L.x > BoxHalfSize.x ? 1 : 0, 
-                         AbsB2L.y > BoxHalfSize.y ? 1 : 0, 
-                         AbsB2L.z > BoxHalfSize.z ? 1 : 0);
-    int OverCount = OverAxis.x + OverAxis.y + OverAxis.z;
-    
-    if (OverCount < 2)
-        return true;
-    
-    // 3. 가장 가까운 AABB 모서리 점과의 거리 검사
-    float3 NearBoxPoint = sign(B2L) * OverAxis * BoxHalfSize + BoxCenter;
-    NearBoxPoint.x = OverAxis.x == 0 ? SphereCenter.x : NearBoxPoint.x;
-    NearBoxPoint.y = OverAxis.y == 0 ? SphereCenter.y : NearBoxPoint.y;
-    NearBoxPoint.z = OverAxis.z == 0 ? SphereCenter.z : NearBoxPoint.z;
-    
-    float3 P2L = SphereCenter - NearBoxPoint;
-    return dot(P2L, P2L) < SphereRadius * SphereRadius;
-}
-```
-
-#### 6.3.2. Spot Light Culling
-
-**옵션 1**: Bounding Sphere로 근사 (빠르지만 부정확)
-- Point Light와 동일한 방법 사용
-
-**옵션 2**: 원뿔 AABB (정확하지만 느림)
-- 원뿔을 감싸는 AABB를 계산하여 교차 검사
-- Rodrigues 회전 공식 사용:
-
-```hlsl
-float3 RodriguesRotation(float3 N, float3 V, float Radian, float CosCache, float SinCache)
-{
-    return dot(V, N) * N * (1 - CosCache) + CosCache * V + cross(N, V) * SinCache;
-}
-```
-
-#### 6.3.3. Light Index Buffer 작성
-
-```hlsl
-int LightIndicesOffset = LightMaxCountPerCluster * ThreadIdx;
-uint IncludeLightCount = 0;
-
-for (int i = 0; i < PointLightCount && IncludeLightCount < LightMaxCountPerCluster; i++)
-{
-    if (IntersectAABBSphere(...))
+// PCF: 3×3 커널 샘플링
+float ShadowFactor = 0.0f;
+for (int y = -1; y <= 1; ++y)
+    for (int x = -1; x <= 1; ++x)
     {
-        PointLightIndices[LightIndicesOffset + IncludeLightCount] = i;
-        IncludeLightCount++;
+        float2 Offset = float2(x, y) * TexelSize;
+        ShadowFactor += ShadowMap.SampleCmpLevelZero(
+            ShadowSampler, ShadowUV + Offset, CurrentDepth);
     }
-}
-
-// 나머지는 -1로 채움 (끝 마커)
-for (uint i = IncludeLightCount; i < LightMaxCountPerCluster; i++)
-{
-    PointLightIndices[LightIndicesOffset + i] = -1;
-}
+ShadowFactor /= 9.0f;
 ```
 
-### 6.4. 픽셀 셰이더에서의 활용
+**PCF의 한계**: 그림자 경계를 더 부드럽게 만들려면 커널 크기를 키워야 하고, 샘플 수는 커널 크기의 제곱에 비례해 증가한다.
 
-각 픽셀에서 자신이 속한 Cluster를 찾고, 해당 Cluster의 광원 인덱스만 순회하며 조명을 계산합니다:
+---
+
+### 2. VSM - Variance Shadow Maps
+
+PCF의 다중 샘플링 대신, 섀도우 맵에 깊이의 통계적 모멘트를 저장하고 확률론으로 그림자 인자를 계산한다.
+
+**핵심 아이디어**: 깊이 값의 평균(M1)과 분산(Var)을 알면, 체비쇼프 부등식으로 현재 픽셀 깊이 `t`가 차폐물보다 뒤에 있을 확률 상한을 단 두 채널 샘플링으로 얻을 수 있다.
+
+<details>
+<summary><b>구현 상세 — 클릭해서 펼치기</b></summary>
+
+<br>
+
+**모멘트 저장**
+
+깊이 단일 값 대신 `float2(M1, M2)` — 1차·2차 모멘트를 `DXGI_FORMAT_R32G32_FLOAT` 텍스쳐에 렌더링한다.
 
 ```hlsl
-uint GetLightIndicesOffset(float3 WorldPos)
-{
-    float4 ViewPos = mul(float4(WorldPos, 1), View);
-    float4 NDC = mul(ViewPos, Projection);
-    NDC.xy /= NDC.w;
-    
-    float2 ScreenNorm = saturate(NDC.xy * 0.5f + 0.5f);
-    uint2 ClusterXY = uint2(floor(ScreenNorm * float2(ClusterSliceNumX, ClusterSliceNumY)));
-    uint ClusterZ = GetDepthSliceIdx(ViewPos.z);
-    
-    uint ClusterIdx = ClusterXY.x + ClusterXY.y * ClusterSliceNumX 
-                      + ClusterSliceNumX * ClusterSliceNumY * ClusterZ;
-    
-    return LightMaxCountPerCluster * ClusterIdx;
-}
-
-// 픽셀 셰이더
-uint LightIndicesOffset = GetLightIndicesOffset(Input.WorldPosition);
-uint PointLightCount = GetPointLightCount(LightIndicesOffset);
-
-for (uint i = 0; i < PointLightCount; i++)
-{
-    FPointLightInfo PointLight = GetPointLight(LightIndicesOffset + i);
-    ADD_ILLUM(Illumination, CalculatePointLight(PointLight, ...));
-}
-```
-
-### 6.5. 성능 이점
-
-- **기존 방식**: 모든 픽셀에서 모든 광원을 검사 → O(픽셀 수 × 광원 수)
-- **Tiled 방식**: 각 픽셀에서 Cluster 내 광원만 검사 → O(픽셀 수 × 평균 Cluster당 광원 수)
-
-예시:
-- 광원 100개, 픽셀 1920×1080, Cluster당 평균 광원 5개
-- **기존**: 207,360,000 검사
-- **Tiled**: 10,368,000 검사 (**약 20배 감소**)
-
----
-## 7. Cluster 시각화
-
-디버깅을 위해 각 Cluster를 와이어프레임으로 시각화하는 기능을 제공합니다.
-
-### 7.1. Cluster Gizmo 생성 (`ClusterGizmoSetCS.hlsl`)
-
-각 Cluster의 8개 코너를 정점으로 하는 와이어프레임을 생성합니다:
-
-```hlsl
-[numthreads(THREAD_NUM, 1, 1)]
-void main(uint3 GroupID : SV_GroupID, uint3 GroupThreadID : SV_GroupThreadID)
-{
-    uint ThreadIdx = GetThreadIdx(GroupID.x, GroupThreadID.x);
-    FAABB CurAABB = ClusterAABB[ThreadIdx];
-    
-    // 8개 코너 계산
-    float3 ViewPos[8];
-    ViewPos[0] = float3(ViewMin.x, ViewMin.y, ViewMin.z);
-    ViewPos[1] = float3(ViewMin.x, ViewMax.y, ViewMin.z);
-    // ... 나머지 6개
-    
-    // Cluster에 포함된 광원 수에 따라 색상 결정
-    float4 Color = float4(0, 0, 0, 0);
-    for (int i = 0; i < LightMaxCountPerCluster; i++)
-    {
-        if (PointLightIndices[LightIndicesOffset + i] >= 0)
-            Color += PointLightInfos[...].Color;
-        if (SpotLightIndices[LightIndicesOffset + i] >= 0)
-            Color += SpotLightInfos[...].Color;
-    }
-    
-    // 정점 버퍼에 기록
-    for (int i = 0; i < 8; i++)
-    {
-        ClusterGizmoVertex[VertexOffset + i].Pos = mul(float4(ViewPos[i], 1), ViewInv);
-        ClusterGizmoVertex[VertexOffset + i].Color = Color;
-    }
-}
-```
-
-### 7.2. Light Density Heatmap
-
-`ClusteredRenderingGrid.hlsl`은 화면 오버레이로 각 픽셀이 포함된 Cluster의 광원 밀도를 히트맵으로 표시합니다:
-
-```hlsl
-float4 mainPS(PS_INPUT input) : SV_Target
-{
-    float2 uv = input.TexCoord;
-    uint2 ClusterXY = uint2(floor(uv * float2(ClusterSliceNumX, ClusterSliceNumY)));
-    uint ClusterIdxNear = ClusterXY.x + ClusterXY.y * ClusterSliceNumX;
-    
-    uint LightCount = 0;
-    for (int i = 0; i < ClusterSliceNumZ; i++)
-    {
-        uint CurClusterIdx = ClusterIdxNear + i * ClusterSliceNumX * ClusterSliceNumY;
-        for (int j = 0; j < LightMaxCountPerCluster; j++)
-        {
-            if (PointLightIndices[CurClusterIdx * LightMaxCountPerCluster + j] >= 0)
-                LightCount++;
-            if (SpotLightIndices[CurClusterIdx * LightMaxCountPerCluster + j] >= 0)
-                LightCount++;
-        }
-    }
-    
-    // 초록색으로, 광원이 많을수록 불투명
-    return float4(0, 1, 0, (float)LightCount / (LightMaxCountPerCluster * ClusterSliceNumZ) * 8);
-}
-```
-
----
-## 8. 렌더링 파이프라인 통합
-
-### 8.1. FLightPass
-
-`FLightPass`는 매 프레임 다음 작업을 수행합니다:
-
-1. **옵션 변경 검사**: Cluster 설정이 변경되었는지 확인하고, 변경되었다면 버퍼를 재생성합니다.
-
-2. **광원 정보 수집**: 현재 씬의 모든 광원을 순회하며 GPU 버퍼에 업로드합니다.
-   ```cpp
-   FRenderResourceFactory::UpdateConstantBufferData(GlobalLightConstantBuffer, GlobalLightData);
-   FRenderResourceFactory::UpdateStructuredBuffer(PointLightStructuredBuffer, PointLightDatas);
-   FRenderResourceFactory::UpdateStructuredBuffer(SpotLightStructuredBuffer, SpotLightDatas);
-   ```
-
-3. **Cluster AABB 계산**: `ViewClusterCS` Compute Shader를 디스패치합니다.
-   ```cpp
-   Pipeline->SetUnorderedAccessView(0, ClusterAABBRWStructuredBufferUAV);
-   Pipeline->DispatchCS(ViewClusterCS, ThreadGroupCount, 1, 1);
-   ```
-
-4. **Light Culling**: `ClusteredLightCullingCS` Compute Shader를 디스패치합니다.
-   ```cpp
-   Pipeline->SetUnorderedAccessView(0, PointLightIndicesRWStructuredBufferUAV);
-   Pipeline->SetUnorderedAccessView(1, SpotLightIndicesRWStructuredBufferUAV);
-   Pipeline->DispatchCS(ClusteredLightCullingCS, ThreadGroupCount, 1, 1);
-   ```
-
-5. **셰이더에 바인딩**: 조명 정보와 인덱스 버퍼를 셰이더 슬롯에 바인딩합니다.
-   ```cpp
-   Pipeline->SetConstantBuffer(3, EShaderType::VS | EShaderType::PS, GlobalLightConstantBuffer);
-   Pipeline->SetShaderResourceView(6, EShaderType::VS | EShaderType::PS, PointLightIndicesRWStructuredBufferSRV);
-   Pipeline->SetShaderResourceView(8, EShaderType::VS | EShaderType::PS, PointLightStructuredBufferSRV);
-   // ...
-   ```
-
-### 8.2. FStaticMeshPass
-
-`FStaticMeshPass`는 메시를 렌더링할 때 View Mode에 따라 적절한 셰이더를 선택합니다:
-
-```cpp
-void FStaticMeshPass::Execute(FRenderingContext& Context)
-{
-    if (Context.ViewMode == EViewModeIndex::VMI_Wireframe)
-    {
-        RenderState.FillMode = EFillMode::WireFrame;
-    }
-    else
-    {
-        VS = Renderer.GetVertexShader(Context.ViewMode);
-        PS = Renderer.GetPixelShader(Context.ViewMode);
-    }
-    
-    // ... 메시 렌더링
-}
-```
-
-View Mode 종류:
-- `VMI_Gouraud`: Gouraud Shading
-- `VMI_Lambert`: Lambert Shading
-- `VMI_BlinnPhong`: Blinn-Phong Shading
-- `VMI_WorldNormal`: 법선 시각화
-- `VMI_Unlit`: 조명 없음
-- `VMI_Wireframe`: 와이어프레임
-
----
-## 9. 에디터 통합
-
-### 9.1. View Mode 전환
-
-메인 메뉴바의 "보기" 메뉴에서 셰이딩 모델을 실시간으로 전환할 수 있습니다:
-
-```cpp
-void UMainBarWidget::RenderViewMenu()
-{
-    if (ImGui::BeginMenu("보기"))
-    {
-        if (ImGui::MenuItem("고로 셰이딩 적용(Gouraud)", nullptr, bIsGouraud))
-        {
-            ViewportMgr.SetActiveViewportViewMode(EViewModeIndex::VMI_Gouraud);
-        }
-        if (ImGui::MenuItem("램버트 셰이딩 적용(Lambert)", nullptr, bIsLambert))
-        {
-            ViewportMgr.SetActiveViewportViewMode(EViewModeIndex::VMI_Lambert);
-        }
-        if (ImGui::MenuItem("블린-퐁 셰이딩 적용(Blinn-Phong)", nullptr, bIsBlinnPhong))
-        {
-            ViewportMgr.SetActiveViewportViewMode(EViewModeIndex::VMI_BlinnPhong);
-        }
-        if (ImGui::MenuItem("월드 노멀(WorldNormal)", nullptr, bIsWorldNormal))
-        {
-            ViewportMgr.SetActiveViewportViewMode(EViewModeIndex::VMI_WorldNormal);
-        }
-        // ...
-    }
-}
-```
-
-### 9.2. 광원 시각화
-
-각 광원은 `UBillboardComponent`를 통해 에디터에서 시각적으로 표시됩니다:
-- 광원의 색상과 강도에 따라 빌보드 색상이 자동으로 업데이트됩니다.
-- `UpdateVisualizationBillboardTint()` 함수가 이를 담당합니다.
-
-```cpp
-void ULightComponent::UpdateVisualizationBillboardTint()
-{
-    if (!VisualizationBillboard)
-        return;
-    
-    FVector ClampedColor = GetLightColor();
-    ClampedColor.X = std::clamp(ClampedColor.X, 0.0f, 1.0f);
-    ClampedColor.Y = std::clamp(ClampedColor.Y, 0.0f, 1.0f);
-    ClampedColor.Z = std::clamp(ClampedColor.Z, 0.0f, 1.0f);
-    
-    FVector4 Tint(ClampedColor.X, ClampedColor.Y, ClampedColor.Z, 1.0f);
-    VisualizationBillboard->SetSpriteTint(Tint);
-}
-```
-
----
-## 10. 성능 최적화 기법
-
-### 10.1. NaN 방지
-
-모든 벡터 정규화에서 `SafeNormalize` 함수를 사용하여 NaN 발생을 방지합니다:
-- 영벡터 입력 시 영벡터 반환
-- `1e-12f` 임계값으로 매우 작은 벡터도 안전하게 처리
-
-### 10.2. 조기 종료 (Early Exit)
-
-조명 계산에서 기여도가 없는 경우 즉시 반환:
-```hlsl
-if (dot(Info.Direction, Info.Direction) < 1e-12 || 
-    dot(WorldNormal, WorldNormal) < 1e-12)
-    return Result;
-```
-
-### 10.3. 동적 버퍼 크기 조정
-
-광원 수가 증가하면 버퍼를 2배씩 확장하여 재할당 빈도를 줄입니다:
-
-```cpp
-if (PointLightBufferCount < PointLightCount)
-{
-    while (PointLightBufferCount < PointLightCount)
-    {
-        PointLightBufferCount = PointLightBufferCount << 1;
-    }
-    SafeRelease(PointLightStructuredBuffer);
-    PointLightStructuredBuffer = FRenderResourceFactory::CreateStructuredBuffer<FPointLightInfo>(PointLightBufferCount);
-    // ...
-}
-```
-
-### 10.4. Compute Shader 병렬화
-
-모든 Cluster 계산을 병렬로 수행:
-```cpp
-int ThreadGroupCount = (ClusterSliceNumX * ClusterSliceNumY * ClusterSliceNumZ + CSNumThread - 1) / CSNumThread;
-Pipeline->DispatchCS(ViewClusterCS, ThreadGroupCount, 1, 1);
-```
-
----
-## 11. 한계 및 향후 개선 방향
-
-### 11.1. 현재 한계
-
-1. **그림자 미지원**: 광원이 물체에 가려져도 뒤편이 밝게 표현됩니다.
-2. **고정 Cluster 크기**: 씬의 복잡도에 따라 동적으로 조정되지 않습니다.
-3. **간접광 없음**: 한 번 반사된 빛(Indirect Lighting)은 계산되지 않습니다.
-
-### 11.2. 향후 개선 방향
-
-1. **Shadow Mapping**: 그림자 구현으로 현실감 향상
-2. **Adaptive Clustering**: 광원 밀도에 따라 Cluster 크기를 동적 조정
-3. **Deferred Rendering**: G-Buffer 기반 렌더링으로 더 많은 광원 지원
-4. **PBR (Physically Based Rendering)**: 물리 기반 재질 시스템
-5. **Global Illumination**: 간접광 시뮬레이션 (Screen Space GI, Voxel GI 등)
----
-## 부록: 주요 상수 및 설정값
-
-| 항목 | 기본값 | 범위 | 설명 |
-|------|--------|------|------|
-| Light Intensity | 1.0 | 0.0 ~ 20.0 | 광원 세기 (UE 호환) |
-| Point Light Range | 10.0 | > 0.0 | 점 광원 유효 범위 |
-| Distance Falloff Exponent | 2.0 | 0.0 ~ 16.0 | 거리 감쇠 지수 |
-| Spot Inner Cone Angle | 0.0 | 0.0 ~ π/2 | 스포트라이트 내부 각도 |
-| Spot Outer Cone Angle | π/4 | 0.0 ~ π/2 | 스포트라이트 외부 각도 |
-| Cluster X Slices | 24 | > 0 | 화면 X축 분할 수 |
-| Cluster Y Slices | 16 | > 0 | 화면 Y축 분할 수 |
-| Cluster Z Slices | 32 | > 0 | 깊이 분할 수 (로그 스케일) |
-| Max Lights Per Cluster | 32 | > 0 | Cluster당 최대 광원 수 |
--->
-
-### 배경 및 개요
-
-Week-08에서 소프트 섀도우 시스템을 단계적으로 구축했습니다. 각 단계는 이전 기법의 구체적인 한계를 직접 해결하는 방식으로 설계됐습니다.
-
-```
-PCF                →  VSM                    →  SAVSM
-단순 비교 샘플링      체비쇼프 부등식 기반        Summed-Area Table
-하드 엣지             수학적 soft shadow          O(1) 쿼리 (필터 크기 무관)
-커널 ∝ 비용           블러 후 경계 불안정          병렬 prefix scan
-```
-
-DirectionalLight, SpotLight, PointLight + Shadow Atlas 전체를 지원하며, 에디터에서 라이트마다 모드를 실시간으로 전환할 수 있습니다.
-
----
-
-### 1. VSM — 체비쇼프 부등식과 Analytic Variance Bias
-
-#### 1.1 그림자 인자 계산
-
-VSM은 깊이 값의 1차·2차 통계적 모멘트(M1, M2)를 텍스쳐에 저장하고, 픽셀 셰이더에서 체비쇼프 부등식으로 그림자 확률을 계산합니다.
-
-```hlsl
-// UberLit.hlsl — 체비쇼프 부등식
-float CalculateChebyshevShadowFactor(float t, float2 Moments)
-{
-    float M1       = Moments.x;
-    float M2       = Moments.y;
-    float Variance = max(0.00001f, M2 - M1 * M1);   // Var[X] = E[X²] - E[X]²
-    float d        = t - M1;
-    return Variance / (Variance + d * d);             // P(x >= t) 상한
-}
-```
-
-- `t` : 현재 픽셀의 라이트 공간 깊이
-- PCF가 주변 텍셀을 다중 샘플링하는 것과 달리, 두 채널 샘플링 한 번으로 soft shadow를 얻습니다.
-
-#### 1.2 Analytic Variance Bias (ddx/ddy)
-
-깊이 불연속면(물체 실루엣)에서 M1과 M2 사이의 분산이 0에 수렴하면 체비쇼프 항이 수치적으로 불안정해집니다. 이를 픽셀 셰이더 미분으로 선제적으로 억제합니다.
-
-```hlsl
-// DepthOnlyVS.hlsl — 모멘트 저장 PS
+// DepthOnlyVS.hlsl — 모멘트 저장 패스
 float2 mainPS(PS_INPUT Input) : SV_Target0
 {
     float Depth = Input.Position.z;
 
+    // Analytic Variance Bias: ddx/ddy로 깊이 기울기를 추정해 실루엣 아티팩트 억제
     float dx = ddx(Depth);
     float dy = ddy(Depth);
     float AnalyticVarianceBias = 0.25f * (dx * dx + dy * dy);
 
-    float M1 = Depth;
-    float M2 = Depth * Depth + AnalyticVarianceBias;
-    return float2(M1, M2);
+    return float2(Depth, Depth * Depth + AnalyticVarianceBias);
 }
 ```
 
-`ddx/ddy`는 인접 픽셀 간 깊이 기울기를 추정합니다. 기울기가 가파를수록(불연속면) 분산을 더 크게 부풀려서 "빛이 닿을 확률"을 보수적으로 계산하고 아티팩트를 억제합니다. 단순한 상수 bias offset보다 기하학적 상황에 적응적입니다.
+체비쇼프 ShadowFactor = `Var / (Var + d²)`. 실루엣 근방에서 모멘트 텍스쳐를 블러하면, 커널 안에 가까운 물체 표면과 먼 배경의 깊이 값이 섞인다. 이 두 클러스터가 혼재할 때 `M2 - M1²`이 수치적으로 0에 수렴하는 경우가 생기고, Var ≈ 0이면 분모에서 `d²`가 지배해 ShadowFactor가 급락하는 — 그림자가 져야 할 이유가 없는 픽셀까지 어두워지는 — 줄 아티팩트가 발생한다.
+
+`AnalyticVarianceBias`는 이를 모멘트 저장 단계에서 선제적으로 보정한다. 화면 공간 편미분 `ddx(Depth)`, `ddy(Depth)`는 인접 픽셀 간 깊이 변화율, 즉 표면 기울기의 근사값이다. 실루엣이나 깊이 불연속면에 가까울수록 이 값이 커지므로, `0.25 * (dx² + dy²)`를 M2에 더해 분산의 하한을 높인다. 이로써 Var ≈ 0이 되는 상황 자체를 막아 아티팩트를 억제한다. 평평한 표면에서는 ddx/ddy가 거의 0이므로 보정량도 거의 없어 불필요한 light bleeding이 생기지 않는다.
+
+**그림자 인자 계산 (체비쇼프)**
+
+```hlsl
+// UberLit.hlsl
+float CalculateChebyshevShadowFactor(float t, float2 Moments)
+{
+    float M1       = Moments.x;
+    float M2       = Moments.y;
+    float Variance = max(0.00001f, M2 - M1 * M1);  // Var[X] = E[X²] - E[X]²
+    float d        = t - M1;
+    return Variance / (Variance + d * d);            // P(x >= t) 상한
+}
+```
+
+- `t` : 현재 픽셀의 라이트 공간 깊이
+- `t > M1` (평균 깊이보다 뒤에 있을수록) → ShadowFactor 감소 → 어두워짐
+- PCF의 N² 샘플링과 달리 **두 채널 샘플링 한 번**으로 연속적인 그림자 경계를 얻는다
+
+</details>
+
+**VSM의 새로운 한계**: 모멘트 텍스쳐에 블러를 적용하면 경계가 더 부드러워지지만, 블러의 비용은 커널 반지름에 비례해 증가한다. PCF와 동일한 문제가 필터 단계에서 재발한다.
 
 ---
 
-### 2. SAVSM — Hillis-Steele Parallel Prefix Scan
+### 3. SAVSM - Summed-Area Variance Shadow Maps
 
-#### 2.1 동기
-
-VSM에 가우시안/박스 블러를 적용하면 커널 반지름에 비례해 비용이 증가합니다. SAVSM은 **Summed-Area Table(SAT/적분 이미지)** 을 미리 계산해 임의 크기 직사각형 영역의 평균 모멘트를 상수 시간에 조회합니다.
+VSM 블러의 비용 문제를 **SAT(Summed-Area Table)** 로 해결한다. 모멘트 텍스쳐 전체의 SAT를 프레임당 한 번 계산해두면, 임의 크기 직사각형 영역의 평균 모멘트를 **4-corner 조회 한 번**으로 상수 시간에 얻는다.
 
 ```
-VSM + Blur:   O(kernel_radius) per pixel
-SAVSM:        O(1) per pixel  (SAT 구축은 O(n log n), 프레임당 1회)
+VSM + Blur:  샘플 수 = O(커널 크기²)  — 커널이 커질수록 비용 증가
+SAVSM:       샘플 수 = O(1)           — 필터 크기와 무관
 ```
 
-#### 2.2 Hillis-Steele 알고리즘 구현
+SAT 구축에는 2D 텍스쳐 전체의 행·열 방향 누적합이 필요하다. 이를 Compute Shader에서 **Hillis-Steele parallel prefix scan**으로 구현했다.
 
-1024개 스레드 그룹이 텍스쳐의 한 행(Row) 또는 열(Column)을 `groupshared` 메모리에 올린 뒤, stride를 1→2→4→…→512로 배증하며 inclusive prefix sum을 계산합니다.
+**트러블슈팅: Catastrophic Cancellation**
+
+초기 구현은 float SAT로 작성했으나, 그림자 영역에 노이즈 패턴 같은 불규칙한 아티팩트가 발생했다.
+
+![savsm-artifact][img-savsm-artifact]
+
+원인은 SAT 4-corner 차분 `D - B - C + A`에서의 Catastrophic Cancellation이었다. D, B, C, A는 모두 텍스쳐 전체 누적합에 가까운 큰 값이고, 이 값들의 차이인 실제 영역 합은 훨씬 작을 수 있다. 1024×1024 해상도에서 SAT 값은 최대 ~10⁶ 규모까지 커지는데, float32는 유효숫자가 약 7자리이므로 이 규모의 숫자에서 수십 단위 차이를 구하면 의미 있는 비트가 전혀 남지 않는다.
+
+```
+// float SAT — Catastrophic Cancellation 발생
+float D = 524287.73f;
+float B = 524277.81f;
+float C = 524261.45f;
+float A = 524251.53f;
+float Result = D - B - C + A; // 기댓값: 0.00, 실제: 노이즈
+```
+
+**해결**: float [0,1] 깊이 값을 정수로 스케일링해 SAT를 정수로 구성하고, D-B-C+A를 정수 연산으로 수행한다. 정수 뺄셈은 Cancellation이 없어 결과가 정확하다.
+
+```hlsl
+// 인코딩 (SummedAreaTextureFilter.hlsl): float [0,1] → uint
+uint EncodedValue = uint(round(FloatDepth * float(DEPTH_SCALE)));
+
+// 디코딩 + 차분 (UberLit.hlsl): uint 비트 패턴으로 복원 후 정수 연산
+uint2 D = asuint(SATTexture.Load(...).xy);
+uint2 B = asuint(SATTexture.Load(...).xy);
+uint2 C = asuint(SATTexture.Load(...).xy);
+uint2 A = asuint(SATTexture.Load(...).xy);
+float2 Moments = float2(D - B - C + A) / (Area * SAT_DEPTH_SCALE); // 마지막에만 float 변환
+```
+
+`asfloat(uint)` / `asuint(float)`로 float 텍스쳐에 uint 비트 패턴을 저장·복원하고, 차분 연산만 uint로 수행해 정밀도 손실 없이 정확한 모멘트를 얻는다.
+
+<details>
+<summary><b>구현 상세 — 클릭해서 펼치기</b></summary>
+
+<br>
+
+**Hillis-Steele 알고리즘**
+
+1024개 스레드 그룹이 텍스쳐의 한 행(Row) 또는 열(Column) 전체를 `groupshared` 메모리에 올린 뒤, stride를 1→2→4→…→512로 증가시키며 log₂1024 = 10 스텝에 inclusive prefix sum을 완성한다.
 
 ```hlsl
 // SummedAreaTextureFilter.hlsl
-groupshared float2 SharedMemory[THREAD_BLOCK_SIZE]; // THREAD_BLOCK_SIZE = 1024
+groupshared float2 SharedMemory[THREAD_BLOCK_SIZE]; // 1024
 
 [numthreads(THREAD_BLOCK_SIZE, 1, 1)]
 void mainCS(uint3 GroupThreadID : SV_GroupThreadID, uint3 GroupID : SV_GroupID)
 {
     uint ThreadIndex = GroupThreadID.x;
-
 #ifdef SCAN_DIRECTION_COLUMN
-    uint Column = GroupID.x;
-    uint Row    = ThreadIndex;
-    SharedMemory[ThreadIndex] = InputTexture[uint2(Column, Row)];
+    SharedMemory[ThreadIndex] = InputTexture[uint2(GroupID.x, ThreadIndex)];
 #else
-    uint Row    = GroupID.x;
-    uint Column = ThreadIndex;
-    SharedMemory[ThreadIndex] = InputTexture[uint2(Column, Row)];
+    SharedMemory[ThreadIndex] = InputTexture[uint2(ThreadIndex, GroupID.x)];
 #endif
     GroupMemoryBarrierWithGroupSync();
 
-    // Hillis-Steele: stride 배증 누적합
     for (uint Stride = 1; Stride < THREAD_BLOCK_SIZE; Stride <<= 1)
     {
         float2 NeighborValue = (ThreadIndex >= Stride)
@@ -813,125 +192,70 @@ void mainCS(uint3 GroupThreadID : SV_GroupThreadID, uint3 GroupID : SV_GroupID)
         SharedMemory[ThreadIndex] += NeighborValue;
         GroupMemoryBarrierWithGroupSync();
     }
-
 #ifdef SCAN_DIRECTION_COLUMN
-    OutputTexture[uint2(Column, Row)] = SharedMemory[ThreadIndex];
+    OutputTexture[uint2(GroupID.x, ThreadIndex)] = SharedMemory[ThreadIndex];
 #else
-    OutputTexture[uint2(Column, Row)] = SharedMemory[ThreadIndex];
+    OutputTexture[uint2(ThreadIndex, GroupID.x)] = SharedMemory[ThreadIndex];
 #endif
 }
 ```
 
-- Row 패스 → Column 패스 2회로 2D SAT를 완성합니다.
-- `SCAN_DIRECTION_COLUMN` 매크로 하나로 Row/Column을 단일 셰이더 파일에서 분기합니다.
+Row 패스 → Column 패스 2회로 2D SAT를 완성한다. `SCAN_DIRECTION_COLUMN` 매크로 하나로 단일 `.hlsl` 파일에서 두 방향을 분기해 코드 중복을 제거했다.
 
-**트레이드오프**: Hillis-Steele은 Work-inefficient(총 연산 O(n log n))이지만 GPU의 massively parallel 특성 덕분에 O(log n) 스텝에 완료됩니다. 1024 해상도 기준으로 스레드 그룹 하나가 정확히 한 행/열을 처리하도록 설계했습니다. 1024를 초과하는 해상도에서는 다중 그룹 확장 전략이 필요한 트레이드오프가 있습니다.
+> **트레이드오프**: Hillis-Steele은 총 연산이 O(n log n)으로 Work-inefficient하지만, GPU의 특성 덕분에 O(log n) 스텝에 완료된다. 1024 해상도에서 스레드 그룹 하나가 정확히 한 행/열을 처리하도록 설계되어 있다.
 
-#### 2.3 SAT 조회
-
-```hlsl
-// UberLit.hlsl — SAVSM 쿼리 (O(1))
-float2 CalculateSATMoments(Texture2D SATTexture, SamplerState Sampler,
-                           float2 Center, float HalfWidth, float HalfHeight)
-{
-    // 직사각형 4-corner 조회로 영역 평균 계산
-    float2 A = SATTexture.Sample(Sampler, Center + float2(-HalfWidth, -HalfHeight));
-    float2 B = SATTexture.Sample(Sampler, Center + float2( HalfWidth, -HalfHeight));
-    float2 C = SATTexture.Sample(Sampler, Center + float2(-HalfWidth,  HalfHeight));
-    float2 D = SATTexture.Sample(Sampler, Center + float2( HalfWidth,  HalfHeight));
-    float Area = (2.0f * HalfWidth) * (2.0f * HalfHeight) * TextureSize.x * TextureSize.y;
-    return (D - B - C + A) / Area;
-}
-```
-
----
-
-### 3. 아키텍처 — FTextureFilter & 전략 패턴
-
-#### 3.1 FTextureFilter
-
-2-pass 분리 가능(separable) 컴퓨트 필터를 캡슐화합니다. 생성 시 하나의 `.hlsl` 파일에서 Row CS와 Column CS를 각각 컴파일하고, 더블 버퍼링용 임시 텍스쳐를 내부에서 관리합니다.
-
-```cpp
-class FTextureFilter {
-    ComPtr<ID3D11ComputeShader> ComputeShaderRow;
-    ComPtr<ID3D11ComputeShader> ComputeShaderColumn;
-    ComPtr<ID3D11Texture2D>     TemporaryTexture;    // Row 결과 임시 저장
-    ComPtr<ID3D11ShaderResourceView>  TemporarySRV;
-    ComPtr<ID3D11UnorderedAccessView> TemporaryUAV;
-
-    // 입력 텍스쳐 크기 변경 시 자동 재생성
-    void ResizeTexture(uint32 Width, uint32 Height);
-
-    // Row pass → TemporaryTexture, Column pass → Output UAV
-    void FilterTexture(ID3D11ShaderResourceView* In,
-                       ID3D11UnorderedAccessView* Out,
-                       uint32 ThreadGroupCountX, uint32 ThreadGroupCountY, uint32 Z);
-};
-```
-
-#### 3.2 FShadowMapFilterPass — 전략(Strategy) 패턴
-
-라이트별 `ShadowModeIndex`에 따라 적합한 필터 전략을 선택합니다.
-
-```cpp
-// 초기화
-TMap<EShadowModeIndex, std::unique_ptr<FTextureFilter>> TextureFilterMap;
-TextureFilterMap[SMI_VSM_BOX]      = make_unique<FTextureFilter>("BoxTextureFilter.hlsl");
-TextureFilterMap[SMI_VSM_GAUSSIAN] = make_unique<FTextureFilter>("GaussianTextureFilter.hlsl");
-TextureFilterMap[SMI_SAVSM]        = make_unique<FTextureFilter>("SummedAreaTextureFilter.hlsl");
-
-// 실행 (ShadowModeIndex에 따라 자동 선택)
-if (auto* Filter = TextureFilterMap.Find(Light->ShadowModeIndex))
-    Filter->FilterTexture(VarianceSRV, FilteredUAV, Region);
-```
-
-#### 3.3 Shadow Atlas Region-based 필터링
-
-Shadow Atlas는 여러 라이트의 섀도우 맵을 하나의 텍스쳐에 타일로 배치합니다. 블러를 전체 아틀라스에 적용하면 인접 타일이 오염됩니다. 각 필터 셰이더에 `RegionStart/Size` cbuffer를 추가해 샘플링 범위를 해당 타일 내부로 한정합니다.
+**O(1) SAT 조회**
 
 ```hlsl
-// BoxTextureFilter.hlsl / GaussianTextureFilter.hlsl
-cbuffer RegionData : register(b1)
-{
-    uint RegionStartX, RegionStartY;
-    uint RegionWidth,  RegionHeight;
-};
-
-// 타일 경계 밖은 "빛이 통과"(=1) 기본값으로 처리
-int SampleRow = (int)PixelCoord.y + Offset;
-if (SampleRow >= (int)RegionStartY && SampleRow < (int)(RegionStartY + RegionHeight))
-    AccumulatedValue += InputTexture[uint2(PixelCoord.x, SampleRow)] * Weight;
-else
-    AccumulatedValue += float2(1.0f, 1.0f) * Weight;  // out-of-region default
+// 직사각형 4-corner 차분으로 영역 평균 모멘트 계산 (UberLit.hlsl)
+uint2 D = asuint(SATTexture.Load(int3(TileOrigin + RegionMax, 0)).xy);
+uint2 B = asuint(SATTexture.Load(int3(TileOrigin + int2(RegionMax.x, RegionMin.y - 1), 0)).xy);
+uint2 C = asuint(SATTexture.Load(int3(TileOrigin + int2(RegionMin.x - 1, RegionMax.y), 0)).xy);
+uint2 A = asuint(SATTexture.Load(int3(TileOrigin + int2(RegionMin.x - 1, RegionMin.y - 1), 0)).xy);
+float2 Moments = float2(D - B - C + A) / (Area * SAT_DEPTH_SCALE);
+return CalculateChebyshevShadowFactor(CurrentDepth, Moments);
 ```
+
+</details>
 
 ---
 
-### 4. 데이터 흐름 요약
+## Performance
 
-```
-ShadowMapPass
-  │  DepthOnlyPS: float2(M1, M2 + AnalyticVarianceBias) → VarianceShadowRTV
-  ▼
-ShadowMapFilterPass  (ShadowModeIndex에 따라 분기)
-  ├─ SMI_VSM          : 필터 없음, VarianceShadowSRV 직접 사용
-  ├─ SMI_VSM_BOX      : FTextureFilter(Box)      → Row → Col → FilteredUAV
-  ├─ SMI_VSM_GAUSSIAN : FTextureFilter(Gaussian) → Row → Col → FilteredUAV
-  └─ SMI_SAVSM        : FTextureFilter(SAT)      → Row → Col → SAT UAV
-  ▼
-UberLit.hlsl (StaticMeshPass)
-  ├─ VSM 계열  : Moments = Sample(FilteredSRV),    CalculateChebyshevShadowFactor(t, Moments)
-  └─ SAVSM     : Moments = QuerySAT(4-corner),     CalculateChebyshevShadowFactor(t, Moments)
-```
+![performance][img-performance]
+
+**커널 크기별 Total Frame Time (ms)**
+
+| Shadow Mode | 3×3 | 7×7 | 11×11 | 15×15 |
+|-------------|-----|-----|-------|-------|
+| PCF | 0.73 | 1.27 | 2.54 | **11.04** |
+| VSM + Box | 1.66 | 1.68 | 2.01 | 2.64 |
+| VSM + Gaussian | 1.67 | 1.70 | 2.07 | 2.70 |
+| SAVSM | 3.49 | **3.41** | **3.41** | **3.41** |
+
+- **PCF**: 라이팅 패스에서 픽셀당 k² 샘플을 수행. 샘플 수 25배(3×3→15×15) 증가 시 GPU 시간 **26배** 증가 — O(k²) 이론과 일치
+- **VSM**: 분리 가능 컨볼루션(Separable filter)으로 필터 복잡도를 O(k)로 낮추고 라이팅 패스는 O(1)로 고정. **11×11부터 PCF보다 빠르며, 15×15에서 4.2배 우위**
+- **SAVSM**: SAT 구성 비용이 해상도에만 의존하므로 커널 크기와 관계없이 **~3.4ms 일정 유지**
 
 ---
 
-### 5. 구현 결과
+## References
 
-| 모드 | 쿼리 비용 | 특성 |
-|------|-----------|------|
-| PCF | O(kernel²) | 하드 엣지, 커널 크기 ∝ 비용 |
-| VSM | O(1) | Soft shadow, 깊이 불연속면 light bleeding |
-| VSM + Box/Gaussian | O(1) | 블러로 경계 개선, 커널 고정 비용 |
-| SAVSM | O(1) | 임의 필터 크기 상수 비용, 가장 부드러운 경계 |
+- Donnelly & Lauritzen, **Variance Shadow Maps**, I3D 2006
+- Lauritzen, **Summed-Area Variance Shadow Maps**, GPU Gems 3, Chapter 8, 2007
+- Hensley et al., **Fast Summed-Area Table Generation and its Applications**, Eurographics 2005
+
+---
+
+[← Week 07][link-week07] | [Week 09 →][link-week09]
+
+<!-- 이미지 레퍼런스 -->
+[img-preview]:        Docs/Images/main.png
+[img-pipeline]:       Docs/Images/pipeline.png
+[img-comparison]:     Docs/Images/pcf-vsm-savsm.png
+[img-savsm-artifact]: Docs/Images/savsm-artifact.png
+[img-performance]:    Docs/Images/performance.png
+
+<!-- 링크 레퍼런스 -->
+[link-week07]: https://github.com/geb0598/DX-Engine/tree/week-07
+[link-week09]: https://github.com/geb0598/DX-Engine/tree/week-09
