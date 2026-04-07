@@ -47,6 +47,7 @@
       <Filter>Asset\Shader</Filter>
     </FxCompile>
     <FxCompile Include="Asset\Shader\ColorCopy.hlsl" />
+    <FxCompile Include="Asset\Shader\PPTexture.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Utility\Private\ScopeCycleCounter.cpp">
@@ -620,6 +621,20 @@
     <ClCompile Include="Source\Render\RenderPass\Private\VignettePass.cpp" />
     <ClCompile Include="Source\Render\RenderPass\Public\PostProcessPass.cpp" />
     <ClCompile Include="Source\Render\UI\Widget\Private\SpringArmComponentWidget.cpp" />
+    <ClCompile Include="Source\Component\Camera\Private\CameraModifier_Transition.cpp" />
+    <ClCompile Include="Source\Game\Actor\Private\TopDownCameraActor.cpp" />
+    <ClCompile Include="Source\Editor\Private\CameraShakeDetailPanel.cpp" />
+    <ClCompile Include="Source\Editor\Private\CameraShakePresetDetailPanel.cpp" />
+    <ClCompile Include="Source\Global\BezierCurve.cpp" />
+    <ClCompile Include="Source\Global\CameraShakeTypes.cpp" />
+    <ClCompile Include="Source\Global\Private\TransitionTypes.cpp" />
+    <ClCompile Include="Source\ImGui\ImGuiBezierEditor.cpp" />
+    <ClCompile Include="Source\Manager\Camera\Private\CameraShakePresetManager.cpp" />
+    <ClCompile Include="Source\Manager\Camera\Private\TransitionPresetManager.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\GammaPass.cpp" />
+    <ClCompile Include="Source\Render\RenderPass\Private\PPTexturePass.cpp" />
+    <ClCompile Include="Source\Render\UI\Window\Private\CameraShakeWindow.cpp" />
+    <ClCompile Include="Source\Render\UI\Window\Private\CameraShakePresetEditorWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\Global\BVH.h">
@@ -1260,6 +1275,14 @@
     <ClInclude Include="Source\Render\RenderPass\Public\PostProcessPass.h" />
     <ClInclude Include="Source\Render\RenderPass\Public\VignettePass.h" />
     <ClInclude Include="Source\Render\UI\Widget\Public\SpringArmComponentWidget.h" />
+    <ClInclude Include="Source\Component\Camera\Public\CameraModifier_Transition.h" />
+    <ClInclude Include="Source\Game\Actor\Public\TopDownCameraActor.h" />
+    <ClInclude Include="Source\Global\Public\CameraShakeTypes.h" />
+    <ClInclude Include="Source\Global\Public\TransitionTypes.h" />
+    <ClInclude Include="Source\Manager\Camera\Public\CameraShakePresetManager.h" />
+    <ClInclude Include="Source\Manager\Camera\Public\TransitionPresetManager.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\GammaPass.h" />
+    <ClInclude Include="Source\Render\RenderPass\Public\PPTexturePass.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Asset\Shader\ClusteredRenderingCS.hlsli">
