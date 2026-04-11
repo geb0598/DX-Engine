@@ -19,8 +19,12 @@ public:
 	/** 시스템 내에 존재하는 이미터들의 배열 */
 	TArray<UParticleEmitter*> Emitters;
 
-	/** 파티클 시스템을 위한 바운딩 박스 (언리얼엔진에서는 FBox 타입을 사용) */
+	/** 파티클 시스템을 위한 바운딩 박스 */
 	FAABB FixedRelativeBoundingBox;
+
+	/** LODDistances[i]: LOD i → i+1 전환 거리(m). 비어 있으면 LOD 전환 없음. */
+	UPROPERTY(EditAnywhere, Category="LOD")
+	TArray<float> LODDistances;
 
 public:
 	UParticleSystem() = default;
@@ -28,35 +32,10 @@ public:
 	virtual ~UParticleSystem();
 
 	//~Begin UObject Interface.
-
-	/**
-	 * JSON 직렬화/역직렬화
-	 * @param bInIsLoading true면 로드, false면 저장
-	 * @param InOutHandle JSON 데이터
-	 */
 	virtual void Serialize(const bool bInIsLoading, JSON& InOutHandle);
-
-	/**
-	 * 파일에서 파티클 시스템 로드
-	 * @param FilePath .particle 파일 경로
-	 * @return 성공 여부
-	 */
 	bool LoadFromFile(const FWideString& FilePath);
-
-	/**
-	 * 파일로 파티클 시스템 저장
-	 * @param FilePath .particle 파일 경로
-	 * @return 성공 여부
-	 */
 	bool SaveToFile(const FWideString& FilePath);
-
-	/**
-	 * ResourceManager용 Load 인터페이스
-	 * @param FilePath .particle 파일 경로
-	 * @param Device D3D11 디바이스 (사용하지 않음, 인터페이스 호환성)
-	 */
 	void Load(const FString& FilePath, ID3D11Device* Device = nullptr);
-
 	//~End UObject Interface.
 
 	/**

@@ -273,46 +273,138 @@ void SParticleEditorWindow::RenderTopToolbar()
 		ImGui::Separator();
 		ImGui::SameLine();
 
-		// Regen LOD buttons
-		if (ImGui::Button("Regen LOD"))
+		// ── LOD 설정 팝업 ────────────────────────────────────────────
+		if (ImGui::Button("LOD Settings"))
 		{
-			// TODO: Regen LOD
+			ImGui::OpenPopup("LODSettingsPopup");
 		}
 
-		if (ImGui::Button("Regen LOD"))
+		if (ImGui::BeginPopup("LODSettingsPopup"))
 		{
-			// TODO: Regen LOD
+			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.4f, 1.0f), "LOD Distance Thresholds");
+			ImGui::Separator();
+			ImGui::Spacing();
+			ImGui::TextDisabled("LODDistances[i]: LOD i -> i+1 전환 거리 (m)");
+			ImGui::Spacing();
+
+			if (EditingParticleSystem)
+			{
+				TArray<float>& Distances = EditingParticleSystem->LODDistances;
+
+				for (int32 i = 0; i < Distances.Num(); ++i)
+				{
+					char label[32];
+					sprintf_s(label, "LOD %d -> LOD %d##dist%d", i, i + 1, i);
+					ImGui::SetNextItemWidth(160.0f);
+					ImGui::DragFloat(label, &Distances[i], 1.0f, 0.0f, 10000.0f, "%.1f m");
+				}
+
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::Spacing();
+
+				// 거리 추가 (LOD 수 - 1 개가 적절. 그 이상은 의미 없음)
+				const int32 MaxDistances = FMath::Max(0, (int32)EditingParticleSystem->Emitters.size() > 0
+					? GetMaxLODIndex()
+					: 0);
+
+				ImGui::BeginDisabled(Distances.Num() >= MaxDistances);
+				if (ImGui::Button("+ Add Distance"))
+				{
+					float lastDist = Distances.Num() > 0 ? Distances[Distances.Num() - 1] : 50.0f;
+					Distances.Add(lastDist + 50.0f);
+				}
+				ImGui::EndDisabled();
+
+				ImGui::SameLine();
+
+				ImGui::BeginDisabled(Distances.Num() == 0);
+				if (ImGui::Button("- Remove Last"))
+				{
+					Distances.RemoveAt(Distances.Num() - 1);
+				}
+				ImGui::EndDisabled();
+
+				ImGui::Spacing();
+
+				// LOD 수 요약
+				ImGui::TextDisabled("현재 LOD 레벨 수: %d  |  거리 임계값 수: %d",
+					GetMaxLODIndex() + 1, Distances.Num());
+			}
+			else
+			{
+				ImGui::TextDisabled("파티클 시스템이 없습니다.");
+			}
+
+			ImGui::Spacing();
+			if (ImGui::Button("Close", ImVec2(80, 0)))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+
+			ImGui::EndPopup();
 		}
 
+		ImGui::SameLine();
+		ImGui::Separator();
+		ImGui::SameLine();
+
+		// ── LOD 툴바 (UE4 Cascade 스타일) ──────────────────────────────
+		// Regen LOD: 모든 LOD 레벨의 모듈 리스트를 재빌드한다.
+		if (ImGui::Button("Regen LOD"))
+		{
+			OnRegenLOD();
+		}
+
+		// Lowest LOD: 가장 낮은 품질 LOD로 이동
 		if (ImGui::Button("Lowest LOD"))
 		{
-			// TODO: Lowest LOD
+			OnLowestLOD();
 		}
 
+		// Lower LOD: 한 단계 낮은 품질 LOD로 이동 (인덱스 증가)
 		if (ImGui::Button("Lower LOD"))
 		{
-			// TODO: Lower LOD
+			OnLowerLOD();
 		}
 
+		// Add LOD: 현재 LOD 아래에 새 LOD 레벨을 추가한다.
 		if (ImGui::Button("Add LOD"))
 		{
-			// TODO: Add LOD
+			OnAddLOD();
 		}
 
-		// LOD dropdown
-		ImGui::SetNextItemWidth(60);
-		const char* lodItems[] = { "LOD: 0" };
-		static int currentLOD = 0;
-		ImGui::Combo("##LOD", &currentLOD, lodItems, IM_ARRAYSIZE(lodItems));
-
-		if (ImGui::Button("Add LOD"))
+		// LOD 레벨 선택 드롭다운 - 현재 파티클 시스템의 LOD 수를 동적으로 반영
 		{
-			// TODO: Add LOD
+			const int32 MaxLOD = GetMaxLODIndex();
+
+			// 아이템 문자열 빌드 (최대 8개 LOD 가정)
+			static char lodLabel[8][16];
+			static const char* lodPtrs[8];
+			const int32 ItemCount = FMath::Max(1, MaxLOD + 1);
+			for (int32 i = 0; i < ItemCount && i < 8; ++i)
+			{
+				sprintf_s(lodLabel[i], sizeof(lodLabel[i]), "LOD: %d", i);
+				lodPtrs[i] = lodLabel[i];
+			}
+
+			CurrentLODIndex = FMath::Clamp(CurrentLODIndex, 0, MaxLOD);
+			ImGui::SetNextItemWidth(70);
+			ImGui::Combo("##LODCombo", &CurrentLODIndex, lodPtrs, ItemCount);
 		}
 
+		// Remove LOD: 현재 LOD 레벨 제거 (LOD 0은 제거 불가)
+		ImGui::BeginDisabled(CurrentLODIndex == 0);
+		if (ImGui::Button("Remove LOD"))
+		{
+			OnRemoveLOD();
+		}
+		ImGui::EndDisabled();
+
+		// Higher LOD: 한 단계 높은 품질 LOD로 이동 (인덱스 감소)
 		if (ImGui::Button("Higher LOD"))
 		{
-			// TODO: Higher LOD
+			OnHigherLOD();
 		}
 
 		ImGui::EndMenuBar();
@@ -496,7 +588,12 @@ void SParticleEditorWindow::RenderEmittersPanel()
 			UParticleEmitter* emitter = EditingParticleSystem->Emitters[emitterIdx];
 			if (!emitter || emitter->LODLevels.size() == 0) continue;
 
-			UParticleLODLevel* LODLevel = emitter->LODLevels[0];
+			// 툴바에서 선택한 CurrentLODIndex에 맞는 LOD 레벨을 표시한다.
+			// 해당 이미터에 CurrentLODIndex가 없으면 가장 낮은 인덱스(LOD 0)로 폴백한다.
+			const int32 SafeLODIdx = (CurrentLODIndex < (int32)emitter->LODLevels.size())
+				? CurrentLODIndex
+				: 0;
+			UParticleLODLevel* LODLevel = emitter->LODLevels[SafeLODIdx];
 			if (!LODLevel) continue;
 
 			ImVec4 headerColor = emitterColors[emitterIdx % 4];
@@ -527,12 +624,10 @@ void SParticleEditorWindow::RenderEmittersPanel()
 
 				if (ImGui::Button(("##EmitterHeader_" + std::to_string(emitterIdx)).c_str(), headerSize))
 				{
-					// 이미터 선택
 					SelectedEmitterIndex = emitterIdx;
 					SelectedModuleIndex = -1;
 					SelectedModule = nullptr;
 
-					// 디테일 위젯에 이미터 설정
 					if (DetailWidget)
 					{
 						DetailWidget->SetSelectedModule(nullptr);
@@ -542,38 +637,53 @@ void SParticleEditorWindow::RenderEmittersPanel()
 
 				ImGui::PopStyleColor(3);
 
-				// 텍스트와 이미지는 버튼 위에 오버레이
-				ImVec2 currentPos = ImGui::GetCursorScreenPos();
+				// 헤더 내부 텍스트/아이콘은 DrawList로 그려서 ImGui 커서 흐름과 분리
+				// ── 왼쪽 상단: 이미터 타입 라벨 ────────────────────────────
+				{
+					const char* typeLabel = LODLevel->TypeDataModule ? "Mesh" : "GPU Sprites";
+					drawList->AddText(
+						ImVec2(headerPos.x + 5, headerPos.y + 5),
+						IM_COL32(220, 220, 220, 255),
+						typeLabel
+					);
+				}
 
-				// 파티클 카운트 (오른쪽 상단)
-				char countText[16];
-				sprintf_s(countText, "%d", emitter->PeakActiveParticles);
-				ImVec2 textSize = ImGui::CalcTextSize(countText);
-				ImGui::SetCursorScreenPos(ImVec2(headerPos.x + headerSize.x - textSize.x - 5, headerPos.y + 5));
-				ImGui::Text("%s", countText);
+				// ── 왼쪽 하단: 이미터 이름 ──────────────────────────────
+				{
+					FString emitterNameStr = emitter->GetEmitterName().ToString();
+					drawList->AddText(
+						ImVec2(headerPos.x + 5, headerPos.y + headerSize.y - 18),
+						IM_COL32(255, 255, 255, 255),
+						emitterNameStr.c_str()
+					);
+				}
 
-				// 이미터 이름 (왼쪽 하단)
-				ImGui::SetCursorScreenPos(ImVec2(headerPos.x + 5, headerPos.y + headerSize.y - 20));
-				FString emitterNameStr = emitter->GetEmitterName().ToString();
-				ImGui::Text("%s", emitterNameStr.c_str());
+				// ── 오른쪽 상단: 최대 활성 파티클 수 ───────────────────────
+				{
+					char countText[16];
+					sprintf_s(countText, "%d", emitter->PeakActiveParticles);
+					ImVec2 textSize = ImGui::CalcTextSize(countText);
+					drawList->AddText(
+						ImVec2(headerPos.x + headerSize.x - textSize.x - 5, headerPos.y + 5),
+						IM_COL32(180, 255, 180, 255),
+						countText
+					);
+				}
 
-				// 스프라이트 썸네일 (중앙 우측)
-				ImVec2 spritePos = ImVec2(headerPos.x + headerSize.x - 55, headerPos.y + 15);
-				drawList->AddRectFilled(
-					spritePos,
-					ImVec2(spritePos.x + 45, spritePos.y + 35),
-					IM_COL32(60, 60, 60, 255)
-				);
-				drawList->AddRect(
-					spritePos,
-					ImVec2(spritePos.x + 45, spritePos.y + 35),
-					IM_COL32(120, 120, 120, 255)
-				);
+				// ── 오른쪽 하단: LOD 배지 ──────────────────────────────
+				{
+					char lodText[16];
+					sprintf_s(lodText, "LOD %d", CurrentLODIndex);
+					ImVec2 textSize = ImGui::CalcTextSize(lodText);
+					drawList->AddText(
+						ImVec2(headerPos.x + headerSize.x - textSize.x - 5, headerPos.y + headerSize.y - 18),
+						IM_COL32(150, 200, 255, 255),
+						lodText
+					);
+				}
 
-				ImGui::SetCursorScreenPos(currentPos);
-
-				// "GPU Sprites" 라벨
-				ImGui::Text("GPU Sprites");
+				// 버튼 이후 커서를 헤더 바로 아래로 명시적으로 이동
+				ImGui::SetCursorScreenPos(ImVec2(headerPos.x, headerPos.y + headerSize.y));
 
 				ImGui::Spacing();
 
@@ -1636,9 +1746,13 @@ void SParticleEditorWindow::ShowAddModuleContextMenu(int32 EmitterIndex)
 	if (!emitter || emitter->LODLevels.size() == 0)
 		return;
 
-	UParticleLODLevel* LODLevel = emitter->LODLevels[0];
+	// 현재 선택된 LOD 레벨에 모듈을 추가한다.
+	const int32 SafeLODIdx = (CurrentLODIndex < (int32)emitter->LODLevels.size())
+		? CurrentLODIndex
+		: 0;
+	UParticleLODLevel* LODLevel = emitter->LODLevels[SafeLODIdx];
 
-	ImGui::Text("Add Module");
+	ImGui::Text("Add Module (LOD %d)", SafeLODIdx);
 	ImGui::Separator();
 
 	// 리플렉션 시스템을 사용하여 모든 UParticleModule 서브클래스 찾기
@@ -1853,4 +1967,147 @@ void SParticleEditorWindow::UpdatePreviewActor()
 		// 현재 편집 중인 파티클 시스템으로 템플릿 설정
 		ParticleComp->SetTemplate(EditingParticleSystem);
 	}
+}
+
+/*-----------------------------------------------------------------------------
+	LOD 툴바 핸들러
+-----------------------------------------------------------------------------*/
+
+int32 SParticleEditorWindow::GetMaxLODIndex() const
+{
+	if (!EditingParticleSystem)
+	{
+		return 0;
+	}
+
+	int32 MaxLOD = 0;
+	for (UParticleEmitter* Emitter : EditingParticleSystem->Emitters)
+	{
+		if (Emitter)
+		{
+			MaxLOD = FMath::Max(MaxLOD, Emitter->LODLevels.Num() - 1);
+		}
+	}
+	return MaxLOD;
+}
+
+void SParticleEditorWindow::OnRegenLOD()
+{
+	// 모든 이미터의 모듈 리스트와 파티클 수를 재빌드한다.
+	// 모듈 추가/제거 후 오프셋 맵이 오염될 수 있으므로 전체 재계산이 필요하다.
+	if (!EditingParticleSystem)
+	{
+		return;
+	}
+
+	EditingParticleSystem->UpdateAllModuleLists();
+	EditingParticleSystem->CalculateMaxActiveParticleCounts();
+
+	// 프리뷰 액터를 재초기화하여 변경 사항을 반영한다.
+	EditingParticleSystem->OnParticleChanged.Broadcast();
+
+	StatusMessage = "LOD regenerated";
+	UE_LOG("[ParticleEditor] OnRegenLOD: module lists rebuilt");
+}
+
+void SParticleEditorWindow::OnAddLOD()
+{
+	// 모든 이미터에 현재 LOD 바로 아래(더 낮은 품질)에 새 LOD 레벨을 추가한다.
+	// 새 LOD는 LOD 0의 설정을 기반으로 기본값으로 초기화된다.
+	if (!EditingParticleSystem)
+	{
+		return;
+	}
+
+	for (UParticleEmitter* Emitter : EditingParticleSystem->Emitters)
+	{
+		if (Emitter)
+		{
+			Emitter->AddLODLevel();
+		}
+	}
+
+	// 새로 추가된 LOD로 이동
+	CurrentLODIndex = GetMaxLODIndex();
+
+	EditingParticleSystem->UpdateAllModuleLists();
+	EditingParticleSystem->CalculateMaxActiveParticleCounts();
+	EditingParticleSystem->OnParticleChanged.Broadcast();
+
+	StatusMessage = FString("LOD ") + std::to_string(CurrentLODIndex) + " added";
+	UE_LOG("[ParticleEditor] OnAddLOD: LOD %d added", CurrentLODIndex);
+}
+
+void SParticleEditorWindow::OnRemoveLOD()
+{
+	// 현재 선택된 LOD 레벨을 제거한다. LOD 0은 제거할 수 없다.
+	if (!EditingParticleSystem || CurrentLODIndex == 0)
+	{
+		return;
+	}
+
+	const int32 RemoveIndex = CurrentLODIndex;
+
+	for (UParticleEmitter* Emitter : EditingParticleSystem->Emitters)
+	{
+		if (!Emitter || RemoveIndex < 0 || RemoveIndex >= Emitter->LODLevels.Num())
+		{
+			continue;
+		}
+
+		UParticleLODLevel* LODToRemove = Emitter->LODLevels[RemoveIndex];
+		Emitter->LODLevels.RemoveAt(RemoveIndex);
+
+		if (LODToRemove)
+		{
+			DeleteObject(LODToRemove);
+		}
+
+		// 남은 LOD 레벨 인덱스 재정렬
+		for (int32 i = RemoveIndex; i < Emitter->LODLevels.Num(); ++i)
+		{
+			if (Emitter->LODLevels[i])
+			{
+				Emitter->LODLevels[i]->Level = i;
+			}
+		}
+	}
+
+	// 제거 후 상위 LOD로 이동 (클램프)
+	CurrentLODIndex = FMath::Clamp(CurrentLODIndex - 1, 0, GetMaxLODIndex());
+
+	EditingParticleSystem->UpdateAllModuleLists();
+	EditingParticleSystem->CalculateMaxActiveParticleCounts();
+	EditingParticleSystem->OnParticleChanged.Broadcast();
+
+	StatusMessage = FString("LOD ") + std::to_string(RemoveIndex) + " removed";
+	UE_LOG("[ParticleEditor] OnRemoveLOD: LOD %d removed", RemoveIndex);
+}
+
+void SParticleEditorWindow::OnHigherLOD()
+{
+	// 한 단계 높은 품질 LOD로 이동 (인덱스 감소, 최소 0)
+	if (CurrentLODIndex > 0)
+	{
+		CurrentLODIndex--;
+		StatusMessage = FString("LOD: ") + std::to_string(CurrentLODIndex);
+	}
+}
+
+void SParticleEditorWindow::OnLowerLOD()
+{
+	// 한 단계 낮은 품질 LOD로 이동 (인덱스 증가, 최대값 클램프)
+	const int32 MaxLOD = GetMaxLODIndex();
+	if (CurrentLODIndex < MaxLOD)
+	{
+		CurrentLODIndex++;
+		StatusMessage = FString("LOD: ") + std::to_string(CurrentLODIndex);
+	}
+}
+
+void SParticleEditorWindow::OnLowestLOD()
+{
+	// 가장 낮은 품질(가장 높은 인덱스) LOD로 이동
+	CurrentLODIndex = GetMaxLODIndex();
+	StatusMessage = FString("LOD: ") + std::to_string(CurrentLODIndex);
 }

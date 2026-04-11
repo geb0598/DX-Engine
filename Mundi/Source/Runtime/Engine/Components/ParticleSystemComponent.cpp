@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "ParticleSystemComponent.h"
+#include "CameraActor.h"
 
 #include "BoxComponent.h"
 #include "Collision.h"
@@ -134,6 +135,20 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		InitParticles();
 	}
 
+	if (Template && Template->LODDistances.Num() > 0)
+	{
+		ACameraActor* CameraActor = GWorld ? GWorld->GetEditorCameraActor() : nullptr;
+		if (CameraActor)
+		{
+			const FVector CameraLocation = CameraActor->GetActorLocation();
+			const int32 NewLODLevel = DetermineCurrentLODLevel(CameraLocation);
+			if (NewLODLevel != LODLevel)
+			{
+				SetLODLevel(NewLODLevel);
+			}
+		}
+	}
+
 	TotalActiveParticles = 0;
 
 	for (int32 EmitterIndex = 0; EmitterIndex < EmitterInstances.Num(); EmitterIndex++)
@@ -171,7 +186,6 @@ void UParticleSystemComponent::CollectMeshBatches(TArray<FMeshBatchElement>& Out
 			continue;
 		}
 
-		// 렌더링 배치를 수집 (Collect)
 		EmitterData->GetDynamicMeshElementsEmitter(OutMeshBatchElements, View);
 	}
 }
@@ -363,7 +377,6 @@ bool UParticleSystemComponent::ParticleLineCheck(FHitResult& Hit, AActor* Source
 
 void UParticleSystemComponent::SetTemplate(UParticleSystem* NewTemplate, bool bAutoActivate)
 {
-	// 기존 템플릿과 동일하면 아무것도 하지 않음
 	if (Template == NewTemplate)
 	{
 		return;
@@ -374,7 +387,6 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* NewTemplate, bool bA
 		Template->OnParticleChanged.Remove(TemplateChangedHandle);
 	}
 
-	// 새로운 템플릿 설정
 	Template = NewTemplate;
 
 	if (Template)
@@ -384,11 +396,76 @@ void UParticleSystemComponent::SetTemplate(UParticleSystem* NewTemplate, bool bA
 
 	InitializeSystem();
 
-	// 템플릿이 유효하고 자동 활성화가 켜져있으면 활성화
 	if (Template && bAutoActivate)
 	{
 		Activate(true);
 	}
+}
+
+void UParticleSystemComponent::SetLODLevel(int32 InLODLevel)
+{
+	if (!Template)
+	{
+		return;
+	}
+
+	int32 MaxLOD = 0;
+	for (UParticleEmitter* Emitter : Template->Emitters)
+	{
+		if (Emitter)
+		{
+			MaxLOD = FMath::Max(MaxLOD, Emitter->LODLevels.Num() - 1);
+		}
+	}
+
+	const int32 NewLODLevel = FMath::Clamp(InLODLevel, 0, MaxLOD);
+
+	if (NewLODLevel == LODLevel)
+	{
+		return;
+	}
+
+	LODLevel = NewLODLevel;
+
+	for (FParticleEmitterInstance* Instance : EmitterInstances)
+	{
+		if (!Instance || !Instance->SpriteTemplate)
+		{
+			continue;
+		}
+
+		UParticleEmitter* Emitter = Instance->SpriteTemplate;
+		if (LODLevel < 0 || LODLevel >= Emitter->LODLevels.Num())
+		{
+			continue;
+		}
+
+		Instance->CurrentLODLevelIndex = LODLevel;
+		Instance->CurrentLODLevel      = Emitter->LODLevels[LODLevel];
+
+		Instance->SetupEmitterDuration();
+	}
+}
+
+int32 UParticleSystemComponent::DetermineCurrentLODLevel(const FVector& CameraLocation) const
+{
+	if (!Template || Template->LODDistances.Num() == 0)
+	{
+		return 0;
+	}
+
+	const FVector MyLocation = GetWorldLocation();
+	const float Distance = FVector::Distance(MyLocation, CameraLocation);
+
+	for (int32 LODIdx = Template->LODDistances.Num() - 1; LODIdx >= 0; LODIdx--)
+	{
+		if (Distance >= Template->LODDistances[LODIdx])
+		{
+			return FMath::Min(LODIdx + 1, Template->LODDistances.Num());
+		}
+	}
+
+	return 0;
 }
 
 int32 UParticleSystemComponent::GetTotalActiveParticles() const

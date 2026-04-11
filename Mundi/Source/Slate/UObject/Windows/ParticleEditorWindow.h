@@ -90,10 +90,24 @@ private:
 	// Selected Emitter
 	int32 SelectedEmitterIndex = 0;
 
+	// 현재 편집/미리보기 중인 LOD 레벨 인덱스 (0 = 최고 품질)
+	int32 CurrentLODIndex = 0;
+
 	// Event handlers
 	void OnPlayClicked();
 	void OnPauseClicked();
 	void OnResetClicked();
 	void OnRestartSimClicked();
 	void OnRestartLevelClicked();
+
+	// LOD 툴바 핸들러
+	void OnRegenLOD();       // 모든 LOD 레벨 모듈 리스트 재빌드
+	void OnAddLOD();         // 현재 LOD 아래에 새 LOD 레벨 추가
+	void OnRemoveLOD();      // 현재 LOD 레벨 제거 (LOD 0은 제거 불가)
+	void OnHigherLOD();      // 더 높은 품질(낮은 인덱스) LOD로 이동
+	void OnLowerLOD();       // 더 낮은 품질(높은 인덱스) LOD로 이동
+	void OnLowestLOD();      // 가장 낮은 품질 LOD로 이동
+
+	// 현재 파티클 시스템의 최대 LOD 인덱스를 반환
+	int32 GetMaxLODIndex() const;
 };

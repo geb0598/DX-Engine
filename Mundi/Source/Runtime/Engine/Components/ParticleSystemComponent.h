@@ -85,6 +85,12 @@ public:
 	 */
 	void SetTemplate(UParticleSystem* NewTemplate, bool bAutoActivate = true);
 
+	void SetLODLevel(int32 InLODLevel);
+
+	int32 DetermineCurrentLODLevel(const FVector& CameraLocation) const;
+
+	int32 GetCurrentLODLevel() const { return LODLevel; }
+
 	/**
 	 * 현재 설정된 파티클 시스템 템플릿을 반환한다.
 	 * @return 현재 템플릿
@@ -99,8 +105,6 @@ public:
 	UParticleSystem* Template;
 
 private:
-	/** 사용할 파티클 시스템 템플릿 */
-
 	/** 이미터별 머티리얼 오버라이드 배열 */
 	TArray<UMaterialInterface*> EmitterMaterials;
 

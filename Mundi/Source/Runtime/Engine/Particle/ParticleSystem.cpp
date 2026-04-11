@@ -97,6 +97,16 @@ void UParticleSystem::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 		}
 		Emitters.Empty();
 
+		LODDistances.Empty();
+		JSON LODDistancesJson;
+		if (FJsonSerializer::ReadArray(InOutHandle, "LODDistances", LODDistancesJson))
+		{
+			for (uint32 i = 0; i < LODDistancesJson.size(); ++i)
+			{
+				LODDistances.Add((float)LODDistancesJson.at(i).ToFloat());
+			}
+		}
+
 		// 이미터 배열 로드
 		JSON EmittersJson;
 		if (FJsonSerializer::ReadArray(InOutHandle, "Emitters", EmittersJson))
@@ -124,6 +134,13 @@ void UParticleSystem::Serialize(const bool bInIsLoading, JSON& InOutHandle)
 	{
 		// 파티클 시스템 타입 저장
 		InOutHandle["Type"] = "UParticleSystem";
+
+		JSON LODDistancesJson = JSON::Make(JSON::Class::Array);
+		for (float Dist : LODDistances)
+		{
+			LODDistancesJson.append(Dist);
+		}
+		InOutHandle["LODDistances"] = LODDistancesJson;
 
 		// 이미터 배열 저장
 		JSON EmittersJson = JSON::Make(JSON::Class::Array);
@@ -183,7 +200,6 @@ bool UParticleSystem::SaveToFile(const FWideString& FilePath)
 
 void UParticleSystem::Load(const FString& FilePath, ID3D11Device* Device)
 {
-	// FString을 FWideString으로 변환
 	FWideString WideFilePath = UTF8ToWide(FilePath);
 	LoadFromFile(WideFilePath);
 }

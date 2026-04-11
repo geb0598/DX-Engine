@@ -284,44 +284,37 @@ int32 UParticleLODLevel::CalculateMaxActiveParticleCount()
 		}
 		else
 		{
+			// 다중 루프: 루프 경계에서 이전 루프 파티클과 현재 루프 파티클이 겹칠 수 있다.
+			// Lifetime < Duration → 한 루프 안에서 최대 SpawnRate * Lifetime 개 공존
+			// Lifetime >= Duration → 이전 루프 파티클이 다음 루프 초반에도 살아 있으므로
+			//                        ceil(SpawnRate * Duration) 개씩 최대 2 루프치가 겹침
 			if (ParticleLifetime < MaxDuration)
 			{
 				MaxAPC += std::ceil(ParticleLifetime * MaxSpawnRate);
 			}
 			else
 			{
-				MaxAPC += std::ceil(std::ceil(MaxDuration * MaxSpawnRate) * ParticleLifetime);
+				MaxAPC += std::ceil(MaxDuration * MaxSpawnRate) * 2;
 			}
 			MaxAPC += 1; // 부동 소수점 오차 보정
 		}
 	}
 	else // 무한 루프 (TotalLoops == 0)
 	{
-		if (ParticleLifetime < MaxDuration)
+		// 무한 루프 정상 상태(Steady State) 공식: N = SpawnRate × Lifetime
+		// 파티클 수명 동안 새로 생성되는 파티클 수가 동시에 살아있는 최대치와 같다.
+		if (ParticleLifetime > 0.0f)
 		{
-			MaxAPC += std::ceil(ParticleLifetime * std::ceil(MaxSpawnRate));
+			MaxAPC += std::ceil(MaxSpawnRate * ParticleLifetime);
 		}
 		else
 		{
-			if (ParticleLifetime != 0.0f)
-			{
-				if (ParticleLifetime <= MaxDuration)
-				{
-					MaxAPC += std::ceil(MaxDuration * MaxSpawnRate);
-				}
-				else
-				{
-					MaxAPC += std::ceil(MaxDuration * MaxSpawnRate) * ParticleLifetime;
-				}
-			}
-			else
-			{
-				MaxAPC += std::ceil(MaxSpawnRate);
-			}
+			// 수명이 0이면 스폰율 기준으로만 추정
+			MaxAPC += std::ceil(MaxSpawnRate);
 		}
-		// [안전 구역 (Safety Zone)] - 33ms 프레임 지연 보정
-		// 프레임 드랍이 생겨서 DeltaTime이 0.032초(약 30fps)만큼 튀었을 때,
-		// 한 번에 몰려서 생성될 파티클 개수를 미리 확보해둔다.
+
+		// [Safety Zone] - 33ms 프레임 지연 보정
+		// 프레임 드랍(DeltaTime ≈ 0.032s) 시 한 번에 몰려 생성될 파티클 수를 미리 확보한다.
 		MaxAPC += FMath::Max<int32>(std::ceil(MaxSpawnRate * 0.032f), 2);
 	}
 

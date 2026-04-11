@@ -366,11 +366,9 @@ void FParticleEmitterInstance::Tick_ModuleUpdate(float DeltaTime, UParticleLODLe
 
 void FParticleEmitterInstance::Tick_ModulePostUpdate(float DeltaTime, UParticleLODLevel* InCurrentLODLevel)
 {
-	if (InCurrentLODLevel->TypeDataModule)
-	{
-		// @todo
-		// InCurrentLODLevel->TypeDataModule->Update({*this, TypeDataOffset, DeltaTime});
-	}
+	// 기반 스프라이트 이미터에서는 PostUpdate가 필요 없다.
+	// TypeDataModule을 사용하는 파생 이미터(Mesh, Beam, Ribbon)는
+	// Tick()을 오버라이드하여 타입별 Update 로직을 수행한다.
 }
 
 void FParticleEmitterInstance::Tick_ModuleFinalUpdate(float DeltaTime, UParticleLODLevel* InCurrentLODLevel)
@@ -394,21 +392,11 @@ void FParticleEmitterInstance::Tick_ModuleFinalUpdate(float DeltaTime, UParticle
 
 uint32 FParticleEmitterInstance::RequiredBytes()
 {
-	uint32 uiBytes = 0;
-	bool bHasSubUV = false;
-	for (int32 LODIndex = 0; (LODIndex < SpriteTemplate->LODLevels.Num()) && !bHasSubUV; LODIndex++)
-	{
-		UParticleLODLevel* LODLevel = SpriteTemplate->GetLODLevel(LODIndex);
-
-		if (LODLevel)
-		{
-			if (LODIndex > 0)
-			{
-				/** @todo SubUV 좀 더 알아보기, 현재는 아무것도 하지 않음 */
-			}
-		}
-	}
-	return uiBytes;
+	// FBaseParticle 이외의 추가 페이로드가 없는 기본 스프라이트 이미터.
+	// SubUV 인덱스는 FBaseParticle::SubImageIndex 필드를 직접 사용하므로
+	// 별도의 페이로드 공간이 불필요하다.
+	// 파생 이미터(Mesh, Beam, Ribbon)는 이 함수를 오버라이드하여 추가 바이트를 반환한다.
+	return 0;
 }
 
 uint32 FParticleEmitterInstance::GetModuleDataOffset(UParticleModule* Module)
@@ -695,14 +683,10 @@ void FParticleEmitterInstance::KillParticle(int32 Index)
 {
 	if (Index < ActiveParticles)
 	{
-		UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
-
-		int32 KillIndex = ParticleIndices[Index];
-
-		for (int32 i = Index; i < ActiveParticles - 1; i++)
-		{
-			ParticleIndices[i] = ParticleIndices[i + 1];
-		}
+		// KillParticles()의 배치 삭제와 동일한 O(1) 스왑 방식 사용.
+		// 삭제할 인덱스를 활성 목록 끝으로 보내고 ActiveParticles를 줄인다.
+		const int32 KillIndex = ParticleIndices[Index];
+		ParticleIndices[Index] = ParticleIndices[ActiveParticles - 1];
 		ParticleIndices[ActiveParticles - 1] = KillIndex;
 		ActiveParticles--;
 	}
