@@ -20,7 +20,7 @@ class UParticleEmitter;
 struct FParticleEmitterInstance
 {
 public:
-	/** @todo 주석 */
+	/** 이 값보다 짧은 DeltaTime 프레임에서만 PeakActiveParticles를 갱신한다. */
 	static const float PeakActiveParticleUpdateDelta;
 
 	/** 이 인스턴스가 기반으로 하는 템플릿									*/

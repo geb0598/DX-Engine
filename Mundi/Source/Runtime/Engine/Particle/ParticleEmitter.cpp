@@ -143,10 +143,6 @@ void UParticleEmitter::CacheEmitterModuleInfo()
 	assert(HighLODLevel);
 
 	UParticleModuleTypeDataBase* HighTypeData = HighLODLevel->TypeDataModule;
-	if (HighTypeData)
-	{
-		// @todo
-	}
 
 	UParticleModuleRequired* RequiredModule = HighLODLevel->RequiredModule;
 	assert(RequiredModule);

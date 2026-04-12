@@ -257,8 +257,6 @@ void FDynamicMeshEmitterData::Init(bool bInSelected, const FParticleMeshEmitterI
 
 	StaticMesh = InStaticMesh;
 	assert(StaticMesh);
-
-	// @todo
 }
 
 void FDynamicMeshEmitterData::GetDynamicMeshElementsEmitter(TArray<FMeshBatchElement>& Collector, const FSceneView* View)

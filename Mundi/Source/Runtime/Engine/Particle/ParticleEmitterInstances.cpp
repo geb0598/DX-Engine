@@ -229,8 +229,6 @@ void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 
 		if (ActiveParticles > 0)
 		{
-			// @todo
-			// UpdateOrbitData(DeltaTime);
 			UpdateBoundingBox(DeltaTime);
 		}
 
@@ -606,14 +604,6 @@ void FParticleEmitterInstance::PreSpawn(FBaseParticle* Particle, const FVector& 
 void FParticleEmitterInstance::PostSpawn(FBaseParticle* Particle, float InterpolationPercentage, float SpawnTime)
 {
 	UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
-	// @todo
-	 // if (LODLevel->RequiredModule->bUseLocalSpace == false)
-	 // {
-		// if (FVector::DistSquared(OldLocation, Location) > 1.f)
-		// {
-		// 	Particle->Location += InterpolationPercentage * (OldLocation - Location);
-		// }
-	 // }
 	Particle->OldLocation = Particle->Location;
 	Particle->Location += FVector(Particle->Velocity) * SpawnTime;
 }
@@ -672,10 +662,6 @@ void FParticleEmitterInstance::KillParticles()
 			}
 		}
 
-		if (bFoundCorruptIndices)
-		{
-			// @todo Fixup 로직 필요
-		}
 	}
 }
 
@@ -683,8 +669,6 @@ void FParticleEmitterInstance::KillParticle(int32 Index)
 {
 	if (Index < ActiveParticles)
 	{
-		// KillParticles()의 배치 삭제와 동일한 O(1) 스왑 방식 사용.
-		// 삭제할 인덱스를 활성 목록 끝으로 보내고 ActiveParticles를 줄인다.
 		const int32 KillIndex = ParticleIndices[Index];
 		ParticleIndices[Index] = ParticleIndices[ActiveParticles - 1];
 		ParticleIndices[ActiveParticles - 1] = KillIndex;
@@ -698,7 +682,7 @@ void FParticleEmitterInstance::UpdateTransforms()
 
 	UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
 	FMatrix ComponentToWorld = Component->GetWorldTransform().ToMatrix();
-	// @todo 현재는 RequiredModule에 EmitterOrigin, EmitterRotation과 같은 오프셋 정보가 없음
+	// EmitterOrigin, EmitterRotation 오프셋은 현재 RequiredModule에 없이 Identity로 처리함
 	FMatrix EmitterToComponent = FMatrix::Identity();
 	if (!LODLevel) {
 		return;
