@@ -743,6 +743,13 @@ bool FParticleEmitterInstance::FillReplayData(FDynamicEmitterReplayDataBase& Out
 
 	assert(MaxActiveParticles >= ActiveParticles);
 
+	static bool bStridePrinted = false;
+	if (!bStridePrinted)
+	{
+		UE_LOG("[Benchmark] ParticleStride: %d bytes", ParticleStride);
+		bStridePrinted = true;
+	}
+
 	OutData.eEmitterType = DET_Unknown;
 	OutData.ActiveParticleCount = ActiveParticles;
 	OutData.ParticleStride = ParticleStride;
