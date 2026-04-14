@@ -36,6 +36,7 @@
 
 #include <Windows.h>
 #include "DirectionalLightComponent.h"
+#include "InsightsStats.h"
 URenderer::URenderer(D3D11RHI* InDevice) : RHIDevice(InDevice)
 {
 	InitializeLineBatch();
@@ -84,7 +85,10 @@ void URenderer::EndFrame()
 		GPUTimer->EndFrame();
 	}
 
-	RHIDevice->Present();
+	{
+		INSIGHTS_SCOPE(GStat_Present);
+		RHIDevice->Present();
+	}
 }
 
 void URenderer::RenderSceneForView(UWorld* World, FSceneView* View, FViewport* Viewport)

@@ -14,6 +14,7 @@
 #include "ParticleModuleTypeDataRibbon.h"
 #include "ParticleSystemComponent.h"
 #include "ParticleModuleSubUV.h"
+#include "InsightsStats.h"
 
 /*-----------------------------------------------------------------------------
 	FParticleEmitterInstance
@@ -205,6 +206,7 @@ bool FParticleEmitterInstance::Resize(int32 NewMaxActiveParticles, bool bSetMaxA
 
 void FParticleEmitterInstance::Tick(float DeltaTime, bool bSuppressSpawning)
 {
+	INSIGHTS_SCOPE(GStat_EmitterTick);
 	assert(SpriteTemplate);
 	assert(SpriteTemplate->LODLevels.Num() > 0);
 
@@ -330,6 +332,7 @@ float FParticleEmitterInstance::Tick_EmitterTimeSetup(float DeltaTime, UParticle
 
 float FParticleEmitterInstance::Tick_SpawnParticles(float DeltaTime, UParticleLODLevel* InCurrentLODLevel, bool bSuppressSpawning, bool bFirstTime)
 {
+	INSIGHTS_SCOPE(GStat_Tick_SpawnParticles);
 	if (bSuppressSpawning || EmitterTime < 0.0f)
 	{
 		return 0.0f;
@@ -350,6 +353,7 @@ float FParticleEmitterInstance::Tick_SpawnParticles(float DeltaTime, UParticleLO
 
 void FParticleEmitterInstance::Tick_ModuleUpdate(float DeltaTime, UParticleLODLevel* InCurrentLODLevel)
 {
+	INSIGHTS_SCOPE(GStat_Tick_ModuleUpdate);
 	UParticleLODLevel* HighestLODLevel = SpriteTemplate->LODLevels[0];
 	assert(HighestLODLevel);
 	for (int32 ModuleIndex = 0; ModuleIndex < InCurrentLODLevel->UpdateModules.Num(); ModuleIndex++)
@@ -371,6 +375,7 @@ void FParticleEmitterInstance::Tick_ModulePostUpdate(float DeltaTime, UParticleL
 
 void FParticleEmitterInstance::Tick_ModuleFinalUpdate(float DeltaTime, UParticleLODLevel* InCurrentLODLevel)
 {
+	INSIGHTS_SCOPE(GStat_Tick_FinalUpdate);
 	UParticleLODLevel* HighestLODLevel = SpriteTemplate->LODLevels[0];
 	assert(HighestLODLevel);
 	for (int32 ModuleIndex = 0; ModuleIndex < InCurrentLODLevel->UpdateModules.Num(); ModuleIndex++)
@@ -426,6 +431,7 @@ uint32 FParticleEmitterInstance::CalculateParticleStride(uint32 ParticleSize)
 
 void FParticleEmitterInstance::ResetParticleParameters(float DeltaTime)
 {
+	INSIGHTS_SCOPE(GStat_Tick_ResetParameters);
 	UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();
 	UParticleLODLevel* HighestLODLevel = SpriteTemplate->LODLevels[0];
 	assert(HighestLODLevel);
@@ -636,6 +642,7 @@ void FParticleEmitterInstance::SetupEmitterDuration()
 
 void FParticleEmitterInstance::KillParticles()
 {
+	INSIGHTS_SCOPE(GStat_Tick_KillParticles);
 	if (ActiveParticles > 0)
 	{
 		UParticleLODLevel* LODLevel = GetCurrentLODLevelChecked();

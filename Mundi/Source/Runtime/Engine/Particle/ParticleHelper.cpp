@@ -2,6 +2,7 @@
 #include "ParticleHelper.h"
 
 #include "ParticleSpriteEmitter.h"
+#include "InsightsStats.h"
 
 constexpr uint32 InitMaxParticles = 128u;
 
@@ -130,6 +131,7 @@ void FDynamicSpriteEmitterData::Init(bool bInSelected)
 
 void FDynamicSpriteEmitterData::GetDynamicMeshElementsEmitter(TArray<FMeshBatchElement>& Collector, const FSceneView* View)
 {
+	INSIGHTS_SCOPE(GStat_ParticleCollectBatches);
 	const FDynamicSpriteEmitterReplayDataBase* Src = GetSourceData();
 	if (!Src) return;
 

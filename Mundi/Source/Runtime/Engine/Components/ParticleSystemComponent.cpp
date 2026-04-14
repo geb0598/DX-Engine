@@ -9,6 +9,7 @@
 #include "ParticleModuleVelocity.h"
 #include "Source/Runtime/Engine/Particle/ParticleEmitter.h"
 #include "Source/Runtime/Engine/Particle/ParticleEmitterInstances.h"
+#include "InsightsStats.h"
 #include "Source/Runtime/Engine/Particle/ParticleHelper.h"
 #include "Source/Runtime/Engine/Particle/ParticleLODLevel.h"
 #include "Source/Runtime/Engine/Particle/ParticleSystem.h"
@@ -174,7 +175,10 @@ void UParticleSystemComponent::TickComponent(float DeltaTime)
 		bWasCompleted = true;
 	}
 
-	UpdateDynamicData();
+	{
+		INSIGHTS_SCOPE(GStat_ParticleUpdateDynamicData);
+		UpdateDynamicData();
+	}
 }
 
 void UParticleSystemComponent::CollectMeshBatches(TArray<FMeshBatchElement>& OutMeshBatchElements, const FSceneView* View)

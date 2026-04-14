@@ -1,0 +1,158 @@
+{
+  "Emitters": [
+    {
+      "EmitterName": "ScalingTestMeshEmitter",
+      "InitialAllocationCount": 0,
+      "LODLevels": [
+        {
+          "Level": 0,
+          "Modules": [
+            {
+              "EmitterDelay": 0.0,
+              "EmitterDuration": 1.0,
+              "EmitterDurationLow": 1.0,
+              "EmitterLoops": 0,
+              "Material": {
+                "Overrides": {
+                  "Scalars": {},
+                  "Vectors": {},
+                  "Textures": {
+                    "0": "Data/Model/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg"
+                  }
+                },
+                "ParentPath": "Shaders/Materials/UberLit.hlsl"
+              },
+              "ScreenAlignment": 1,
+              "Type": "UParticleModuleRequired",
+              "bUseLocalSpace": false
+            },
+            {
+              "Rate": 20.0,
+              "RateScale": 1.0,
+              "Type": "UParticleModuleSpawn"
+            },
+            {
+              "Mesh": "Data/Model/apple_mid.obj",
+              "RollPitchYawRange": {
+                "DistributionType": "Uniform",
+                "Max": [
+                  90.0,
+                  90.0,
+                  90.0
+                ],
+                "Min": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "RotationRate": {
+                "DistributionType": "Uniform",
+                "Max": [
+                  90.0,
+                  90.0,
+                  90.0
+                ],
+                "Min": [
+                  0.0,
+                  0.0,
+                  0.0
+                ]
+              },
+              "Type": "UParticleModuleTypeDataMesh"
+            },
+            {
+              "Lifetime": {
+                "DistributionType": "Uniform",
+                "Max": 5.0,
+                "Min": 5.0
+              },
+              "Type": "UParticleModuleLifetime"
+            },
+            {
+              "StartSize": {
+                "DistributionType": "Bezier",
+                "MaxInput": 1.0,
+                "MinInput": 0.0,
+                "P0": [
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "P1": [
+                  0.33,
+                  0.33,
+                  0.33
+                ],
+                "P2": [
+                  0.66,
+                  0.66,
+                  0.66
+                ],
+                "P3": [
+                  0.5,
+                  0.5,
+                  0.5
+                ]
+              },
+              "Type": "UParticleModuleSize"
+            },
+            {
+              "StartAlpha": {
+                "Constant": 1.0,
+                "DistributionType": "Constant"
+              },
+              "StartColor": {
+                "Constant": [
+                  1.0,
+                  1.0,
+                  1.0
+                ],
+                "DistributionType": "Constant"
+              },
+              "Type": "UParticleModuleColor"
+            },
+            {
+              "StartVelocity": {
+                "DistributionType": "Uniform",
+                "Max": [
+                  5.0,
+                  5.0,
+                  10.0
+                ],
+                "Min": [
+                  -5.0,
+                  -5.0,
+                  5.0
+                ]
+              },
+              "StartVelocityRadial": {
+                "Constant": 0.0,
+                "DistributionType": "Constant"
+              },
+              "Type": "UParticleModuleVelocity",
+              "bApplyOwnerScale": true,
+              "bInWorldSpace": false
+            },
+            {
+              "Acceleration": {
+                "Constant": [
+                  0.0,
+                  0.0,
+                  -9.8
+                ],
+                "DistributionType": "Constant"
+              },
+              "Type": "UParticleModuleAccelerationConstant"
+            }
+          ],
+          "bEnabled": true
+        }
+      ],
+      "PeakActiveParticles": 101,
+      "Type": "UParticleEmitter"
+    }
+  ],
+  "LODDistances": [],
+  "Type": "UParticleSystem"
+}

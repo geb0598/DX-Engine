@@ -51,6 +51,7 @@
 #include "FbxLoader.h"
 #include "SkinnedMeshComponent.h"
 #include "ParticleSystemComponent.h"
+#include "InsightsStats.h"
 
 FSceneRenderer::FSceneRenderer(UWorld* InWorld, FSceneView* InView, URenderer* InOwnerRenderer)
 	: World(InWorld)
@@ -78,6 +79,7 @@ FSceneRenderer::~FSceneRenderer()
 //====================================================================================
 void FSceneRenderer::Render()
 {
+    INSIGHTS_SCOPE(GStat_RenderScene);
     if (!IsValid()) return;
 
 	/*static bool Loaded = false;
@@ -92,9 +94,13 @@ void FSceneRenderer::Render()
     // 렌더링할 대상 수집 (Cull + Gather)
     GatherVisibleProxies();
 
-	TIME_PROFILE(ShadowMapPass)
-	RenderShadowMaps();
-	TIME_PROFILE_END(ShadowMapPass)
+	{
+		INSIGHTS_SCOPE(GStat_RenderShadowMaps);
+		INSIGHTS_GPU_SCOPE(GStat_GPU_ShadowMaps);
+		TIME_PROFILE(ShadowMapPass)
+		RenderShadowMaps();
+		TIME_PROFILE_END(ShadowMapPass)
+	}
 
 	// ViewMode에 따라 렌더링 경로 결정
 	if (View->RenderSettings->GetViewMode() == EViewMode::VMI_Lit_Phong ||
@@ -156,6 +162,8 @@ void FSceneRenderer::Render()
 
 void FSceneRenderer::RenderLitPath()
 {
+	INSIGHTS_SCOPE(GStat_RenderLitPath);
+	INSIGHTS_GPU_SCOPE(GStat_GPU_LitPath);
 	GPU_EVENT_TIMER(RHIDevice->GetDeviceContext(), "RenderLitPath", OwnerRenderer->GetGPUTimer());
 
     RHIDevice->OMSetRenderTargets(ERTVMode::SceneColorTargetWithId);
@@ -656,6 +664,7 @@ void FSceneRenderer::PrepareView()
 
 void FSceneRenderer::GatherVisibleProxies()
 {
+	INSIGHTS_SCOPE(GStat_RenderGatherProxies);
 	// NOTE: 일단 컴포넌트 단위와 데칼 관련 이슈 해결까지 컬링 무시
 	//// 절두체 컬링 수행 -> 결과가 멤버 변수 PotentiallyVisibleActors에 저장됨
 	//PerformFrustumCulling();
@@ -1062,6 +1071,8 @@ void FSceneRenderer::RenderDecalPass()
 
 void FSceneRenderer::RenderParticlePass()
 {
+	INSIGHTS_SCOPE(GStat_ParticleRenderPass);
+	INSIGHTS_GPU_SCOPE(GStat_GPU_ParticlePass);
 	if (Proxies.Particles.IsEmpty())
 		return;
 
@@ -1104,6 +1115,8 @@ void FSceneRenderer::RenderParticlePass()
 
 void FSceneRenderer::RenderPostProcessingPasses()
 {
+	INSIGHTS_SCOPE(GStat_RenderPostProcessing);
+	INSIGHTS_GPU_SCOPE(GStat_GPU_PostProcessing);
 	// Ensure first post-process pass samples from the current scene output
  	TArray<FPostProcessModifier> PostProcessModifiers = View->Modifiers;
 

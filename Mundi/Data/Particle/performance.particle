@@ -15,23 +15,23 @@
 
                   },
                   "Textures" : {
-                    "0" : "Data/Textures/Boom.png"
+                    "0" : "Data/Model/Freshly_Bitten_Apple_tgzpdhlpa_Mid_2K_BaseColor.jpg"
                   },
                   "Vectors" : {
 
                   }
                 },
-                "ParentPath" : "STONE"
+                "ParentPath" : "Shaders/Materials/UberLit.hlsl"
               },
               "ScreenAlignment" : 1,
               "Type" : "UParticleModuleRequired",
               "bUseLocalSpace" : false
             }, {
-              "Rate" : 100.000000,
+              "Rate" : 5000.000000,
               "RateScale" : 1.000000,
               "Type" : "UParticleModuleSpawn"
             }, {
-              "Mesh" : "Data/Gizmo/Camera.obj",
+              "Mesh" : "Data/Model/apple_mid.obj",
               "RollPitchYawRange" : {
                 "DistributionType" : "Uniform",
                 "Max" : [90.000000, 90.000000, 90.000000],
@@ -46,15 +46,19 @@
             }, {
               "Lifetime" : {
                 "DistributionType" : "Uniform",
-                "Max" : 1.000000,
-                "Min" : 0.100000
+                "Max" : 5.000000,
+                "Min" : 5.000000
               },
               "Type" : "UParticleModuleLifetime"
             }, {
               "StartSize" : {
-                "DistributionType" : "Uniform",
-                "Max" : [2.000000, 2.000000, 2.000000],
-                "Min" : [1.000000, 1.000000, 1.000000]
+                "DistributionType" : "Bezier",
+                "MaxInput" : 1.000000,
+                "MinInput" : 0.000000,
+                "P0" : [1.000000, 1.000000, 1.000000],
+                "P1" : [0.330000, 0.330000, 0.330000],
+                "P2" : [0.660000, 0.660000, 0.660000],
+                "P3" : [0.000000, 0.000000, 0.000000]
               },
               "Type" : "UParticleModuleSize"
             }, {
@@ -70,8 +74,8 @@
             }, {
               "StartVelocity" : {
                 "DistributionType" : "Uniform",
-                "Max" : [50.000000, 50.000000, 2000.000000],
-                "Min" : [-50.000000, -50.000000, 100.000000]
+                "Max" : [5.000000, 5.000000, 10.000000],
+                "Min" : [-5.000000, -5.000000, 5.000000]
               },
               "StartVelocityRadial" : {
                 "Constant" : 0.000000,
@@ -80,29 +84,34 @@
               "Type" : "UParticleModuleVelocity",
               "bApplyOwnerScale" : true,
               "bInWorldSpace" : false
-            }],
-          "bEnabled" : true
-        }, {
-          "Level" : 1,
-          "Modules" : [{
-              "EmitterDelay" : 0.000000,
-              "EmitterDuration" : 1.000000,
-              "EmitterDurationLow" : 0.000000,
-              "EmitterLoops" : 0,
-              "Material" : "",
-              "ScreenAlignment" : 1,
-              "Type" : "UParticleModuleRequired",
-              "bUseLocalSpace" : false
             }, {
-              "Rate" : 1.000000,
-              "RateScale" : 1.000000,
-              "Type" : "UParticleModuleSpawn"
+              "Acceleration" : {
+                "Constant" : [0.000000, 0.000000, -9.800000],
+                "DistributionType" : "Constant"
+              },
+              "Type" : "UParticleModuleAccelerationConstant"
+            }, {
+              "DampingFactor" : {
+                "Constant" : [0.800000, 0.800000, 0.800000],
+                "DistributionType" : "Constant"
+              },
+              "DelayAmount" : {
+                "Constant" : 0.000000,
+                "DistributionType" : "Constant"
+              },
+              "DirScalar" : 1.000000,
+              "MaxCollisions" : {
+                "Constant" : 5.000000,
+                "DistributionType" : "Constant"
+              },
+              "Type" : "UParticleModuleCollision",
+              "bKillOnMaxCollision" : true
             }],
           "bEnabled" : true
         }],
-      "PeakActiveParticles" : 104,
+      "PeakActiveParticles" : 62,
       "Type" : "UParticleEmitter"
     }],
-  "LODDistances" : [10.000000],
+  "LODDistances" : [],
   "Type" : "UParticleSystem"
 }

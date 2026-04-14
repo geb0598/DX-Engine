@@ -4,6 +4,7 @@
 #include "SelectionManager.h"
 
 #include "MiniDump.h"
+#include "insights/insights_d3d11.h"
 
 
 float UEditorEngine::ClientWidth = 1024.0f;
@@ -184,6 +185,9 @@ bool UEditorEngine::Startup(HINSTANCE hInstance)
     RHIDevice.Initialize(HWnd);
     Renderer = std::make_unique<URenderer>(&RHIDevice);
 
+    INSIGHTS_GPU_INIT_D3D11(RHIDevice.GetDevice(), RHIDevice.GetDeviceContext());
+    INSIGHTS_INITIALIZE();
+
     //매니저 초기화
     UI.Initialize(HWnd, RHIDevice.GetDevice(), RHIDevice.GetDeviceContext());
     INPUT.Initialize(HWnd);
@@ -311,8 +315,10 @@ void UEditorEngine::MainLoop()
             bChangedPieToEditor = false;
         }
 
+        INSIGHTS_FRAME_BEGIN();
         Tick(DeltaSeconds);
         Render();
+        INSIGHTS_FRAME_END();
 
         // Shader Hot Reloading - Call AFTER render to avoid mid-frame resource conflicts
         // This ensures all GPU commands are submitted before we check for shader updates
@@ -341,6 +347,8 @@ void UEditorEngine::Shutdown()
     // IMPORTANT: Explicitly release Renderer before RHIDevice destructor runs
     // Renderer may hold references to D3D resources
     Renderer.reset();
+
+    INSIGHTS_SHUTDOWN();
 
     // Explicitly release D3D11RHI resources before global destruction
     RHIDevice.Release();

@@ -99,7 +99,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_EDITOR;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_EDITOR;FBXSDK_SHARED;INSIGHTS;INSIGHTS_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -111,8 +111,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(SolutionDir)Mundi\ThirdParty\Library\Lua\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTex\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\FBX\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTK\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>DirectXTK_debug.lib;DirectXTex.lib;%(AdditionalDependencies);Lua.lib;libfbxsdk.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(SolutionDir)Mundi\ThirdParty\Library\Lua\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTex\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\FBX\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTK\;$(SolutionDir)Mundi\ThirdParty\Library\cpp-insights\Debug\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DirectXTK_debug.lib;DirectXTex.lib;%(AdditionalDependencies);Lua.lib;libfbxsdk.lib;cpp-insights-core.lib;cpp-insights-gpu.lib</AdditionalDependencies>
       <AdditionalOptions>/IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PreBuildEvent>
@@ -133,7 +133,7 @@ cmd /c ""C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\symstore.exe" add 
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_EDITOR;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_EDITOR;FBXSDK_SHARED;INSIGHTS;INSIGHTS_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -147,8 +147,8 @@ cmd /c ""C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\symstore.exe" add 
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(SolutionDir)Mundi\ThirdParty\Library\Lua\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTex\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\FBX\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTK\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>DirectXTK.lib;DirectXTex.lib;%(AdditionalDependencies);Lua.lib;libfbxsdk.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(SolutionDir)Mundi\ThirdParty\Library\Lua\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTex\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\FBX\$(Configuration)\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTK\;$(SolutionDir)Mundi\ThirdParty\Library\cpp-insights\Release\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DirectXTK.lib;DirectXTex.lib;%(AdditionalDependencies);Lua.lib;libfbxsdk.lib;cpp-insights-core.lib;cpp-insights-gpu.lib</AdditionalDependencies>
       <AdditionalOptions>/IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PreBuildEvent>
@@ -168,7 +168,7 @@ cmd /c ""C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\symstore.exe" add 
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_GAME;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_GAME;FBXSDK_SHARED;INSIGHTS;INSIGHTS_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -180,8 +180,8 @@ cmd /c ""C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\symstore.exe" add 
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(SolutionDir)Mundi\ThirdParty\Library\Lua\Debug\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTex\Debug\;$(SolutionDir)Mundi\ThirdParty\Library\FBX\Debug\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTK\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>DirectXTK_debug.lib;DirectXTex.lib;%(AdditionalDependencies);Lua.lib;libfbxsdk.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(SolutionDir)Mundi\ThirdParty\Library\Lua\Debug\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTex\Debug\;$(SolutionDir)Mundi\ThirdParty\Library\FBX\Debug\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTK\;$(SolutionDir)Mundi\ThirdParty\Library\cpp-insights\Debug\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DirectXTK_debug.lib;DirectXTex.lib;%(AdditionalDependencies);Lua.lib;libfbxsdk.lib;cpp-insights-core.lib;cpp-insights-gpu.lib</AdditionalDependencies>
       <AdditionalOptions>/IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PreBuildEvent>
@@ -202,7 +202,7 @@ cmd /c ""C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\symstore.exe" add 
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_GAME;FBXSDK_SHARED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;_GAME;FBXSDK_SHARED;INSIGHTS;INSIGHTS_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
@@ -216,8 +216,8 @@ cmd /c ""C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\symstore.exe" add 
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(SolutionDir)Mundi\ThirdParty\Library\Lua\Release\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTex\Release\;$(SolutionDir)Mundi\ThirdParty\Library\FBX\Release\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTK\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>DirectXTK.lib;DirectXTex.lib;%(AdditionalDependencies);Lua.lib;libfbxsdk.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(SolutionDir)Mundi\ThirdParty\Library\Lua\Release\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTex\Release\;$(SolutionDir)Mundi\ThirdParty\Library\FBX\Release\;$(SolutionDir)Mundi\ThirdParty\Library\DirectXTK\;$(SolutionDir)Mundi\ThirdParty\Library\cpp-insights\Release\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>DirectXTK.lib;DirectXTex.lib;%(AdditionalDependencies);Lua.lib;libfbxsdk.lib;cpp-insights-core.lib;cpp-insights-gpu.lib</AdditionalDependencies>
       <AdditionalOptions>/IGNORE:4099 %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PreBuildEvent>
@@ -485,6 +485,7 @@ cmd /c ""C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\symstore.exe" add 
     <ClCompile Include="Source\Runtime\Engine\GameFramework\World.cpp" />
     <ClCompile Include="Source\Runtime\Engine\GameFramework\WorldPartitionManager.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Particle\ParticleEmitter.cpp" />
+    <ClCompile Include="Source\Runtime\Engine\Particle\InsightsStats.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Particle\ParticleEmitterInstances.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Particle\ParticleHelper.cpp" />
     <ClCompile Include="Source\Runtime\Engine\Particle\ParticleModule.cpp" />
@@ -873,6 +874,7 @@ cmd /c ""C:\Program Files (x86)\Windows Kits\10\Debuggers\x64\symstore.exe" add 
     <ClInclude Include="Source\Runtime\Engine\Particle\ParticleModuleVelocity.h" />
     <ClInclude Include="Source\Runtime\Engine\Particle\ParticleSpriteEmitter.h" />
     <ClInclude Include="Source\Runtime\Engine\Particle\ParticleSystem.h" />
+    <ClInclude Include="Source\Runtime\Engine\Particle\InsightsStats.h" />
     <ClInclude Include="Source\Runtime\Engine\Scripting\GameObject.h" />
     <ClInclude Include="Source\Runtime\Engine\Scripting\LuaBindHelpers.h" />
     <ClInclude Include="Source\Runtime\Engine\Scripting\LuaBindingRegistry.h" />
