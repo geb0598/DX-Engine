@@ -367,17 +367,28 @@ void FDynamicMeshEmitterData::GetDynamicMeshElementsEmitter(TArray<FMeshBatchEle
 
 void FParticleDataContainer::Alloc(int32 InParticleDataNumBytes, int32 InParticleIndicesNumShorts)
 {
+	int32 NewMemBlockSize = InParticleDataNumBytes + (InParticleIndicesNumShorts * sizeof(uint16));
+
+	// 기존 버퍼가 충분한 경우 재사용 — malloc/free 스킵
+	if (ParticleData != nullptr && MemBlockSize >= NewMemBlockSize)
+	{
+		ParticleDataNumBytes = InParticleDataNumBytes;
+		ParticleIndicesNumShorts = InParticleIndicesNumShorts;
+		ParticleIndices = (uint16*)(ParticleData + InParticleDataNumBytes);
+		return;
+	}
+
 	Free();
 
 	ParticleDataNumBytes = InParticleDataNumBytes;
 	ParticleIndicesNumShorts = InParticleIndicesNumShorts;
 
-	if ((ParticleDataNumBytes > 0) && (ParticleIndicesNumShorts > 0))
+	if ((InParticleDataNumBytes > 0) && (InParticleIndicesNumShorts > 0))
 	{
-		MemBlockSize = ParticleDataNumBytes + (ParticleIndicesNumShorts * sizeof(uint16));
+		MemBlockSize = NewMemBlockSize;
 
 		ParticleData = (uint8*)std::malloc(MemBlockSize);
-		ParticleIndices = (uint16*)(ParticleData + ParticleDataNumBytes);
+		ParticleIndices = (uint16*)(ParticleData + InParticleDataNumBytes);
 	}
 }
 
