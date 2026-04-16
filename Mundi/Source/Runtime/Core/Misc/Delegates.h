@@ -56,29 +56,33 @@ public:
         return Handle;
     }
 
-    void Broadcast(Args... args) 
+    void Broadcast(Args... args)
     {
-       auto NewEnd = std::remove_if(Handlers.begin(), Handlers.end(),
-           [](const Entry& Entry) {
-               if (!Entry.Validator()) 
-               {
-                   return true; 
-               }
-               return false;
-           });
+        for (auto it = Handlers.begin(); it != Handlers.end(); )
+        {
+            if (it->Validator && !it->Validator())
+            {
+                it = Handlers.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
 
-       if (NewEnd != Handlers.end())
-       {
-           Handlers.erase(NewEnd, Handlers.end());
-       }
+        if (Handlers.empty())
+        {
+            return;
+        }
 
-       std::vector<Entry> SafeHandlers = Handlers;
-       for (auto& Entry : SafeHandlers) {
-          if (Entry.Handler)
-          {
-             Entry.Handler(args...);
-          }
-       }
+        std::vector<Entry> SafeHandlers = Handlers;
+        for (auto& Item : SafeHandlers)
+        {
+            if (Item.Handler)
+            {
+                Item.Handler(args...);
+            }
+        }
     }
 
     void Remove(FDelegateHandle Handle)

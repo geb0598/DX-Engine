@@ -1,4 +1,4 @@
-<?xml version='1.0' encoding='utf-8'?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
   <ItemGroup>
     <FxCompile Include="Shaders\Materials\Fireball.hlsl">
@@ -79,6 +79,7 @@
     <FxCompile Include="Shaders\Utility\SceneDepth_PS.hlsl">
       <Filter>Shaders\Utility</Filter>
     </FxCompile>
+    <FxCompile Include="Shaders\PostProcess\Vignette_PS.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Runtime\Core\Memory\WeakObjectPtr.cpp">
